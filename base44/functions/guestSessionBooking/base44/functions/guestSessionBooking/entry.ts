@@ -1,0 +1,2058 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+async function clubRestrictionCheck(base44:any,tenantId:any,clubId:any,identity:any){const rows=await base44.asServiceRole.entities.ClubAccessRestriction.filter({tenant_id:String(tenantId),club_id:String(clubId),status:'active'},'-created_date',200);const email=String(identity.email||'').trim().toLowerCase(),phone=String(identity.mobile||'').replace(/\D/g,''),name=String(identity.fullName||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();let review=false;for(const r of rows||[]){const re=String(r.email_key||'').toLowerCase(),rp=String(r.mobile_key||'').replace(/\D/g,''),rn=String(r.full_name||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();if((email&&re===email)||(phone.length>=9&&rp.length>=9&&phone.slice(-9)===rp.slice(-9)))return 'deny';if(name&&rn===name)review=true;}return review?'review':'clear';}
+function clubRestrictionResponse(v:string){return Response.json({error:v==='deny'?'This registration cannot be accepted. Contact the club.':'This registration needs club review. Contact the club.'},{status:v==='deny'?403:409});}
+
+import { createCheckout, retrievePayment, refundPayment, providerConfigured, verifyProviderConnection, type ProviderAccount } from './payments.ts';
+import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
+import { findUniqueSpondPersonRow } from './spondIdentityMatch.js';
+
+const PRIVACY_VERSION='clare-guest-session-privacy-v1-2026-09';
+const CANCELLATION_VERSION='clare-guest-session-cancellation-v1-2026-09';
+const ADULT_AGE_VERSION='clare-adult-18plus-v1-2026-09';
+const SPOND_API_BASE='https://api.spond.com/core/v1';
+
+const maps=(q:string)=>`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+const VENUES:any={
+  doora:{
+    key:'doora',
+    name:'St. Josephs Doora Barefield GAA Club',
+    address:'Gurteen, Quin Road, Co. Clare, Ireland',
+    eircode:'V95 PD36',
+    mapsUrl:'https://maps.app.goo.gl/8JuFsTbr6dJT8pQJA',
+  },
+  ennistymon:{
+    key:'ennistymon',
+    name:'Ennistymon Community Centre',
+    address:'Parliament Street, Ennistymon, County Clare, Ireland',
+    eircode:'V95 X8XC',
+    mapsUrl:maps('Ennistymon Community Centre, Parliament Street, Ennistymon, County Clare, V95 X8XC'),
+  },
+  corofin:{
+    key:'corofin',
+    name:'Corofin (Clare) GAA Sports Hall',
+    address:'Corofin, County Clare, Ireland',
+    eircode:'V95 XD56',
+    mapsUrl:'https://maps.app.goo.gl/U4BMNDqiMzShuJV58',
+  },
+};
+
+const TEMPLATES:any={
+  doora_mon_1900:{key:'doora_mon_1900',venueKey:'doora',weekday:'Monday',start:'19:00',end:'20:30',fee:5.50,payment:'sumup',label:'Monday 7:00 pm'},
+  doora_mon_2030:{key:'doora_mon_2030',venueKey:'doora',weekday:'Monday',start:'20:30',end:'22:00',fee:5.50,payment:'sumup',label:'Monday 8:30 pm'},
+  doora_thu_1900:{key:'doora_thu_1900',venueKey:'doora',weekday:'Thursday',start:'19:00',end:'20:30',fee:5.50,payment:'sumup',label:'Thursday 7:00 pm'},
+  doora_thu_2030:{key:'doora_thu_2030',venueKey:'doora',weekday:'Thursday',start:'20:30',end:'22:00',fee:5.50,payment:'sumup',label:'Thursday 8:30 pm'},
+  ennistymon_wed_1900:{key:'ennistymon_wed_1900',venueKey:'ennistymon',weekday:'Wednesday',start:'19:00',end:'20:00',fee:5.50,payment:'sumup',label:'Wednesday 7:00 pm'},
+  ennistymon_wed_2000:{key:'ennistymon_wed_2000',venueKey:'ennistymon',weekday:'Wednesday',start:'20:00',end:'21:00',fee:5.50,payment:'sumup',label:'Wednesday 8:00 pm'},
+  corofin_wed_1130:{key:'corofin_wed_1130',venueKey:'corofin',weekday:'Wednesday',start:'11:30',end:'13:30',fee:5.00,payment:'cash',label:'Wednesday 11:30 am'},
+};
+
+function clean(v:any,max=250){return String(v??'').trim().replace(/\s+/g,' ').slice(0,max)}
+const GUEST_PREVIOUS_SPORT_OPTIONS=['Tennis','Badminton','Squash','Racketball','Padel','Table Tennis','None of these'];
+function guestPreviousSports(value:any){
+  const supplied=Array.isArray(value)?value:[];
+  const cleaned=[...new Set(supplied.map((v:any)=>clean(v,80)).filter((v:string)=>GUEST_PREVIOUS_SPORT_OPTIONS.includes(v)))];
+  return cleaned.includes('None of these')?['None of these']:cleaned;
+}
+function emailKey(v:any){return clean(v,200).toLowerCase()}
+function mobileKey(v:any){return clean(v,50).replace(/[^0-9]/g,'')}
+function sameMobile(a:any,b:any){const aa=mobileKey(a),bb=mobileKey(b);return !!aa&&!!bb&&(aa===bb||(aa.length>=9&&bb.length>=9&&aa.slice(-9)===bb.slice(-9)))}
+function nameKey(v:any){return clean(v,180).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
+function sameEmail(a:any,b:any){const aa=emailKey(a),bb=emailKey(b);return !!aa&&!!bb&&aa===bb}
+function token(){return `gs_${crypto.randomUUID().replaceAll('-','')}`}
+function validToken(v:string){return /^gs_[0-9a-f]{32}$/i.test(v)}
+function confirmation(){return `G${crypto.randomUUID().replaceAll('-','').slice(0,7).toUpperCase()}`}
+function normalisePhone(v:any){return clean(v,80).replace(/\D/g,'').replace(/^3530?/,'353')}
+async function spondLoginFromSecrets(){
+  const email=Deno.env.get('SPOND_EMAIL'),password=Deno.env.get('SPOND_PASSWORD');
+  if(!email||!password)return null;
+  const response=await fetch(`${SPOND_API_BASE}/auth2/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+  if(!response.ok)throw new Error(`Spond login failed ${response.status}`);
+  const data=await response.json();
+  return data.accessToken?.token||data.loginToken||data.token||null;
+}
+async function spondRequest(path:string,accessToken:string){
+  const response=await fetch(`${SPOND_API_BASE}${path}`,{headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'}});
+  if(!response.ok)throw new Error(`Spond API error ${response.status}`);
+  return response.json();
+}
+function spondEventStart(event:any){return event?.startTimestamp||event?.meetupTimestamp||event?.start_time||event?.startTime||''}
+function spondEventStartCandidates(event:any){
+  return [...new Set([event?.startTimestamp,event?.meetupTimestamp,event?.start_time,event?.startTime].filter(Boolean).map(String))];
+}
+function collectSpondInviteIds(event:any){
+  const ids=new Set<string>();
+  const add=(value:any)=>{if(value!==undefined&&value!==null&&String(value).trim())ids.add(String(value))};
+  const addMany=(values:any)=>(Array.isArray(values)?values:[]).forEach(add);
+  const addMember=(row:any)=>add(row?.memberId||row?.uid||row?.id||row);
+  addMany(event?.responses?.acceptedIds);addMany(event?.responses?.declinedIds);addMany(event?.responses?.unansweredIds);addMany(event?.responses?.unconfirmedIds);addMany(event?.responses?.waitinglistIds);addMany(event?.responses?.waitingListIds);addMany(event?.invitedMemberIds);addMany(event?.memberIds);
+  (event?.responses?.members||[]).forEach(addMember);
+  (event?.responses?.responses||[]).forEach(addMember);
+  (event?.recipients?.members||[]).forEach(addMember);
+  // For a directly opened Spond event, recipients.group.members is the event's
+  // own distribution list. That is authoritative for this session, unlike the
+  // lighter list payload where it can be ambiguous.
+  if(event?._distributionAuthoritative)(event?.recipients?.group?.members||[]).forEach(addMember);
+  return ids;
+}
+async function hydrateSpondEventDistribution(event:any,accessToken:string,cache:Map<string,any>){
+  const eventId=clean(event?.id,180);
+  if(!eventId)return event;
+  let detail=cache.get(eventId);
+  if(detail===undefined){
+    try{
+      const full=await spondRequest(`/sponds/${encodeURIComponent(eventId)}`,accessToken);
+      detail={
+        recipients:full?.recipients??null,
+        responses:full?.responses??null,
+        invitedMemberIds:full?.invitedMemberIds??null,
+        memberIds:full?.memberIds??null,
+      };
+    }catch(error){
+      console.warn(`Spond event detail unavailable for ${eventId}`,error?.message||error);
+      detail=null;
+    }
+    cache.set(eventId,detail);
+  }
+  if(!detail)return event;
+  return {...event,
+    recipients:detail.recipients??event?.recipients,
+    responses:detail.responses??event?.responses,
+    invitedMemberIds:detail.invitedMemberIds??event?.invitedMemberIds,
+    memberIds:detail.memberIds??event?.memberIds,
+    _distributionAuthoritative:true,
+  };
+}
+function spondRowMatchesPerson(row:any,person:any,memberId:string){
+  if(!row)return false;
+  const rowId=String(row?.memberId||row?.uid||row?.id||'');
+  if(rowId&&rowId===String(memberId||''))return true;
+  const profile=row?.profile||{};
+  const emails=new Set([person?.primary_email,...(person?.alternate_emails||[])].map(emailKey).filter(Boolean));
+  const phones=new Set([person?.mobile,...(person?.alternate_phones||[])].map(normalisePhone).filter((v:string)=>v.length>=7));
+  const rowEmails=[profile.email,row?.email].map(emailKey).filter(Boolean);
+  if(rowEmails.some((email:string)=>emails.has(email)))return true;
+  const rowPhones=[profile.phoneNumber,row?.phoneNumber].map(normalisePhone).filter((v:string)=>v.length>=7);
+  if(rowPhones.some((phone:string)=>phones.has(phone)))return true;
+  const rowName=nameKey(`${profile.firstName||row?.firstName||''} ${profile.lastName||row?.lastName||''}`);
+  return !!rowName&&rowName===nameKey(person?.full_name||'');
+}
+function spondMemberSubgroupIds(group:any,memberId:string){
+  const ids=new Set<string>();
+  const add=(value:any)=>{const id=String(value?.id??value?.uid??value?.subGroupId??value??'').trim();if(id)ids.add(id)};
+  const sameMember=(row:any)=>String(row?.memberId??row?.uid??row?.id??row??'')===String(memberId||'');
+  for(const sub of group?.subGroups||group?.subgroups||[]){
+    const members=[...(sub?.members||[]),...(sub?.memberIds||[])];
+    if(members.some(sameMember))add(sub?.id||sub?.uid||sub?.subGroupId);
+  }
+  const member=spondGroupMembers(group).find((row:any)=>sameMember(row));
+  for(const value of member?.subGroups||member?.subgroups||member?.subGroupIds||member?.subgroupIds||[])add(value);
+  // Spond's group member objects normally store subgroup membership under
+  // member.groups[].subGroups rather than directly on the member itself.
+  const groupId=String(group?.id||group?.uid||'');
+  for(const membership of member?.groups||[]){
+    if(groupId&&String(membership?.groupId||membership?.id||'')!==groupId)continue;
+    for(const value of membership?.subGroups||membership?.subgroups||membership?.subGroupIds||membership?.subgroupIds||[])add(value);
+  }
+  return ids;
+}
+function spondEventSubgroupIds(event:any){
+  const ids=new Set<string>();
+  const add=(value:any)=>{const id=String(value?.id??value?.uid??value?.subGroupId??value??'').trim();if(id)ids.add(id)};
+  const addMany=(values:any)=>(Array.isArray(values)?values:[]).forEach(add);
+  add(event?.subGroupId);add(event?.subgroupId);addMany(event?.subGroupIds);addMany(event?.subgroupIds);
+  add(event?.subGroup);add(event?.subgroup);
+  const recipients=event?.recipients||{},groupRecipients=recipients?.group||{};
+  add(groupRecipients?.subGroupId);add(groupRecipients?.subgroupId);addMany(groupRecipients?.subGroupIds);addMany(groupRecipients?.subgroupIds);addMany(groupRecipients?.subGroups);addMany(groupRecipients?.subgroups);
+  addMany(recipients?.subGroupIds);addMany(recipients?.subgroupIds);addMany(recipients?.subGroups);addMany(recipients?.subgroups);
+  return ids;
+}
+function memberIsInvitedToSpondEvent(event:any,person:any,memberId:string,memberSubgroupIds:Set<string>){
+  if(memberId&&collectSpondInviteIds(event).has(String(memberId)))return true;
+  const rows=[...(event?.responses?.members||[]),...(event?.responses?.responses||[]),...(event?.recipients?.members||[])];
+  if(rows.some((row:any)=>spondRowMatchesPerson(row,person,memberId)))return true;
+  const groupRows=event?.recipients?.group?.members||[];
+  if(event?._distributionAuthoritative&&groupRows.some((row:any)=>spondRowMatchesPerson(row,person,memberId)))return true;
+  const eventSubgroups=spondEventSubgroupIds(event);
+  if(eventSubgroups.size&&[...eventSubgroups].some(id=>memberSubgroupIds.has(id)))return true;
+  // Fallback only for summary/list payloads where Spond supplied recipient
+  // profiles but the direct event detail could not be opened.
+  return groupRows.some((row:any)=>spondRowMatchesPerson({...row,id:''},person,''));
+}
+function spondEventMemberId(event:any,person:any,fallbackMemberId=''){
+  if(fallbackMemberId)return String(fallbackMemberId);
+  const rows=[...(event?.responses?.members||[]),...(event?.responses?.responses||[]),...(event?.recipients?.members||[]),...(event?.recipients?.group?.members||[])];
+  const exact=rows.find((row:any)=>spondRowMatchesPerson(row,person,''));
+  const match=exact?{row:exact}:findUniqueSpondPersonRow(rows,person,'');
+  const row=match?.row||null;
+  return String(row?.memberId||row?.uid||row?.id||'');
+}
+function spondResponseStatus(event:any,memberId:string){
+  const id=String(memberId||'');
+  const includes=(values:any)=>(Array.isArray(values)?values:[]).some(value=>String(value)===id);
+  if(includes(event?.responses?.acceptedIds))return 'accepted';
+  if(includes(event?.responses?.waitinglistIds)||includes(event?.responses?.waitingListIds))return 'waiting';
+  if(includes(event?.responses?.declinedIds))return 'declined';
+  if(includes(event?.responses?.unansweredIds))return 'unanswered';
+  if(includes(event?.responses?.unconfirmedIds))return 'unconfirmed';
+  const row=[...(event?.responses?.members||[]),...(event?.responses?.responses||[])].find((item:any)=>String(item?.memberId||item?.uid||item?.id)===id);
+  return clean(row?.status||'invited',40).toLowerCase()||'invited';
+}
+function spondGroupMembers(group:any){
+  const rows:any[]=[],seen=new Set<string>();
+  const add=(member:any)=>{const id=String(member?.id||member?.uid||member?.memberId||'');if(!id||seen.has(id))return;seen.add(id);rows.push(member)};
+  (group?.members||[]).forEach(add);(group?.subGroups||[]).forEach((sub:any)=>(sub?.members||[]).forEach(add));
+  return rows;
+}
+function dublinParts(value:any){
+  const d=new Date(value);if(!Number.isFinite(d.getTime()))return null;
+  const parts=new Intl.DateTimeFormat('en-IE',{timeZone:'Europe/Dublin',weekday:'long',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(d);
+  const p=Object.fromEntries(parts.map(x=>[x.type,x.value]));
+  return {day:p.weekday,date:`${p.year}-${p.month}-${p.day}`,time:`${p.hour}:${p.minute}`};
+}
+function weekday(date:string){
+  const d=new Date(`${date}T12:00:00Z`);
+  return Number.isFinite(d.getTime())?['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getUTCDay()]:'';
+}
+function templateOut(t:any){
+  const v=VENUES[t.venueKey];
+  return {...t,venueName:v.name,venueAddress:v.address,eircode:v.eircode,mapsUrl:v.mapsUrl};
+}
+async function directoryProfile(base44:any,club:any){
+  const profile=(await base44.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:club.slug,status:'active'},'-updated_at',5))?.[0];
+  const data=profile?.public_json?JSON.parse(profile.public_json):{};
+  return {profile,data,venues:Array.isArray(data?.venues)?data.venues:[],sessions:Array.isArray(data?.sessions)?data.sessions:[]};
+}
+
+async function memberDirectorySessions(base44:any,club:any){
+  const directory=await directoryProfile(base44,club);
+  return (directory.sessions||[]).map((s:any)=>{
+    const v=(directory.venues||[]).find((x:any)=>String(x.id)===String(s.venueId));
+    if(!v)return null;
+    const rawPayment=String(s.paymentMethod||'').toLowerCase();
+    const price=Number(s.price);
+    const payment=/none|free|no payment/.test(rawPayment)||price===0?'none':/cash/i.test(rawPayment)?'cash':'sumup';
+    return {
+      key:String(s.id),directorySessionId:String(s.id),venueKey:String(v.id),weekday:String(s.day||''),
+      start:String(s.start||''),end:String(s.end||''),fee:payment==='none'?0:(Number.isFinite(price)&&price>0?price:(payment==='cash'?5:5.5)),
+      payment,label:`${s.day||''} ${s.start||''}`.trim(),level:String(s.level||''),host:String(s.host||''),
+      capacity:Number(s.capacity||0)||null,
+      venueName:String(v.name||''),venueAddress:String(v.address||''),eircode:String(v.eircode||''),mapsUrl:String(v.mapUrl||''),
+      clubContactEmail:emailKey(directory.data?.contact?.email||club.public_contact_email||''),
+      clubContactName:clean(directory.data?.contact?.name||'',120),
+    };
+  }).filter(Boolean);
+}
+
+function matchSpondMemberId(group:any,person:any,explicitIds:string[]=[]){
+  const members=spondGroupMembers(group);
+  for(const explicitId of explicitIds){
+    const found=members.find((member:any)=>String(member?.id||member?.uid||member?.memberId||'')===String(explicitId));
+    if(found)return String(found?.id||found?.uid||found?.memberId);
+  }
+  const emails=new Set([person?.primary_email,...(person?.alternate_emails||[])].map(emailKey).filter(Boolean));
+  const phones=new Set([person?.mobile,...(person?.alternate_phones||[])].map(normalisePhone).filter((v:string)=>v.length>=7));
+  for(const member of members){
+    const profile=member?.profile||{};
+    const memberEmails=[profile.email,member?.email].map(emailKey).filter(Boolean);
+    if(memberEmails.some((email:string)=>emails.has(email)))return String(member?.id||member?.uid||member?.memberId);
+    const memberPhones=[profile.phoneNumber,member?.phoneNumber].map(normalisePhone).filter((v:string)=>v.length>=7);
+    if(memberPhones.some((phone:string)=>phones.has(phone)))return String(member?.id||member?.uid||member?.memberId);
+  }
+  const targetName=nameKey(person?.full_name||'');
+  if(targetName){
+    const nameMatches=members.filter((member:any)=>{
+      const profile=member?.profile||{};
+      const full=clean(`${profile.firstName||member?.firstName||''} ${profile.lastName||member?.lastName||''}`,180);
+      return nameKey(full)===targetName;
+    });
+    if(nameMatches.length===1)return String(nameMatches[0]?.id||nameMatches[0]?.uid||nameMatches[0]?.memberId);
+  }
+  // Final identity bridge for harmless name variations such as Ann/Anne. This
+  // only resolves when the strongest surname + first-initial candidate is unique.
+  const loose=findUniqueSpondPersonRow(members,person,'');
+  const looseRow=loose?.row||null;
+  return looseRow?String(looseRow?.id||looseRow?.uid||looseRow?.memberId||''):null;
+}
+
+async function ensureClubGuestRelationship(base44:any,session:any,person:any){
+  if(!session?.tenant_id||!session?.club_id||!person?.id)return null;
+  try{
+    const memberRows=await base44.asServiceRole.entities.ClubRelationship.filter({tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,relationship_type:'member',status:'active'},'-updated_date',5);
+    if(memberRows?.[0])return memberRows[0];
+    const existing=(await base44.asServiceRole.entities.ClubRelationship.filter({tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,relationship_type:'guest'},'-updated_date',10))?.[0];
+    const data:any={
+      tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,
+      relationship_type:'guest',status:'active',entry_route:'guest_play',source_system:'rallyhub_guest_session',
+      start_date:String(existing?.start_date||session.session_date||new Date().toISOString().slice(0,10)),
+      notes:existing?.notes||'Club guest created through RallyHub session booking.',
+      last_synced_at:new Date().toISOString(),
+    };
+    if(existing)return await base44.asServiceRole.entities.ClubRelationship.update(existing.id,data);
+    return await base44.asServiceRole.entities.ClubRelationship.create(data);
+  }catch(error){console.warn('Could not persist club guest relationship',error?.message||error);return null}
+}
+
+async function persistResolvedSpondIdentity(base44:any,club:any,membership:any,person:any,spondMemberId:string,spondGroupId:string){
+  if(!membership?.id||!spondMemberId)return;
+  try{
+    const existing=(await base44.asServiceRole.entities.SpondIdentity.filter({tenant_id:club.tenant_id,club_id:club.id,member_id:membership.id},'-last_verified_at',10))?.[0];
+    const data:any={
+      tenant_id:club.tenant_id,club_id:club.id,member_id:membership.id,spond_member_id:spondMemberId,
+      spond_group_id:spondGroupId||'',spond_name:clean(person?.full_name||'',180),spond_email:emailKey(person?.primary_email||''),spond_phone:clean(person?.mobile||'',80),
+      match_status:'matched',match_method:'spond_id',last_verified_at:new Date().toISOString(),notes:'Resolved from an exact Spond event distribution list during member session lookup.',
+    };
+    if(existing)await base44.asServiceRole.entities.SpondIdentity.update(existing.id,data);
+    else await base44.asServiceRole.entities.SpondIdentity.create(data);
+  }catch(error){console.warn('Could not persist Spond identity',error?.message||error)}
+}
+
+async function directBoundMemberSessions(base44:any,club:any,person:any,membership:any,memberId:string,memberSubgroups:Set<string>,accessToken:string,configured:any[]){
+  const bindings=await base44.asServiceRole.entities.SpondSessionBinding.filter({tenant_id:club.tenant_id,club_id:club.id,listing_slug:club.slug,active:true},'directory_session_key',100);
+  const sessions:any[]=[];
+  for(const binding of bindings||[]){
+    const cfg=configured.find((s:any)=>String(s.directorySessionId||s.key)===String(binding.directory_session_key||''));
+    if(!cfg)continue;
+    try{
+      const full=await spondRequest(`/sponds/${encodeURIComponent(String(binding.spond_event_id||''))}`,accessToken);
+      const event={...full,_distributionAuthoritative:true};
+      if(!memberIsInvitedToSpondEvent(event,person,memberId,memberSubgroups))continue;
+      const resolvedMemberId=spondEventMemberId(event,person,memberId);
+      if(resolvedMemberId)await persistResolvedSpondIdentity(base44,club,membership,person,resolvedMemberId,String(binding.spond_group_id||''));
+      const status=spondResponseStatus(event,resolvedMemberId);
+      if(['declined','waiting','waitinglist','waitlist'].includes(status))continue;
+      const sessionDate=nextOccurrenceDate(cfg.weekday,cfg.start);
+      if(!sessionDate)continue;
+      const acceptedCount=(event?.responses?.acceptedIds||[]).length||0;
+      const capacity=Number(event?.maxAccepted||event?.maxParticipants||cfg.capacity||0)||null;
+      if(status!=='accepted'&&capacity&&acceptedCount>=capacity)continue;
+      sessions.push({
+        id:`spond:${String(binding.spond_event_id)}:${sessionDate}:${cfg.start}`,
+        spondEventId:String(binding.spond_event_id),title:clean(event?.heading||cfg.level||'Club session',180),responseStatus:status,
+        sessionDate,weekday:cfg.weekday,start:cfg.start,end:cfg.end||'',
+        venueKey:cfg.venueKey,venueName:cfg.venueName,venueAddress:cfg.venueAddress,eircode:cfg.eircode,mapsUrl:cfg.mapsUrl,
+        fee:Number(cfg.fee),payment:cfg.payment,capacity,acceptedCount,host:cfg.host||'',source:'spond-binding',directorySessionId:cfg.directorySessionId||cfg.key,
+        clubContactEmail:cfg.clubContactEmail||'',clubContactName:cfg.clubContactName||'',
+      });
+    }catch(error){console.warn(`Direct Spond event binding failed for ${binding?.spond_event_id||'unknown'}`,error?.message||error)}
+  }
+  return {sessions,boundEventIds:new Set((bindings||[]).map((b:any)=>String(b.spond_event_id||'')).filter(Boolean))};
+}
+
+async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,membership:any){
+  const connections=await base44.asServiceRole.entities.DirectorySpondConnection.filter({listing_slug:club.slug,status:'active'},'-last_synced_at',10);
+  const connection=connections?.[0];
+  if(!connection?.spond_group_id)return {status:'not_configured',sessions:[]};
+  const identities=await base44.asServiceRole.entities.SpondIdentity.filter({tenant_id:club.tenant_id,club_id:club.id,match_status:'matched'},'-last_verified_at',100);
+  const explicitIds=(identities||[]).filter((row:any)=>String(row.member_id||'')===String(membership?.id||'')).map((row:any)=>clean(row.spond_member_id,180)).filter(Boolean);
+  try{
+    const accessToken=await spondLoginFromSecrets();
+    if(!accessToken)return {status:'credentials_unavailable',sessions:[]};
+    let group:any=null;
+    try{group=await spondRequest(`/groups/${connection.spond_group_id}`,accessToken)}catch{
+      const groups=await spondRequest('/groups',accessToken);
+      group=(Array.isArray(groups)?groups:[]).find((row:any)=>String(row.id)===String(connection.spond_group_id));
+    }
+    if(!group)return {status:'group_unavailable',sessions:[]};
+    const memberId=matchSpondMemberId(group,person,explicitIds)||'';
+    // Do not fail here. A member can be identifiable on the exact event's
+    // distribution list even when the broader Spond group payload does not
+    // expose enough profile data to resolve a group member ID first.
+    const memberSubgroups=memberId?spondMemberSubgroupIds(group,memberId):new Set<string>();
+    const configured=await memberDirectorySessions(base44,club);
+    const directBound=await directBoundMemberSessions(base44,club,person,membership,memberId,memberSubgroups,accessToken,configured);
+    const now=new Date(),maxStart=new Date(now.getTime()+60*24*60*60*1000);
+    // Include future scheduled occurrences because Clare's recurring Spond sessions can be configured
+    // before their push invitation is sent. Eligibility still has to pass the event/subgroup invite test below.
+    const params=new URLSearchParams({groupId:String(connection.spond_group_id),minStartTimestamp:now.toISOString(),maxStartTimestamp:maxStart.toISOString(),max:'300',scheduled:'true',includeComments:'false',includeHidden:'false',addProfileInfo:'true'});
+    const raw=await spondRequest(`/sponds?${params.toString()}`,accessToken);
+    const candidates=(Array.isArray(raw)?raw:[]).filter((event:any)=>!directBound.boundEventIds.has(String(event?.id||''))).map((event:any)=>{
+      const loc=event?.location||{};
+      const eventVenue=clean(loc?.feature||loc?.name||loc?.address||'',220);
+      const venueKey=nameKey(eventVenue);
+      let match:any=null;
+      for(const startRaw of spondEventStartCandidates(event)){
+        const start=dublinParts(startRaw);
+        if(!start)continue;
+        const possible=configured.filter((s:any)=>s.weekday===start.day&&s.start===start.time);
+        if(!possible.length)continue;
+        let cfg=possible[0]||null;
+        if(eventVenue){
+          cfg=possible.find((s:any)=>{
+            const configuredVenue=nameKey(s.venueName);
+            const configuredAddress=nameKey(s.venueAddress);
+            return configuredVenue.includes(venueKey)||venueKey.includes(configuredVenue)||configuredAddress.includes(venueKey)||venueKey.includes(configuredAddress);
+          })||null;
+        }
+        if(cfg){match={startRaw,start,cfg};break}
+      }
+      return match?{event,match}:null;
+    }).filter(Boolean);
+    // The Spond event itself is now the source of truth for invitation/distribution.
+    // Hydrate each unique event ID directly (the same series ID can appear in many
+    // upcoming occurrences), then ask whether this member is on that event's list.
+    const detailCache=new Map<string,any>();
+    const hydrated=[];
+    for(const item of candidates){
+      hydrated.push({event:await hydrateSpondEventDistribution(item.event,accessToken,detailCache),match:item.match});
+    }
+    const sessions=hydrated.filter(({event}:any)=>memberIsInvitedToSpondEvent(event,person,memberId,memberSubgroups)).map(({event,match}:any)=>{
+      const eventMemberId=spondEventMemberId(event,person,memberId);
+      if(eventMemberId)persistResolvedSpondIdentity(base44,club,membership,person,eventMemberId,String(connection.spond_group_id)).catch(()=>{});
+      const status=spondResponseStatus(event,eventMemberId);
+      if(['declined','waiting','waitinglist','waitlist'].includes(status))return null;
+      const {startRaw,start,cfg}=match;
+      const end=dublinParts(event?.endTimestamp||event?.endTime||'');
+      if(!Number.isFinite(Number(cfg.fee))||Number(cfg.fee)<=0)return null;
+      const acceptedCount=(event?.responses?.acceptedIds||[]).length||0;
+      const capacity=Number(event?.maxAccepted||event?.maxParticipants||cfg.capacity||0)||null;
+      if(status!=='accepted'&&capacity&&acceptedCount>=capacity)return null;
+      return {
+        id:`spond:${String(event.id)}:${startRaw}`,
+        spondEventId:String(event.id),title:clean(event?.heading||cfg.level||'Club session',180),responseStatus:status,
+        sessionDate:start.date,weekday:start.day,start:start.time,end:end?.time||cfg.end||'',
+        venueKey:cfg.venueKey,venueName:cfg.venueName,venueAddress:cfg.venueAddress,eircode:cfg.eircode,mapsUrl:cfg.mapsUrl,
+        fee:Number(cfg.fee),payment:cfg.payment,capacity,acceptedCount,host:cfg.host||'',source:'spond',
+      };
+    }).filter(Boolean);
+    const merged=[...(directBound.sessions||[]),...sessions];
+    const unique=new Map<string,any>();
+    for(const session of merged){
+      const key=`${session.directorySessionId||session.venueKey}:${session.sessionDate}:${session.start}`;
+      if(!unique.has(key))unique.set(key,session);
+    }
+    return {status:'connected',sessions:[...unique.values()].sort((a:any,b:any)=>`${a.sessionDate}${a.start}`.localeCompare(`${b.sessionDate}${b.start}`))};
+  }catch(error){
+    console.error('member payment fallback Spond feed error',error?.message||error);
+    return {status:'temporarily_unavailable',sessions:[]};
+  }
+}
+
+async function resolveActiveMember(base44:any,club:any,identity:any){
+  const suppliedName=nameKey(identity?.fullName||'');
+  const suppliedEmail=emailKey(identity?.email||'');
+  const suppliedMobile=mobileKey(identity?.mobile||'');
+  if(!suppliedName&&!suppliedEmail&&!suppliedMobile){
+    return {match:null,error:'Enter your name, email or mobile number so RallyHub can check your membership.',code:'MEMBERSHIP_DETAILS_REQUIRED'};
+  }
+  const [memberships,people]=await Promise.all([
+    base44.asServiceRole.entities.ClubMembership.filter({tenant_id:club.tenant_id,club_id:club.id},'-updated_date',500),
+    base44.asServiceRole.entities.Person.filter({tenant_id:club.tenant_id},'full_name',500),
+  ]);
+  const activeMemberships=(memberships||[]).filter((m:any)=>m.membership_status==='paid_active'&&m.relationship_type==='member'&&m.include_in_rallyhub!==false);
+  const membershipByPerson=new Map(activeMemberships.map((m:any)=>[String(m.person_id),m]));
+  const matches:any[]=[];
+  for(const person of people||[]){
+    const membership=membershipByPerson.get(String(person.id));
+    if(!membership)continue;
+    const methods:string[]=[];
+    const emailCandidates=[person.primary_email,...(person.alternate_emails||[]),...(membership.alternate_emails||[])].filter(Boolean);
+    const mobileCandidates=[person.mobile,...(person.alternate_phones||[])].filter(Boolean);
+    const nameCandidates=[person.full_name,...(membership.alternate_names||[])].filter(Boolean).map(nameKey);
+    if(suppliedEmail&&emailCandidates.some((x:any)=>sameEmail(x,suppliedEmail)))methods.push('email');
+    if(suppliedMobile&&mobileCandidates.some((x:any)=>sameMobile(x,suppliedMobile)))methods.push('mobile');
+    if(suppliedName&&nameCandidates.includes(suppliedName))methods.push('name');
+    if(methods.length)matches.push({person,membership,methods});
+  }
+  const distinct=new Map(matches.map((m:any)=>[String(m.person.id),m]));
+  const rows=[...distinct.values()];
+  if(rows.length===1){
+    const row:any=rows[0];
+    return {match:row,verificationMethod:row.methods.length>1?'multiple':row.methods[0]};
+  }
+  if(rows.length>1){
+    return {match:null,error:'More than one membership record matches those details. Please enter the email or mobile number held by the club.',code:'MEMBERSHIP_MATCH_AMBIGUOUS'};
+  }
+  return {match:null,error:'No membership record found. Please follow the guest booking process.',code:'MEMBERSHIP_NOT_FOUND'};
+}
+
+function nextOccurrenceDate(day:string,start:string){
+  const parts=new Intl.DateTimeFormat('en-IE',{timeZone:'Europe/Dublin',weekday:'long',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());
+  const get=(type:string)=>parts.find(p=>p.type===type)?.value||'';
+  const names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const todayName=get('weekday');
+  const target=names.indexOf(day),todayIndex=names.indexOf(todayName);
+  const todayIso=`${get('year')}-${get('month')}-${get('day')}`;
+  if(target<0||todayIndex<0)return '';
+  let diff=(target-todayIndex+7)%7;
+  const nowMinutes=Number(get('hour')||0)*60+Number(get('minute')||0);
+  const [hh,mm]=String(start||'00:00').split(':').map(Number);
+  const startMinutes=(Number.isFinite(hh)?hh:0)*60+(Number.isFinite(mm)?mm:0);
+  if(diff===0&&nowMinutes>=startMinutes)diff=7;
+  const d=new Date(`${todayIso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate()+diff);
+  return d.toISOString().slice(0,10);
+}
+
+async function hostContactFromName(base44:any,tenantId:string,hostName:any){
+  const wanted=nameKey(hostName||'');
+  if(!wanted)return null;
+  const people=await base44.asServiceRole.entities.Person.filter({tenant_id:tenantId},'full_name',500);
+  const person=(people||[]).find((p:any)=>nameKey(p.full_name)===wanted);
+  if(!person)return {personId:'',name:clean(hostName,120),email:'',mobile:''};
+  return {personId:String(person.id||''),name:clean(person.full_name||hostName,120),email:emailKey(person.primary_email||''),mobile:clean(person.mobile||'',80)};
+}
+
+async function resolveSessionHostContact(base44:any,session:any){
+  try{
+    const club=(await base44.asServiceRole.entities.Club.filter({id:session.club_id,tenant_id:session.tenant_id},'-updated_date',5))?.[0];
+    if(!club?.slug)return null;
+    const profile=(await base44.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:club.slug,status:'active'},'-updated_at',5))?.[0];
+    const data=profile?.public_json?JSON.parse(profile.public_json):{};
+    const sessions=Array.isArray(data?.sessions)?data.sessions:[];
+    let configured=sessions.find((s:any)=>String(s.id||'')===String(session.session_label||''));
+    if(!configured){
+      configured=sessions.find((s:any)=>String(s.venueId||'')===String(session.venue_key||'')&&String(s.day||'')===String(session.weekday||'')&&String(s.start||'')===String(session.start_time||''));
+    }
+    if(!configured?.host)return null;
+    return await hostContactFromName(base44,session.tenant_id,configured.host);
+  }catch(e){console.error('session host resolution failed',e?.message||e);return null}
+}
+
+async function ensureMemberSessionLink(base44:any,club:any,memberSession:any){
+  const date=clean(memberSession.sessionDate,20)||nextOccurrenceDate(memberSession.weekday,memberSession.start);
+  if(!date)throw Object.assign(new Error('RallyHub could not determine the date for that session.'),{status:409});
+  const priorLinks=await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:club.tenant_id,club_id:club.id},'-created_at',50);
+  const explicitAdmin=(priorLinks||[]).find((link:any)=>link.created_by_user_id&&emailKey(link.notification_email||''));
+  const adminEmail=emailKey(explicitAdmin?.notification_email||memberSession.clubContactEmail||club.public_contact_email||'');
+  const adminName=clean(explicitAdmin?.notification_name||memberSession.clubContactName||club.name,120);
+  let row=(await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:club.tenant_id,club_id:club.id,session_date:date,start_time:memberSession.start,venue_key:memberSession.venueKey,active:true},'-created_at',10))?.[0];
+  if(row){
+    // Older auto-created links used the session host as the sole notification target.
+    // Keep an explicit admin/club notification as primary, while host notification is resolved separately.
+    const host=await hostContactFromName(base44,club.tenant_id,memberSession.host);
+    const existing=emailKey(row.notification_email||'');
+    if(adminEmail&&(!existing||(host?.email&&existing===host.email&&adminEmail!==host.email))){
+      row=await base44.asServiceRole.entities.GuestSessionLink.update(row.id,{notification_email:adminEmail,notification_name:adminName});
+    }
+    return row;
+  }
+  row=await base44.asServiceRole.entities.GuestSessionLink.create({
+    tenant_id:club.tenant_id,club_id:club.id,token:token(),active:true,
+    session_date:date,weekday:memberSession.weekday,start_time:memberSession.start,end_time:memberSession.end,
+    venue_key:memberSession.venueKey,venue_name:memberSession.venueName,venue_address:memberSession.venueAddress,venue_eircode:memberSession.eircode,google_maps_url:memberSession.mapsUrl,
+    session_label:memberSession.directorySessionId||memberSession.key,capacity:memberSession.capacity||undefined,fee_amount:Number(memberSession.fee||0),currency:'EUR',payment_method:memberSession.payment,
+    notification_email:adminEmail||undefined,notification_name:adminName||undefined,
+    created_by_user_id:'',created_at:new Date().toISOString(),notes:`Auto-created for an existing member session booking/payment fallback${memberSession.spondEventId?` · Spond event ${memberSession.spondEventId}`:''}.`,
+  });
+  return row;
+}
+
+async function directoryTemplates(base44:any,tenantId:string,clubId:string){
+  try{
+    const club=(await base44.asServiceRole.entities.Club.filter({id:clubId,tenant_id:tenantId},'-updated_date',5))?.[0];
+    if(!club?.slug)return Object.values(TEMPLATES).map(templateOut);
+    const profile=(await base44.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:club.slug,status:'active'},'-updated_at',5))?.[0];
+    const data=profile?.public_json?JSON.parse(profile.public_json):null;
+    const venues=Array.isArray(data?.venues)?data.venues:[];
+    const sessions=Array.isArray(data?.sessions)?data.sessions:[];
+    if(!sessions.length||!venues.length)return Object.values(TEMPLATES).map(templateOut);
+    return sessions.filter((s:any)=>s?.guestEligible!==false).map((s:any)=>{
+      const v=venues.find((x:any)=>String(x.id)===String(s.venueId));
+      if(!v)return null;
+      const rawPayment=String(s.paymentMethod||'').toLowerCase();
+      const price=Number(s.price);
+      const payment=/none|free|no payment/.test(rawPayment)||price===0?'none':/cash/i.test(rawPayment)?'cash':'sumup';
+      return {
+        key:String(s.id),directorySessionId:String(s.id),venueKey:String(v.id),weekday:String(s.day||''),
+        start:String(s.start||''),end:String(s.end||''),fee:payment==='none'?0:(Number.isFinite(price)&&price>0?price:(payment==='cash'?5:5.5)),
+        payment,label:`${s.day||''} ${s.start||''}`.trim(),level:String(s.level||''),host:String(s.host||''),
+        venueName:String(v.name||''),venueAddress:String(v.address||''),eircode:String(v.eircode||''),mapsUrl:String(v.mapUrl||''),
+        clubContactEmail:emailKey(data?.contact?.email||club.public_contact_email||''),clubContactName:clean(data?.contact?.name||club.name,120),
+        beginnerGuestEligible:s.beginnerGuestEligible===true,
+      };
+    }).filter(Boolean);
+  }catch(e){console.error('directory guest templates failed',e?.message||e);return Object.values(TEMPLATES).map(templateOut)}
+}
+async function inviteForSession(base44:any,session:any,rawToken:any,email='',mobile=''){
+  const inviteToken=clean(rawToken,120);
+  if(!inviteToken)return null;
+  const rows=await base44.asServiceRole.entities.AccessInviteToken.filter({token:inviteToken,purpose:'guest_booking',status:'active',session_link_id:session.id},'-created_at',5);
+  const invite=rows?.[0]||null;
+  if(!invite)return null;
+  if(invite.expires_at&&Date.parse(invite.expires_at)<Date.now()){
+    await base44.asServiceRole.entities.AccessInviteToken.update(invite.id,{status:'expired'}).catch(()=>{});
+    return null;
+  }
+  // A private/admin-authorised link must be bound to at least one contact identifier.
+  // Either the intended email OR intended mobile may prove identity at submission.
+  const boundEmail=emailKey(invite.intended_email);
+  const boundMobile=mobileKey(invite.intended_mobile);
+  if(!boundEmail&&!boundMobile)return null;
+  const suppliedEmail=emailKey(email);
+  const suppliedMobile=mobileKey(mobile);
+  if(suppliedEmail||suppliedMobile){
+    const emailMatch=!!boundEmail&&!!suppliedEmail&&boundEmail===suppliedEmail;
+    const mobileMatch=!!boundMobile&&!!suppliedMobile&&sameMobile(boundMobile,suppliedMobile);
+    if(!emailMatch&&!mobileMatch)return null;
+  }
+  return invite;
+}
+async function guestRequestForInvite(base44:any,invite:any){
+  const requestId=clean(invite?.access_request_id,120);
+  if(!requestId)return null;
+  return (await base44.asServiceRole.entities.GuestBookingRequest.filter({id:requestId,tenant_id:invite.tenant_id,club_id:invite.club_id},'-submitted_at',5))?.[0]||null;
+}
+async function createInvite(base44:any,session:any,user:any,intendedEmail='',intendedName='',intendedMobile=''){
+  const boundEmail=emailKey(intendedEmail);
+  const boundMobileRaw=clean(intendedMobile,50);
+  const boundMobile=mobileKey(boundMobileRaw);
+  if(boundEmail&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(boundEmail))throw new Error('Enter a valid guest email address.');
+  if(boundMobileRaw&&boundMobile.length<8)throw new Error('Enter a valid guest mobile/WhatsApp number.');
+  if(!boundEmail&&!boundMobile)throw new Error('Enter either the guest email address or mobile/WhatsApp number for a private invitation.');
+  const now=new Date();
+  const inviteToken=`gi_${crypto.randomUUID().replaceAll('-','')}`;
+  const row=await base44.asServiceRole.entities.AccessInviteToken.create({
+    tenant_id:session.tenant_id,club_id:session.club_id,purpose:'guest_booking',token:inviteToken,status:'active',session_link_id:session.id,
+    intended_email:boundEmail,intended_mobile:boundMobileRaw,intended_name:clean(intendedName,120),expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),
+    created_by_user_id:user?.id||'',created_at:now.toISOString(),notes:'Admin-issued guest booking magic link. Bound to email and/or mobile; single-use and expires after 7 days.',
+  });
+  return row;
+}
+function safeSession(s:any){
+  return {
+    id:s.id,token:s.token,active:s.active,sessionDate:s.session_date,weekday:s.weekday,
+    startTime:s.start_time,endTime:s.end_time,venueKey:s.venue_key,venueName:s.venue_name,
+    venueAddress:s.venue_address,eircode:s.venue_eircode,mapsUrl:s.google_maps_url,
+    sessionLabel:s.session_label||'',capacity:s.capacity||null,feeAmount:Number(s.fee_amount||0),
+    currency:s.currency||'EUR',paymentMethod:s.payment_method,
+    archivedAt:s.archived_at||'',archiveReason:s.archive_reason||'',
+  };
+}
+async function clubBrand(base44:any,clubId:string){
+  try{
+    const rows=await base44.asServiceRole.entities.Club.filter({id:clubId},'-updated_date',5);
+    const club=rows?.[0]||null;
+    if(!club)return null;
+    return {
+      id:club.id,name:club.name||'',slug:club.slug||'',
+      logo_url:club.logo_url||'',
+      primary_colour:club.primary_colour||'',
+      secondary_colour:club.secondary_colour||'',
+    };
+  }catch{return null}
+}
+async function sessionEmailCopy(base44:any,tenantId:string,purpose:string,subject:string,intro:string,vars:Record<string,string>){
+  try{
+    const rows=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose},'-created_date',30);
+    const item=(rows||[]).find((r:any)=>r.owner_scope==='tenant'&&r.status!=='retired');
+    const merge=(v:string)=>String(v||'').replace(/{{([a-z_]+)}}/g,(_m:string,k:string)=>vars[k]??'');
+    return {subject:merge(item?.subject_template||subject),intro:merge(item?.plain_text_template||intro)};
+  }catch(e){console.error('Communication template lookup',purpose,e);return {subject,intro}}
+}
+function sessionIntroHtml(value:string){return '<p style="white-space:pre-line;font-size:15px;line-height:1.65;color:#374151">'+escapeHtml(value)+'</p>'}
+async function tenantEmailBrandKit(base44:any,tenantId:string,clubId:string){
+  const rows=await base44.asServiceRole.entities.CommunicationBrandKit.filter({tenant_id:tenantId,owner_scope:'tenant',status:'active'},'-updated_date',30);
+  return (rows||[]).find((k:any)=>!k.club_id||String(k.club_id)===String(clubId))||null;
+}
+async function activeClubLegalDocument(base44:any,tenantId:string,clubId:string,documentType:string){
+  const rows=await base44.asServiceRole.entities.ClubLegalDocument.filter({tenant_id:tenantId,club_id:clubId,document_type:documentType,active:true},'-effective_from',20);
+  const doc=(rows||[])[0];
+  if(!doc) throw Object.assign(new Error(`This club has no active ${documentType.replaceAll('_',' ')} configured.`),{status:409});
+  return doc;
+}
+async function activeGuestJourneyConfig(base44:any,tenantId:string,clubId:string){
+  const rows=await base44.asServiceRole.entities.ClubGuestJourneyConfig.filter({tenant_id:tenantId,club_id:clubId,active:true},'-updated_date',20);
+  return rows?.[0]||null;
+}
+async function legal(base44:any,session:any){
+  const [waiver,code,guestConfig]=await Promise.all([
+    activeClubLegalDocument(base44,session.tenant_id,session.club_id,'liability_waiver'),
+    activeClubLegalDocument(base44,session.tenant_id,session.club_id,'code_of_conduct'),
+    activeGuestJourneyConfig(base44,session.tenant_id,session.club_id)
+  ]);
+  return {
+    waiverVersion:waiver.version,
+    waiverTitle:waiver.title,
+    waiverText:waiver.body_text,
+    waiverConsentLabel:waiver.consent_label||'I have read and accept the Clare Pickleball Participation Declaration, Assumption of Risk & Liability Notice.',
+    codeVersion:code.version,
+    codeTitle:code.title,
+    codeText:code.body_text,
+    codeConsentLabel:code.consent_label||'I have read and agree to abide by the club Code of Conduct.',
+    minimumAge:guestConfig?.adults_only===false?null:(Number(guestConfig?.minimum_age||18)||18),
+    privacyVersion:PRIVACY_VERSION,
+    privacyText:'Your details are used to administer this guest booking, payment, emergency/safety arrangements and necessary session communications. A guest booking does not make you a Clare Pickleball member. Your booking history may later be linked to the same RallyHub person record if you join the club, so RallyHub does not create duplicate identities.',
+    cancellationVersion:CANCELLATION_VERSION,
+    cancellationText:'Cancellations made less than 24 hours before the session are non-refundable.',
+  };
+}
+function formatDate(d:string){
+  try{return new Intl.DateTimeFormat('en-IE',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Europe/Dublin'}).format(new Date(`${d}T12:00:00Z`))}catch{return d}
+}
+function escapeHtml(value:any){
+  return String(value??'').replace(/[&<>"']/g,(ch)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' } as any)[ch]);
+}
+function firstName(value:any){
+  return clean(value,120).split(/\s+/).filter(Boolean)[0]||'there';
+}
+function money(value:any,currency='EUR'){
+  try{return new Intl.NumberFormat('en-IE',{style:'currency',currency}).format(Number(value||0))}catch{return `€${Number(value||0).toFixed(2)}`}
+}
+function emailShell({club,headline,preheader,content,brandKit}:any){
+  const name=escapeHtml(club?.name||'Clare Pickleball');
+  const logo=escapeHtml(club?.logo_url||'');
+  const primary=escapeHtml(brandKit?.colours?.primary||club?.primary_colour||'#2667f2');
+  const secondary=escapeHtml(brandKit?.colours?.secondary||club?.secondary_colour||'#facc15');
+  const contact=brandKit?.contact||{};
+  const signatureConfig=brandKit?.channel_overrides?.email?.signature_block||{};
+  const style=(part:string,fallback:string)=>{const v=signatureConfig.styles?.[part]||{};return 'font-size:'+Number(v.size||13)+'px;font-weight:'+(v.bold?'800':'400')+';color:'+escapeHtml(v.color||fallback)+';text-align:'+(['left','right','center'].includes(v.align)?v.align:'left')};
+  const signature=brandKit&&contact.name&&signatureConfig.enabled_default!==false?'<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #dbe5f1;border-radius:12px;background:#f8fafc"><tr><td width="5" style="background:'+secondary+';width:5px">&nbsp;</td><td style="padding:16px 18px"><div style="'+style('signoff','#64748b')+'">'+escapeHtml(contact.signoff||'Yours in sport,')+'</div><div style="'+style('name',primary)+';margin-top:5px">'+escapeHtml(contact.name)+'</div><div style="'+style('role','#172033')+'">'+escapeHtml(contact.role||'')+'</div><div style="'+style('organisation',primary)+'">'+escapeHtml(contact.organisation||'')+'</div>'+(signatureConfig.show_phone===false?'':'<div>'+escapeHtml(contact.phone_whatsapp||'')+'</div>')+(signatureConfig.show_email===false?'':'<div>'+escapeHtml(contact.email||'')+'</div>')+(signatureConfig.show_website===false?'':'<div>'+escapeHtml(contact.website||'')+'</div>')+'</td></tr></table>':'<div>Yours in sport,<br><strong>Brian Moore</strong><br>Chairperson, Clare Pickleball</div>';
+  const approvedPowered=String(brandKit?.compliance_footer?.powered_by_html||'').trim();
+  const powered=approvedPowered||'<a href="https://rallyhub.ie/" style="display:inline-block"><img src="https://rallyhub.ie/assets/brand/rallyhub-signature-light.png" alt="Powered by RallyHub" width="160" style="max-width:160px;height:auto;border:0"></a>';
+  return `<!doctype html>
+<html><body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader||headline||'')}</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:24px 12px;"><tr><td align="center">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #d9e1ec;border-radius:18px;overflow:hidden;">
+<tr><td style="height:6px;background:${primary};border-bottom:3px solid ${secondary};"></td></tr>
+<tr><td style="padding:26px 28px 18px;text-align:center;">
+${logo?`<img src="${logo}" alt="${name} logo" width="72" height="72" style="display:block;margin:0 auto 12px;object-fit:contain;border-radius:12px;">`:''}
+<div style="font-size:25px;font-weight:800;color:#10182b;">${name}</div>
+<div style="margin-top:5px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6b7280;">Guest Session Booking</div>
+</td></tr>
+<tr><td style="padding:0 28px 28px;">
+<h1 style="margin:0 0 18px;font-size:23px;line-height:1.25;color:#10182b;">${escapeHtml(headline)}</h1>
+${content}
+</td></tr>
+<tr><td style="padding:0 28px 22px;"><div style="border-top:1px solid #dbe5f1;padding-top:18px;">${signature}</div></td></tr>
+<tr><td style="padding:16px 20px;background:#f7f9fc;border-top:1px solid #e4e9f1;text-align:center;">${powered}</td></tr>
+</table>
+</td></tr></table></body></html>`;
+}
+function detailRow(label:string,value:any){
+  return `<tr><td style="padding:7px 0;color:#6b7280;font-size:13px;width:38%;vertical-align:top;">${escapeHtml(label)}</td><td style="padding:7px 0;color:#172033;font-size:13px;font-weight:700;vertical-align:top;">${escapeHtml(value)}</td></tr>`;
+}
+function hostText(session:any,b:any){
+  const isMember=b.participant_type==='member';
+  const pay=b.payment_method==='none'
+    ? 'No payment required'
+    : b.payment_method==='cash'
+      ? (b.payment_status==='paid'?'€'+Number(b.amount).toFixed(2)+' hall contribution paid in cash':'€'+Number(b.amount).toFixed(2)+' hall contribution payable in cash to the host')
+      : '€'+Number(b.amount).toFixed(2)+' paid online';
+  if(isMember){
+    return `MEMBER BOOKING – ${session.venue_name}
+${formatDate(session.session_date)} · ${session.start_time}${session.end_time?'–'+session.end_time:''}
+
+Member: ${b.full_name}
+Mobile: ${b.mobile||'—'}
+Payment: ${pay}
+Booking ref: ${b.confirmation_code}${b.booking_note?`\nNote: ${b.booking_note}`:''}
+
+Venue: ${session.venue_address}, ${session.venue_eircode}
+Map: ${session.google_maps_url}`;
+  }
+  return `GUEST BOOKING – ${session.venue_name}
+${formatDate(session.session_date)} · ${session.start_time}${session.end_time?'–'+session.end_time:''}
+
+Guest: ${b.full_name}
+Mobile: ${b.mobile}
+Emergency contact: ${b.emergency_contact_name} – ${b.emergency_contact_mobile}
+Previous sports: ${(b.previous_sports||[]).join(', ')||'—'}${b.sporting_background_note?`\nOther sporting background: ${b.sporting_background_note}`:''}
+Health/medical screening: ${b.health_declaration_applies?'YES – details supplied':'No issues declared'}${b.health_declaration_applies&&b.medical_note?`\nHealth/medical details: ${b.medical_note}`:''}
+Payment: ${pay}
+Booking ref: ${b.confirmation_code}${b.booking_note?`\nNote: ${b.booking_note}`:''}
+
+Waiver, Code of Conduct, privacy notice and 24-hour cancellation policy accepted.
+Venue: ${session.venue_address}, ${session.venue_eircode}
+Map: ${session.google_maps_url}`;
+}
+async function sendHostBookingEmail(base44:any,scope:any,club:any,session:any,booking:any,host:any,summary:string){
+  if(!host?.email)return false;
+  const isMember=booking.participant_type==='member';
+  const dateLabel=formatDate(session.session_date);
+  const timeLabel=`${session.start_time}${session.end_time?'–'+session.end_time:''}`;
+  const hostFirst=firstName(host.name||'');
+  const hostCopy=await sessionEmailCopy(base44,session.tenant_id,'session_booking_host','Session booking confirmed · '+booking.full_name+' · '+session.venue_name,'A guest has confirmed attendance for your session.',{guest_name:firstName(booking.full_name),participant_name:booking.full_name||'',venue_name:session.venue_name||'',session_date:dateLabel,session_time:timeLabel,club_name:club.name||''});
+
+  const textBody=`Hi ${hostFirst},\n\nA ${isMember?'member':'guest'} has booked your ${club.name} session.\n\n${summary}\n\nThis notification was generated automatically by RallyHub.\n\n${club.name}\nPowered by RallyHub`;
+  const brandKit=await tenantEmailBrandKit(base44,session.tenant_id,session.club_id);
+  const htmlBody=emailShell({
+    club,brandKit,
+    headline:`New ${isMember?'member':'guest'} booking for your session`,
+    preheader:`${booking.full_name} · ${dateLabel} · ${timeLabel}`,
+    content:`
+<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">${escapeHtml(hostCopy.intro)}</p>
+<div style="white-space:pre-wrap;margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#f7f9fc;border:1px solid #dfe5ee;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#172033;">${escapeHtml(summary)}</div>
+<p style="margin:0;font-size:12px;line-height:1.5;color:#6b7280;">You are receiving this because you are recorded as the host for this club session.</p>`,
+  });
+  await sendWithConfiguredEmailTransport(base44,scope,{
+    to:host.email,
+    subject:hostCopy.subject,
+    textBody,htmlBody,senderName:club.name,
+  });
+  return true;
+}
+
+// Coalesce overlapping confirmation attempts for the same booking within one runtime.
+// Persistent sent timestamps remain the cross-invocation guard.
+const confirmationInFlight=new Map<string,Promise<any>>();
+async function sendConfirmations(base44:any,session:any,booking:any,force=false,attendanceAccepted=false){
+  if(force)return sendConfirmationsUnprotected(base44,session,booking,true,attendanceAccepted);
+  const key=String(booking.id||'');
+  if(!key)return sendConfirmationsUnprotected(base44,session,booking,false,attendanceAccepted);
+  const existing=confirmationInFlight.get(key);
+  if(existing)return existing;
+  const pending=sendConfirmationsUnprotected(base44,session,booking,false,attendanceAccepted);
+  confirmationInFlight.set(key,pending);
+  try{return await pending}finally{if(confirmationInFlight.get(key)===pending)confirmationInFlight.delete(key)}
+}
+async function sendConfirmationsUnprotected(base44:any,session:any,booking:any,force=false,attendanceAccepted=false){
+  if(!force && booking.notification_sent_at && booking.guest_confirmation_sent_at) return booking;
+  const summary=hostText(session,booking);
+  const now=new Date().toISOString();
+  const updates:any={};
+  const brandKit=await tenantEmailBrandKit(base44,session.tenant_id,session.club_id);
+  const club=(await clubBrand(base44,session.club_id))||{
+    name:'Clare Pickleball',
+    logo_url:'https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/6e59058fc_ClarePBLogo.jpg',
+    primary_colour:'#2667f2',secondary_colour:'#facc15',
+  };
+  const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:session.tenant_id,clubId:session.club_id};
+  const amount=money(booking.amount,booking.currency||'EUR');
+  const dateLabel=formatDate(session.session_date);
+  const timeLabel=`${session.start_time}${session.end_time?'–'+session.end_time:''}`;
+  const paymentLabel=booking.payment_method==='none'
+    ? 'No payment required'
+    : booking.payment_method==='cash'
+      ? (booking.payment_status==='paid'? `${amount} hall contribution paid in cash` : `${amount} hall contribution payable in cash to the host`)
+      : `${amount} paid online`;
+
+  const isMember=booking.participant_type==='member';
+  const venueName=String(session.venue_name||'');
+  const startTime=String(session.start_time||'').trim();
+  const guestArrivalHost=/corofin/i.test(venueName)?'Bróna McBreen'
+    :/clarecastle/i.test(venueName)?'John McLaughlin'
+    :/shannon/i.test(venueName)?'Liz Daley'
+    :/ennistymon/i.test(venueName)&&startTime==='19:00'?'Mary Fahy'
+    :/ennistymon/i.test(venueName)&&startTime==='20:00'?'Jenny Martin':'';
+  const vars={guest_name:firstName(booking.full_name),participant_name:booking.full_name||'',session_date:dateLabel,session_time:timeLabel,venue_name:session.venue_name||'',venue_address:session.venue_address||'',directions_url:session.google_maps_url||'',booking_reference:booking.confirmation_code||'',club_name:club.name||''};
+  const guestCopy=await sessionEmailCopy(base44,session.tenant_id,'session_booking_guest',club.name+' · Guest booking confirmed · '+dateLabel+' '+session.start_time,'Your guest session is confirmed. We look forward to seeing you on court.',vars);
+  const adminCopy=await sessionEmailCopy(base44,session.tenant_id,'session_booking_organiser','Booking confirmed · '+booking.full_name,'A guest booking has been confirmed for this session.',vars);
+  if(force||!booking.notification_sent_at){
+    let organiserNotificationsOk=true;
+    let organiserNotificationExpected=false;
+    const host=await resolveSessionHostContact(base44,session);
+    if(session.notification_email){
+      organiserNotificationExpected=true;
+      try{
+        const typeLabel=isMember?'member':'guest';
+        const adminText=`New ${club.name} ${typeLabel} booking confirmed.\n\n${summary}\n\n${isMember?'Member':'Guest'} email: ${booking.email||'—'}\n\nThis session notification was generated automatically by RallyHub.\n\n${club.name}\nPowered by RallyHub`;
+        const adminHtml=emailShell({
+          club,brandKit,
+          headline:`New ${typeLabel} booking confirmed`,
+          preheader:`${booking.full_name} · ${dateLabel} · ${timeLabel}`,
+          content:`
+<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">${escapeHtml(adminCopy.intro)}</p>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 20px;">
+${detailRow(isMember?'Member':'Guest',booking.full_name)}
+${detailRow('Email',booking.email||'—')}
+${detailRow('Mobile',booking.mobile||'—')}
+${detailRow('Session',`${dateLabel} · ${timeLabel}`)}
+${detailRow('Venue',session.venue_name)}
+${detailRow('Payment',paymentLabel)}
+${detailRow('Booking reference',booking.confirmation_code)}
+${booking.booking_note?detailRow('Note',booking.booking_note):''}
+</table>
+${isMember?'':`<div style="margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#eef8f1;border:1px solid #b9e2c4;font-size:13px;line-height:1.55;color:#23452d;"><strong>Waiver and policies recorded</strong><br>Guest waiver, Code of Conduct, privacy notice and 24-hour cancellation policy accepted.</div>`}
+<div style="margin:0 0 8px;font-size:13px;font-weight:800;color:#172033;">Session host summary</div>
+<div style="white-space:pre-wrap;margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#f7f9fc;border:1px solid #dfe5ee;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#172033;">${escapeHtml(summary)}</div>`,
+        });
+        await sendWithConfiguredEmailTransport(base44,scope,{
+          to:session.notification_email,
+          subject:adminCopy.subject,
+          textBody:adminText,
+          htmlBody:adminHtml,
+          senderName:club.name,
+        });
+      }catch(e){organiserNotificationsOk=false;console.error('club/admin booking notification failed',e?.message||e)}
+    }
+    const acceptanceHostOnly=attendanceAccepted&&session.venue_key==='ennistymon'&&session.weekday==='Wednesday'&&session.start_time==='19:00';
+    const resolvedHost=acceptanceHostOnly?{name:'Mary Fahy',email:'mary_fahy@hotmail.com'}:host;
+    if(resolvedHost?.email&&emailKey(resolvedHost.email)!==emailKey(session.notification_email||'')&&!(!attendanceAccepted&&session.venue_key==='ennistymon'&&session.weekday==='Wednesday'&&session.start_time==='19:00')){
+      organiserNotificationExpected=true;
+      try{await sendHostBookingEmail(base44,scope,club,session,booking,resolvedHost,summary)}
+      catch(e){organiserNotificationsOk=false;console.error('session host booking notification failed',e?.message||e)}
+    }
+    if(organiserNotificationExpected&&organiserNotificationsOk)updates.notification_sent_at=now;
+  }
+
+  const guestEligible=booking.email && (
+    (booking.payment_method==='sumup' && ['paid','partially_refunded','refunded'].includes(booking.payment_status))
+    || (booking.payment_method==='cash' && ['cash_due','paid'].includes(booking.payment_status))
+    || (booking.payment_method==='none' && booking.payment_status==='not_required')
+  );
+  if((force||!booking.guest_confirmation_sent_at) && guestEligible){
+    try{
+      const guestFirst=firstName(booking.full_name);
+      const guestText=isMember?`Hi ${guestFirst},
+
+Thank you for your booking. Your ${club.name} session is confirmed.
+
+Session: ${dateLabel} · ${timeLabel}
+Venue: ${session.venue_name}
+Address: ${session.venue_address}, ${session.venue_eircode}
+Payment: ${paymentLabel}
+Booking reference: ${booking.confirmation_code}
+${guestArrivalHost?'On arrival, ask for '+guestArrivalHost+'.\n':''}
+Google Maps:
+${session.google_maps_url}
+
+Cancellation policy:
+Cancellations made less than 24 hours before the session are non-refundable.
+
+Thank you for your booking.
+
+Brian Moore
+Chairperson, Clare Pickleball
+
+Powered by RallyHub`:`Hi ${guestFirst},
+
+Thank you for your booking. Your ${club.name} guest session is confirmed.
+
+Session: ${dateLabel} · ${timeLabel}
+Venue: ${session.venue_name}
+Address: ${session.venue_address}, ${session.venue_eircode}
+Payment: ${paymentLabel}
+Booking reference: ${booking.confirmation_code}
+${guestArrivalHost?'On arrival, ask for '+guestArrivalHost+'.\n':''}
+Google Maps:
+${session.google_maps_url}
+
+Cancellation policy:
+Cancellations made less than 24 hours before the session are non-refundable.
+
+Your guest waiver, Code of Conduct and privacy acknowledgement have been recorded.
+
+Thank you for your booking.
+
+Brian Moore
+Chairperson, Clare Pickleball
+
+Powered by RallyHub`;
+      const guestHtml=emailShell({
+        club,brandKit,
+        headline:`Thanks for your booking, ${guestFirst}`,
+        preheader:`${dateLabel} · ${timeLabel} · ${session.venue_name}`,
+        content:`
+<p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">${escapeHtml(guestCopy.intro)}</p>
+<div style="margin:0 0 20px;padding:16px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe5ee;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+${detailRow('Date',dateLabel)}
+${detailRow('Time',timeLabel)}
+${detailRow('Venue',session.venue_name)}
+${detailRow('Address',`${session.venue_address}, ${session.venue_eircode}`)}
+${detailRow('Payment',paymentLabel)}
+${detailRow('Booking reference',booking.confirmation_code)}
+${guestArrivalHost?detailRow('Your host',guestArrivalHost):''}
+</table>
+</div>
+<div style="text-align:center;margin:0 0 22px;">
+<a href="${escapeHtml(session.google_maps_url)}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#078e48;color:#ffffff;text-decoration:none;font-size:14px;font-weight:800;">View venue in Google Maps</a>
+</div>
+<div style="margin:0 0 18px;padding:14px 16px;border-radius:12px;background:#fff8ea;border:1px solid #f2d18a;font-size:13px;line-height:1.55;color:#624717;">
+<strong>Cancellation policy</strong><br>
+Cancellations made less than 24 hours before the session are non-refundable.
+</div>
+${isMember?'':`<p style="margin:0 0 22px;font-size:12px;line-height:1.55;color:#6b7280;">Your guest waiver, Code of Conduct and privacy acknowledgement have been recorded with this booking.</p>`}
+<p style="margin:0;font-size:15px;line-height:1.65;color:#374151;">Thank you for your booking.</p>
+<p style="margin:10px 0 0;font-size:15px;line-height:1.5;color:#172033;"><strong>Brian Moore</strong><br>Chairperson<br>Clare Pickleball</p>`,
+      });
+      await sendWithConfiguredEmailTransport(base44,scope,{
+        to:booking.email,
+        subject:guestCopy.subject,
+        textBody:guestText,
+        htmlBody:guestHtml,
+        senderName:club.name,
+      });
+      updates.guest_confirmation_sent_at=now;
+    }catch(e){console.error('guest confirmation failed',e?.message||e)}
+  }
+  if(Object.keys(updates).length){
+    return await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,updates);
+  }
+  return booking;
+}
+async function gatewayAccount(base44:any,tenantId:string,clubId:string,provider:string){
+  try{
+    const rows=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:tenantId,club_id:clubId,provider},'-updated_date',20);
+    const row=(rows||[]).find((x:any)=>x.status==='connected'&&x.is_default) || (rows||[]).find((x:any)=>x.status==='connected') || (rows||[]).find((x:any)=>x.is_default) || rows?.[0] || null;
+    if(!row)return null;
+    const account:ProviderAccount={
+      provider,
+      merchantAccountId:clean(row.merchant_account_id,120)||undefined,
+      credentialSecretName:clean(row.credential_reference,120)||undefined,
+      connectionMode:row.connection_mode||undefined,
+    };
+    return {row,account};
+  }catch{return null}
+}
+async function createProviderCheckout(base44:any,session:any,booking:any,req:Request){
+  const provider=clean(session.payment_provider||session.payment_method,30).toLowerCase();
+  const gateway=await gatewayAccount(base44,session.tenant_id,session.club_id,provider);
+  const ref=`RH-GUEST-${String(booking.id).slice(-18)}-${Date.now().toString(36)}`.slice(0,64);
+  const origin=clean(req.headers.get('origin')||'',250);
+  const safeOrigin=/^https:\/\/([a-z0-9-]+\.)?(rallyhub\.ie|base44\.app)$/i.test(origin)?origin:'https://rallyhub.ie';
+  const redirectUrl=`${safeOrigin}/guest-session/${encodeURIComponent(session.token)}?booking=${encodeURIComponent(booking.id)}&payment=return`;
+  const returnUrl='https://rallyhub.ie/api/apps/6a01dc00702b7dd2a2978c28/functions/paymentGatewayWebhook?provider=sumup';
+  const brand=await clubBrand(base44,session.club_id);
+  const checkout=await createCheckout({
+    provider,account:gateway?.account||null,amount:Number(session.fee_amount),currency:session.currency||'EUR',
+    reference:ref,description:`${brand?.name||'RallyHub club'} ${booking.participant_type==='member'?'member':'guest'} session ${session.session_date} ${session.start_time}`,
+    redirectUrl,returnUrl,
+  });
+  return {id:checkout.checkoutId,url:checkout.checkoutUrl,reference:checkout.reference,status:checkout.providerStatus,provider,merchantAccountId:checkout.merchantAccountId};
+}
+async function retrieveProviderCheckout(base44:any,session:any,checkoutId:string){
+  const provider=clean(session.payment_provider||session.payment_method,30).toLowerCase();
+  const gateway=await gatewayAccount(base44,session.tenant_id,session.club_id,provider);
+  const result=await retrievePayment(provider,checkoutId,gateway?.account||null);
+  return {
+    status:result.normalizedStatus==='paid'?'PAID':result.normalizedStatus==='failed'?'FAILED':result.normalizedStatus==='expired'?'EXPIRED':result.providerStatus,
+    transaction_id:result.transactionId,transaction_code:result.transactionCode,
+    transactions:result.transactionId?[{id:result.transactionId,transaction_code:result.transactionCode}]:[],
+    provider:result.provider,merchant_account_id:result.merchantAccountId,_normalized:result.normalizedStatus,
+  };
+}
+
+Deno.serve(async(req)=>{
+  try{
+    const base44=createClientFromRequest(req);
+    const body=await req.json().catch(()=>({}));
+    const action=clean(body.action||'public_get',40);
+
+    if(action==='admin_change_offer_preview'){
+      const user=await base44.auth.me();
+      if(!user||user.role!=='admin')return Response.json({error:'Unauthorized'},{status:403});
+      const tenantId=clean(user.active_tenant_id,100),clubId=clean(user.active_club_id,100);
+      if(!tenantId||!clubId)return Response.json({error:'Select a tenant and club.'},{status:400});
+      const club=await clubBrand(base44,clubId);
+      const brandKit=await tenantEmailBrandKit(base44,tenantId,clubId);
+      if(!club||club.slug!=='clare-pickleball')return Response.json({error:'Clare Pickleball club branding unavailable.'},{status:409});
+      const sample={guest_name:'Sample Guest',session_details:'Ennistymon Community Centre · Wednesday 14 October · 19:00–20:00',confirmation_link:'https://rallyhub.ie/booking-change/SAMPLE-LINK-NOT-ACTIVE'};
+      const merge=(v:string)=>String(v||'').replace(/{{(guest_name|session_details|confirmation_link)}}/g,(_m:string,key:string)=>(sample as any)[key]||'');
+      const bodyTemplate=String(body.messageBody||'');
+      if(!bodyTemplate.includes('{{confirmation_link}}'))return Response.json({error:'The message must include the confirmation link.'},{status:400});
+      const htmlMessage=bodyTemplate.split('{{confirmation_link}}').map((part:string)=>escapeHtml(merge(part)).replace(/\n/g,'<br>')).join('<br><a href="'+escapeHtml(sample.confirmation_link)+'" style="display:inline-block;margin:10px 0;background:#081342;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700">Yes, I’m attending / Respond to offer</a><br>');
+      return Response.json({success:true,subject:merge(body.subject||''),previewHtml:emailShell({club,headline:'Please confirm your alternative session',preheader:sample.session_details,content:'<p style="line-height:1.7">'+htmlMessage+'</p>',brandKit})});
+    }
+    if(action==='change_offer_get'||action==='change_offer_reply'){
+      const raw=clean(body.token,150);
+      if(!/^gco_[a-f0-9]{64}$/.test(raw))return Response.json({error:'Invalid offer link.'},{status:400});
+      const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw)))).map(x=>x.toString(16).padStart(2,'0')).join('');
+      const offer=(await base44.asServiceRole.entities.GuestBookingChangeOffer.filter({token_hash:digest},'-created_at',2))?.[0];
+      if(!offer)return Response.json({error:'Offer not found.'},{status:404});
+      const source=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:offer.source_session_id,tenant_id:offer.tenant_id,club_id:offer.club_id}))?.[0];
+      const target=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:offer.target_session_id,tenant_id:offer.tenant_id,club_id:offer.club_id}))?.[0];
+      const booking=(await base44.asServiceRole.entities.GuestSessionBooking.filter({id:offer.booking_id,tenant_id:offer.tenant_id,club_id:offer.club_id}))?.[0];
+      if(!source||!target||!booking)return Response.json({error:'Offer booking no longer available.'},{status:404});
+      const expired=Date.parse(offer.expires_at)<Date.now();
+      const status=expired&&offer.status==='pending'?'expired':offer.status;
+      if(action==='change_offer_get')return Response.json({success:true,status,guestName:clean(booking.full_name,120),source:safeSession(source),target:safeSession(target)});
+      if(status!=='pending')return Response.json({error:'This offer is no longer awaiting a response.',status},{status:409});
+      if(!['accept','decline'].includes(String(body.decision)))return Response.json({error:'Choose accept or decline.'},{status:400});
+      if(body.decision==='decline'){
+        await base44.asServiceRole.entities.GuestBookingChangeOffer.update(offer.id,{status:'declined',responded_at:new Date().toISOString()});
+        return Response.json({success:true,status:'declined'});
+      }
+      if(booking.session_link_id!==source.id)return Response.json({error:'Booking has already changed. Contact the organiser.'},{status:409});
+      if(!target.active||target.archived_at||Date.parse(target.session_date+'T23:59:59Z')<Date.now())return Response.json({error:'The proposed session is no longer available.'},{status:409});
+      if(booking.payment_method!==target.payment_method||Math.abs(Number(booking.amount)-Number(target.fee_amount))>0.001)return Response.json({error:'This change needs an organiser payment review.'},{status:409});
+      const existing=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:target.id},'-registered_at',500);
+      const occupied=existing.filter((b:any)=>b.booking_status!=='cancelled').length;
+      if(Number(target.capacity)>0&&occupied>=Number(target.capacity))return Response.json({error:'This session is now full. Contact the organiser.'},{status:409});
+      if(existing.some((b:any)=>b.id!==booking.id&&emailKey(b.email)===emailKey(booking.email)&&b.booking_status!=='cancelled'))return Response.json({error:'You already have a booking in this session.'},{status:409});
+      const moved=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{session_link_id:target.id});
+      await base44.asServiceRole.entities.GuestBookingChangeOffer.update(offer.id,{status:'accepted',responded_at:new Date().toISOString()});
+      // A session change must issue a fresh confirmation and updated organiser/host notifications.
+      // Reuse the existing paid/cash booking confirmation path and preserve the original payment.
+      const confirmed=await sendConfirmations(base44,target,moved,true,true);
+      return Response.json({success:true,status:'accepted',target:safeSession(target),guestConfirmationSent:!!confirmed?.guest_confirmation_sent_at,organiserNotificationSent:!!confirmed?.notification_sent_at});
+    }
+
+    if(action==='admin_offer_reminder'){
+      const user=await base44.auth.me();
+      if(!user||user.role!=='admin')return Response.json({error:'Admin access required.'},{status:403});
+      const tenantId=clean(user.active_tenant_id,100),clubId=clean(user.active_club_id,100);
+      const booking=(await base44.asServiceRole.entities.GuestSessionBooking.filter({id:clean(body.bookingId,100),tenant_id:tenantId,club_id:clubId}))?.[0];
+      if(!booking||booking.booking_status==='cancelled')return Response.json({error:'Active booking not found.'},{status:404});
+      const offers=await base44.asServiceRole.entities.GuestBookingChangeOffer.filter({booking_id:booking.id,tenant_id:tenantId,club_id:clubId,status:'pending'},'-created_at',10);
+      const offer=offers?.[0];
+      if(!offer)return Response.json({error:'No pending alternative offer exists.'},{status:409});
+      const target=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:offer.target_session_id,tenant_id:tenantId,club_id:clubId}))?.[0];
+      if(!target)return Response.json({error:'Proposed session not found.'},{status:404});
+      if(Date.parse(offer.expires_at)<Date.now()||Date.parse(target.session_date+'T23:59:59Z')<Date.now())return Response.json({error:'This alternative offer has expired. Create a new offer.'},{status:409});
+      const raw='gco_'+Array.from(crypto.getRandomValues(new Uint8Array(32))).map(x=>x.toString(16).padStart(2,'0')).join('');
+      const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw)))).map(x=>x.toString(16).padStart(2,'0')).join('');
+      const url='https://rallyhub.ie/booking-change/'+raw;
+      const label=offer.target_label||target.venue_name+' · '+target.session_date+' · '+target.start_time;
+      const first=String(booking.full_name||'').trim().split(/\s+/)[0]||'there';
+      const message='Hi '+first+', a reminder of your proposed Clare Pickleball session: '+label+'. Your original payment is recorded and no further payment is needed. Please accept or decline here: '+url;
+      // Rotate the private token; never expose an old hash or trigger a new payment.
+      await base44.asServiceRole.entities.GuestBookingChangeOffer.update(offer.id,{token_hash:digest});
+      if(body.channel==='email'){
+        const club=await clubBrand(base44,clubId),brandKit=await tenantEmailBrandKit(base44,tenantId,clubId);
+        if(!club)return Response.json({error:'Club brand not found.'},{status:409});
+        await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant' as const,purpose:'club_comms',tenantId,clubId},{to:booking.email,senderName:club.name,subject:'Clare Pickleball · Reminder: alternative session',textBody:message,htmlBody:emailShell({club,brandKit,headline:'Reminder: alternative session',preheader:label,content:'<p>'+escapeHtml(message).replace(url,'<a href="'+escapeHtml(url)+'">Respond to your offer</a>')+'</p>'})});
+        return Response.json({success:true,emailSent:true});
+      }
+      return Response.json({success:true,offerUrl:url,message});
+    }
+
+    if(action==='admin_change_offer'){
+      const user=await base44.auth.me();
+      if(!user||user.role!=='admin')return Response.json({error:'Admin access required.'},{status:403});
+      const tenantId=clean(user.active_tenant_id,100),clubId=clean(user.active_club_id,100);
+      if(!tenantId||!clubId)return Response.json({error:'Select a club.'},{status:400});
+      const booking=(await base44.asServiceRole.entities.GuestSessionBooking.filter({id:clean(body.bookingId,100),tenant_id:tenantId,club_id:clubId}))?.[0];
+      if(!booking||booking.booking_status==='cancelled')return Response.json({error:'Active booking not found.'},{status:404});
+      const source=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:booking.session_link_id,tenant_id:tenantId,club_id:clubId}))?.[0];
+      if(!source)return Response.json({error:'Original session not found.'},{status:404});
+      const templates=await directoryTemplates(base44,tenantId,clubId);
+      const template=templates.find((t:any)=>t.key===clean(body.templateKey,100));
+      const date=clean(body.sessionDate,20);
+      if(!template||!/^\d{4}-\d{2}-\d{2}$/.test(date)||weekday(date)!==template.weekday)return Response.json({error:'Select a valid session slot and matching date.'},{status:400});
+      if(Date.parse(date+'T23:59:59Z')<Date.now())return Response.json({error:'Select a future date.'},{status:400});
+      if(template.payment!==booking.payment_method||Math.abs(Number(template.fee)-Number(booking.amount))>0.001)return Response.json({error:'The new session has a different fee or payment method. Manual payment review is required.'},{status:409});
+      let target=(await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId,session_date:date,session_label:template.key},'-created_at',10))?.find((x:any)=>x.active&&!x.archived_at);
+      if(!target){
+        target=await base44.asServiceRole.entities.GuestSessionLink.create({tenant_id:tenantId,club_id:clubId,token:token(),active:true,session_date:date,weekday:template.weekday,start_time:template.start,end_time:template.end,venue_key:template.venueKey,venue_name:template.venueName,venue_address:template.venueAddress,venue_eircode:template.eircode,google_maps_url:template.mapsUrl,session_label:template.key,fee_amount:template.fee,currency:'EUR',payment_method:template.payment,created_at:new Date().toISOString(),created_by_user_id:user.id});
+      }
+      if(source.id===target.id)return Response.json({error:'Choose a different session.'},{status:400});
+      const current=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:target.id},'-registered_at',500);
+      if(Number(target.capacity)>0&&current.filter((b:any)=>b.booking_status!=='cancelled').length>=Number(target.capacity))return Response.json({error:'The proposed session is full.'},{status:409});
+      const old=await base44.asServiceRole.entities.GuestBookingChangeOffer.filter({booking_id:booking.id,status:'pending'},'-created_at',30);
+      for(const o of old)await base44.asServiceRole.entities.GuestBookingChangeOffer.update(o.id,{status:'superseded'});
+      const raw='gco_'+Array.from(crypto.getRandomValues(new Uint8Array(32))).map(x=>x.toString(16).padStart(2,'0')).join('');
+      const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw)))).map(x=>x.toString(16).padStart(2,'0')).join('');
+      const expires=new Date(Math.min(Date.now()+7*86400000,Date.parse(date+'T23:59:59Z'))).toISOString();
+      const label=target.venue_name+' · '+target.session_date+' · '+target.start_time+'–'+target.end_time;
+      const offer=await base44.asServiceRole.entities.GuestBookingChangeOffer.create({tenant_id:tenantId,club_id:clubId,booking_id:booking.id,source_session_id:source.id,target_session_id:target.id,token_hash:digest,status:'pending',expires_at:expires,created_at:new Date().toISOString(),created_by_user_id:user.id,guest_email:emailKey(booking.email),email_sent:false,target_label:label});
+      const url='https://rallyhub.ie/booking-change/'+raw;
+      const tenantClub=await clubBrand(base44,clubId);
+      const brandKit=await tenantEmailBrandKit(base44,tenantId,clubId);
+      if(!tenantClub||tenantClub.slug!=='clare-pickleball')return Response.json({error:'Clare Pickleball tenant branding is unavailable.'},{status:409});
+      let emailSent=false;
+      try{
+        const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId,clubId};
+        const templateRows=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_booking_change_offer'},'-created_date',30);
+        const savedTemplate=(templateRows||[]).find((t:any)=>t.owner_scope==='tenant'&&t.status!=='retired');
+        const guestName=clean(booking.full_name,120);
+        const defaultBody='Hi {{guest_name}},\n\nWe can offer you an alternative pickleball session:\n\n{{session_details}}\n\nPlease confirm whether you can attend:\n{{confirmation_link}}\n\nYour original booking remains unchanged until you accept.';
+        const bodyTemplate=String(savedTemplate?.plain_text_template||defaultBody);
+        const subjectTemplate=String(savedTemplate?.subject_template||'Clare Pickleball · Please confirm your alternative session');
+        const merge=(value:string)=>value.replace(/{{(guest_name|session_details|confirmation_link)}}/g,(_m:string,key:string)=>({guest_name:guestName,session_details:label,confirmation_link:url}[key]||''));
+        if(!bodyTemplate.includes('{{confirmation_link}}'))throw Error('Tenant template is missing its required confirmation link.');
+        const message=merge(bodyTemplate);
+        const htmlMessage=bodyTemplate.split('{{confirmation_link}}').map((part:string)=>escapeHtml(merge(part)).replace(/\n/g,'<br>')).join('<br><a href="'+escapeHtml(url)+'" style="display:inline-block;margin:10px 0;background:#081342;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700">Yes, I’m attending / Respond to offer</a><br>');
+        await sendWithConfiguredEmailTransport(base44,scope,{to:booking.email,senderName:tenantClub.name,subject:merge(subjectTemplate),textBody:message+'\n\nClare Pickleball · Powered by RallyHub',htmlBody:emailShell({club:tenantClub,headline:'Please confirm your alternative session',preheader:label,content:'<p style="line-height:1.7">'+htmlMessage+'</p>',brandKit})});
+        emailSent=true;
+      }catch(e){console.error('Change offer email failed',e?.message||e);}
+      if(emailSent)await base44.asServiceRole.entities.GuestBookingChangeOffer.update(offer.id,{email_sent:true});
+      return Response.json({success:true,emailSent,offerStatus:'pending',offerUrl:url,target:safeSession(target)});
+    }
+
+    if(['attendance_list','attendance_save','followup_preview','followup_send','followup_history','followup_template','followup_test'].includes(action)){
+      const user=await base44.auth.me();
+      if(!user||user.role!=='admin')return Response.json({error:'Admin access required'},{status:403});
+      const tenantId=clean(user.active_tenant_id,100),clubId=clean(user.active_club_id,100),sessionId=clean(body.sessionId,100);
+      if(!tenantId||!clubId||!sessionId)return Response.json({error:'Active club and session required'},{status:400});
+      const sessions=await base44.asServiceRole.entities.GuestSessionLink.filter({id:sessionId,tenant_id:tenantId,club_id:clubId});
+      const session=sessions?.[0];
+      if(!session)return Response.json({error:'Session not found'},{status:404});
+      const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:sessionId,tenant_id:tenantId,club_id:clubId});
+      const records=await base44.asServiceRole.entities.GuestSessionAttendance.filter({session_link_id:sessionId,tenant_id:tenantId,club_id:clubId});
+      if(action==='attendance_list')return Response.json({success:true,attendance:records.map((r:any)=>({bookingId:r.booking_id,status:r.status}))});
+      const bookingId=clean(body.bookingId,100);
+      if(action==='followup_template'){
+        const rows=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
+        let current=rows.find((t:any)=>t.status==='approved')||rows[0];
+        if(body.operation==='create'&&!current){
+          current=await base44.asServiceRole.entities.CommunicationTemplate.create({owner_scope:'tenant',tenant_id:tenantId,module:'Session Bookings',name:'Guest Session — Thank You & Next Steps',purpose:'guest_session_followup',version:'1',status:'draft',subject_template:'Thanks for joining Clare Pickleball, {{recipient.first_name}}!',plain_text_template:'Hi {{recipient.first_name}},\n\nThanks for joining us for pickleball. It was lovely to have you along, and we hope you enjoyed the session.\n\nIf you would like to join Clare Pickleball, you can find membership details here:\nhttps://www.clarepickleball.ie/membership\n\nYou are also very welcome to book another guest session:\nhttps://www.clarepickleball.ie/book\n\nWe hope to see you on court again soon!\n\nYours in sport,\nBrian Moore\nChairperson, Clare Pickleball',created_by_user_id:user.id});
+        }
+        if(body.operation==='approve'&&current?.status==='draft'){
+          if(!current.subject_template||!current.plain_text_template)return Response.json({error:'Template is incomplete'},{status:400});
+          await base44.asServiceRole.entities.CommunicationTemplate.update(current.id,{status:'approved',approved_by_user_id:user.id,approved_at:new Date().toISOString()});current={...current,status:'approved'};
+        }
+        return Response.json({success:true,template:current?{id:current.id,status:current.status,subject:current.subject_template,body:current.plain_text_template}:null});
+      }
+      if(action==='followup_test'){
+        if(body.confirmSend!==true)return Response.json({error:'Confirm the test email explicitly'},{status:400});
+        const rows=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
+        const approved=rows.find((t:any)=>t.status==='approved');
+        if(!approved)return Response.json({error:'Approve the template first'},{status:409});
+        const destination=clean(user.email,200).toLowerCase();
+        if(!destination||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(destination))return Response.json({error:'Admin email unavailable'},{status:400});
+        const club=await clubBrand(base44,clubId),brandKit=await tenantEmailBrandKit(base44,tenantId,clubId);
+        const first=clean(user.full_name||user.name||'Brian',100).split(' ')[0];
+        const subject='[TEST] '+String(approved.subject_template||'Guest follow-up').replaceAll('{{recipient.first_name}}',first);
+        const textBody=String(approved.plain_text_template||'').replaceAll('{{recipient.first_name}}',first);
+        const htmlBody=emailShell({club,brandKit,headline:'Thank You & Next Steps',preheader:'Test guest follow-up',content:'<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody)+'</p>'});
+        const delivery=await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant',purpose:'club_comms',tenantId,clubId},{to:destination,senderName:club.name,subject,textBody,htmlBody});
+        return Response.json({success:true,to:destination,provider:delivery.provider});
+      }
+      if(action==='followup_send'){
+        if(body.confirmSend!==true)return Response.json({error:'Explicit send confirmation required'},{status:400});
+        const ids=Array.isArray(body.bookingIds)?[...new Set(body.bookingIds.map((v:any)=>clean(v,100)))]:[];
+        if(!ids.length||ids.length>50)return Response.json({error:'Select 1–50 guests'},{status:400});
+        const selectedBookings=ids.map((bid:string)=>bookings.find((b:any)=>b.id===bid));
+        if(selectedBookings.some((b:any)=>!b||!['confirmed','cash_due'].includes(b.booking_status)||records.find((r:any)=>r.booking_id===b.id)?.status!=='attended'))return Response.json({error:'Only saved attended bookings can be contacted'},{status:400});
+        const templates=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
+        const approved=templates.find((t:any)=>t.status==='approved');
+        if(!approved)return Response.json({error:'Approve the guest follow-up template first'},{status:409});
+        const cc=Array.isArray(body.cc)?body.cc:[];
+        const allowed=['John McLoughlin','Bróna McBreen','Liz Daly','Jenny Martin','Mary Fahey'];
+        if(cc.some((c:any)=>!allowed.includes(c.name)||!/^\S+@\S+\.\S+$/.test(String(c.email||''))))return Response.json({error:'Invalid CC recipient'},{status:400});
+        const club=await clubBrand(base44,clubId),brandKit=await tenantEmailBrandKit(base44,tenantId,clubId);
+        const results=[];
+        for(const booking of selectedBookings){
+          const key='guest_session_followup:'+tenantId+':'+sessionId+':'+booking.id;
+          const previous=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({tenant_id:tenantId,idempotency_key:key},'-created_date',20);
+          if(previous.some((a:any)=>['sent','accepted','delivered','sending','queued'].includes(a.status))){results.push({bookingId:booking.id,status:'skipped_duplicate'});continue;}
+          const suppressed=booking.person_id?await base44.asServiceRole.entities.CommunicationSuppression.filter({tenant_id:tenantId,person_id:booking.person_id,channel:'email',active:true}):[];
+          const preferences=booking.person_id?await base44.asServiceRole.entities.CommunicationPreference.filter({tenant_id:tenantId,person_id:booking.person_id,channel:'email'}):[];
+          if(suppressed.length||preferences.some((p:any)=>p.status==='withdrawn')){results.push({bookingId:booking.id,status:'suppressed'});continue;}
+          const first=clean(booking.full_name,150).split(' ')[0]||'there';
+          const merge=(s:string)=>String(s||'').replaceAll('{{recipient.first_name}}',first);
+          const subject=merge(approved.subject_template),textBody=merge(approved.plain_text_template);
+          if(!subject||!textBody){results.push({bookingId:booking.id,status:'failed',error:'Template incomplete'});continue;}
+          const htmlBody=emailShell({club,brandKit,headline:'Thank You & Next Steps',preheader:'Thanks for playing',content:'<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody)+'</p>'});
+          const attempt=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.create({campaign_id:'guest_session_followup:'+sessionId,recipient_id:booking.id,tenant_id:tenantId,channel:'email',status:'sending',idempotency_key:key,attempt_number:(previous||[]).length+1,queued_at:new Date().toISOString(),metadata:{sessionId,cc:cc.map((c:any)=>({name:c.name,email:c.email})),templateId:approved.id}});
+          try{
+            const delivery=await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant',purpose:'club_comms',tenantId,clubId},{to:booking.email,cc:cc.map((c:any)=>c.email),senderName:club.name,subject,textBody,htmlBody});
+            await base44.asServiceRole.entities.CommunicationDeliveryAttempt.update(attempt.id,{status:'sent',provider:delivery.provider,sent_at:new Date().toISOString()});
+            results.push({bookingId:booking.id,status:'sent'});
+          }catch(e){await base44.asServiceRole.entities.CommunicationDeliveryAttempt.update(attempt.id,{status:'failed',error_message:clean(e?.message,500)});results.push({bookingId:booking.id,status:'failed',error:clean(e?.message,300)})}
+        }
+        return Response.json({success:true,results});
+      }
+      if(action==='followup_history'){
+        const attempts=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({tenant_id:tenantId,campaign_id:'guest_session_followup:'+sessionId},'-created_date',200);
+        return Response.json({success:true,history:attempts.map((a:any)=>({bookingId:a.recipient_id,status:a.status,sentAt:a.sent_at,cc:a.metadata?.cc||[]}))});
+      }
+      if(action==='attendance_save'){
+        const status=clean(body.status,20);
+        if(!['attended','no_show','cancelled','unconfirmed'].includes(status))return Response.json({error:'Invalid attendance status'},{status:400});
+        if(!bookings.some((b:any)=>b.id===bookingId))return Response.json({error:'Booking does not belong to session'},{status:404});
+        const existing=records.find((r:any)=>r.booking_id===bookingId);
+        const data={tenant_id:tenantId,club_id:clubId,session_link_id:sessionId,booking_id:bookingId,status,marked_by_user_id:user.id,marked_at:new Date().toISOString()};
+        if(existing)await base44.asServiceRole.entities.GuestSessionAttendance.update(existing.id,data);
+        else await base44.asServiceRole.entities.GuestSessionAttendance.create(data);
+        return Response.json({success:true,bookingId,status});
+      }
+      const ids=Array.isArray(body.bookingIds)?[...new Set(body.bookingIds.map((v:any)=>clean(v,100)))]:[];
+      if(!ids.length||ids.length>100)return Response.json({error:'Select 1–100 attendees'},{status:400});
+      const chosen=ids.map((bid:string)=>bookings.find((b:any)=>b.id===bid));
+      if(chosen.some((b:any)=>!b))return Response.json({error:'Unknown booking'},{status:400});
+      if(chosen.some((b:any)=>!['confirmed','cash_due'].includes(b.booking_status)||records.find((r:any)=>r.booking_id===b.id)?.status!=='attended'))return Response.json({error:'Only confirmed attendees can receive a follow-up'},{status:400});
+      const club=await clubBrand(base44,clubId),brandKit=await tenantEmailBrandKit(base44,tenantId,clubId);
+      const templates=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
+      const approved=templates.find((t:any)=>t.status==='approved');
+      if(!approved)return Response.json({error:'Follow-up template must first be approved in Communications Centre'},{status:409});
+      const ccNames=['John McLoughlin','Bróna McBreen','Liz Daly','Jenny Martin','Mary Fahey'];
+      const cc=Array.isArray(body.cc)?body.cc:[];
+      if(cc.some((c:any)=>!ccNames.includes(c.name)||!/^\S+@\S+\.\S+$/.test(String(c.email||''))))return Response.json({error:'Invalid CC contact'},{status:400});
+      const previews=chosen.map((b:any)=>{
+        const first=clean(b.full_name,150).split(' ')[0]||'there';
+        const merge=(s:string)=>String(s||'').replaceAll('{{recipient.first_name}}',first);
+        const subject=merge(approved.subject_template),textBody=merge(approved.plain_text_template);
+        const htmlBody=emailShell({club,brandKit,headline:'Thank You & Next Steps',preheader:'Thanks for playing',content:'<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody)+'</p>'});
+        return {bookingId:b.id,to:b.email,cc,subject,textBody,htmlBody};
+      });
+      return Response.json({success:true,previews,sendEnabled:false});
+    }
+
+    if(['admin_templates','admin_list','admin_create','admin_close','admin_archive_session','admin_restore_session','admin_delete_session','admin_delete_booking','admin_send_invite','admin_create_magic_invite','admin_mark_cash_paid','admin_verify_payment','admin_refund_payment','admin_resend_emails','admin_resend_host_email'].includes(action)){
+      const user=await base44.auth.me();
+      if(!user)return Response.json({error:'Unauthorized'},{status:401});
+      if(user.role!=='admin')return Response.json({error:'Admin access required.'},{status:403});
+      const tenantId=clean(user.active_tenant_id,100);
+      const clubId=clean(user.active_club_id,100);
+      if(!tenantId||!clubId)return Response.json({error:'Choose an active RallyHub club first.'},{status:400});
+      const sumupGateway=await gatewayAccount(base44,tenantId,clubId,'sumup');
+      let sumupConfigured=providerConfigured('sumup',sumupGateway?.account||null);
+      let sumupMerchantName='';
+      if(sumupConfigured){
+        const verification=await verifyProviderConnection('sumup',sumupGateway?.account||null);
+        sumupConfigured=verification.ok===true;
+        sumupMerchantName=clean(verification.merchantName,160);
+        if(sumupGateway?.row){
+          const gatewayUpdates:any={
+            status:verification.ok?'connected':'error',
+            last_verified_at:new Date().toISOString(),
+            supports_payments:true,supports_refunds:true,
+          };
+          if(verification.ok){
+            if(verification.merchantAccountId)gatewayUpdates.merchant_account_id=verification.merchantAccountId;
+            if(!sumupGateway.row.connected_at)gatewayUpdates.connected_at=new Date().toISOString();
+          }
+          await base44.asServiceRole.entities.PaymentGatewayAccount.update(sumupGateway.row.id,gatewayUpdates);
+        }
+      }
+
+      if(action==='admin_templates'){
+        const templates=await directoryTemplates(base44,tenantId,clubId);
+        return Response.json({success:true,templates,sumupConfigured,sumupMerchantName,source:'directory'});
+      }
+
+      if(action==='admin_list'){
+        const sessions=await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId},'-session_date',200);
+        const rows=[];
+        // Read-only listing: never archive sessions while someone is loading attendees.
+        // Fetch independent session data concurrently to avoid a long serial waterfall.
+        const sessionDetails=[];
+        for(let offset=0;offset<(sessions||[]).length;offset+=8){
+          const batch=await Promise.all((sessions||[]).slice(offset,offset+8).map(async s=>{
+          const [host,bookings]=await Promise.all([
+            resolveSessionHostContact(base44,s),
+            base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:s.id},'-registered_at',200)
+          ]);
+          const paymentsByBooking=[];
+          for(let paymentOffset=0;paymentOffset<(bookings||[]).length;paymentOffset+=12){
+            paymentsByBooking.push(...await Promise.all((bookings||[]).slice(paymentOffset,paymentOffset+12).map(b=>base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:b.id},'-created_date',10))));
+          }
+          return {s,host,bookings, paymentsByBooking};
+          }));
+          sessionDetails.push(...batch);
+        }
+        for(const {s,host,bookings,paymentsByBooking} of sessionDetails){
+          const bookingRows=[];
+          for(const [bookingIndex,b] of (bookings||[]).entries()){
+            const payments=paymentsByBooking[bookingIndex]||[];
+            const payment=payments?.[0]||null;
+            const originalAmount=Number(payment?.amount||b.amount||0);
+            const refundedAmount=Number(payment?.amount_refunded||0);
+            bookingRows.push({
+              id:b.id,fullName:b.full_name,email:b.email,mobile:b.mobile,bookingNote:b.booking_note||'',participantType:b.participant_type||'guest',membershipId:b.membership_id||'',memberVerificationMethod:b.member_verification_method||'',previousSports:b.previous_sports||[],sportingBackgroundNote:b.sporting_background_note||'',healthDeclarationApplies:b.health_declaration_applies===true,medicalNote:b.medical_note||'',bookingStatus:b.booking_status,
+              paymentMethod:b.payment_method,paymentStatus:b.payment_status,amount:b.amount,
+              refundedAmount,refundableAmount:Math.max(0,Math.round((originalAmount-refundedAmount)*100)/100),
+              provider:payment?.provider||b.payment_method||'',providerTransactionId:payment?.provider_transaction_id||'',
+              registeredAt:b.registered_at,paidAt:b.paid_at||'',confirmationCode:b.confirmation_code||'',sumupCheckoutUrl:b.sumup_checkout_url||'',
+              hostMessage:hostText(s,b),
+            });
+          }
+          rows.push({...safeSession(s),notificationEmail:s.notification_email||'',hostName:host?.name||'',hostEmail:host?.email||'',hostMobile:host?.mobile||'',bookings:bookingRows});
+        }
+        const offers=await base44.asServiceRole.entities.GuestBookingChangeOffer.filter({tenant_id:tenantId,club_id:clubId},'-created_at',500);
+        const latestOffers:Record<string,any>={};
+        for(const o of offers||[]){if(!latestOffers[o.booking_id])latestOffers[o.booking_id]={status:o.status,targetSessionId:o.target_session_id,targetLabel:o.target_label||'',respondedAt:o.responded_at||'',expiresAt:o.expires_at||''};}
+        return Response.json({success:true,sessions:rows,changeOffers:latestOffers,sumupConfigured});
+      }
+
+      if(action==='admin_archive_session'||action==='admin_restore_session'||action==='admin_delete_session'){
+        const sessionId=clean(body.sessionId,100);
+        const session=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:sessionId,tenant_id:tenantId,club_id:clubId},'-created_at',5))?.[0];
+        if(!session)return Response.json({error:'Session not found.'},{status:404});
+        const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:session.id},'-registered_at',500);
+        if(action==='admin_archive_session'){
+          const updated=await base44.asServiceRole.entities.GuestSessionLink.update(session.id,{active:false,archived_at:new Date().toISOString(),archived_by_user_id:user.id,archive_reason:clean(body.reason||'Archived by admin',240)});
+          return Response.json({success:true,session:safeSession(updated)});
+        }
+        if(action==='admin_restore_session'){
+          const updated=await base44.asServiceRole.entities.GuestSessionLink.update(session.id,{archived_at:null,archived_by_user_id:null,archive_reason:null,active:String(session.session_date||'')>=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Dublin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())});
+          return Response.json({success:true,session:safeSession(updated)});
+        }
+        const protectedBooking=(bookings||[]).find((b:any)=>['paid','partially_refunded','refunded'].includes(String(b.payment_status||'')) || ['confirmed','cash_due'].includes(String(b.booking_status||'')));
+        if(protectedBooking)return Response.json({error:'This session has confirmed or financial booking history. Archive it instead of deleting it.'},{status:409});
+        for(const b of bookings||[]) await base44.asServiceRole.entities.GuestSessionBooking.delete(b.id);
+        const invites=await base44.asServiceRole.entities.AccessInviteToken.filter({session_link_id:session.id},'-created_at',500);
+        for(const i of invites||[]) await base44.asServiceRole.entities.AccessInviteToken.delete(i.id);
+        await base44.asServiceRole.entities.GuestSessionLink.delete(session.id);
+        return Response.json({success:true,deleted:true});
+      }
+
+      if(action==='admin_delete_booking'){
+        const bookingId=clean(body.bookingId,100);
+        const booking=(await base44.asServiceRole.entities.GuestSessionBooking.filter({id:bookingId,tenant_id:tenantId,club_id:clubId},'-registered_at',5))?.[0];
+        if(!booking)return Response.json({error:'Booking not found.'},{status:404});
+        if(['paid','partially_refunded','refunded'].includes(String(booking.payment_status||'')) || ['confirmed','cash_due'].includes(String(booking.booking_status||''))) return Response.json({error:'Confirmed or financial booking records cannot be deleted. Keep them for the session record.'},{status:409});
+        const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',20);
+        const realPayment=(payments||[]).find((p:any)=>['paid','partially_refunded','refunded'].includes(String(p.payment_status||'')));
+        if(realPayment)return Response.json({error:'This booking has a financial record and cannot be deleted.'},{status:409});
+        for(const p of payments||[]) await base44.asServiceRole.entities.PaymentRecord.delete(p.id);
+        await base44.asServiceRole.entities.GuestSessionBooking.delete(booking.id);
+        return Response.json({success:true,deleted:true});
+      }
+
+      if(action==='admin_create'){
+        const templates=await directoryTemplates(base44,tenantId,clubId);
+        const t=templates.find((x:any)=>x.key===clean(body.templateKey,80));
+        const date=clean(body.sessionDate,20);
+        if(!t)return Response.json({error:'Choose a valid club session from the Directory schedule.'},{status:400});
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return Response.json({error:'Choose the session date.'},{status:400});
+        if(weekday(date)!==t.weekday)return Response.json({error:`That date is not a ${t.weekday}.`},{status:400});
+
+        const cap=Number(body.capacity||0);
+        const capacity=Number.isFinite(cap)&&cap>0?Math.floor(cap):undefined;
+        const feeInput=body.feeAmount===undefined||body.feeAmount===null||body.feeAmount===''?Number(t.fee):Number(body.feeAmount);
+        const feeAmount=Math.round(feeInput*100)/100;
+        if(!Number.isFinite(feeAmount)||feeAmount<=0)return Response.json({error:'Enter a valid session price greater than €0.'},{status:400});
+        const now=new Date().toISOString();
+        const row=await base44.asServiceRole.entities.GuestSessionLink.create({
+          tenant_id:tenantId,club_id:clubId,token:token(),active:true,
+          session_date:date,weekday:t.weekday,start_time:t.start,end_time:t.end,
+          venue_key:t.venueKey,venue_name:t.venueName,venue_address:t.venueAddress,venue_eircode:t.eircode,google_maps_url:t.mapsUrl,
+          session_label:t.directorySessionId||t.key,capacity:capacity||undefined,fee_amount:feeAmount,currency:'EUR',payment_method:t.payment,
+          notification_email:emailKey(body.notificationEmail||user.email||''),notification_name:clean(user.full_name||user.email||'',120),
+          created_by_user_id:user.id,created_at:now,
+        });
+        const publicSessionUrl=`https://rallyhub.ie/book/${encodeURIComponent(row.token)}`;
+        return Response.json({success:true,session:safeSession(row),sumupConfigured,publicSessionUrl});
+      }
+
+      if(action==='admin_close'){
+        const sessionId=clean(body.sessionId,100);
+        const row=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:sessionId,tenant_id:tenantId,club_id:clubId}))?.[0];
+        if(!row)return Response.json({error:'Guest session not found.'},{status:404});
+        const updated=await base44.asServiceRole.entities.GuestSessionLink.update(row.id,{active:false,closed_at:new Date().toISOString()});
+        return Response.json({success:true,session:safeSession(updated)});
+      }
+
+      if(action==='admin_create_magic_invite'){
+        const sessionId=clean(body.sessionId,100);
+        const recipientEmail=emailKey(body.recipientEmail||'');
+        const recipientMobile=clean(body.recipientMobile||'',50);
+        const recipientName=clean(body.recipientName||'',120);
+        if(recipientEmail&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipientEmail))return Response.json({error:'Enter a valid guest email address.'},{status:400});
+        if(recipientMobile&&mobileKey(recipientMobile).length<8)return Response.json({error:'Enter a valid guest mobile/WhatsApp number.'},{status:400});
+        if(!recipientEmail&&!mobileKey(recipientMobile))return Response.json({error:'Enter either the guest email address or mobile/WhatsApp number. Private invitations must be tied to the intended guest.'},{status:400});
+        const session=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:sessionId,tenant_id:tenantId,club_id:clubId}))?.[0];
+        if(!session)return Response.json({error:'Guest session not found.'},{status:404});
+        if(!session.active)return Response.json({error:'This booking link is closed.'},{status:409});
+        const restriction=await clubRestrictionCheck(base44,tenantId,clubId,{fullName:recipientName,email:recipientEmail,mobile:recipientMobile});
+        if(restriction!=='clear')return clubRestrictionResponse(restriction);
+        const invite=await createInvite(base44,session,user,recipientEmail,recipientName,recipientMobile);
+        return Response.json({success:true,magicInviteUrl:`https://rallyhub.ie/book/${encodeURIComponent(session.token)}?invite=${encodeURIComponent(invite.token)}`,expiresAt:invite.expires_at,boundTo:{email:invite.intended_email||'',mobile:invite.intended_mobile||''}});
+      }
+
+      if(action==='admin_send_invite'){
+        const sessionId=clean(body.sessionId,100);
+        const recipientEmail=emailKey(body.recipientEmail||'');
+        const recipientName=clean(body.recipientName||'',120);
+        if(!recipientEmail||!recipientEmail.includes('@'))return Response.json({error:'Enter the guest email address.'},{status:400});
+        const session=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:sessionId,tenant_id:tenantId,club_id:clubId}))?.[0];
+        if(!session)return Response.json({error:'Guest session not found.'},{status:404});
+        if(!session.active)return Response.json({error:'This booking link is closed.'},{status:409});
+        const restriction=await clubRestrictionCheck(base44,tenantId,clubId,{fullName:recipientName,email:recipientEmail});
+        if(restriction!=='clear')return clubRestrictionResponse(restriction);
+        const invite=await createInvite(base44,session,user,recipientEmail,recipientName);
+        const club=(await clubBrand(base44,clubId))||{
+          name:'Clare Pickleball',
+          logo_url:'https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/6e59058fc_ClarePBLogo.jpg',
+          primary_colour:'#2667f2',secondary_colour:'#facc15',
+        };
+        const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId,clubId};
+        const bookingUrl=`https://rallyhub.ie/book/${encodeURIComponent(session.token)}?invite=${encodeURIComponent(invite.token)}`;
+        const dateLabel=formatDate(session.session_date);
+        const timeLabel=`${session.start_time}${session.end_time?'–'+session.end_time:''}`;
+        const amount=money(session.fee_amount,session.currency||'EUR');
+        const hello=recipientName?firstName(recipientName):'there';
+        const actionLabel=session.payment_method==='none'?'Confirm your place':session.payment_method==='cash'?'Reserve your place':`Book & Pay ${amount}`;
+        const textBody=`Hi ${hello},
+
+You are invited to book a ${club.name} guest session.
+
+Date: ${dateLabel}
+Time: ${timeLabel}
+Venue: ${session.venue_name}
+Fee: ${session.payment_method==='none'?'No payment required':`${amount}${session.payment_method==='cash'?' cash on arrival':' online payment'}`}
+
+Complete your booking, waiver and payment here:
+${bookingUrl}
+
+Cancellations made less than 24 hours before the session are non-refundable.
+
+Brian Moore
+Chairperson, Clare Pickleball
+
+Powered by RallyHub`;
+        const htmlBody=emailShell({
+          club,
+          headline:recipientName?`Guest session invitation for ${firstName(recipientName)}`:'Guest session invitation',
+          preheader:`${dateLabel} · ${timeLabel} · ${session.venue_name}`,
+          content:`
+<p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">You are invited to book a Clare Pickleball guest session.</p>
+<div style="margin:0 0 22px;padding:16px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe5ee;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+${detailRow('Date',dateLabel)}
+${detailRow('Time',timeLabel)}
+${detailRow('Venue',session.venue_name)}
+${detailRow('Address',`${session.venue_address}, ${session.venue_eircode}`)}
+${detailRow('Fee',session.payment_method==='none'?'No payment required':session.payment_method==='cash'?`${amount} cash on arrival`:`${amount} online`)}
+</table>
+</div>
+<div style="text-align:center;margin:6px 0 24px;">
+<a href="${escapeHtml(bookingUrl)}" style="display:inline-block;padding:14px 24px;border-radius:10px;background:#2667f2;color:#ffffff;text-decoration:none;font-size:16px;font-weight:800;">${escapeHtml(actionLabel)}</a>
+</div>
+<p style="margin:0 0 18px;text-align:center;font-size:12px;color:#6b7280;">The button opens your secure Clare Pickleball booking page.</p>
+<div style="margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#fff8ea;border:1px solid #f2d18a;font-size:13px;line-height:1.55;color:#624717;"><strong>Cancellation policy</strong><br>Cancellations made less than 24 hours before the session are non-refundable.</div>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#172033;"><strong>Brian Moore</strong><br>Chairperson<br>Clare Pickleball</p>`,
+        });
+        await sendWithConfiguredEmailTransport(base44,scope,{
+          to:recipientEmail,
+          subject:`${club.name} · Guest session · ${dateLabel} ${session.start_time}`,
+          textBody,htmlBody,senderName:club.name,
+        });
+        return Response.json({success:true});
+      }
+
+      const bookingId=clean(body.bookingId,100);
+      const booking=(await base44.asServiceRole.entities.GuestSessionBooking.filter({id:bookingId,tenant_id:tenantId,club_id:clubId}))?.[0];
+      if(!booking)return Response.json({error:'Booking not found.'},{status:404});
+      const session=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:booking.session_link_id,tenant_id:tenantId,club_id:clubId}))?.[0];
+      if(!session)return Response.json({error:'Session not found.'},{status:404});
+
+      if(action==='admin_mark_cash_paid'){
+        if(booking.payment_method!=='cash')return Response.json({error:'This is not a cash booking.'},{status:409});
+        const now=new Date().toISOString();
+        let updated=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:'paid',booking_status:'confirmed',paid_at:now});
+        const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
+        if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10)});
+        updated=await sendConfirmations(base44,session,updated);
+        return Response.json({success:true,booking:updated});
+      }
+
+      if(action==='admin_resend_emails'||action==='admin_resend_host_email'){
+        const offers=await base44.asServiceRole.entities.GuestBookingChangeOffer.filter({booking_id:booking.id,tenant_id:tenantId,club_id:clubId,status:'pending'},'-created_at',20);
+        if((offers||[]).some((offer:any)=>Date.parse(offer.expires_at)>Date.now())){
+          return Response.json({error:'An alternative-session offer is awaiting the guest’s response. Do not resend the original session confirmation.'},{status:409});
+        }
+      }
+      if(action==='admin_resend_emails'){
+        if(booking.payment_status!=='paid' && booking.payment_status!=='partially_refunded' && booking.payment_status!=='refunded'){
+          return Response.json({error:'Confirm the payment before resending booking emails.'},{status:409});
+        }
+        const updated=await sendConfirmations(base44,session,booking,true);
+        return Response.json({success:true,booking:updated});
+      }
+
+      if(action==='admin_resend_host_email'){
+        const host=await resolveSessionHostContact(base44,session);
+        if(!host?.email)return Response.json({error:'No email address is available for this session host.'},{status:409});
+        const paidLike=['paid','partially_refunded','refunded'].includes(String(booking.payment_status||''));
+        const cashReserved=booking.payment_method==='cash'&&booking.booking_status==='cash_due';
+        if(!paidLike&&!cashReserved)return Response.json({error:'The booking must be confirmed before notifying the session host.'},{status:409});
+        const club=(await clubBrand(base44,session.club_id))||{name:'Clare Pickleball',logo_url:'',primary_colour:'#2667f2',secondary_colour:'#facc15'};
+        const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:session.tenant_id,clubId:session.club_id};
+        await sendHostBookingEmail(base44,scope,club,session,booking,host,hostText(session,booking));
+        return Response.json({success:true,hostName:host.name,hostEmail:host.email});
+      }
+
+      if(action==='admin_verify_payment'){
+        if(booking.payment_method!=='sumup'||!booking.sumup_checkout_id)return Response.json({error:'No SumUp checkout is attached to this booking.'},{status:409});
+        const checkout=await retrieveProviderCheckout(base44,session,booking.sumup_checkout_id);
+        const status=String(checkout?.status||'PENDING').toUpperCase();
+        if(status==='PAID'){
+          const now=new Date().toISOString();
+          let updated=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:'paid',booking_status:'confirmed',paid_at:now});
+          const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
+          if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10),provider:checkout?.provider||'sumup',provider_account_id:checkout?.merchant_account_id||'',provider_transaction_id:checkout?.transaction_id||checkout?.transactions?.[0]?.id||'',provider_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||'',provider_status:checkout?.status||'PAID',external_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||''});
+          updated=await sendConfirmations(base44,session,updated);
+          return Response.json({success:true,status:'paid',booking:updated});
+        }
+        if(status==='FAILED'||status==='EXPIRED'){
+          const localStatus=status.toLowerCase();
+          const updated=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:localStatus,booking_status:'pending_payment'});
+          const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
+          if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:localStatus,provider_status:status});
+          return Response.json({success:true,status:localStatus,booking:updated});
+        }
+        return Response.json({success:true,status:status.toLowerCase()});
+      }
+
+      if(action==='admin_refund_payment'){
+        if(booking.payment_method==='cash')return Response.json({error:'Cash refunds are recorded manually; there is no online gateway transaction to refund.'},{status:409});
+        if(body.confirmRefund!==true)return Response.json({error:'Refund confirmation is required.'},{status:400});
+        const reason=clean(body.reason,500);
+        if(!reason)return Response.json({error:'Enter a reason for the refund.'},{status:400});
+
+        const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
+        let payment=payments?.[0]||null;
+        if(!payment)return Response.json({error:'Payment record not found.'},{status:404});
+        if(!['paid','partially_refunded','refund_failed'].includes(String(payment.payment_status||''))){
+          return Response.json({error:'Only a completed online payment can be refunded.'},{status:409});
+        }
+
+        let transactionId=clean(payment.provider_transaction_id,120);
+        let provider=clean(payment.provider||booking.payment_method,30).toLowerCase();
+        let merchantAccountId=clean(payment.provider_account_id,120);
+        if(!transactionId && booking.sumup_checkout_id){
+          const checkout=await retrieveProviderCheckout(base44,session,booking.sumup_checkout_id);
+          transactionId=clean(checkout?.transaction_id||checkout?.transactions?.[0]?.id,120);
+          provider=clean(checkout?.provider||provider,30).toLowerCase();
+          merchantAccountId=clean(checkout?.merchant_account_id||merchantAccountId,120);
+          if(transactionId){
+            payment=await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{
+              provider,provider_account_id:merchantAccountId,provider_transaction_id:transactionId,
+              provider_payment_reference:checkout?.transaction_code||'',provider_status:checkout?.status||'PAID',
+            });
+          }
+        }
+        if(!transactionId)return Response.json({error:'RallyHub could not identify the gateway transaction to refund. Verify the payment first.'},{status:409});
+
+        const previous=await base44.asServiceRole.entities.PaymentRefund.filter({payment_record_id:payment.id},'-requested_at',100);
+        const alreadyRefunded=(previous||[]).filter((x:any)=>x.status==='succeeded').reduce((sum:number,x:any)=>sum+Number(x.amount||0),0);
+        const originalAmount=Number(payment.amount||booking.amount||0);
+        const remaining=Math.max(0,Math.round((originalAmount-alreadyRefunded)*100)/100);
+        if(remaining<=0)return Response.json({error:'This payment has already been fully refunded.'},{status:409});
+
+        const requestedRaw=body.refundAmount===undefined||body.refundAmount===null||body.refundAmount===''?remaining:Number(body.refundAmount);
+        const refundAmount=Math.round(requestedRaw*100)/100;
+        if(!Number.isFinite(refundAmount)||refundAmount<=0||refundAmount>remaining){
+          return Response.json({error:`Refund amount must be between €0.01 and €${remaining.toFixed(2)}.`},{status:400});
+        }
+
+        const gateway=await gatewayAccount(base44,tenantId,clubId,provider);
+        const now=new Date().toISOString();
+        let refundRow=await base44.asServiceRole.entities.PaymentRefund.create({
+          tenant_id:tenantId,club_id:clubId,payment_record_id:payment.id,person_id:booking.person_id||'',
+          purpose_type:'booking',purpose_id:booking.id,provider,
+          provider_account_id:merchantAccountId,provider_transaction_id:transactionId,
+          amount:refundAmount,currency:payment.currency||booking.currency||'EUR',status:'processing',
+          reason,policy_override:body.policyOverride===true,requested_by_user_id:user.id,requested_at:now,
+          source_system:'rallyhub_guest_session',
+        });
+
+        try{
+          const fullOriginalRefund=alreadyRefunded<=0.001 && refundAmount>=originalAmount-0.001;
+          const result=await refundPayment({
+            provider,account:gateway?.account||null,transactionId,
+            amount:fullOriginalRefund?undefined:refundAmount,currency:payment.currency||'EUR',
+          });
+          const completedAt=new Date().toISOString();
+          refundRow=await base44.asServiceRole.entities.PaymentRefund.update(refundRow.id,{
+            status:'succeeded',provider_refund_id:result.refundId||'',provider_status:result.providerStatus||'REFUNDED',completed_at:completedAt,
+          });
+          const totalRefunded=Math.round((alreadyRefunded+refundAmount)*100)/100;
+          const fullyRefunded=totalRefunded>=originalAmount-0.001;
+          await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{
+            payment_status:fullyRefunded?'refunded':'partially_refunded',amount_refunded:totalRefunded,last_refund_at:completedAt,
+            provider_status:result.providerStatus||'REFUNDED',
+          });
+          const updatedBooking=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{
+            payment_status:fullyRefunded?'refunded':'partially_refunded',
+          });
+
+          if(booking.email){
+            try{
+              const club=(await clubBrand(base44,session.club_id))||{name:'Clare Pickleball',logo_url:'',primary_colour:'#2667f2',secondary_colour:'#facc15'};
+              const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:session.tenant_id,clubId:session.club_id};
+              const refundLabel=money(refundAmount,payment.currency||booking.currency||'EUR');
+              const guestFirst=firstName(booking.full_name);
+              const refundText=`Hi ${guestFirst},
+
+A refund of ${refundLabel} has been issued for your ${club.name} guest booking.
+
+Session: ${formatDate(session.session_date)} · ${session.start_time}${session.end_time?'–'+session.end_time:''}
+Venue: ${session.venue_name}
+Booking reference: ${booking.confirmation_code}
+Reason: ${reason}
+
+The refund is being returned to the original payment method.
+
+Brian Moore
+Chairperson, Clare Pickleball
+
+Powered by RallyHub`;
+              const refundHtml=emailShell({
+                club,
+                headline:`Refund issued, ${guestFirst}`,
+                preheader:`${refundLabel} refund · ${session.venue_name}`,
+                content:`
+<p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">A refund of <strong>${escapeHtml(refundLabel)}</strong> has been issued for your guest booking.</p>
+<div style="margin:0 0 20px;padding:16px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe5ee;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+${detailRow('Session',`${formatDate(session.session_date)} · ${session.start_time}${session.end_time?'–'+session.end_time:''}`)}
+${detailRow('Venue',session.venue_name)}
+${detailRow('Refund',refundLabel)}
+${detailRow('Booking reference',booking.confirmation_code)}
+${detailRow('Reason',reason)}
+</table>
+</div>
+<p style="margin:0 0 22px;font-size:13px;line-height:1.55;color:#6b7280;">The refund is being returned to the original payment method.</p>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#172033;"><strong>Brian Moore</strong><br>Chairperson<br>Clare Pickleball</p>`,
+              });
+              await sendWithConfiguredEmailTransport(base44,scope,{
+                to:booking.email,
+                subject:`${club.name} · Refund issued · ${refundLabel}`,
+                textBody:refundText,
+                htmlBody:refundHtml,
+                senderName:club.name,
+              });
+            }catch(e){console.error('refund confirmation email failed',e?.message||e)}
+          }
+
+          return Response.json({
+            success:true,refundId:refundRow.id,refundAmount,totalRefunded,
+            refundableAmount:Math.max(0,Math.round((originalAmount-totalRefunded)*100)/100),
+            paymentStatus:fullyRefunded?'refunded':'partially_refunded',booking:updatedBooking,
+          });
+        }catch(e){
+          await base44.asServiceRole.entities.PaymentRefund.update(refundRow.id,{
+            status:'failed',failure_message:clean(e?.message||'Refund failed',500),completed_at:new Date().toISOString(),
+          });
+          await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{payment_status:'refund_failed'});
+          return Response.json({error:e?.message||'The payment gateway could not issue the refund.'},{status:502});
+        }
+      }
+    }
+
+    if(action==='public_member_lookup'||action==='public_member_submit'){
+      const clubSlug=clean(body.clubSlug,120);
+      const club=(await base44.asServiceRole.entities.Club.filter({slug:clubSlug,status:'active'},'-updated_date',5))?.[0];
+      if(!club)return Response.json({error:'Club booking is unavailable.'},{status:404});
+      const restriction=await clubRestrictionCheck(base44,club.tenant_id,club.id,{fullName:body.fullName,email:body.email,mobile:body.mobile});
+      if(restriction!=='clear')return clubRestrictionResponse(restriction);
+      const resolved=await resolveActiveMember(base44,club,{fullName:body.fullName,email:body.email,mobile:body.mobile});
+      if(!resolved.match){
+        return Response.json({error:resolved.error,code:resolved.code,memberFound:false},{status:resolved.code==='MEMBERSHIP_MATCH_AMBIGUOUS'?409:404});
+      }
+      const person=resolved.match.person;
+      const membership=resolved.match.membership;
+      if(action==='public_member_lookup'){
+        const spond=await loadInvitedMemberSpondSessions(base44,club,person,membership);
+        if(spond.status!=='connected'){
+          const message=spond.status==='identity_not_matched'
+            ? 'Membership found, but RallyHub could not match your membership to the club’s Spond account. Please contact the club so we can update the link.'
+            : 'Membership found, but invited Spond sessions cannot be loaded right now. Please try again shortly or contact the club.';
+          return Response.json({error:message,code:`SPOND_${String(spond.status||'unavailable').toUpperCase()}`,memberFound:true},{status:503});
+        }
+        return Response.json({
+          success:true,memberFound:true,firstName:firstName(person.full_name),verificationMethod:resolved.verificationMethod,
+          message:`Membership found. Hi ${firstName(person.full_name)}, choose one of the Spond sessions you are invited to and go straight to payment.`,
+          sessions:(spond.sessions||[]).map((s:any)=>({id:s.id,title:s.title,venueName:s.venueName,day:s.weekday,start:s.start,end:s.end,level:s.title,price:s.fee,paymentMethod:s.payment,nextDate:s.sessionDate,responseStatus:s.responseStatus})),
+        });
+      }
+
+      const spond=await loadInvitedMemberSpondSessions(base44,club,person,membership);
+      if(spond.status!=='connected')return Response.json({error:'RallyHub could not confirm your invited Spond sessions right now. Please try again or contact the club.',code:`SPOND_${String(spond.status||'unavailable').toUpperCase()}`},{status:503});
+      const selected=(spond.sessions||[]).find((s:any)=>String(s.id)===clean(body.sessionId,300));
+      if(!selected)return Response.json({error:'That session is not currently available to you in Spond. Please choose one of the sessions shown after membership verification.'},{status:409});
+      const session=await ensureMemberSessionLink(base44,club,selected);
+      const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:session.id},'-registered_at',250);
+      const active=(bookings||[]).filter((b:any)=>b.booking_status!=='cancelled');
+      const cap=Number(session.capacity||0);
+      if(cap>0&&active.length>=cap)return Response.json({error:'This session is currently full. Please contact the session host.'},{status:409});
+
+      let duplicate=(bookings||[]).find((b:any)=>String(b.person_id||'')===String(person.id)&&b.booking_status!=='cancelled');
+      if(duplicate){
+        let paymentUrl=duplicate.sumup_checkout_url||'';
+        let paymentStatus=duplicate.payment_status;
+        if(session.payment_method==='sumup'&&duplicate.booking_status!=='confirmed'&&duplicate.sumup_checkout_id&&!['failed','expired'].includes(String(paymentStatus||'').toLowerCase())){
+          try{
+            const existingCheckout=await retrieveProviderCheckout(base44,session,duplicate.sumup_checkout_id);
+            const remoteStatus=String(existingCheckout?.status||'PENDING').toUpperCase();
+            if(remoteStatus==='PAID'){
+              const now=new Date().toISOString();
+              duplicate=await base44.asServiceRole.entities.GuestSessionBooking.update(duplicate.id,{payment_status:'paid',booking_status:'confirmed',paid_at:now});
+              const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:duplicate.id},'-created_date',10);
+              if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10),provider:existingCheckout?.provider||'sumup',provider_account_id:existingCheckout?.merchant_account_id||'',provider_transaction_id:existingCheckout?.transaction_id||existingCheckout?.transactions?.[0]?.id||'',provider_payment_reference:existingCheckout?.transaction_code||existingCheckout?.transactions?.[0]?.transaction_code||'',provider_status:'PAID'});
+              duplicate=await sendConfirmations(base44,session,duplicate);
+              return Response.json({success:true,alreadyBooked:true,bookingId:duplicate.id,paymentUrl:'',session:safeSession(session),bookingStatus:'confirmed',paymentStatus:'paid',participantType:'member',message:'Your payment is already confirmed for this session.'});
+            }
+            if(remoteStatus==='FAILED'||remoteStatus==='EXPIRED'){
+              paymentStatus=remoteStatus.toLowerCase();
+              await base44.asServiceRole.entities.GuestSessionBooking.update(duplicate.id,{payment_status:paymentStatus});
+            }
+          }catch(e){console.error('member SumUp duplicate status check failed',e?.message||e)}
+        }
+        if(session.payment_method==='sumup'&&duplicate.booking_status!=='confirmed'&&(!paymentUrl||['failed','expired'].includes(String(paymentStatus||'').toLowerCase()))){
+          const checkout=await createProviderCheckout(base44,session,duplicate,req);
+          duplicate=await base44.asServiceRole.entities.GuestSessionBooking.update(duplicate.id,{sumup_checkout_id:checkout.id,sumup_checkout_url:checkout.url,sumup_checkout_reference:checkout.reference,payment_status:'pending',booking_status:'pending_payment'});
+          const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:duplicate.id},'-created_date',10);
+          if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'pending',provider:checkout.provider||'sumup',provider_account_id:checkout.merchantAccountId||'',provider_checkout_id:checkout.id,provider_checkout_url:checkout.url,provider_payment_reference:checkout.reference,provider_status:checkout.status||'PENDING',sumup_checkout_id:checkout.id,sumup_payment_link:checkout.url,external_payment_reference:checkout.reference});
+          paymentUrl=checkout.url;paymentStatus='pending';
+        }
+        return Response.json({success:true,alreadyBooked:true,bookingId:duplicate.id,paymentUrl,session:safeSession(session),bookingStatus:duplicate.booking_status,paymentStatus,participantType:'member',message:duplicate.booking_status==='confirmed'?'You are already confirmed for this session.':'You already started this booking. Complete payment to confirm your place.'});
+      }
+
+      const bookingEmail=emailKey(person.primary_email||'');
+      if(!bookingEmail)return Response.json({error:`Membership found, but there is no email address on the member record. Please contact ${club.name} so the club can update your details before taking payment.`,code:'MEMBER_EMAIL_MISSING'},{status:409});
+      const bookingMobile=clean(person.mobile||'',50);
+      const now=new Date().toISOString();
+      const initialStatus=session.payment_method==='none'?'confirmed':session.payment_method==='cash'?'cash_due':'pending_payment';
+      const initialPayment=session.payment_method==='none'?'not_required':session.payment_method==='cash'?'cash_due':'pending';
+      let booking=await base44.asServiceRole.entities.GuestSessionBooking.create({
+        tenant_id:session.tenant_id,club_id:session.club_id,session_link_id:session.id,person_id:person.id,
+        participant_type:'member',membership_id:membership.id,member_verification_method:resolved.verificationMethod,
+        full_name:person.full_name,email:bookingEmail,email_key:bookingEmail,mobile:bookingMobile,mobile_key:mobileKey(bookingMobile),
+        booking_note:clean(body.bookingNote,1000)||undefined,
+        booking_status:initialStatus,payment_method:session.payment_method,payment_status:initialPayment,
+        amount:Number(session.fee_amount||0),currency:session.currency||'EUR',registered_at:now,
+        confirmation_code:confirmation(),source_system:'rallyhub_member_session',
+      });
+      let paymentRecord:any=null;
+      if(session.payment_method!=='none'){
+        paymentRecord=await base44.asServiceRole.entities.PaymentRecord.create({
+          tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,club_membership_id:membership.id,membership_season:membership.membership_season||'',
+          purpose_type:'booking',purpose_id:booking.id,payment_type:'member_session',
+          amount:Number(session.fee_amount||0),currency:session.currency||'EUR',payment_method:session.payment_method,payment_status:'pending',provider:session.payment_method,amount_refunded:0,
+          source_system:'rallyhub_member_session',source_row:booking.id,
+          notes:`${session.venue_name} · ${session.session_date} · ${session.start_time}`,
+        });
+      }
+      if(session.payment_method==='none'){
+        booking=await sendConfirmations(base44,session,booking);
+        return Response.json({success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),bookingStatus:'confirmed',paymentStatus:'not_required',participantType:'member',paymentUrl:'',message:'Your place is confirmed. No payment is required.'});
+      }
+      if(session.payment_method==='cash'){
+        booking=await sendConfirmations(base44,session,booking);
+        return Response.json({success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),bookingStatus:'cash_due',paymentStatus:'cash_due',participantType:'member',paymentUrl:'',message:`Your place is confirmed. Please bring €${Number(session.fee_amount||0).toFixed(2)} cash for the hall contribution and pay it to the host at the venue.`});
+      }
+      try{
+        const checkout=await createProviderCheckout(base44,session,booking,req);
+        booking=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{sumup_checkout_id:checkout.id,sumup_checkout_url:checkout.url,sumup_checkout_reference:checkout.reference});
+        await base44.asServiceRole.entities.PaymentRecord.update(paymentRecord.id,{provider:checkout.provider||'sumup',provider_account_id:checkout.merchantAccountId||'',provider_checkout_id:checkout.id,provider_checkout_url:checkout.url,provider_payment_reference:checkout.reference,provider_status:checkout.status||'PENDING',sumup_checkout_id:checkout.id,sumup_payment_link:checkout.url,external_payment_reference:checkout.reference});
+        return Response.json({success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),bookingStatus:'pending_payment',paymentStatus:'pending',participantType:'member',paymentUrl:checkout.url,message:`Complete the €${Number(session.fee_amount||0).toFixed(2)} payment to confirm your place.`});
+      }catch(e){
+        console.error('member SumUp create failed',e?.message||e);
+        return Response.json({error:e?.message||`Your booking was saved, but RallyHub could not open the payment page. Please contact ${club.name}.`,bookingId:booking.id},{status:503});
+      }
+    }
+
+    const tokenValue=clean(body.token,80);
+    if(!validToken(tokenValue))return Response.json({error:'Guest booking link is invalid or unavailable.'},{status:404});
+    const session=(await base44.asServiceRole.entities.GuestSessionLink.filter({token:tokenValue,active:true},'-created_at',5))?.[0];
+    if(!session)return Response.json({error:'Guest booking link is closed or unavailable.'},{status:404});
+
+    const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:session.id},'-registered_at',250);
+    const active=(bookings||[]).filter((b:any)=>b.booking_status!=='cancelled');
+    const cap=Number(session.capacity||0);
+    const remaining=cap>0?Math.max(0,cap-active.length):null;
+
+    if(action==='public_get'){
+      const returnBookingId=clean(body.bookingId,100);
+      const returnBooking=returnBookingId?(bookings||[]).find((b:any)=>b.id===returnBookingId):null;
+      const brand=await clubBrand(base44,session.club_id);
+      if(returnBooking?.participant_type==='member'){
+        return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:null,spotsRemaining:remaining,inviteApproved:true,approvalRequired:false,participantType:'member'});
+      }
+      const invite=await inviteForSession(base44,session,body.inviteToken||'');
+      const approvedRequest=invite?await guestRequestForInvite(base44,invite):null;
+      const intakeCaptured=!!approvedRequest&&guestPreviousSports(approvedRequest.previous_sports).length>0&&typeof approvedRequest.health_declaration_applies==='boolean';
+      const templates=await directoryTemplates(base44,session.tenant_id,session.club_id);
+      const directoryTemplate=templates.find((t:any)=>String(t.key)===String(session.session_label)) || templates.find((t:any)=>t.venueName===session.venue_name&&t.weekday===session.weekday&&t.start===session.start_time);
+      const directRegistration=['none','cash'].includes(session.payment_method);
+      return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:await legal(base44,session),spotsRemaining:remaining,inviteApproved:!!invite||directRegistration,inviteEmail:invite?.intended_email||'',inviteMobile:invite?.intended_mobile||'',inviteName:invite?.intended_name||'',approvalRequired:!directRegistration&&!invite,
+        guestIntakeCaptured:intakeCaptured,
+        guestIntake:intakeCaptured?{previousSports:guestPreviousSports(approvedRequest.previous_sports),sportingBackgroundNote:approvedRequest.sporting_background_note||'',healthDeclarationApplies:approvedRequest.health_declaration_applies===true,medicalNote:approvedRequest.medical_note||''}:null,
+        directorySessionId:directoryTemplate?.directorySessionId||directoryTemplate?.key||'',guestRequestUrl:brand?.slug?`/guest/${brand.slug}${directoryTemplate?.key?`?session=${encodeURIComponent(directoryTemplate.key)}`:''}`:''});
+    }
+
+    if(action==='public_status'){
+      const bookingId=clean(body.bookingId,100);
+      let booking=(bookings||[]).find((b:any)=>b.id===bookingId);
+      if(!booking)return Response.json({error:'Booking not found.'},{status:404});
+
+      if(booking.payment_method==='sumup'&&booking.sumup_checkout_id&&booking.payment_status!=='paid'){
+        try{
+          const checkout=await retrieveProviderCheckout(base44,session,booking.sumup_checkout_id);
+          const status=String(checkout?.status||'PENDING').toUpperCase();
+          if(status==='PAID'){
+            const now=new Date().toISOString();
+            booking=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:'paid',booking_status:'confirmed',paid_at:now});
+            const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
+            if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10),provider:checkout?.provider||'sumup',provider_account_id:checkout?.merchant_account_id||'',provider_transaction_id:checkout?.transaction_id||checkout?.transactions?.[0]?.id||'',provider_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||'',provider_status:checkout?.status||'PAID',external_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||''});
+          }else if(status==='FAILED'||status==='EXPIRED'){
+            const localStatus=status.toLowerCase();
+            booking=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:localStatus,booking_status:'pending_payment'});
+            const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
+            if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:localStatus,provider_status:status});
+          }
+        }catch(e){console.error('sumup status check failed',e?.message||e)}
+      }
+
+      if(booking.booking_status==='confirmed'||booking.booking_status==='cash_due'){
+        booking=await sendConfirmations(base44,session,booking);
+      }
+
+      return Response.json({success:true,booking:{
+        id:booking.id,fullName:booking.full_name,participantType:booking.participant_type||'guest',bookingStatus:booking.booking_status,paymentStatus:booking.payment_status,
+        paymentMethod:booking.payment_method,confirmationCode:booking.confirmation_code,
+      },session:safeSession(session)});
+    }
+
+    if(action!=='public_submit')return Response.json({error:'Invalid guest booking action.'},{status:400});
+    if(remaining!==null&&remaining<=0)return Response.json({error:'This guest session is full.'},{status:409});
+    const legalBundle=await legal(base44,session);
+
+    const fullName=clean(body.fullName,120);
+    const email=emailKey(body.email);
+    const mobile=clean(body.mobile,50);
+    const restriction=await clubRestrictionCheck(base44,session.tenant_id,session.club_id,{fullName,email,mobile});
+    if(restriction!=='clear')return clubRestrictionResponse(restriction);
+    const directRegistration=['none','cash'].includes(session.payment_method);
+    const suppliedInviteToken=clean(body.inviteToken||'',120);
+    const invite=suppliedInviteToken?await inviteForSession(base44,session,suppliedInviteToken,email,mobile):null;
+    if(suppliedInviteToken&&!invite)return Response.json({error:'This private invitation is invalid, expired, or does not match the email/mobile supplied.',approvalRequired:true},{status:403});
+    if(!directRegistration&&!invite)return Response.json({error:'This guest booking requires club approval. Please request a guest place first, or use the private invitation link sent by Clare Pickleball.',approvalRequired:true},{status:403});
+    const approvedRequest=invite?await guestRequestForInvite(base44,invite):null;
+    const approvedIntakeCaptured=!!approvedRequest&&guestPreviousSports(approvedRequest.previous_sports).length>0&&typeof approvedRequest.health_declaration_applies==='boolean';
+    const mobileK=mobileKey(mobile);
+    const emergencyName=clean(body.emergencyContactName,120);
+    const emergencyMobile=clean(body.emergencyContactMobile,50);
+    const previousSports=approvedIntakeCaptured?guestPreviousSports(approvedRequest.previous_sports):guestPreviousSports(body.previousSports);
+    const sportingBackgroundNote=clean(approvedIntakeCaptured?approvedRequest?.sporting_background_note:body.sportingBackgroundNote,1200);
+    const healthAnswered=approvedIntakeCaptured?true:typeof body.healthDeclarationApplies==='boolean';
+    const healthDeclarationApplies=approvedIntakeCaptured?approvedRequest.health_declaration_applies===true:body.healthDeclarationApplies===true;
+    const medicalNote=clean(approvedIntakeCaptured?approvedRequest?.medical_note:body.medicalNote,1600);
+    const photo=clean(body.photoVideoConsent,10).toLowerCase();
+
+    if(!fullName||fullName.split(' ').length<2)return Response.json({error:'Please enter your full name.'},{status:400});
+    if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return Response.json({error:'Please enter a valid email address.'},{status:400});
+    if(mobileK.length<8)return Response.json({error:'Please enter a valid mobile number.'},{status:400});
+    if(!emergencyName||mobileKey(emergencyMobile).length<8)return Response.json({error:'Please provide an emergency contact name and mobile number.'},{status:400});
+    if(!previousSports.length)return Response.json({error:'Please tell us whether you have previously played any of the listed sports. You can choose more than one, or choose “None of these”.'},{status:400});
+    if(!healthAnswered)return Response.json({error:'Please answer the guest health and medical screening question.'},{status:400});
+    if(healthDeclarationApplies&&!medicalNote)return Response.json({error:'Please give brief details of the health, treatment, surgery, injury or other issue that may be relevant to the session host.'},{status:400});
+    if(Number(legalBundle.minimumAge||0)>0&&body.ageConfirmed!==true)return Response.json({error:`Guest sessions are currently for participants aged ${legalBundle.minimumAge} or over.`},{status:400});
+    if(body.waiverAccepted!==true||body.codeAccepted!==true||body.privacyAcknowledged!==true||body.cancellationAccepted!==true){
+      return Response.json({error:'Please accept the waiver, Code of Conduct, privacy notice and cancellation policy.'},{status:400});
+    }
+    if(!['yes','no'].includes(photo))return Response.json({error:'Please choose Yes or No for photo/video consent.'},{status:400});
+
+    const duplicate=(bookings||[]).find((b:any)=>b.email_key===email&&b.booking_status!=='cancelled');
+    if(duplicate){
+      let paymentUrl=duplicate.sumup_checkout_url||'';
+      let paymentStatus=duplicate.payment_status;
+      if(session.payment_method==='sumup' && duplicate.booking_status!=='confirmed' && duplicate.sumup_checkout_id && !['failed','expired'].includes(String(paymentStatus||'').toLowerCase())){
+        try{
+          const existingCheckout=await retrieveProviderCheckout(base44,session,duplicate.sumup_checkout_id);
+          const remoteStatus=String(existingCheckout?.status||'PENDING').toUpperCase();
+          if(remoteStatus==='PAID'){
+            const now=new Date().toISOString();
+            let updated=await base44.asServiceRole.entities.GuestSessionBooking.update(duplicate.id,{payment_status:'paid',booking_status:'confirmed',paid_at:now});
+            const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:duplicate.id},'-created_date',10);
+            if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10),provider:existingCheckout?.provider||'sumup',provider_account_id:existingCheckout?.merchant_account_id||'',provider_transaction_id:existingCheckout?.transaction_id||existingCheckout?.transactions?.[0]?.id||'',provider_payment_reference:existingCheckout?.transaction_code||existingCheckout?.transactions?.[0]?.transaction_code||'',provider_status:'PAID'});
+            updated=await sendConfirmations(base44,session,updated);
+            return Response.json({success:true,alreadyBooked:true,bookingId:duplicate.id,paymentUrl:'',session:safeSession(session),bookingStatus:'confirmed',paymentStatus:'paid',message:'Your payment is already confirmed for this session.'});
+          }
+          if(remoteStatus==='FAILED'||remoteStatus==='EXPIRED'){
+            paymentStatus=remoteStatus.toLowerCase();
+            await base44.asServiceRole.entities.GuestSessionBooking.update(duplicate.id,{payment_status});
+            const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:duplicate.id},'-created_date',10);
+            if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:paymentStatus,provider_status:remoteStatus});
+          }
+        }catch(e){console.error('SumUp duplicate status check failed',e?.message||e)}
+      }
+      if(session.payment_method==='sumup' && duplicate.booking_status!=='confirmed' && (!paymentUrl || ['failed','expired'].includes(String(paymentStatus||'').toLowerCase()))){
+        try{
+          const checkout=await createProviderCheckout(base44,session,duplicate,req);
+          await base44.asServiceRole.entities.GuestSessionBooking.update(duplicate.id,{
+            sumup_checkout_id:checkout.id,sumup_checkout_url:checkout.url,sumup_checkout_reference:checkout.reference,
+            payment_status:'pending',booking_status:'pending_payment',
+          });
+          const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:duplicate.id},'-created_date',10);
+          if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{
+            payment_status:'pending',provider:checkout.provider||'sumup',provider_account_id:checkout.merchantAccountId||'',provider_checkout_id:checkout.id,provider_checkout_url:checkout.url,provider_payment_reference:checkout.reference,provider_status:checkout.status||'PENDING',sumup_checkout_id:checkout.id,sumup_payment_link:checkout.url,external_payment_reference:checkout.reference,
+          });
+          paymentUrl=checkout.url;paymentStatus='pending';
+        }catch(e){console.error('SumUp retry checkout failed',e?.message||e)}
+      }
+      return Response.json({
+        success:true,alreadyBooked:true,bookingId:duplicate.id,paymentUrl,
+        session:safeSession(session),bookingStatus:duplicate.booking_status,paymentStatus,
+        message:duplicate.booking_status==='confirmed'?'You are already confirmed for this session.':'You already started this booking. Complete payment to confirm your place.',
+      });
+    }
+
+    let person:any=null;
+    const byEmail=await base44.asServiceRole.entities.Person.filter({tenant_id:session.tenant_id,primary_email:email},'-updated_date',10);
+    person=byEmail?.[0]||null;
+    if(!person&&mobileK){
+      const byMobile=await base44.asServiceRole.entities.Person.filter({tenant_id:session.tenant_id,mobile},'-updated_date',10);
+      person=byMobile?.[0]||null;
+    }
+    const personData:any={
+      full_name:fullName,primary_email:email,mobile,
+      emergency_contact_name:emergencyName,emergency_mobile:emergencyMobile,
+      source_system:'rallyhub_guest_session',last_synced_at:new Date().toISOString(),profile_visibility:'private',
+    };
+    if(person) person=await base44.asServiceRole.entities.Person.update(person.id,personData);
+    else person=await base44.asServiceRole.entities.Person.create({tenant_id:session.tenant_id,...personData});
+    await ensureClubGuestRelationship(base44,session,person);
+
+    const now=new Date().toISOString();
+    const initialStatus=session.payment_method==='none'?'confirmed':session.payment_method==='cash'?'cash_due':'pending_payment';
+    const initialPayment=session.payment_method==='none'?'not_required':session.payment_method==='cash'?'cash_due':'pending';
+    let booking=await base44.asServiceRole.entities.GuestSessionBooking.create({
+      tenant_id:session.tenant_id,club_id:session.club_id,session_link_id:session.id,person_id:person.id,participant_type:'guest',
+      full_name:fullName,email,email_key:email,mobile,mobile_key:mobileK,
+      emergency_contact_name:emergencyName,emergency_contact_mobile:emergencyMobile,
+      previous_sports:previousSports,sporting_background_note:sportingBackgroundNote||undefined,health_declaration_applies:healthDeclarationApplies,medical_note:medicalNote||undefined,booking_note:clean(body.bookingNote,1000)||undefined,
+      waiver_version:legalBundle.waiverVersion,waiver_accepted:true,
+      code_of_conduct_version:legalBundle.codeVersion,code_of_conduct_accepted:true,
+      privacy_notice_version:PRIVACY_VERSION,privacy_acknowledged:true,
+      cancellation_policy_version:CANCELLATION_VERSION,cancellation_policy_accepted:true,
+      photo_video_consent:photo,booking_status:initialStatus,payment_method:session.payment_method,payment_status:initialPayment,
+      amount:Number(session.fee_amount||0),currency:session.currency||'EUR',registered_at:now,
+      confirmation_code:confirmation(),source_system:'rallyhub_guest_session',
+    });
+
+    for(const c of [
+      {consent_type:'adult_age_confirmation',status:'accepted',response_text:'Confirmed 18 or over',consent_version:ADULT_AGE_VERSION},
+      {consent_type:'guest_session_waiver',status:'accepted',response_text:'Accepted',consent_version:legalBundle.waiverVersion},
+      {consent_type:'guest_session_code_of_conduct',status:'accepted',response_text:'Accepted',consent_version:legalBundle.codeVersion},
+      {consent_type:'guest_session_privacy_notice',status:'accepted',response_text:'Acknowledged',consent_version:PRIVACY_VERSION},
+      {consent_type:'guest_session_cancellation_policy',status:'accepted',response_text:'Accepted',consent_version:CANCELLATION_VERSION},
+      {consent_type:'guest_session_photo_video',status:photo==='yes'?'accepted':'declined',response_text:photo==='yes'?'Yes':'No',consent_version:PRIVACY_VERSION},
+    ]){
+      try{
+        await base44.asServiceRole.entities.ConsentRecord.create({
+          tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,...c,
+          recorded_at:now,source_system:'rallyhub_guest_session',source_row:booking.id,
+          notes:`${session.venue_name} · ${session.session_date} · ${session.start_time}`,
+        });
+      }catch(e){console.error('consent record failed',e?.message||e)}
+    }
+
+    let paymentRecord:any=null;
+    if(session.payment_method!=='none'){
+      paymentRecord=await base44.asServiceRole.entities.PaymentRecord.create({
+        tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,
+        purpose_type:'booking',purpose_id:booking.id,payment_type:'guest_session',
+        amount:Number(session.fee_amount||0),currency:session.currency||'EUR',
+        payment_method:session.payment_method,payment_status:'pending',provider:session.payment_method,amount_refunded:0,
+        source_system:'rallyhub_guest_session',source_row:booking.id,
+        notes:`${session.venue_name} · ${session.session_date} · ${session.start_time}`,
+      });
+    }
+
+    if(session.payment_method==='none'){
+      booking=await sendConfirmations(base44,session,booking);
+      return Response.json({success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),bookingStatus:'confirmed',paymentStatus:'not_required',paymentUrl:'',message:'Your place is confirmed. No payment is required.'});
+    }
+
+    if(session.payment_method==='cash'){
+      booking=await sendConfirmations(base44,session,booking);
+      return Response.json({
+        success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),
+        bookingStatus:'cash_due',paymentStatus:'cash_due',paymentUrl:'',
+        message:`Your place is confirmed. Please bring €${Number(session.fee_amount||0).toFixed(2)} cash for the hall contribution and pay it to the host at the venue.`,
+      });
+    }
+
+    try{
+      const checkout=await createProviderCheckout(base44,session,booking,req);
+      booking=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{
+        sumup_checkout_id:checkout.id,sumup_checkout_url:checkout.url,sumup_checkout_reference:checkout.reference,
+      });
+      await base44.asServiceRole.entities.PaymentRecord.update(paymentRecord.id,{
+        provider:checkout.provider||'sumup',provider_account_id:checkout.merchantAccountId||'',provider_checkout_id:checkout.id,provider_checkout_url:checkout.url,provider_payment_reference:checkout.reference,provider_status:checkout.status||'PENDING',sumup_checkout_id:checkout.id,sumup_payment_link:checkout.url,external_payment_reference:checkout.reference,
+      });
+      return Response.json({
+        success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),
+        bookingStatus:'pending_payment',paymentStatus:'pending',paymentUrl:checkout.url,
+        message:`Your details are saved. Complete the €${Number(session.fee_amount||0).toFixed(2)} SumUp payment to confirm your place.`,
+      });
+    }catch(e){
+      console.error('SumUp create failed',e?.message||e);
+      return Response.json({
+        error:e?.message||'Your details were saved, but RallyHub could not open SumUp payment. Please contact Clare Pickleball.',
+        bookingId:booking.id,
+      },{status:503});
+    }
+  }catch(error){
+    console.error('guestSessionBooking failed',error?.message||error);
+    return Response.json({error:error?.message||'Unable to process the guest booking right now.'},{status:500});
+  }
+});
