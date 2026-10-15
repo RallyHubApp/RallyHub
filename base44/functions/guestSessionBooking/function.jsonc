@@ -1,4 +1,1 @@
-{
-  "name": "guestSessionBooking",
-  "entry": "base44/functions/guestSessionBooking/entry.ts"
-}
+{"name":"guestSessionBooking","entry":"entry.ts"}

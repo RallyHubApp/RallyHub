@@ -4,7 +4,7 @@ function clubRestrictionResponse(v:string){return Response.json({error:v==='deny
 
 import { createCheckout, retrievePayment, refundPayment, providerConfigured, verifyProviderConnection, type ProviderAccount } from './payments.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
-import { renderBasicBrandedEmail } from '../communicationsBasicRenderer.ts';
+import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
 import { findUniqueSpondPersonRow } from './spondIdentityMatch.js';
 
 const PRIVACY_VERSION='clare-guest-session-privacy-v1-2026-09';
