@@ -4,7 +4,7 @@ function clubRestrictionResponse(v:string){return Response.json({error:v==='deny
 
 import { createCheckout, retrievePayment, providerConfigured, type ProviderAccount } from './payments.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
-import { membershipPaidTemplate } from '../membershipPaidTemplate.ts';
+import { membershipPaidTemplate } from './membershipPaidTemplate.ts';
 
 function clean(v:any,max=500){return String(v??'').trim().replace(/\s+/g,' ').slice(0,max)}
 function raw(v:any,max=20000){return String(v??'').trim().slice(0,max)}

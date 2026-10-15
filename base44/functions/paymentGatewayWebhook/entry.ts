@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
-import { membershipPaidTemplate } from '../membershipPaidTemplate.ts';
+import { membershipPaidTemplate } from './membershipPaidTemplate.ts';
 
 function clean(v:any,max=500){return String(v??'').trim().slice(0,max)}
 function nameKey(v:any){return clean(v,180).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
