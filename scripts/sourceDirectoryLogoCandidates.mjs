@@ -1,10 +1,23 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { directoryClubs } from '../src/data/directorySeed.js';
 
-const auditPath = process.env.RALLYHUB_LOGO_AUDIT_PATH || 'docs/directory-branding/RALLYHUB_DIRECTORY_LOGO_AUDIT_2026-09-30.json';
-// For current sweeps pass a fresh audit; the September file is historical, not today's entire Directory.
-const input = JSON.parse(fs.readFileSync(auditPath, 'utf8'))
-  .listings.filter(row => String(row.auditStatus || '').startsWith('Missing') || row.auditStatus === 'Existing · broken/unreadable');
+// An explicit current audit is required; September snapshots must not drive new production research.
+const auditPath = process.env.RALLYHUB_LOGO_AUDIT_PATH;
+if (!auditPath || auditPath.includes('2026-09-30')) throw Error('Provide a current Directory logo audit via RALLYHUB_LOGO_AUDIT_PATH; never recycle September review data.');
+const audit = JSON.parse(fs.readFileSync(auditPath, 'utf8'));
+if (!Array.isArray(audit.listings)) throw Error('Directory logo audit must contain a listings array');
+const seedLogoBySlug = new Map(directoryClubs.map(club => [club.slug, club.logoUrl || club.logo_url || '']));
+const skips=[];
+const input=audit.listings.filter(row => {
+  // Treat owner, Super Admin and batch-installed logos identically. No overwrite.
+  // A hidden seed logo is still an existing asset, even when a null profile masks it.
+  const current=String(row.logoUrl || row.logo_url || row.effectiveLogoUrl || '').trim();
+  const seeded=String(seedLogoBySlug.get(row.slug) || '').trim();
+  if (current || seeded) { skips.push({slug:row.slug,reason: current ? 'existing-logo' : 'existing-seed-logo-hidden-by-profile'});return false; }
+  return String(row.auditStatus || '').startsWith('Missing');
+});
+console.log('Skipping clubs with existing Directory logos:',skips.length);
 const batchDate = process.env.RALLYHUB_LOGO_BATCH_DATE || new Date().toISOString().slice(0,10);
 if (!/^20[0-9]{2}-[01][0-9]-[0-3][0-9]$/.test(batchDate) || batchDate === '2026-09-30') throw Error('Use a new YYYY-MM-DD batch date to preserve archived September evidence');
 const outDir = path.resolve('public/directory/logo-candidates',batchDate);
@@ -183,6 +196,6 @@ for(const row of input){
   console.log(`${String(number).padStart(2,'0')} ${row.name}: ${candidate ? `${candidate.confidence} ${candidate.method} ${candidate.decision}` : 'NO CANDIDATE'}; FB leads ${facebookLeads.length}, IG leads ${instagramLeads.length}`);
 }
 const outputManifest=path.resolve('docs/directory-branding',`RALLYHUB_LOGO_SOCIAL_FIRST_CANDIDATES_${batchDate}.json`);
-fs.writeFileSync(outputManifest,JSON.stringify(results,null,2));
+fs.writeFileSync(outputManifest,JSON.stringify({sourceAudit:auditPath,skippedExisting:skips,researched:results},null,2));
 console.log('Wrote new research manifest',outputManifest);
 console.log(JSON.stringify({total:results.length,candidates:results.filter(r=>r.status==='CANDIDATE').length,approve:results.filter(r=>r.decision==='APPROVE').length,hold:results.filter(r=>r.decision==='HOLD').length,high:results.filter(r=>r.confidence==='HIGH').length,medium:results.filter(r=>r.confidence==='MEDIUM').length,low:results.filter(r=>r.confidence==='LOW').length,none:results.filter(r=>r.confidence==='NONE').length},null,2));
