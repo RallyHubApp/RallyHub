@@ -109,7 +109,9 @@
     listingPanel.append(removeListing,listingStatus,listingCancel);
     controls.append(panel,listingPanel);
     if(!baseImage){panel.hidden=true;}
-    if(prior()?.action==='remove_listing'||restored.find(x=>String(x.number)===number&&x.name===name)?.action==='remove_listing'){
+    const restoredRequest=restored.find(x=>String(x.number)===number&&x.name===name);
+    if(restoredRequest?.action==='adjust')selections.set(number,restoredRequest);
+    if(prior()?.action==='remove_listing'||restoredRequest?.action==='remove_listing'){
       const saved=prior()||restored.find(x=>String(x.number)===number&&x.name===name);
       selections.set(number,saved);listingCancel.hidden=false;listingStatus.textContent='Listing-removal request restored, not published.';
     }
@@ -159,11 +161,12 @@
         img.onerror=()=>{if(serial!==seq)return;warning.textContent='Image did not load. The current live image remains unchanged.';};
         img.alt=name+' replacement preview';img.src=url;
       });
-      confirm.addEventListener('click',()=>{if(!ready)return;selections.set(number,{number,name,action:'replace',image:ready,currentImage:current});warning.textContent='REPLACE requested, not published. Included in copied review batch.';update();});
+      confirm.addEventListener('click',()=>{if(!ready)return;selections.set(number,{number,name,action:'replace',image:ready,currentImage:current,...(selections.get(number)?.layout?{layout:selections.get(number).layout}:{})});warning.textContent='REPLACE requested, not published. Included in copied review batch.';update();});
       removeBtn.addEventListener('click',()=>{++seq;ready='';imageBox.innerHTML=originalMarkup;entry.hidden=true;confirm.hidden=true;selections.set(number,{number,name,action:'remove',image:current,currentImage:current});warning.textContent='REMOVE requested, not published. Included in copied review batch.';update();});
       restoreBtn.addEventListener('click',reset);
       controls.append(note,research,buttons,entry,confirm,warning);card.append(controls);
       if(recovered?.action==='remove'){selections.set(number,recovered);warning.textContent='Previously selected REMOVE request restored; not published.';}
+      else if(recovered?.action==='adjust'){selections.set(number,recovered);warning.textContent='Previously saved layout adjustment restored. No live image changed.';}
       else if(recovered?.action==='replace' && recovered.image){entry.value=recovered.image;showReplace();entry.dispatchEvent(new Event('input'));selections.set(number,recovered);warning.textContent='Replacement request restored. Preview loading; not published.';}
       continue;
     }
@@ -250,7 +253,24 @@
       entry.value='';++sequence;showOriginal();storeSelection();
       status.textContent='Original candidate restored. Your approval remains selected if it was ticked.';
     });
+    const discard=document.createElement('button');discard.type='button';discard.className='candidate-discard';discard.textContent='Remove incorrect candidate';
+    const discardCancel=document.createElement('button');discardCancel.type='button';discardCancel.className='secondary candidate-discard-cancel';discardCancel.textContent='Undo candidate removal';discardCancel.hidden=true;
+    discard.addEventListener('click',()=>{
+      ++sequence;replacement='';entry.value='';imageBox.innerHTML='<div class="missing">Candidate flagged for removal</div>';
+      checkbox.checked=false;checkbox.disabled=true;discardCancel.hidden=false;
+      selections.set(number,{number,name,action:'remove_candidate',image:originalSrc});
+      status.textContent='Candidate removal flagged for review only. The public Directory remains unchanged.';update();
+    });
+    discardCancel.addEventListener('click',()=>{
+      ++sequence;showOriginal();if(selections.get(number)?.action==='remove_candidate')selections.delete(number);
+      discardCancel.hidden=true;status.textContent='Candidate restored.';update();
+    });
     controls.append(entry,reset,status);
+    if(candidate)controls.append(discard,discardCancel);
+    if(recovered?.action==='remove_candidate'){
+      imageBox.innerHTML='<div class="missing">Candidate flagged for removal</div>';
+      checkbox.checked=false;checkbox.disabled=true;discardCancel.hidden=false;selections.set(number,recovered);
+    }
     existingPhoto?.addEventListener('error',()=>{
       if(replacement)return;
       if(selections.get(number)?.image===originalSrc){selections.delete(number);checkbox.checked=false;update();}
@@ -272,7 +292,7 @@
   });
   copy.addEventListener('click',async()=>{
     const lines=[...selections.values()].sort((a,b)=>Number(a.number)-Number(b.number))
-      .map(x=>'#'+x.number+' '+x.name+' | '+(x.action==='remove_listing'?'REQUEST REMOVE DIRECTORY LISTING (not executed)':x.action==='remove'?'REQUEST REMOVE LIVE LOGO (not executed)':x.action==='replace'?'REQUEST REPLACE LIVE LOGO (not executed)':x.action==='adjust'?'IMAGE SIZE/POSITION REQUEST (not executed)':x.proposed?'PROPOSED HTTPS IMAGE (requires verification)':'ARCHIVED CANDIDATE')+' | '+(x.action==='remove_listing'?'REASON: '+x.reason:x.action==='remove'?'CURRENT: '+(x.currentImage||x.image):x.image)+(x.layout?' | DISPLAY: '+JSON.stringify(x.layout):''));
+      .map(x=>'#'+x.number+' '+x.name+' | '+(x.action==='remove_listing'?'REQUEST REMOVE DIRECTORY LISTING (not executed)':x.action==='remove_candidate'?'REQUEST REMOVE SUGGESTED LOGO (not executed)':x.action==='remove'?'REQUEST REMOVE LIVE LOGO (not executed)':x.action==='replace'?'REQUEST REPLACE LIVE LOGO (not executed)':x.action==='adjust'?'IMAGE SIZE/POSITION REQUEST (not executed)':x.proposed?'PROPOSED HTTPS IMAGE (requires verification)':'ARCHIVED CANDIDATE')+' | '+(x.action==='remove_listing'?'REASON: '+String(x.reason||'').replace(/\s+/g,' ').trim():x.action==='remove'?'CURRENT: '+(x.currentImage||x.image):x.image)+(x.layout?' | DISPLAY: '+JSON.stringify(x.layout):''));
     const note='RallyHub Directory logo visual review (not publication approval). Approved for staging checks:\n'+lines.join('\n')+
       '\nAll unselected entries remain HOLD. Replace/Remove requests for live logos are NOT executed automatically. Check sources and ownership before staging. Request separate explicit approval before publishing.';
     persist();
