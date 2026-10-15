@@ -13,6 +13,13 @@ The September discovery script used **official website first**; Facebook and Ins
 5. Do not confuse venue/operator, leisure centre, tennis club, governing body, event poster, or another club with the club's own identity. Facebook Graph photos and Instagram OG images are **HOLD until independently verified**, not automatic APPROVE. Identity evidence, image suitability, hash, duplicates and source URL must all pass.
 6. Preserve existing approved 30-person review work. Do not reset existing review selections or overwrite September candidate files. Candidate stage is repository-only; live storage and publication require their own verified steps and applicable approval.
 
+
+## Mandatory existing-logo skip (all upload origins)
+
+Before any Facebook, Instagram or website search, reconcile every candidate against the current Directory state. If a listing already has a `logoUrl` / `logo_url` / effective logo (club-owner upload, Super Admin upload, prior RallyHub batch import, or any other origin), **SKIP** without replacing it or staging a duplicate. Also skip a stored seed logo hidden by a null profile override; report that separately for a safe display-fallback repair. A broken existing logo goes to a repair queue, **not** to the new-logo discovery/import path. The dated research manifest records each skipped slug and reason.
+
+Do not use archived audit data for production decisions: provide a freshly reconciled current audit, and re-check actual Directory state again before any later staging/publication operation. Existing logos and their owners retain priority over auto-discovery.
+
 ## Execution and limits
 
 `RALLYHUB_LOGO_AUDIT_PATH=docs/directory-branding/<fresh-audit>.json RALLYHUB_LOGO_BATCH_DATE=YYYY-MM-DD node scripts/sourceDirectoryLogoCandidates.mjs`
