@@ -1,0 +1,1950 @@
+{
+  "sourceAudit": "docs/directory-branding/RALLYHUB_DIRECTORY_LOGO_AUDIT_2026-10-15-live.json",
+  "skippedExisting": [
+    {
+      "slug": "abc-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "ards-blair-mayne-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "ashbourne-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "athboy-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "balbriggan-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "belfast-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "better-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "blackrock-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "carlingford-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "carlow-tullow-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "carrickmacross-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "clare-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "cobh-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "cork-pickleballers",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "deise-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "dublin-15-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "duhallow-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "east-cavan-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "east-meath-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "ezpickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "galway-county-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "galway-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "kildare-pickleball-assoc",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "killarney-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "lecanvey-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "limerick-city-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "midleton-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "multyfarnham-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "naas-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "north-star-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "pickleball-south-dublin",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "pickleball-wexford",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "portarlington-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "rebel-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "roundwood-pickleball-group",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "sandyford-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "sligo-tennis-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "south-kildare-pickleball",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "southside-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "terenure-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "wallace-park-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "west-cork-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "north-kildare-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "pickleball-ireland",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "eyva-s-invitational-series",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "newbridge-pickleball-club",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "oriel-pickleball-dundalk",
+      "reason": "existing-logo"
+    },
+    {
+      "slug": "vamos-pickleball",
+      "reason": "existing-logo"
+    }
+  ],
+  "researched": [
+    {
+      "number": 1,
+      "name": "Achill Pickleball",
+      "slug": "achill-pickleball",
+      "county": "Mayo",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Achill Pickleball\" pickleball",
+          "site:facebook.com Achill Pickleball Mayo pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Achill Pickleball\" pickleball",
+          "site:instagram.com Achill Pickleball Mayo pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 2,
+      "name": "Annascaul Picklers",
+      "slug": "annascaul-picklers",
+      "county": "Kerry",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Annascaul Picklers\" pickleball",
+          "site:facebook.com Annascaul Picklers Kerry pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Annascaul Picklers\" pickleball",
+          "site:instagram.com Annascaul Picklers Kerry pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 3,
+      "name": "Ballyfermot Pickleballers",
+      "slug": "ballyfermot-pickleballers",
+      "county": "Dublin",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Ballyfermot Pickleballers\" pickleball",
+          "site:facebook.com Ballyfermot Pickleballers Dublin pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Ballyfermot Pickleballers\" pickleball",
+          "site:instagram.com Ballyfermot Pickleballers Dublin pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 4,
+      "name": "Bayside Pickleball Club",
+      "slug": "bayside-pickleball-club",
+      "county": "Dublin",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Bayside Pickleball Club\" pickleball",
+          "site:facebook.com Bayside Pickleball Club Dublin pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Bayside Pickleball Club\" pickleball",
+          "site:instagram.com Bayside Pickleball Club Dublin pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 5,
+      "name": "Belmayne Pickleball",
+      "slug": "belmayne-pickleball",
+      "county": "Dublin",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Belmayne Pickleball\" pickleball",
+          "site:facebook.com Belmayne Pickleball Dublin pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Belmayne Pickleball\" pickleball",
+          "site:instagram.com Belmayne Pickleball Dublin pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 6,
+      "name": "Blessington Pickleball Club",
+      "slug": "blessington-pickleball-club",
+      "county": "Wicklow",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Blessington Pickleball Club\" pickleball",
+          "site:facebook.com Blessington Pickleball Club Wicklow pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Blessington Pickleball Club\" pickleball",
+          "site:instagram.com Blessington Pickleball Club Wicklow pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 7,
+      "name": "Bluestack Pickleball Club",
+      "slug": "bluestack-pickleball-club",
+      "county": "Donegal",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Bluestack Pickleball Club\" pickleball",
+          "site:facebook.com Bluestack Pickleball Club Donegal pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Bluestack Pickleball Club\" pickleball",
+          "site:instagram.com Bluestack Pickleball Club Donegal pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 8,
+      "name": "Breffni Pickleball Club",
+      "slug": "breffni-pickleball-club",
+      "county": "Cavan",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Breffni Pickleball Club\" pickleball",
+          "site:facebook.com Breffni Pickleball Club Cavan pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Breffni Pickleball Club\" pickleball",
+          "site:instagram.com Breffni Pickleball Club Cavan pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 9,
+      "name": "Castlerahan Pickleball Club",
+      "slug": "castlerahan-pickleball-club",
+      "county": "Cavan",
+      "website": "http://castlerahan.ie/",
+      "facebook": "",
+      "instagram": "",
+      "status": "CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Castlerahan Pickleball Club\" pickleball",
+          "site:facebook.com Castlerahan Pickleball Club Cavan pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Castlerahan Pickleball Club\" pickleball",
+          "site:instagram.com Castlerahan Pickleball Club Cavan pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [
+        {
+          "method": "official-website",
+          "sourcePage": "http://castlerahan.ie/",
+          "sourceImage": "http://castlerahan.ie/wp-content/uploads/2022/01/Castlerahan-Community-Centre-Logo.png",
+          "confidence": "MEDIUM",
+          "decision": "HOLD",
+          "filename": "09-castlerahan-pickleball-club-website.png"
+        }
+      ],
+      "filename": "09-castlerahan-pickleball-club-website.png",
+      "bytes": 15733,
+      "contentType": "image/png",
+      "finalImageUrl": "http://castlerahan.ie/wp-content/uploads/2022/01/Castlerahan-Community-Centre-Logo.png",
+      "method": "official-website",
+      "sourcePage": "http://castlerahan.ie/",
+      "sourceImage": "http://castlerahan.ie/wp-content/uploads/2022/01/Castlerahan-Community-Centre-Logo.png",
+      "sourceTitle": "Castlerahan Community &#8211; The Center of Castlerahan Community",
+      "confidence": "MEDIUM",
+      "score": 54,
+      "candidateKind": "website-img",
+      "decision": "HOLD"
+    },
+    {
+      "number": 10,
+      "name": "Clonakilty Pickleball Club",
+      "slug": "clonakilty-pickleball-club",
+      "county": "Cork",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Clonakilty Pickleball Club\" pickleball",
+          "site:facebook.com Clonakilty Pickleball Club Cork pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Clonakilty Pickleball Club\" pickleball",
+          "site:instagram.com Clonakilty Pickleball Club Cork pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 11,
+      "name": "Connemara Pickleball Club",
+      "slug": "connemara-pickleball-club",
+      "county": "Galway",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Connemara Pickleball Club\" pickleball",
+          "site:facebook.com Connemara Pickleball Club Galway pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Connemara Pickleball Club\" pickleball",
+          "site:instagram.com Connemara Pickleball Club Galway pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 12,
+      "name": "Cumann Pickleball A Chorráin",
+      "slug": "cumann-pickleball-a-chorrain",
+      "county": "Mayo",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Cumann Pickleball A Chorráin\" pickleball",
+          "site:facebook.com Cumann Pickleball A Chorráin Mayo pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Cumann Pickleball A Chorráin\" pickleball",
+          "site:instagram.com Cumann Pickleball A Chorráin Mayo pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 13,
+      "name": "Drogheda Pickleball",
+      "slug": "drogheda-pickleball",
+      "county": "Louth",
+      "website": "",
+      "facebook": "https://www.facebook.com/share/WLfRNxYQVFqnnNrD/",
+      "instagram": "https://www.instagram.com/stories/droghedapickleball/3333908974896735359?utm_source=ig_story_item_share&igsh=dm85NXVod3dzNXl3",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Drogheda Pickleball\" pickleball",
+          "site:facebook.com Drogheda Pickleball Louth pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Drogheda Pickleball\" pickleball",
+          "site:instagram.com Drogheda Pickleball Louth pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [
+          {
+            "url": "https://www.facebook.com/share/WLfRNxYQVFqnnNrD/",
+            "method": "directory-record"
+          }
+        ],
+        "instagram": [
+          {
+            "url": "https://www.instagram.com/stories/droghedapickleball/3333908974896735359?utm_source=ig_story_item_share&igsh=dm85NXVod3dzNXl3",
+            "method": "directory-record"
+          }
+        ]
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 14,
+      "name": "Dublin 7 Pickleball Club",
+      "slug": "dublin-7-pickleball-club",
+      "county": "Dublin",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Dublin 7 Pickleball Club\" pickleball",
+          "site:facebook.com Dublin 7 Pickleball Club Dublin pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Dublin 7 Pickleball Club\" pickleball",
+          "site:instagram.com Dublin 7 Pickleball Club Dublin pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 15,
+      "name": "East Cork Pickleball",
+      "slug": "east-cork-pickleball",
+      "county": "Cork",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"East Cork Pickleball\" pickleball",
+          "site:facebook.com East Cork Pickleball Cork pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"East Cork Pickleball\" pickleball",
+          "site:instagram.com East Cork Pickleball Cork pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 16,
+      "name": "Edenderry Pickleball Club",
+      "slug": "edenderry-pickleball-club",
+      "county": "Offaly",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Edenderry Pickleball Club\" pickleball",
+          "site:facebook.com Edenderry Pickleball Club Offaly pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Edenderry Pickleball Club\" pickleball",
+          "site:instagram.com Edenderry Pickleball Club Offaly pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 17,
+      "name": "Fenside Pickleball",
+      "slug": "fenside-pickleball",
+      "county": "Kilkenny",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Fenside Pickleball\" pickleball",
+          "site:facebook.com Fenside Pickleball Kilkenny pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Fenside Pickleball\" pickleball",
+          "site:instagram.com Fenside Pickleball Kilkenny pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 18,
+      "name": "Hook Pickleball",
+      "slug": "hook-pickleball",
+      "county": "Wexford",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Hook Pickleball\" pickleball",
+          "site:facebook.com Hook Pickleball Wexford pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Hook Pickleball\" pickleball",
+          "site:instagram.com Hook Pickleball Wexford pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 19,
+      "name": "Iveragh Pickleball Club",
+      "slug": "iveragh-pickleball-club",
+      "county": "Kerry",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Iveragh Pickleball Club\" pickleball",
+          "site:facebook.com Iveragh Pickleball Club Kerry pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Iveragh Pickleball Club\" pickleball",
+          "site:instagram.com Iveragh Pickleball Club Kerry pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 20,
+      "name": "Kilcullen Pickleball Panthers",
+      "slug": "kilcullen-pickleball-panthers",
+      "county": "Kildare",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Kilcullen Pickleball Panthers\" pickleball",
+          "site:facebook.com Kilcullen Pickleball Panthers Kildare pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Kilcullen Pickleball Panthers\" pickleball",
+          "site:instagram.com Kilcullen Pickleball Panthers Kildare pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 21,
+      "name": "Killeshandra Pickleball Club",
+      "slug": "killeshandra-pickleball-club",
+      "county": "Cavan",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Killeshandra Pickleball Club\" pickleball",
+          "site:facebook.com Killeshandra Pickleball Club Cavan pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Killeshandra Pickleball Club\" pickleball",
+          "site:instagram.com Killeshandra Pickleball Club Cavan pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 22,
+      "name": "Kingdom Pickleball Club",
+      "slug": "kingdom-pickleball-club",
+      "county": "Kerry",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Kingdom Pickleball Club\" pickleball",
+          "site:facebook.com Kingdom Pickleball Club Kerry pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Kingdom Pickleball Club\" pickleball",
+          "site:instagram.com Kingdom Pickleball Club Kerry pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 23,
+      "name": "Kinsale Pickleball",
+      "slug": "kinsale-pickleball",
+      "county": "Cork",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Kinsale Pickleball\" pickleball",
+          "site:facebook.com Kinsale Pickleball Cork pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Kinsale Pickleball\" pickleball",
+          "site:instagram.com Kinsale Pickleball Cork pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 24,
+      "name": "Kinvara Pickleball",
+      "slug": "kinvara-pickleball",
+      "county": "Galway",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Kinvara Pickleball\" pickleball",
+          "site:facebook.com Kinvara Pickleball Galway pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Kinvara Pickleball\" pickleball",
+          "site:instagram.com Kinvara Pickleball Galway pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 25,
+      "name": "Leeside Pickleball",
+      "slug": "leeside-pickleball",
+      "county": "Cork",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Leeside Pickleball\" pickleball",
+          "site:facebook.com Leeside Pickleball Cork pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Leeside Pickleball\" pickleball",
+          "site:instagram.com Leeside Pickleball Cork pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 26,
+      "name": "Lisburn Pickleball Club",
+      "slug": "lisburn-pickleball-club",
+      "county": "Antrim",
+      "website": "https://www.lisburnpickleball.club",
+      "facebook": "https://facebook.com/LisburnPickleballClub",
+      "instagram": "",
+      "status": "CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Lisburn Pickleball Club\" pickleball",
+          "site:facebook.com Lisburn Pickleball Club Antrim pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Lisburn Pickleball Club\" pickleball",
+          "site:instagram.com Lisburn Pickleball Club Antrim pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [
+          {
+            "url": "https://facebook.com/LisburnPickleballClub",
+            "method": "directory-record"
+          }
+        ],
+        "instagram": []
+      },
+      "alternatives": [
+        {
+          "method": "facebook-profile-image",
+          "sourcePage": "https://facebook.com/LisburnPickleballClub",
+          "sourceImage": "https://graph.facebook.com/LisburnPickleballClub/picture?type=large&width=800&height=800",
+          "confidence": "MEDIUM",
+          "decision": "HOLD",
+          "filename": "26-lisburn-pickleball-club-facebook.jpg"
+        },
+        {
+          "method": "official-website",
+          "sourcePage": "https://lisburnpickleball.club/",
+          "sourceImage": "https://lisburnpickleball.club/wp-content/uploads/2023/09/Lisburn-Pickleball-Club-wide.png",
+          "confidence": "MEDIUM",
+          "decision": "HOLD",
+          "filename": "26-lisburn-pickleball-club-website.png"
+        }
+      ],
+      "filename": "26-lisburn-pickleball-club-facebook.jpg",
+      "bytes": 7284,
+      "contentType": "image/jpeg",
+      "finalImageUrl": "https://scontent-iad6-1.xx.fbcdn.net/v/t39.30808-1/301364771_411365307752673_879691587084458278_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=08baa4&_nc_ohc=0q8rVe5zq3MQ7kNvwF8rShd&_nc_oc=AdrtRXOLpIkAWlp6RM_yhU7WZmcrQIoIDiEGN2iJOf7hWSRyJ7cu2mSISyZk8jhG2Ec&_nc_zt=24&_nc_ht=scontent-iad6-1.xx&edm=AKsJ254EAAAA&_nc_gid=qmLNYWNGzXnM8TDCfsloyg&oh=00_AQOWmmSKHnUJMdbLwqyrmqiVYOmWjSkdxZ68T8gaUHTQbQ&oe=6AD6787B",
+      "method": "facebook-profile-image",
+      "sourcePage": "https://facebook.com/LisburnPickleballClub",
+      "sourceImage": "https://graph.facebook.com/LisburnPickleballClub/picture?type=large&width=800&height=800",
+      "sourceTitle": "",
+      "confidence": "MEDIUM",
+      "score": 45,
+      "candidateKind": "facebook-profile-image",
+      "decision": "HOLD",
+      "discoveryMethod": "directory-record",
+      "reviewNote": "Confirm this is the club official profile and not a generic or unrelated social avatar."
+    },
+    {
+      "number": 27,
+      "name": "Milltown Emper Moyvore Pickleball Club",
+      "slug": "milltown-emper-moyvore-pickleball-club",
+      "county": "Westmeath",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Milltown Emper Moyvore Pickleball Club\" pickleball",
+          "site:facebook.com Milltown Emper Moyvore Pickleball Club Westmeath pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Milltown Emper Moyvore Pickleball Club\" pickleball",
+          "site:instagram.com Milltown Emper Moyvore Pickleball Club Westmeath pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 28,
+      "name": "Moate Pickleball Club",
+      "slug": "moate-pickleball-club",
+      "county": "Westmeath",
+      "website": "https://moatesrc.ie",
+      "facebook": "",
+      "instagram": "",
+      "status": "CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Moate Pickleball Club\" pickleball",
+          "site:facebook.com Moate Pickleball Club Westmeath pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Moate Pickleball Club\" pickleball",
+          "site:instagram.com Moate Pickleball Club Westmeath pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [
+        {
+          "method": "official-website",
+          "sourcePage": "https://moatesrc.ie/",
+          "sourceImage": "https://moatesrc.ie/wp-content/uploads/2023/10/cropped-MSRC-logo-profile.jpg",
+          "confidence": "MEDIUM",
+          "decision": "HOLD",
+          "filename": "28-moate-pickleball-club-website.jpg"
+        }
+      ],
+      "filename": "28-moate-pickleball-club-website.jpg",
+      "bytes": 48913,
+      "contentType": "image/jpeg",
+      "finalImageUrl": "https://moatesrc.ie/wp-content/uploads/2023/10/cropped-MSRC-logo-profile.jpg",
+      "method": "official-website",
+      "sourcePage": "https://moatesrc.ie/",
+      "sourceImage": "https://moatesrc.ie/wp-content/uploads/2023/10/cropped-MSRC-logo-profile.jpg",
+      "sourceTitle": "- Moate Sports &amp; Recreation Centre",
+      "confidence": "MEDIUM",
+      "score": 57,
+      "candidateKind": "website-meta",
+      "decision": "HOLD"
+    },
+    {
+      "number": 29,
+      "name": "Mostrim Pickleball",
+      "slug": "mostrim-pickleball",
+      "county": "Longford",
+      "website": "https://www.stmaryscommunitycampusltd.ie",
+      "facebook": "https://www.facebook.com/sportshubedgeworthstown",
+      "instagram": "https://www.instagram.com/sportshubedgeworthstown",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Mostrim Pickleball\" pickleball",
+          "site:facebook.com Mostrim Pickleball Longford pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Mostrim Pickleball\" pickleball",
+          "site:instagram.com Mostrim Pickleball Longford pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [
+          {
+            "url": "https://www.facebook.com/sportshubedgeworthstown",
+            "method": "directory-record"
+          }
+        ],
+        "instagram": [
+          {
+            "url": "https://www.instagram.com/sportshubedgeworthstown",
+            "method": "directory-record"
+          }
+        ]
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 30,
+      "name": "Mullahoran Pickleball Club",
+      "slug": "mullahoran-pickleball-club",
+      "county": "Cavan",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Mullahoran Pickleball Club\" pickleball",
+          "site:facebook.com Mullahoran Pickleball Club Cavan pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Mullahoran Pickleball Club\" pickleball",
+          "site:instagram.com Mullahoran Pickleball Club Cavan pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 31,
+      "name": "Newport Pickleball",
+      "slug": "newport-pickleball",
+      "county": "Mayo",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Newport Pickleball\" pickleball",
+          "site:facebook.com Newport Pickleball Mayo pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Newport Pickleball\" pickleball",
+          "site:instagram.com Newport Pickleball Mayo pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 32,
+      "name": "Pickleball Arklow",
+      "slug": "pickleball-arklow",
+      "county": "Wicklow",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Pickleball Arklow\" pickleball",
+          "site:facebook.com Pickleball Arklow Wicklow pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Pickleball Arklow\" pickleball",
+          "site:instagram.com Pickleball Arklow Wicklow pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 33,
+      "name": "Pickleball Iorrais",
+      "slug": "pickleball-iorrais",
+      "county": "Mayo",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Pickleball Iorrais\" pickleball",
+          "site:facebook.com Pickleball Iorrais Mayo pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Pickleball Iorrais\" pickleball",
+          "site:instagram.com Pickleball Iorrais Mayo pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 34,
+      "name": "PicklePub Club",
+      "slug": "picklepub-club",
+      "county": "Dublin",
+      "website": "",
+      "facebook": "https://www.facebook.com/share/1BhfxVQAhU/?mibextid=wwXIfr",
+      "instagram": "https://instagra.com/picklepub.ireland",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"PicklePub Club\" pickleball",
+          "site:facebook.com PicklePub Club Dublin pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"PicklePub Club\" pickleball",
+          "site:instagram.com PicklePub Club Dublin pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [
+          {
+            "url": "https://www.facebook.com/share/1BhfxVQAhU/?mibextid=wwXIfr",
+            "method": "directory-record"
+          }
+        ],
+        "instagram": [
+          {
+            "url": "https://instagra.com/picklepub.ireland",
+            "method": "directory-record"
+          }
+        ]
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 35,
+      "name": "Rathdrum Pickleball",
+      "slug": "rathdrum-pickleball",
+      "county": "Wicklow",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Rathdrum Pickleball\" pickleball",
+          "site:facebook.com Rathdrum Pickleball Wicklow pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Rathdrum Pickleball\" pickleball",
+          "site:instagram.com Rathdrum Pickleball Wicklow pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 36,
+      "name": "Sligo Pickleball Club",
+      "slug": "sligo-pickleball-club",
+      "county": "Sligo",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Sligo Pickleball Club\" pickleball",
+          "site:facebook.com Sligo Pickleball Club Sligo pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Sligo Pickleball Club\" pickleball",
+          "site:instagram.com Sligo Pickleball Club Sligo pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 37,
+      "name": "Sports Lab Pickleball",
+      "slug": "sports-lab-pickleball",
+      "county": "Armagh",
+      "website": "https://www.jonesjrsports.com",
+      "facebook": "https://www.facebook.com/sportslabportadown",
+      "instagram": "",
+      "status": "CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Sports Lab Pickleball\" pickleball",
+          "site:facebook.com Sports Lab Pickleball Armagh pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Sports Lab Pickleball\" pickleball",
+          "site:instagram.com Sports Lab Pickleball Armagh pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [
+          {
+            "url": "https://www.facebook.com/sportslabportadown",
+            "method": "directory-record"
+          }
+        ],
+        "instagram": []
+      },
+      "alternatives": [
+        {
+          "method": "facebook-profile-image",
+          "sourcePage": "https://www.facebook.com/sportslabportadown",
+          "sourceImage": "https://graph.facebook.com/sportslabportadown/picture?type=large&width=800&height=800",
+          "confidence": "MEDIUM",
+          "decision": "HOLD",
+          "filename": "37-sports-lab-pickleball-facebook.jpg"
+        },
+        {
+          "method": "official-website",
+          "sourcePage": "https://www.jonesjrsports.com/",
+          "sourceImage": "https://www.jonesjrsports.com/cdn/shop/files/Jones_Jr_Sports-04.png?v=1673305317",
+          "confidence": "MEDIUM",
+          "decision": "HOLD",
+          "filename": "37-sports-lab-pickleball-website.png"
+        }
+      ],
+      "filename": "37-sports-lab-pickleball-facebook.jpg",
+      "bytes": 26588,
+      "contentType": "image/jpeg",
+      "finalImageUrl": "https://scontent-iad3-2.xx.fbcdn.net/v/t39.30808-1/485723101_122104948772802819_6144624138372713065_n.jpg?stp=c150.0.700.700a_dst-jpg_s700x700_tt6&_nc_cat=105&ccb=1-7&_nc_sid=08baa4&_nc_ohc=zT2qnlMgdcAQ7kNvwG98LrX&_nc_oc=Adpkm3jcS8BorLR0XzGlTTO2QSgTl6sT8WV7Ag6e6003DS8LpfSwrZFGHfGHrN88ihE&_nc_zt=24&_nc_ht=scontent-iad3-2.xx&edm=AKsJ254EAAAA&_nc_gid=m74Wx8oea6u0uJNv4qPLMw&oh=00_AQPJHx2nL7R8XDrAbc73YH4zOGz-7eULevOeD6DjEu48cw&oe=6AD6518C",
+      "method": "facebook-profile-image",
+      "sourcePage": "https://www.facebook.com/sportslabportadown",
+      "sourceImage": "https://graph.facebook.com/sportslabportadown/picture?type=large&width=800&height=800",
+      "sourceTitle": "",
+      "confidence": "MEDIUM",
+      "score": 65,
+      "candidateKind": "facebook-profile-image",
+      "decision": "HOLD",
+      "discoveryMethod": "directory-record",
+      "reviewNote": "Confirm this is the club official profile and not a generic or unrelated social avatar."
+    },
+    {
+      "number": 38,
+      "name": "Stepaside Pickleball",
+      "slug": "stepaside-pickleball",
+      "county": "Dublin",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Stepaside Pickleball\" pickleball",
+          "site:facebook.com Stepaside Pickleball Dublin pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Stepaside Pickleball\" pickleball",
+          "site:instagram.com Stepaside Pickleball Dublin pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 39,
+      "name": "Tourmakeady Pickleball Club",
+      "slug": "tourmakeady-pickleball-club",
+      "county": "Mayo",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Tourmakeady Pickleball Club\" pickleball",
+          "site:facebook.com Tourmakeady Pickleball Club Mayo pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Tourmakeady Pickleball Club\" pickleball",
+          "site:instagram.com Tourmakeady Pickleball Club Mayo pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 40,
+      "name": "West Connemara Pickleball Club",
+      "slug": "west-connemara-pickleball-club",
+      "county": "Galway",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"West Connemara Pickleball Club\" pickleball",
+          "site:facebook.com West Connemara Pickleball Club Galway pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"West Connemara Pickleball Club\" pickleball",
+          "site:instagram.com West Connemara Pickleball Club Galway pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 41,
+      "name": "Westport Pickleball Club",
+      "slug": "westport-pickleball-club",
+      "county": "Mayo",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Westport Pickleball Club\" pickleball",
+          "site:facebook.com Westport Pickleball Club Mayo pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Westport Pickleball Club\" pickleball",
+          "site:instagram.com Westport Pickleball Club Mayo pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 42,
+      "name": "Wicklow Pickleball",
+      "slug": "wicklow-pickleball",
+      "county": "Wicklow",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Wicklow Pickleball\" pickleball",
+          "site:facebook.com Wicklow Pickleball Wicklow pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Wicklow Pickleball\" pickleball",
+          "site:instagram.com Wicklow Pickleball Wicklow pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 43,
+      "name": "The Racquet Here Ltd",
+      "slug": "the-racquet-here-ltd",
+      "county": "",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"The Racquet Here Ltd\" pickleball",
+          "site:facebook.com The Racquet Here Ltd pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"The Racquet Here Ltd\" pickleball",
+          "site:instagram.com The Racquet Here Ltd pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 44,
+      "name": "University of Galway Pickleball Club",
+      "slug": "university-of-galway-pickleball-club",
+      "county": "Galway",
+      "website": "https://sport.universityofgalway.ie/clubs/pick",
+      "facebook": "",
+      "instagram": "",
+      "status": "CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"University of Galway Pickleball Club\" pickleball",
+          "site:facebook.com University of Galway Pickleball Club Galway pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"University of Galway Pickleball Club\" pickleball",
+          "site:instagram.com University of Galway Pickleball Club Galway pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [
+        {
+          "method": "official-website",
+          "sourcePage": "https://sport.universityofgalway.ie/clubs/pick",
+          "sourceImage": "https://sport.universityofgalway.ie/assets/img/logo2.png",
+          "confidence": "MEDIUM",
+          "decision": "HOLD",
+          "filename": "44-university-of-galway-pickleball-club-website.png"
+        }
+      ],
+      "filename": "44-university-of-galway-pickleball-club-website.png",
+      "bytes": 273195,
+      "contentType": "image/png",
+      "finalImageUrl": "https://sport.universityofgalway.ie/assets/img/logo2.png",
+      "method": "official-website",
+      "sourcePage": "https://sport.universityofgalway.ie/clubs/pick",
+      "sourceImage": "https://sport.universityofgalway.ie/assets/img/logo2.png",
+      "sourceTitle": "University of Galway Ireland, Galway Sport - Clubs Home",
+      "confidence": "MEDIUM",
+      "score": 68,
+      "candidateKind": "website-img",
+      "decision": "HOLD"
+    },
+    {
+      "number": 45,
+      "name": "New Ross Pickleball",
+      "slug": "new-ross-pickleball",
+      "county": "Wexford",
+      "website": "",
+      "facebook": "https://www.facebook.com/newrosspickleball",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"New Ross Pickleball\" pickleball",
+          "site:facebook.com New Ross Pickleball Wexford pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"New Ross Pickleball\" pickleball",
+          "site:instagram.com New Ross Pickleball Wexford pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [
+          {
+            "url": "https://www.facebook.com/newrosspickleball",
+            "method": "directory-record"
+          }
+        ],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 46,
+      "name": "Coolmine Pickleheads Club",
+      "slug": "coolmine-pickleheads-club",
+      "county": "Dublin",
+      "website": "https://www.pickleheads.com/groups/coolmine-pickleheads-lucan",
+      "facebook": "https://facebook.com/groups/3940907569458640/",
+      "instagram": "",
+      "status": "CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Coolmine Pickleheads Club\" pickleball",
+          "site:facebook.com Coolmine Pickleheads Club Dublin pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Coolmine Pickleheads Club\" pickleball",
+          "site:instagram.com Coolmine Pickleheads Club Dublin pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [
+          {
+            "url": "https://facebook.com/groups/3940907569458640/",
+            "method": "directory-record"
+          }
+        ],
+        "instagram": []
+      },
+      "alternatives": [
+        {
+          "method": "official-website",
+          "sourcePage": "https://www.pickleheads.com/groups/green-pickleheads",
+          "sourceImage": "https://www.pickleheads.com/assets/logo-mark.svg",
+          "confidence": "MEDIUM",
+          "decision": "HOLD",
+          "filename": "46-coolmine-pickleheads-club-website.svg"
+        }
+      ],
+      "filename": "46-coolmine-pickleheads-club-website.svg",
+      "bytes": 16042,
+      "contentType": "image/svg+xml",
+      "finalImageUrl": "https://www.pickleheads.com/assets/logo-mark.svg",
+      "method": "official-website",
+      "sourcePage": "https://www.pickleheads.com/groups/green-pickleheads",
+      "sourceImage": "https://www.pickleheads.com/assets/logo-mark.svg",
+      "sourceTitle": "Green Pickleheads 🇮🇪 | Join Now on Pickleheads",
+      "confidence": "MEDIUM",
+      "score": 54,
+      "candidateKind": "website-img",
+      "decision": "HOLD"
+    },
+    {
+      "number": 47,
+      "name": "Clogh Sliders",
+      "slug": "clogh-sliders",
+      "county": "Kilkenny",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Clogh Sliders\" pickleball",
+          "site:facebook.com Clogh Sliders Kilkenny pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Clogh Sliders\" pickleball",
+          "site:instagram.com Clogh Sliders Kilkenny pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 48,
+      "name": "Streete Sports Club",
+      "slug": "streete-sports-club-pickleball",
+      "county": "Westmeath",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Streete Sports Club\" pickleball",
+          "site:facebook.com Streete Sports Club Westmeath pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Streete Sports Club\" pickleball",
+          "site:instagram.com Streete Sports Club Westmeath pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 49,
+      "name": "Cairdeas Camp",
+      "slug": "cairdeas-camp-pickleball",
+      "county": "Kerry",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Cairdeas Camp\" pickleball",
+          "site:facebook.com Cairdeas Camp Kerry pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Cairdeas Camp\" pickleball",
+          "site:instagram.com Cairdeas Camp Kerry pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 50,
+      "name": "Bandon & West Cork Pickleball",
+      "slug": "bandon-west-cork-pickleball",
+      "county": "Cork",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Bandon & West Cork Pickleball\" pickleball",
+          "site:facebook.com Bandon & West Cork Pickleball Cork pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Bandon & West Cork Pickleball\" pickleball",
+          "site:instagram.com Bandon & West Cork Pickleball Cork pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 51,
+      "name": "NEWBRIDGE COMMUNITY PICKLEBALL",
+      "slug": "newbridge-community-pickleball",
+      "county": "Kildare",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"NEWBRIDGE COMMUNITY PICKLEBALL\" pickleball",
+          "site:facebook.com NEWBRIDGE COMMUNITY PICKLEBALL Kildare pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"NEWBRIDGE COMMUNITY PICKLEBALL\" pickleball",
+          "site:instagram.com NEWBRIDGE COMMUNITY PICKLEBALL Kildare pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 52,
+      "name": "SHANKILL TENNIS CLUB",
+      "slug": "shankill-tennis-club",
+      "county": "Dublin",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"SHANKILL TENNIS CLUB\" pickleball",
+          "site:facebook.com SHANKILL TENNIS CLUB Dublin pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"SHANKILL TENNIS CLUB\" pickleball",
+          "site:instagram.com SHANKILL TENNIS CLUB Dublin pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 53,
+      "name": "Ballinamore Pickleball Club",
+      "slug": "ballinamore-pickleball-club",
+      "county": "Leitrim",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Ballinamore Pickleball Club\" pickleball",
+          "site:facebook.com Ballinamore Pickleball Club Leitrim pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Ballinamore Pickleball Club\" pickleball",
+          "site:instagram.com Ballinamore Pickleball Club Leitrim pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 54,
+      "name": "Coillte Pickleball Club",
+      "slug": "coillte-pickleball-club",
+      "county": "Mayo",
+      "website": "",
+      "facebook": "https://www.facebook.com/share/18YRb1HLuf/",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Coillte Pickleball Club\" pickleball",
+          "site:facebook.com Coillte Pickleball Club Mayo pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Coillte Pickleball Club\" pickleball",
+          "site:instagram.com Coillte Pickleball Club Mayo pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [
+          {
+            "url": "https://www.facebook.com/share/18YRb1HLuf/",
+            "method": "directory-record"
+          }
+        ],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 55,
+      "name": "Dalkey Pickleball Club",
+      "slug": "dalkey-pickkeball-club",
+      "county": "Dublin",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Dalkey Pickleball Club\" pickleball",
+          "site:facebook.com Dalkey Pickleball Club Dublin pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Dalkey Pickleball Club\" pickleball",
+          "site:instagram.com Dalkey Pickleball Club Dublin pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    },
+    {
+      "number": 56,
+      "name": "Portmarnock Pickleball",
+      "slug": "portmarnock-pickleball",
+      "county": "Dublin",
+      "website": "",
+      "facebook": "",
+      "instagram": "",
+      "status": "NO_CANDIDATE",
+      "socialSearchQueries": {
+        "facebook": [
+          "site:facebook.com \"Portmarnock Pickleball\" pickleball",
+          "site:facebook.com Portmarnock Pickleball Dublin pickleball"
+        ],
+        "instagram": [
+          "site:instagram.com \"Portmarnock Pickleball\" pickleball",
+          "site:instagram.com Portmarnock Pickleball Dublin pickleball"
+        ]
+      },
+      "socialLeads": {
+        "facebook": [],
+        "instagram": []
+      },
+      "alternatives": [],
+      "confidence": "NONE",
+      "decision": "HOLD",
+      "reviewNote": "No automatically retrievable asset. Check social search leads and manually verify."
+    }
+  ]
+}
