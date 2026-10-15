@@ -91,35 +91,92 @@ async function resolveFacebook(url='') {
   } catch {}
   return {identifier,pageUrl,title};
 }
-async function facebookCandidate(row, number) {
-  if (!row.facebook) return null;
-  const resolved=await resolveFacebook(row.facebook); if(!resolved.identifier) return null;
-  const graph=`https://graph.facebook.com/${encodeURIComponent(resolved.identifier)}/picture?type=large&width=800&height=800`;
-  const saved=await saveImage(graph, number, row.slug); if(!saved) return null;
-  const tokens=tokensFor(row.name); const hay=`${resolved.pageUrl} ${resolved.title} ${row.facebook}`.toLowerCase(); const matches=tokens.filter(t=>hay.includes(t)).length;
-  const confidence=matches>=1 || resolved.identifier===facebookIdentifier(row.facebook) ? 'MEDIUM' : 'LOW';
-  return {...saved,method:'official-facebook-profile',sourcePage:resolved.pageUrl||row.facebook,sourceImage:graph,sourceTitle:resolved.title,confidence,score:matches*20+45,candidateKind:'facebook-profile-image',decision:confidence==='LOW'?'HOLD':'APPROVE'};
+// Search social networks even when the Directory has no saved social URL.
+// Search engines can be blocked: record a lead for follow-up instead of inventing a match.
+function socialSearchQueries(row, network) {
+  const identity = [row.name, row.county, 'pickleball'].filter(Boolean).join(' ');
+  return [`site:${network}.com "${row.name}" pickleball`, `site:${network}.com ${identity}`];
 }
-
-async function instagramCandidate(row, number) {
-  if (!row.instagram) return null;
+function socialPageLink(url, network) {
   try {
-    const response=await waitFetch(row.instagram,{headers:{accept:'text/html,application/xhtml+xml'}}); if(!response.ok)return null; const html=await response.text();
-    const image=(html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)||[])[1]; if(!image)return null;
-    const saved=await saveImage(decode(image),number,row.slug); if(!saved)return null;
-    return {...saved,method:'official-instagram-profile',sourcePage:response.url||row.instagram,sourceImage:decode(image),sourceTitle:'',confidence:'MEDIUM',score:55,candidateKind:'instagram-profile-image',decision:'APPROVE'};
-  } catch {return null;}
+    const u=new URL(url);
+    if (!['https:','http:'].includes(u.protocol) || !['www.'+network+'.com',network+'.com','m.'+network+'.com'].includes(u.hostname.toLowerCase())) return '';
+    if (/^\/(?:login|share|reel|reels|stories|explore|search|posts|p)\b/i.test(u.pathname)) return '';
+    return u.origin+u.pathname.replace(/\/$/,'')+'/';
+  } catch {return '';}
+}
+async function socialLeads(row, network) {
+  const explicit=network==='facebook'?row.facebook:row.instagram;
+  const found=[];
+  if (explicit) found.push({url:explicit,method:'directory-record'});
+  for (const query of socialSearchQueries(row,network)) {
+    try {
+      const search='https://www.google.com/search?q='+encodeURIComponent(query);
+      const response=await waitFetch(search,{headers:{accept:'text/html'}},9000);
+      if (!response.ok) continue;
+      const html=decode(await response.text());
+      // Discover candidates only; a search result by itself is never a verified official profile.
+      const matches=html.match(/https?:\/\/(?:www\.|m\.)?(?:facebook|instagram)\.com\/[^\s"'<>\\&]+/gi)||[];
+      for(const raw of matches) {
+        const cleaned=socialPageLink(raw,network);
+        if(cleaned && !found.some(x=>socialPageLink(x.url,network)===cleaned)) found.push({url:cleaned,method:'search-discovery'});
+      }
+    } catch { /* Search blocked or timed out; do not claim the club has no logo. */ }
+  }
+  return found.slice(0,8);
+}
+async function facebookCandidate(row, number, leads) {
+  for (const lead of leads) {
+    const resolved=await resolveFacebook(lead.url);
+    if (!resolved.identifier) continue;
+    const graph=`https://graph.facebook.com/${encodeURIComponent(resolved.identifier)}/picture?type=large&width=800&height=800`;
+    const saved=await saveImage(graph,number,row.slug);
+    if (!saved) continue;
+    const tokens=tokensFor(row.name);const hay=`${lead.url} ${resolved.title}`.toLowerCase();
+    const matches=tokens.filter(t=>hay.includes(t)).length;
+    // Club identity and image are not proven just by a resolvable Graph image.
+    return {...saved,method:'facebook-profile-image',sourcePage:lead.url,sourceImage:graph,sourceTitle:resolved.title,
+      confidence:matches?'MEDIUM':'LOW',score:matches*20+25,candidateKind:'facebook-profile-image',decision:'HOLD',
+      discoveryMethod:lead.method,reviewNote:'Confirm this is the club official profile and not a generic or unrelated social avatar.'};
+  }
+  return null;
+}
+async function instagramCandidate(row, number, leads) {
+  for (const lead of leads) {
+    try {
+      const response=await waitFetch(lead.url,{headers:{accept:'text/html,application/xhtml+xml'}});
+      if(!response.ok)continue;
+      const html=await response.text();
+      const image=(html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)||[])[1];
+      if(!image)continue;
+      const saved=await saveImage(decode(image),number,row.slug);if(!saved)continue;
+      return {...saved,method:'instagram-profile-image',sourcePage:response.url||lead.url,sourceImage:decode(image),
+        sourceTitle:'',confidence:'MEDIUM',score:50,candidateKind:'instagram-profile-image',decision:'HOLD',
+        discoveryMethod:lead.method,reviewNote:'Confirm this is the official club logo, not a post or default image.'};
+    }catch { /* Profile metadata may be login-blocked. Keep the lead for manual verification. */ }
+  }
+  return null;
 }
 
 const results=[];
 let number=0;
 for(const row of input){
   number++;
-  let candidate=await websiteCandidate(row,number);
-  // Website generic/low candidates do not block a stronger club social profile.
-  if(!candidate || candidate.confidence==='LOW') candidate=(await facebookCandidate(row,number)) || (await instagramCandidate(row,number)) || candidate;
-  results.push({number,name:row.name,slug:row.slug,county:row.county,website:row.website||'',facebook:row.facebook||'',instagram:row.instagram||'',status:candidate?'CANDIDATE':'NO_CANDIDATE',...(candidate||{confidence:'NONE',decision:'HOLD'})});
-  console.log(`${String(number).padStart(2,'0')} ${row.name}: ${candidate ? `${candidate.confidence} ${candidate.method} ${candidate.decision}` : 'NO CANDIDATE'}`);
+  // Facebook first, then Instagram; official website only after both social attempts.
+  // Always search for social profiles, including when the Directory stores no profile link.
+  const facebookLeads=await socialLeads(row,'facebook');
+  const instagramLeads=await socialLeads(row,'instagram');
+  const facebook=await facebookCandidate(row,number,facebookLeads);
+  const instagram=await instagramCandidate(row,number,instagramLeads);
+  const website=await websiteCandidate(row,number);
+  // Keep alternative candidates and the discovery leads for auditing/review.
+  const candidates=[facebook,instagram,website].filter(Boolean);
+  const candidate=candidates.find(x=>x.decision==='APPROVE') || candidates.find(x=>x.confidence==='MEDIUM') || candidates[0] || null;
+  results.push({number,name:row.name,slug:row.slug,county:row.county,website:row.website||'',facebook:row.facebook||'',instagram:row.instagram||'',
+    status:candidate?'CANDIDATE':'NO_CANDIDATE',socialSearchQueries:{facebook:socialSearchQueries(row,'facebook'),instagram:socialSearchQueries(row,'instagram')},
+    socialLeads:{facebook:facebookLeads,instagram:instagramLeads},alternatives:candidates.map(c=>({method:c.method,sourcePage:c.sourcePage,sourceImage:c.sourceImage,confidence:c.confidence,decision:c.decision,filename:c.filename})),
+    ...(candidate||{confidence:'NONE',decision:'HOLD',reviewNote:'No automatically retrievable asset. Check social search leads and manually verify.'})});
+  console.log(`${String(number).padStart(2,'0')} ${row.name}: ${candidate ? `${candidate.confidence} ${candidate.method} ${candidate.decision}` : 'NO CANDIDATE'}; FB leads ${facebookLeads.length}, IG leads ${instagramLeads.length}`);
 }
 fs.writeFileSync('docs/directory-branding/RALLYHUB_LOGO_CANDIDATES_EASY_SOURCE_2026-09-30.json',JSON.stringify(results,null,2));
 console.log(JSON.stringify({total:results.length,candidates:results.filter(r=>r.status==='CANDIDATE').length,approve:results.filter(r=>r.decision==='APPROVE').length,hold:results.filter(r=>r.decision==='HOLD').length,high:results.filter(r=>r.confidence==='HIGH').length,medium:results.filter(r=>r.confidence==='MEDIUM').length,low:results.filter(r=>r.confidence==='LOW').length,none:results.filter(r=>r.confidence==='NONE').length},null,2));
