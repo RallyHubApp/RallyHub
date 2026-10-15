@@ -1,0 +1,1062 @@
+{
+  "asOf": "2026-10-15",
+  "method": "84 seed entries plus live directoryListingProfile public_list endpoint, deduplicated by slug; profile logoUrl overrides seed/base even when null",
+  "seedCount": 84,
+  "publicListStates": 47,
+  "uniqueListings": 104,
+  "visibleLogos": 43,
+  "missingOrHiddenLogos": 61,
+  "missingWithoutOverride": 56,
+  "nullProfileOverrides": 5,
+  "nullOverrideSlugs": [
+    "cobh-pickleball",
+    "east-meath-pickleball-club",
+    "multyfarnham-pickleball-club",
+    "southside-pickleball-club",
+    "terenure-pickleball-club"
+  ],
+  "eyvaResolved": true,
+  "complete": false,
+  "listings": [
+    {
+      "slug": "abc-pickleball-club",
+      "name": "ABC Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": true
+    },
+    {
+      "slug": "achill-pickleball",
+      "name": "Achill Pickleball",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "annascaul-picklers",
+      "name": "Annascaul Picklers",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "ards-blair-mayne-pickleball-club",
+      "name": "Ards Blair Mayne Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "ashbourne-pickleball",
+      "name": "Ashbourne Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": true
+    },
+    {
+      "slug": "athboy-pickleball",
+      "name": "Athboy Pickleball",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "balbriggan-pickleball",
+      "name": "Balbriggan Pickleball",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "ballinamore-pickleball-club",
+      "name": "Ballinamore Pickleball Club",
+      "origin": "dynamic",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "ballyfermot-pickleballers",
+      "name": "Ballyfermot Pickleballers",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "bandon-west-cork-pickleball",
+      "name": "Bandon & West Cork Pickleball",
+      "origin": "dynamic",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "bayside-pickleball-club",
+      "name": "Bayside Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "belfast-pickleball-club",
+      "name": "Belfast Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "belmayne-pickleball",
+      "name": "Belmayne Pickleball",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "better-pickleball-club",
+      "name": "Better Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": true
+    },
+    {
+      "slug": "blackrock-pickleball",
+      "name": "Blackrock Pickleball",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": false,
+      "instagramListed": true,
+      "websiteListed": false
+    },
+    {
+      "slug": "blessington-pickleball-club",
+      "name": "Blessington Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "bluestack-pickleball-club",
+      "name": "Bluestack Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "breffni-pickleball-club",
+      "name": "Breffni Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "cairdeas-camp-pickleball",
+      "name": "Cairdeas Camp",
+      "origin": "dynamic",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "carlingford-pickleball-club",
+      "name": "Carlingford Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": false
+    },
+    {
+      "slug": "carlow-tullow-pickleball-club",
+      "name": "Carlow/Tullow Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": true
+    },
+    {
+      "slug": "carrickmacross-pickleball-club",
+      "name": "Carrickmacross Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "castlerahan-pickleball-club",
+      "name": "Castlerahan Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": true
+    },
+    {
+      "slug": "clare-pickleball",
+      "name": "Clare Pickleball",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": true
+    },
+    {
+      "slug": "clogh-sliders",
+      "name": "Clogh Sliders",
+      "origin": "dynamic",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "clonakilty-pickleball-club",
+      "name": "Clonakilty Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "cobh-pickleball",
+      "name": "Cobh Pickleball",
+      "origin": "seed",
+      "logoStatus": "null_profile_override",
+      "logoSource": null,
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": false
+    },
+    {
+      "slug": "coillte-pickleball-club",
+      "name": "Coillte Pickleball Club",
+      "origin": "dynamic",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "connemara-pickleball-club",
+      "name": "Connemara Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "coolmine-pickleheads-club",
+      "name": "Coolmine Pickleheads Club",
+      "origin": "dynamic",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": true
+    },
+    {
+      "slug": "cork-pickleballers",
+      "name": "Cork Pickleballers",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "cumann-pickleball-a-chorrain",
+      "name": "Cumann Pickleball A Chorráin",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "dalkey-pickkeball-club",
+      "name": "Dalkey Pickleball Club",
+      "origin": "dynamic",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "deise-pickleball",
+      "name": "Déise Pickleball",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": true
+    },
+    {
+      "slug": "drogheda-pickleball",
+      "name": "Drogheda Pickleball",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": false
+    },
+    {
+      "slug": "dublin-15-pickleball",
+      "name": "Dublin 15 Pickleball",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": false
+    },
+    {
+      "slug": "dublin-7-pickleball-club",
+      "name": "Dublin 7 Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "duhallow-pickleball",
+      "name": "Duhallow Pickleball",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": true
+    },
+    {
+      "slug": "east-cavan-pickleball",
+      "name": "East Cavan Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "east-cork-pickleball",
+      "name": "East Cork Pickleball",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "east-meath-pickleball-club",
+      "name": "East Meath Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "null_profile_override",
+      "logoSource": null,
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "edenderry-pickleball-club",
+      "name": "Edenderry Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "eyva-s-invitational-series",
+      "name": "Eyva's Invitational Series",
+      "origin": "dynamic",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": false
+    },
+    {
+      "slug": "ezpickleball",
+      "name": "ezPICKLEBALL",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": false,
+      "instagramListed": true,
+      "websiteListed": true
+    },
+    {
+      "slug": "fenside-pickleball",
+      "name": "Fenside Pickleball",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "galway-county-pickleball",
+      "name": "Galway County Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "galway-pickleball",
+      "name": "Galway Pickleball",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": true
+    },
+    {
+      "slug": "hook-pickleball",
+      "name": "Hook Pickleball",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "iveragh-pickleball-club",
+      "name": "Iveragh Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "kilcullen-pickleball-panthers",
+      "name": "Kilcullen Pickleball Panthers",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "kildare-pickleball-assoc",
+      "name": "Kildare Pickleball Assoc.",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "killarney-pickleball-club",
+      "name": "Killarney Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "killeshandra-pickleball-club",
+      "name": "Killeshandra Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "kingdom-pickleball-club",
+      "name": "Kingdom Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "kinsale-pickleball",
+      "name": "Kinsale Pickleball",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "kinvara-pickleball",
+      "name": "Kinvara Pickleball",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "lecanvey-pickleball-club",
+      "name": "Lecanvey Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "leeside-pickleball",
+      "name": "Leeside Pickleball",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "limerick-city-pickleball",
+      "name": "Limerick City Pickleball",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "lisburn-pickleball-club",
+      "name": "Lisburn Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": true
+    },
+    {
+      "slug": "midleton-pickleball",
+      "name": "Midleton Pickleball",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": false
+    },
+    {
+      "slug": "milltown-emper-moyvore-pickleball-club",
+      "name": "Milltown Emper Moyvore Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "moate-pickleball-club",
+      "name": "Moate Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": true
+    },
+    {
+      "slug": "mostrim-pickleball",
+      "name": "Mostrim Pickleball",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": true
+    },
+    {
+      "slug": "mullahoran-pickleball-club",
+      "name": "Mullahoran Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "multyfarnham-pickleball-club",
+      "name": "Multyfarnham Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "null_profile_override",
+      "logoSource": null,
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": false
+    },
+    {
+      "slug": "naas-pickleball",
+      "name": "Naas Pickleball",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": false
+    },
+    {
+      "slug": "new-ross-pickleball",
+      "name": "New Ross Pickleball",
+      "origin": "dynamic",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "newbridge-community-pickleball",
+      "name": "NEWBRIDGE COMMUNITY PICKLEBALL",
+      "origin": "dynamic",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "newbridge-pickleball-club",
+      "name": "Newbridge Pickleball Club",
+      "origin": "dynamic",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "newport-pickleball",
+      "name": "Newport Pickleball",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "north-kildare-pickleball-club",
+      "name": "North Kildare Pickleball Club",
+      "origin": "dynamic",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "north-star-pickleball-club",
+      "name": "North Star Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": true
+    },
+    {
+      "slug": "oriel-pickleball-dundalk",
+      "name": "Oriel Pickleball Dundalk",
+      "origin": "dynamic",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": true
+    },
+    {
+      "slug": "pickleball-arklow",
+      "name": "Pickleball Arklow",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "pickleball-iorrais",
+      "name": "Pickleball Iorrais",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "pickleball-ireland",
+      "name": "Pickleball Ireland",
+      "origin": "dynamic",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": true
+    },
+    {
+      "slug": "pickleball-south-dublin",
+      "name": "Pickleball South Dublin",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "pickleball-wexford",
+      "name": "Pickleball Wexford",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "picklepub-club",
+      "name": "PicklePub Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": false
+    },
+    {
+      "slug": "portarlington-pickleball",
+      "name": "Portarlington Pickleball",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": true,
+      "websiteListed": false
+    },
+    {
+      "slug": "portmarnock-pickleball",
+      "name": "Portmarnock Pickleball",
+      "origin": "dynamic",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "rathdrum-pickleball",
+      "name": "Rathdrum Pickleball",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "rebel-pickleball",
+      "name": "Rebel Pickleball",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "roundwood-pickleball-group",
+      "name": "Roundwood Pickleball Group",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "sandyford-pickleball-club",
+      "name": "Sandyford Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "shankill-tennis-club",
+      "name": "SHANKILL TENNIS CLUB",
+      "origin": "dynamic",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "sligo-pickleball-club",
+      "name": "Sligo Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "sligo-tennis-pickleball-club",
+      "name": "Sligo Tennis Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": true
+    },
+    {
+      "slug": "south-kildare-pickleball",
+      "name": "South Kildare Pickleball",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "southside-pickleball-club",
+      "name": "Southside Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "null_profile_override",
+      "logoSource": null,
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "sports-lab-pickleball",
+      "name": "Sports Lab Pickleball",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": true
+    },
+    {
+      "slug": "stepaside-pickleball",
+      "name": "Stepaside Pickleball",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "streete-sports-club-pickleball",
+      "name": "Streete Sports Club",
+      "origin": "dynamic",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "terenure-pickleball-club",
+      "name": "Terenure Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "null_profile_override",
+      "logoSource": null,
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": true
+    },
+    {
+      "slug": "the-racquet-here-ltd",
+      "name": "The Racquet Here Ltd",
+      "origin": "dynamic",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "tourmakeady-pickleball-club",
+      "name": "Tourmakeady Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "university-of-galway-pickleball-club",
+      "name": "University of Galway Pickleball Club",
+      "origin": "dynamic",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": true
+    },
+    {
+      "slug": "vamos-pickleball",
+      "name": "VAMOS Pickleball",
+      "origin": "dynamic",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": false,
+      "instagramListed": true,
+      "websiteListed": false
+    },
+    {
+      "slug": "wallace-park-pickleball-club",
+      "name": "Wallace Park Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "seed_or_base",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "west-connemara-pickleball-club",
+      "name": "West Connemara Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "west-cork-pickleball-club",
+      "name": "West Cork Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "present",
+      "logoSource": "profile",
+      "facebookListed": true,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "westport-pickleball-club",
+      "name": "Westport Pickleball Club",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    },
+    {
+      "slug": "wicklow-pickleball",
+      "name": "Wicklow Pickleball",
+      "origin": "seed",
+      "logoStatus": "missing",
+      "logoSource": null,
+      "facebookListed": false,
+      "instagramListed": false,
+      "websiteListed": false
+    }
+  ]
+}
