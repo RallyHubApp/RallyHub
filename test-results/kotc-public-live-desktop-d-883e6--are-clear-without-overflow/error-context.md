@@ -14,14 +14,14 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('Live Standings')
+Locator: getByTestId('public-kotc-round-history')
 Expected: visible
 Timeout: 3000ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('Live Standings') with timeout 3000ms
-  - waiting for getByText('Live Standings')
+  - Expect "toBeVisible" getByTestId('public-kotc-round-history') with timeout 3000ms
+  - waiting for getByTestId('public-kotc-round-history')
 
 ```
 
@@ -35,12 +35,12 @@ Call log:
     - text: Live Event View
   - img "RallyHub"
   - text: RallyHub King of the Court
-  - paragraph: Live Event View
+  - paragraph: Event Summary
   - img
   - heading "E2E Live KOTC" [level=1]
-  - paragraph: Live
-  - text: Round 1 STARTED 06:58 0 rounds completed
-  - paragraph: This page updates automatically as the host starts rounds and scores are saved.
+  - paragraph: Final Results
+  - text: Round 2 COMPLETED 2 rounds completed
+  - paragraph: Final podium and completed round results. Full individual rankings are not published here.
   - img
   - paragraph: My KOTC
   - paragraph: Choose your name once to personalise this Player Link.
@@ -48,26 +48,31 @@ Call log:
   - button "I'm Playing — Verify This Device" [disabled]
   - paragraph: If your RallyHub account is already linked to this player, verification can happen automatically. Otherwise the host confirms the 4-digit code.
   - navigation "KOTC Player Link sections":
-    - button "Live"
+    - button "Results"
     - button "Players"
     - button "Rounds"
     - button "Leaderboard"
     - button "Event Info"
-  - heading "On Court Now · Round 1" [level=2]
-  - text: STARTED
-  - paragraph: Bench This Round
-  - paragraph: Player 17 · Guest One
   - img
-  - paragraph: Court 1
-  - text: SAVED Player 01 & Player 02
-  - strong: "11"
-  - text: vs Player 03 & Player 04
-  - strong: "7"
-  - paragraph: Court 2
-  - text: LIVE Player 05 & Player 06
-  - strong: "8"
-  - text: vs Player 07 & Player 08
-  - strong: "8"
+  - paragraph: Final Podium
+  - list "Final podium":
+    - 'listitem "1st place: Player 01"':
+      - text: 🥇
+      - paragraph: 1st
+      - paragraph: Player 01
+      - paragraph: 3W · 0L · +14
+    - 'listitem "2nd place: Guest One"':
+      - text: 🥈
+      - paragraph: 2nd
+      - paragraph: Guest One
+      - paragraph: 3W · 0L · +10
+    - 'listitem "3rd place: Player 03"':
+      - text: 🥉
+      - paragraph: 3rd
+      - paragraph: Player 03
+      - paragraph: 2W · 1L · +6
+  - heading "Final Standings" [level=2]
+  - text: "# Player W L Diff 1 Player 01 3 0 +14 2 Guest One 3 0 +10 3 Player 03 2 1 +6"
 ```
 
 # Test source
@@ -111,23 +116,25 @@ Call log:
   36 |   await expect(page.getByText('Round Ready · Round 1')).toBeVisible();
   37 |   phase='live';await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   38 |   await expect(page.getByText('On Court Now · Round 1')).toBeVisible({timeout:1800});
-> 39 |   await expect(page.getByText('Live Standings')).toBeVisible();
-     |                                                  ^ Error: expect(locator).toBeVisible() failed
-  40 |   let layout=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,innerWidth:innerWidth}));
-  41 |   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.innerWidth+1);
-  42 | 
-  43 |   phase='finished';await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
-  44 |   await expect(page.getByTestId('public-kotc-podium')).toBeVisible({timeout:1800});
-  45 |   await expect(page.getByText('King of the Court',{exact:true})).toBeVisible();
-  46 |   await expect(page.getByText('Final Results',{exact:true})).toBeVisible();
-  47 |   await expect(page.getByTestId('public-kotc-round-history')).toBeVisible();
-  48 |   await expect(page.getByTestId('public-kotc-round-history')).toContainText('Round 2');
-  49 |   await page.getByTestId('public-kotc-round-history').getByRole('button',{name:'Round 1'}).click();
-  50 |   await expect(page.getByTestId('public-kotc-round-history')).toContainText('Player 05');
-  51 |   await expect(page.getByTestId('public-kotc-round-history')).toContainText('11');
-  52 |   layout=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,innerWidth:innerWidth}));
-  53 |   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.innerWidth+1);
-  54 |   await expect(page.getByText(/Emergency contact|Member mobile/i)).toHaveCount(0);
-  55 | });
-  56 | 
+  39 |   await page.getByRole('button',{name:'Leaderboard',exact:true}).click();
+  40 |   await expect(page.getByText('Live Standings')).toBeVisible();
+  41 |   let layout=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,innerWidth:innerWidth}));
+  42 |   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.innerWidth+1);
+  43 | 
+  44 |   await page.getByRole('button',{name:'Live',exact:true}).click();
+  45 |   phase='finished';await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+  46 |   await expect(page.getByTestId('public-kotc-podium')).toBeVisible({timeout:1800});
+  47 |   await expect(page.getByText('King of the Court',{exact:true})).toBeVisible();
+  48 |   await expect(page.getByText('Final Results',{exact:true})).toBeVisible();
+> 49 |   await expect(page.getByTestId('public-kotc-round-history')).toBeVisible();
+     |                                                               ^ Error: expect(locator).toBeVisible() failed
+  50 |   await expect(page.getByTestId('public-kotc-round-history')).toContainText('Round 2');
+  51 |   await page.getByTestId('public-kotc-round-history').getByRole('button',{name:'Round 1'}).click();
+  52 |   await expect(page.getByTestId('public-kotc-round-history')).toContainText('Player 05');
+  53 |   await expect(page.getByTestId('public-kotc-round-history')).toContainText('11');
+  54 |   layout=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,innerWidth:innerWidth}));
+  55 |   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.innerWidth+1);
+  56 |   await expect(page.getByText(/Emergency contact|Member mobile/i)).toHaveCount(0);
+  57 | });
+  58 | 
 ```

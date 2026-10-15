@@ -36,10 +36,12 @@ test('desktop public KOTC: live session and round history are clear without over
   await expect(page.getByText('Round Ready · Round 1')).toBeVisible();
   phase='live';await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   await expect(page.getByText('On Court Now · Round 1')).toBeVisible({timeout:1800});
+  await page.getByRole('button',{name:'Leaderboard',exact:true}).click();
   await expect(page.getByText('Live Standings')).toBeVisible();
   let layout=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,innerWidth:innerWidth}));
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.innerWidth+1);
 
+  await page.getByRole('button',{name:'Live',exact:true}).click();
   phase='finished';await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   await expect(page.getByTestId('public-kotc-podium')).toBeVisible({timeout:1800});
   await expect(page.getByText('King of the Court',{exact:true})).toBeVisible();

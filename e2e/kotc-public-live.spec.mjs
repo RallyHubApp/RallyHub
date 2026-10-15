@@ -46,8 +46,10 @@ test('public KOTC link: assignments → live scores → permanent final results 
   await expect(page.getByText('On Court Now · Round 1')).toBeVisible({timeout:1800});
   await expect(page.getByTestId('public-kotc-court-1')).toContainText('11');
   await expect(page.getByTestId('public-kotc-court-2')).toContainText('8');
+  await page.getByRole('button',{name:'Leaderboard',exact:true}).click();
   await expect(page.getByText('Live Standings')).toBeVisible();
 
+  await page.getByRole('button',{name:'Live',exact:true}).click();
   phase='finished';
   await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   await expect(page.getByTestId('public-kotc-podium')).toBeVisible({timeout:1800});

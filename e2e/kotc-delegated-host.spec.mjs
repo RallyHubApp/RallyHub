@@ -79,9 +79,10 @@ test('delegated host: session-only controls, attendee contacts, links and keyboa
   await page.getByTestId('kotc-contact-search').fill('');
 
   // Delegated host can prepare player/public links but cannot appoint another host.
-  await page.getByText('Session Links & Access').click();
-  await expect(page.getByText('Live Player View',{exact:true})).toBeVisible();
-  await expect(page.getByText('Player Scoring Link',{exact:true})).toBeVisible();
+  await page.getByText('Player Link, Broadcasts & Access').click();
+  await expect(page.getByText('KOTC Player Link',{exact:true})).toBeVisible();
+  await expect(page.getByText('Player Link scoring — one scorer per court')).toHaveCount(0);
+  await expect(page.getByText('Player scoring',{exact:true})).toBeVisible();
   await expect(page.getByText('Restricted Host Link')).toHaveCount(0);
   await expect(page.getByRole('button',{name:/Grant Host Access/i})).toHaveCount(0);
   expect(model.calls.some(c=>c.name==='manageKotcSessionAccess')).toBe(false);
@@ -112,7 +113,7 @@ test('super admin test-mode tools stay local until the real sporting save',async
   await page.goto('/e2e/kotcDelegatedHostHarness.html');
   await expect(page.getByTestId('kotc-sound-check')).toBeVisible();
   const callsBeforeSound=model.calls.length;
-  await page.getByTestId('kotc-sound-check').getByRole('button',{name:'Test Sound'}).click();
+  await page.getByTestId('kotc-sound-check').getByRole('button',{name:'Test Full Announcement'}).click();
   await page.waitForTimeout(120);
   expect(model.calls.length,'Sound check must be device-local and make no Base44 call').toBe(callsBeforeSound);
 
