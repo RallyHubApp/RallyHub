@@ -3,7 +3,9 @@ import path from 'node:path';
 
 const input = JSON.parse(fs.readFileSync('docs/directory-branding/RALLYHUB_DIRECTORY_LOGO_AUDIT_2026-09-30.json', 'utf8'))
   .listings.filter(row => row.auditStatus === 'Missing · source lead');
-const outDir = path.resolve('public/directory/logo-candidates/2026-09-30');
+const batchDate = process.env.RALLYHUB_LOGO_BATCH_DATE || new Date().toISOString().slice(0,10);
+if (!/^20[0-9]{2}-[01][0-9]-[0-3][0-9]$/.test(batchDate) || batchDate === '2026-09-30') throw Error('Use a new YYYY-MM-DD batch date to preserve archived September evidence');
+const outDir = path.resolve('public/directory/logo-candidates',batchDate);
 fs.mkdirSync(outDir, { recursive: true });
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153 Safari/537.36';
 
@@ -18,7 +20,7 @@ const decode = (s='') => s.replace(/&amp;/g,'&').replace(/&#x2F;/g,'/').replace(
 const tokensFor = name => String(name || '').toLowerCase().replace(/pickleball|club|assoc\.?|series/g,' ').replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(t => t.length > 2);
 const extFrom = (type='', url='') => /svg/i.test(type)||/\.svg(?:\?|$)/i.test(url)?'svg':/png/i.test(type)||/\.png(?:\?|$)/i.test(url)?'png':/webp/i.test(type)||/\.webp(?:\?|$)/i.test(url)?'webp':/gif/i.test(type)||/\.gif(?:\?|$)/i.test(url)?'gif':'jpg';
 
-async function saveImage(url, number, slug) {
+async function saveImage(url, number, slug, sourceKind) {
   try {
     const response = await waitFetch(url, { headers: { accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8' } });
     if (!response.ok) return null;
@@ -27,7 +29,7 @@ async function saveImage(url, number, slug) {
     const body = Buffer.from(await response.arrayBuffer());
     if (body.length < 1500 || body.length > 5_000_000) return null;
     const ext = extFrom(type, response.url || url);
-    const filename = `${String(number).padStart(2,'0')}-${slug}.${ext}`;
+    const filename = `${String(number).padStart(2,'0')}-${slug}-${sourceKind}.${ext}`;
     fs.writeFileSync(path.join(outDir, filename), body);
     return { filename, bytes: body.length, contentType: type, finalImageUrl: response.url || url };
   } catch { return null; }
@@ -60,7 +62,7 @@ async function websiteCandidate(row, number) {
     const title = ((html.match(/<title[^>]*>([^<]+)<\/title>/i)||[])[1] || '').trim();
     const tokens=tokensFor(row.name); const pageMatch=tokens.filter(t => (`${title} ${finalPage}`).toLowerCase().includes(t)).length;
     for (const c of websiteCandidates(html, finalPage, row.name).slice(0, 15)) {
-      const saved = await saveImage(c.url, number, row.slug); if (!saved) continue;
+      const saved = await saveImage(c.url, number, row.slug, 'website'); if (!saved) continue;
       const exactish = c.score >= 65 || (c.score >= 48 && pageMatch >= 1);
       const confidence = exactish ? (c.score >= 80 ? 'HIGH' : 'MEDIUM') : 'LOW';
       return { ...saved, method:'official-website', sourcePage:finalPage, sourceImage:c.url, sourceTitle:title, confidence, score:c.score, candidateKind:c.kind, decision:confidence==='HIGH'?'APPROVE':'HOLD' };
@@ -130,7 +132,7 @@ async function facebookCandidate(row, number, leads) {
     const resolved=await resolveFacebook(lead.url);
     if (!resolved.identifier) continue;
     const graph=`https://graph.facebook.com/${encodeURIComponent(resolved.identifier)}/picture?type=large&width=800&height=800`;
-    const saved=await saveImage(graph,number,row.slug);
+    const saved=await saveImage(graph,number,row.slug,'facebook');
     if (!saved) continue;
     const tokens=tokensFor(row.name);const hay=`${lead.url} ${resolved.title}`.toLowerCase();
     const matches=tokens.filter(t=>hay.includes(t)).length;
@@ -149,7 +151,7 @@ async function instagramCandidate(row, number, leads) {
       const html=await response.text();
       const image=(html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)||[])[1];
       if(!image)continue;
-      const saved=await saveImage(decode(image),number,row.slug);if(!saved)continue;
+      const saved=await saveImage(decode(image),number,row.slug,'instagram');if(!saved)continue;
       return {...saved,method:'instagram-profile-image',sourcePage:response.url||lead.url,sourceImage:decode(image),
         sourceTitle:'',confidence:'MEDIUM',score:50,candidateKind:'instagram-profile-image',decision:'HOLD',
         discoveryMethod:lead.method,reviewNote:'Confirm this is the official club logo, not a post or default image.'};
@@ -171,12 +173,14 @@ for(const row of input){
   const website=await websiteCandidate(row,number);
   // Keep alternative candidates and the discovery leads for auditing/review.
   const candidates=[facebook,instagram,website].filter(Boolean);
-  const candidate=candidates.find(x=>x.decision==='APPROVE') || candidates.find(x=>x.confidence==='MEDIUM') || candidates[0] || null;
+  const candidate=facebook || instagram || website || null; // Source priority, not approval status.
   results.push({number,name:row.name,slug:row.slug,county:row.county,website:row.website||'',facebook:row.facebook||'',instagram:row.instagram||'',
     status:candidate?'CANDIDATE':'NO_CANDIDATE',socialSearchQueries:{facebook:socialSearchQueries(row,'facebook'),instagram:socialSearchQueries(row,'instagram')},
     socialLeads:{facebook:facebookLeads,instagram:instagramLeads},alternatives:candidates.map(c=>({method:c.method,sourcePage:c.sourcePage,sourceImage:c.sourceImage,confidence:c.confidence,decision:c.decision,filename:c.filename})),
     ...(candidate||{confidence:'NONE',decision:'HOLD',reviewNote:'No automatically retrievable asset. Check social search leads and manually verify.'})});
   console.log(`${String(number).padStart(2,'0')} ${row.name}: ${candidate ? `${candidate.confidence} ${candidate.method} ${candidate.decision}` : 'NO CANDIDATE'}; FB leads ${facebookLeads.length}, IG leads ${instagramLeads.length}`);
 }
-fs.writeFileSync('docs/directory-branding/RALLYHUB_LOGO_CANDIDATES_EASY_SOURCE_2026-09-30.json',JSON.stringify(results,null,2));
+const outputManifest=path.resolve('docs/directory-branding',`RALLYHUB_LOGO_SOCIAL_FIRST_CANDIDATES_${batchDate}.json`);
+fs.writeFileSync(outputManifest,JSON.stringify(results,null,2));
+console.log('Wrote new research manifest',outputManifest);
 console.log(JSON.stringify({total:results.length,candidates:results.filter(r=>r.status==='CANDIDATE').length,approve:results.filter(r=>r.decision==='APPROVE').length,hold:results.filter(r=>r.decision==='HOLD').length,high:results.filter(r=>r.confidence==='HIGH').length,medium:results.filter(r=>r.confidence==='MEDIUM').length,low:results.filter(r=>r.confidence==='LOW').length,none:results.filter(r=>r.confidence==='NONE').length},null,2));
