@@ -102,7 +102,7 @@ test('delegated host: session-only controls, attendee contacts, links and keyboa
   const box=await save.boundingBox();expect(box?.height||0).toBeGreaterThanOrEqual(44);
   await save.click();
   await expect(page.getByTestId('kotc-next-action')).toContainText('scores complete',{timeout:1800});
-  await expect(page.getByTestId('kotc-next-action')).toContainText('review the 1 results');
+  await expect(page.getByTestId('kotc-next-action')).toContainText('Review/correct anything now');
 
   const layout=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,innerWidth:window.innerWidth}));
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.innerWidth+1);
