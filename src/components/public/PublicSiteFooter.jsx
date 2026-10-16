@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { RALLYHUB_BRAND } from '@/lib/rallyhubBrand';
 
-const FOOTER_PHOTO = '/assets/rallyhub-home-footer-pickleball.webp';
+const FOOTER_PHOTO = '/assets/about-footer-scenic.webp';
 const footerLinks = [
   ['Directory', '/directory'], ['Events', '/events'],
   ['Club Guide', '/directory/help'], ['About', '/about'], ['Contact', '/contact'],
@@ -11,10 +11,10 @@ const footerLinks = [
 /** Shared public-site footer: the approved compact photo + navy band design. */
 export default function PublicSiteFooter() {
   return (
-    <footer aria-label="RallyHub public footer" className="w-full min-w-0 px-4 pb-4 sm:px-6 lg:px-10">
-      <div className="mx-auto flex w-full max-w-[1380px] min-w-0 flex-col overflow-hidden rounded-xl bg-[#053c56] text-white md:min-h-[188px] md:flex-row">
+    <footer aria-label="RallyHub public footer" className="w-full min-w-0 px-5 pb-4 sm:px-7 lg:px-10 xl:px-12">
+      <div className="mx-auto flex w-full max-w-[1180px] min-w-0 flex-col overflow-hidden rounded-xl bg-[#053c56] text-white md:min-h-[188px] md:flex-row">
         <div className="h-[155px] w-full shrink-0 overflow-hidden sm:h-[185px] md:h-auto md:w-[38%]">
-          <img src={FOOTER_PHOTO} alt="Pickleball players enjoying time together on court" loading="lazy" decoding="async" className="h-full w-full object-cover object-center" />
+          <img src={FOOTER_PHOTO} alt="Pickleball court scenery" loading="lazy" decoding="async" className="h-full w-full object-cover object-center" />
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-between gap-4 px-5 py-5 sm:px-7 md:px-8 lg:px-10">
           <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
