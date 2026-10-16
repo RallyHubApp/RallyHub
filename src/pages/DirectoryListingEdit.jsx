@@ -700,10 +700,10 @@ export default function DirectoryListingEdit() {
             <div className="space-y-5">
               <section className="glass rounded-2xl p-6 sm:p-7 overflow-hidden relative">
                 <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
-                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
-                  <div className="min-w-0">
+                <div className="flex flex-col gap-5 min-w-0">
+                  <div className="min-w-0 w-full">
                     <p className="text-xs uppercase tracking-wider text-primary font-semibold">{user?.role === 'admin' && !isClaimed ? 'Super Admin · Unclaimed listing' : access?.accessRole === 'owner' ? 'Primary Directory Owner' : 'Verified Directory Editor'}</p>
-                    <h1 className="text-3xl sm:text-4xl font-black mt-1 truncate">{form.name || baseClub.name}</h1>
+                    <h1 className="text-3xl sm:text-4xl font-black mt-1 break-words">{form.name || baseClub.name}</h1>
                     <div className="flex flex-wrap gap-2 mt-3 text-xs text-muted-foreground">
                       {isClubListing ? <>
                         <span className="rounded-full border border-border px-2.5 py-1">County {baseClub.county}</span>
@@ -716,7 +716,7 @@ export default function DirectoryListingEdit() {
                     </div>
                     <p className="text-sm text-muted-foreground mt-3 max-w-2xl">{isClubListing ? 'Keep the public listing accurate. The displayed club name can be corrected at any time; the underlying RallyHub URL stays fixed so existing links and ownership are not affected. County remains fixed.' : 'Keep the public listing accurate. The displayed name, description, contact details, service area and links can be updated at any time; the underlying RallyHub URL stays fixed.'}</p>
                   </div>
-                  <div className="flex flex-wrap gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 min-w-0 w-full [&_button]:max-w-full [&_button]:whitespace-normal">
                     <Button type="button" variant="outline" className="gap-2" onClick={viewPublicListing} disabled={saving}><ExternalLink className="w-4 h-4" /> View public listing</Button>
                     {user?.role === 'admin' && <a href={`/app/communications?scope=platform&source=directory&sourceId=${encodeURIComponent(slug)}&template=directory_claim&returnTo=${encodeURIComponent(`/directory/${slug}/edit`)}&label=${encodeURIComponent(form?.name||baseClub?.name||'Directory listing')}`}><Button type="button" variant="outline">Open in Communications</Button></a>}
                     {isClubListing && <Link to={`/directory/${slug}/events`}><Button type="button" variant="outline" className="gap-2" disabled={saving}><CalendarDays className="w-4 h-4" /> Manage events</Button></Link>}
