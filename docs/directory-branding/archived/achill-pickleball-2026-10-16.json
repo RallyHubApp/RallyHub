@@ -1,0 +1,54 @@
+{
+  "archivedAt": "2026-10-16",
+  "reason": "Super Admin requested Achill Pickleball excluded from public Directory",
+  "source": "src/data/directoryImported.js",
+  "originalRecord": {
+    "id": "achill-pickleball",
+    "slug": "achill-pickleball",
+    "name": "Achill Pickleball",
+    "sport": "Pickleball",
+    "county": "Mayo",
+    "region": "Connacht",
+    "founded": null,
+    "status": "listed",
+    "membershipStatus": "Unclaimed listing — contact club",
+    "affiliation": null,
+    "logoUrl": null,
+    "website": null,
+    "instagram": null,
+    "facebook": null,
+    "waitingListUrl": null,
+    "joiningCtaLabel": "Contact club",
+    "policyLabel": "Attendance information",
+    "description": "Achill Pickleball is listed in the RallyHub Club Directory for County Mayo. This listing has not yet been claimed and can be updated by an authorised club representative.",
+    "guestPolicy": "Contact the club directly before attending. Session times, access arrangements and membership details have not yet been verified by RallyHub.",
+    "scheduleUpdatedAt": null,
+    "source": "PickleBook club list (Pickleball Ireland)",
+    "sourceUrl": "https://www.picklebook.org/a/pb/clublocator",
+    "sourceCheckedAt": "16 September 2026",
+    "verificationStatus": "unclaimed",
+    "contact": {
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
+      "whatsapp": null,
+      "email": null
+    },
+    "secondaryContacts": [],
+    "venues": [
+      {
+        "id": "the-boreen-cashel-achill-island-county-mayo-f28yk80",
+        "name": "The Boreen Cashel Achill Island County Mayo F28YK80",
+        "shortName": "The Boreen Cashel Achill Island Coun",
+        "address": "The Boreen Cashel Achill Island County Mayo F28YK80",
+        "eircode": "F28YK80",
+        "indoor": null,
+        "courts": null,
+        "latitude": null,
+        "longitude": null,
+        "mapUrl": "https://maps.google.com/?q=The%20Boreen%20Cashel%20Achill%20Island%20County%20Mayo%20F28YK80"
+      }
+    ],
+    "sessions": []
+  }
+}
