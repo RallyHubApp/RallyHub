@@ -264,7 +264,7 @@ export default function PublicMembershipApplication() {
   };
 
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
-  if (!config) return <div className="min-h-screen bg-background text-foreground flex flex-col"><main className="flex-1 container mx-auto max-w-2xl px-4 py-12"><div className="glass rounded-2xl p-6"><h1 className="text-xl font-bold">Membership unavailable</h1><p className="mt-2 text-sm text-muted-foreground">{error || 'Membership applications are not open at the moment.'}</p><Link to="/directory" className="inline-flex mt-5 text-primary font-semibold">Back to Directory</Link></div></main><PublicCopyrightFooter /></div>;
+  if (!config) return <div className="min-h-screen bg-background text-foreground flex flex-col"><main className="flex-1 container mx-auto max-w-2xl px-4 py-12"><div className="glass rounded-2xl p-6"><h1 className="text-xl font-bold">Membership unavailable</h1><p className="mt-2 text-sm text-muted-foreground">{error || 'Membership applications are not open at the moment.'}</p><Link to="/directory" className="inline-flex mt-5 text-primary font-semibold">Back to Directory</Link></div></main><PublicCopyrightFooter maxWidthClass="max-w-3xl" className="pb-4" /></div>;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -372,7 +372,7 @@ export default function PublicMembershipApplication() {
           )}
         </div>
       </main>
-      <PublicCopyrightFooter />
+      <PublicCopyrightFooter maxWidthClass="max-w-3xl" className="pb-4" />
     </div>
   );
 }
