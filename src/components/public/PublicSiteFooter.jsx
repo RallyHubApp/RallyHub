@@ -12,7 +12,7 @@ const footerLinks = [
 export default function PublicSiteFooter() {
   return (
     <footer aria-label="RallyHub public footer" className="w-full min-w-0 px-5 pb-4 sm:px-7 lg:px-10 xl:px-12">
-      <div className="mx-auto flex w-full max-w-[1180px] min-w-0 flex-col overflow-hidden rounded-xl bg-[#053c56] text-white md:min-h-[188px] md:flex-row">
+      <div className="mx-auto flex w-full max-w-[1380px] min-w-0 flex-col overflow-hidden rounded-xl bg-[#053c56] text-white md:min-h-[188px] md:flex-row">
         <div className="h-[155px] w-full shrink-0 overflow-hidden sm:h-[185px] md:h-auto md:w-[38%]">
           <img src={FOOTER_PHOTO} alt="Pickleball court scenery" loading="lazy" decoding="async" className="h-full w-full object-cover object-center" />
         </div>

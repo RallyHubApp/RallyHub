@@ -222,7 +222,7 @@ export default function Landing() {
               ? "bg-transparent px-5 pb-4 text-white opacity-100 transition-opacity duration-200 sm:px-7 lg:px-10 xl:px-12"
               : "bg-transparent px-5 pb-4 text-white opacity-0 transition-opacity duration-200 sm:px-7 lg:px-10 xl:px-12"}
           >
-            <div className="mx-auto flex w-full max-w-[1180px] flex-col overflow-hidden rounded-xl bg-[#053c56] md:h-[188px] md:flex-row">
+            <div className="mx-auto flex w-full max-w-[1380px] flex-col overflow-hidden rounded-xl bg-[#053c56] md:h-[188px] md:flex-row">
               <div className="h-[118px] w-full overflow-hidden sm:h-[145px] md:h-full md:w-[38%] md:shrink-0">
                 <img
                   src={FOOTER_PHOTO}
