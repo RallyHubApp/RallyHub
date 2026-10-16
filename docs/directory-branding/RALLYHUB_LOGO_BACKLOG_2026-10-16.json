@@ -1,0 +1,127 @@
+{
+  "date": "2026-10-16",
+  "appId": "6a01dc00702b7dd2a2978c28",
+  "source": "production Base44 active/public entities plus current directorySeed.js; effective merge uses profile precedence",
+  "staticCount": 83,
+  "dynamicPublicCount": 19,
+  "activeProfiles": 26,
+  "uniqueListings": 102,
+  "effectiveLogoUrls": 61,
+  "missingOrHidden": 41,
+  "hiddenExisting": 7,
+  "genuinelyMissing": 34,
+  "hiddenSlugs": [
+    "bluestack-pickleball-club",
+    "connemara-pickleball-club",
+    "multyfarnham-pickleball-club",
+    "cobh-pickleball",
+    "dalkey-pickkeball-club",
+    "southside-pickleball-club",
+    "terenure-pickleball-club"
+  ],
+  "approved15Oct": {
+    "staged": 17,
+    "effective": 14,
+    "hidden": 2,
+    "existingProfileLogoWins": 1
+  },
+  "batchLimit": 10,
+  "processed": 10,
+  "recordsChanged": 0,
+  "deployed": false,
+  "newPermanentStaged": 0,
+  "cases": [
+    {
+      "slug": "coolmine-pickleheads-club",
+      "status": "owner_approved_repository_png_exported_not_staged",
+      "facebook": "https://facebook.com/groups/3940907569458640/",
+      "instagram": null,
+      "website": "https://www.pickleheads.com/groups/coolmine-pickleheads-lucan",
+      "artwork": "public/directory/logo-candidates/2026-10-15/46-coolmine-owner-approved-preview.png",
+      "sha256": "068d8267233f41b062bfb1a2cafb5cdfdf67e9ee6473c529f74aa13e6be616cf",
+      "stageReceipt": null
+    },
+    {
+      "slug": "bluestack-pickleball-club",
+      "status": "owner_approved_staged_verified_hidden_by_null_profile",
+      "facebook": "https://www.facebook.com/p/Bluestack-Pickleball-100090729565053/",
+      "instagram": null,
+      "website": null,
+      "sha256": "3e6a22c5a44eab543d32fa92635e29abd4179a13a3a3d2c59230928fe9a1d36d",
+      "stageReceipt": {
+        "httpStatus": 200,
+        "bytes": 6332,
+        "checksumMatches": true
+      }
+    },
+    {
+      "slug": "picklepub-club",
+      "status": "candidate_preserved_unapproved",
+      "facebook": "https://www.facebook.com/share/1BhfxVQAhU/",
+      "instagram": "https://www.instagram.com/picklepub.ireland/",
+      "website": null,
+      "sha256": "b2212bf65feacab895546dd6edd4e6b337ebb0078b522a260c37b28115c7e89c",
+      "stageReceipt": null
+    },
+    {
+      "slug": "achill-pickleball",
+      "status": "instagram_profile_indexed_image_not_verified",
+      "facebook": null,
+      "instagram": "https://www.instagram.com/achillpickleball/",
+      "website": null,
+      "stageReceipt": null
+    },
+    {
+      "slug": "ballyfermot-pickleballers",
+      "status": "no_verified_artwork",
+      "facebook": null,
+      "instagram": null,
+      "website": null
+    },
+    {
+      "slug": "bayside-pickleball-club",
+      "status": "overseas_facebook_candidate_rejected",
+      "facebook": "https://www.facebook.com/BaysidePickleballClub/",
+      "instagram": null,
+      "website": null
+    },
+    {
+      "slug": "belmayne-pickleball",
+      "status": "no_verified_artwork",
+      "facebook": null,
+      "instagram": null,
+      "website": null
+    },
+    {
+      "slug": "blessington-pickleball-club",
+      "status": "sports_programme_posts_only",
+      "facebook": null,
+      "instagram": null,
+      "website": null
+    },
+    {
+      "slug": "breffni-pickleball-club",
+      "status": "mentions_only_no_official_artwork",
+      "facebook": null,
+      "instagram": null,
+      "website": null
+    },
+    {
+      "slug": "castlerahan-pickleball-club",
+      "status": "parent_venue_branding_not_club",
+      "facebook": null,
+      "instagram": null,
+      "website": "https://castlerahan.ie/pickleballbooking/"
+    }
+  ],
+  "ownerPolicy": "approved review selections remain accepted; related/shared branding not grounds to reject; never overwrite owner-uploaded logo",
+  "eyva": {
+    "slug": "eyva-s-invitational-series",
+    "present": true,
+    "hasLogo": true,
+    "category": "event/organiser",
+    "duplicateCreated": false
+  },
+  "backlogComplete": false,
+  "switchToMonthly": false
+}
