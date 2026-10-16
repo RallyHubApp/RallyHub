@@ -213,12 +213,6 @@ export default function DirectoryListingEdit() {
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoDraft, setLogoDraft] = useState(null);
-  const [logoSourceUrl, setLogoSourceUrl] = useState('');
-  const [logoExpectedHash, setLogoExpectedHash] = useState('');
-  const [logoApprovalId, setLogoApprovalId] = useState('');
-  const [stagingSourceLogo, setStagingSourceLogo] = useState(false);
-  const [sourceLogoReceipt, setSourceLogoReceipt] = useState(null);
-  const [sourceLogoStatus, setSourceLogoStatus] = useState({kind:'idle',message:''});
   const [inviting, setInviting] = useState(false);
   const [inviteMessage, setInviteMessage] = useState('');
   const [autoWhatsApp, setAutoWhatsApp] = useState(false);
@@ -560,29 +554,6 @@ export default function DirectoryListingEdit() {
     } finally { setUploadingLogo(false); }
   };
 
-  const stageSourceLogo = async () => {
-    if (stagingSourceLogo || sourceLogoReceipt) return; // Never submit a second staging request accidentally.
-    setStagingSourceLogo(true);
-    setSourceLogoStatus({kind:'loading',message:'Contacting RallyHub, downloading the official image and checking storage. Please wait; do not press again.'});
-    try {
-      const r = await base44.functions.invoke('directoryLogoIngest', {
-        listingSlug: slug, sourceUrl: logoSourceUrl.trim(),
-        expectedSha256: logoExpectedHash.trim().toLowerCase(), approvalId: logoApprovalId.trim()
-      });
-      const receipt = r.data || {};
-      if (!receipt.success || receipt.status !== 'staged' || !receipt.readbackVerified || receipt.listingSlug !== slug || receipt.sha256 !== logoExpectedHash.trim().toLowerCase())
-        throw new Error(receipt.error || 'RallyHub did not return a verified storage receipt. The file may have reached storage; please check before trying again.');
-      setSourceLogoReceipt(receipt);
-      setSourceLogoStatus({kind:'success',message:'Success — the logo is stored and its checksum is verified. It is not published.'});
-    } catch (e) {
-      const detail = e?.response?.data?.error || e?.data?.error || e?.message || 'No response from RallyHub';
-      const beforeUpload = /directory listing not found|directory editor permission required|authentication required|valid listing slug|source url must be from an approved/i.test(String(detail));
-      setSourceLogoStatus({kind:'error',message:beforeUpload
-        ? `Upload was stopped before file storage: ${detail}. No logo was staged by this request.`
-        : `Could not confirm upload: ${detail}. Do not retry until the storage receipt has been checked, as the request may have uploaded the file.`});
-    } finally { setStagingSourceLogo(false); }
-  };
-
   const addVenue = () => { setSaved(false); setForm(prev => ({ ...prev, venues: [...(prev.venues || []), emptyVenue((prev.venues || []).length + 1)] })); };
   const removeVenue = index => {
     const venue = form?.venues?.[index];
@@ -850,26 +821,12 @@ export default function DirectoryListingEdit() {
                           {form.logoUrl && <Button type="button" variant="outline" onClick={() => setField('logoUrl', '')}>Remove logo</Button>}
                         </div>
                         <p className="text-xs text-muted-foreground">JPG, PNG or WebP up to 5 MB. RallyHub automatically removes common transparent/white padding, centres the crest, then lets you resize and reposition it before upload.</p>
-                        {isClubListing && <div className="mt-3 rounded-xl border border-border p-3 space-y-2 max-w-xl">
-                          <p className="text-sm font-bold">Stage approved official logo from HTTPS</p>
-                          <p className="text-xs text-muted-foreground">Uses the existing server-side artwork download and checksum readback pattern. Staging does not save or publish the logo. Only approved official artwork hosts are accepted.</p>
-                          <Input type="url" aria-label="Approved original logo image URL" placeholder="https://official-source.example/club-logo.png" value={logoSourceUrl} onChange={e => {setLogoSourceUrl(e.target.value);setSourceLogoReceipt(null);setSourceLogoStatus({kind:'idle',message:''});}} />
-                          <Input aria-label="Approved logo SHA-256" placeholder="Expected SHA-256 (64 hexadecimal characters)" value={logoExpectedHash} onChange={e => {setLogoExpectedHash(e.target.value);setSourceLogoReceipt(null);setSourceLogoStatus({kind:'idle',message:''});}} />
-                          <Input aria-label="Logo approval reference" placeholder="Approval reference, e.g. RHLOGO-20261013-18" value={logoApprovalId} onChange={e => {setLogoApprovalId(e.target.value);setSourceLogoReceipt(null);setSourceLogoStatus({kind:'idle',message:''});}} />
-                          <Button type="button" className="w-full sm:w-auto min-h-12 bg-green-700 hover:bg-green-800 text-white font-bold disabled:opacity-60" disabled={stagingSourceLogo || !!sourceLogoReceipt || !logoSourceUrl.trim() || !/^[a-f0-9]{64}$/i.test(logoExpectedHash.trim()) || logoApprovalId.trim().length < 6} onClick={stageSourceLogo} aria-busy={stagingSourceLogo}>
-                            {stagingSourceLogo ? <><Loader2 className="mr-2 h-5 w-5 animate-spin"/>Uploading and verifying…</> : sourceLogoReceipt ? <><CheckCircle2 className="mr-2 h-5 w-5"/>Logo verified</> : <><Upload className="mr-2 h-5 w-5"/>Stage and verify logo</>}
-                          </Button>
-                          {sourceLogoStatus.kind !== 'idle' && <div role={sourceLogoStatus.kind === 'error' ? 'alert' : 'status'} aria-live="polite" className={`rounded-lg border p-3 text-sm font-medium break-words ${sourceLogoStatus.kind === 'success' ? 'border-green-600/50 bg-green-600/10 text-green-800' : sourceLogoStatus.kind === 'error' ? 'border-red-500/50 bg-red-500/10 text-red-800' : 'border-blue-500/40 bg-blue-500/10 text-foreground'}`}>
-                            <div className="flex items-start gap-2">{sourceLogoStatus.kind === 'loading' && <Loader2 className="h-4 w-4 shrink-0 mt-0.5 animate-spin"/>}{sourceLogoStatus.kind === 'success' && <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5"/>}<span>{sourceLogoStatus.message}</span></div>
-                          </div>}
-                          {sourceLogoReceipt && <div role="status" className="rounded-lg border border-green-500/30 bg-green-500/5 p-3 space-y-2">
-                            <p className="text-sm font-semibold">Stored and verified — not published</p>
-                            <p className="text-xs break-all">SHA-256: {sourceLogoReceipt.sha256}</p>
-                            <img src={sourceLogoReceipt.fileUrl} alt="Verified staged club logo" className="h-28 w-28 bg-white rounded-lg object-contain p-2" />
-                            <Button type="button" variant="outline" onClick={() => {setField('logoUrl',sourceLogoReceipt.fileUrl);setSourceLogoReceipt(null);}}>Use in unsaved listing draft</Button>
-                            <p className="text-xs text-muted-foreground">The public logo changes only after you explicitly choose Save changes for this listing.</p>
-                          </div>}
-                        </div>}
+                        <div className="mt-3 space-y-2 max-w-xl">
+                          <Label htmlFor="directory-logo-https-url">Or use a logo image URL (HTTPS)</Label>
+                          <Input id="directory-logo-https-url" type="url" aria-label="Logo image HTTPS URL" placeholder="https://example.com/club-logo.png" value={form.logoUrl || ''} onChange={e => setField('logoUrl', e.target.value.trim())} />
+                          <p className="text-xs text-muted-foreground">Optional alternative to uploading an image. Paste a direct HTTPS image link, preview it above, then use Save changes to update this listing.</p>
+                          {form.logoUrl && !/^https:\/\//i.test(form.logoUrl) && <p role="alert" className="text-xs text-red-600">Please enter a direct HTTPS image URL.</p>}
+                        </div>
                       </div>
                     </div>
                     {logoDraft && (
