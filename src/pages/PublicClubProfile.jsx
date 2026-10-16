@@ -87,7 +87,12 @@ export default function PublicClubProfile() {
             if (res.data?.error) throw new Error(res.data.error);
             return res.data || {};
           })
-      : loadPublicDirectoryState().then(listings => listings?.[slug] || {});
+      : base44.functions.invoke('directoryListingProfile', { action: 'public_get', listingSlug: slug })
+          .then(res => {
+            if (res.data?.error) throw new Error(res.data.error);
+            return res.data || {};
+          })
+          .catch(() => loadPublicDirectoryState({ force: true }).then(listings => listings?.[slug] || {}));
 
     request
       .then(state => {
