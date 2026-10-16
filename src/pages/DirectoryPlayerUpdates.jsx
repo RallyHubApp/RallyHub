@@ -87,6 +87,6 @@ export default function DirectoryPlayerUpdates(){
         <Link to="/directory" className="mt-6 inline-flex text-sm font-semibold text-primary hover:underline">Back to the RallyHub Directory</Link>
       </section>
     </main>
-    <PublicCopyrightFooter />
+    <PublicCopyrightFooter maxWidthClass="max-w-3xl" />
   </div>;
 }
