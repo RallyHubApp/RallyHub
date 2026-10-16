@@ -9,12 +9,12 @@ const footerLinks = [
 ];
 
 /** Shared public-site footer: the approved compact photo + navy band design. */
-export default function PublicSiteFooter({ photoSrc = FOOTER_PHOTO, photoAlt = "Pickleball players enjoying time together" }) {
+export default function PublicSiteFooter({ photoSrc = FOOTER_PHOTO, photoAlt = "Pickleball players enjoying time together", cropPhotoEdges = false }) {
   return (
     <footer aria-label="RallyHub public footer" className="w-full min-w-0 px-5 pb-4 sm:px-7 lg:px-10 xl:px-12">
       <div className="mx-auto flex w-full max-w-[1380px] min-w-0 flex-col overflow-hidden rounded-xl bg-[#053c56] text-white md:min-h-[188px] md:flex-row">
         <div className="h-[155px] w-full shrink-0 overflow-hidden sm:h-[185px] md:h-auto md:w-[38%]">
-          <img src={photoSrc} alt={photoAlt} loading="lazy" decoding="async" className="h-full w-full object-cover object-center" />
+          <img src={photoSrc} alt={photoAlt} loading="lazy" decoding="async" className={`h-full w-full object-cover object-center ${cropPhotoEdges ? "scale-[1.12]" : ""}`} />
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-between gap-4 px-5 py-5 sm:px-7 md:px-8 lg:px-10">
           <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
