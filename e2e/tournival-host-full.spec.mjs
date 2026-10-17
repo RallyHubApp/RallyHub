@@ -3,7 +3,10 @@ for(const size of [{width:390,height:844},{width:1280,height:850}])
 test(`Full Tournival host journey ${size.width}px`,async({page})=>{
  await page.setViewportSize(size);
  page.on('dialog',dialog=>dialog.accept('Host corrected paper score'));
+ page.on('pageerror',e=>console.log('PAGE ERROR:',e.message));
+ page.on('console',m=>{if(m.type()==='error')console.log('CONSOLE ERROR:',m.text())});
  await page.goto('/e2e/tournivalHostHarness.html');
+ console.log('BODY:',(await page.locator('body').innerText()).slice(0,350));
  await expect(page.getByText('Tournival Setup')).toBeVisible();
  await expect(page.getByText('2 rounds').count()).resolves.toBeGreaterThanOrEqual(1).catch(()=>{});
  await page.getByRole('button',{name:'Confirm seed order'}).click();
