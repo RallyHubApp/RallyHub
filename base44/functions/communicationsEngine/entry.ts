@@ -99,11 +99,16 @@ Deno.serve(async(req)=>{
     if(!message||!recipient||!campaign||campaign.source_module!=='Tournival'||
        recipient.eligibility_status!=='eligible'||!recipient.email)
       return Response.json({error:'Recipient or campaign is not authorised for delivery'},{status:409});
-    const transport=await resolveEmailTransport(base44,{
-      scopeType:'tenant',tenantId,clubId,purpose:campaign.purpose
-    });
+    let transport:any;
+    try{
+      transport=await resolveEmailTransport(base44,{
+        scopeType:'tenant',tenantId,clubId,purpose:campaign.purpose
+      });
+    }catch{
+      return Response.json({error:'No tenant sender configured for this communication purpose; message remains queued'},{status:409});
+    }
     if(transport.status!=='configured')
-      return Response.json({error:'Tenant sender is not configured'},{status:409});
+      return Response.json({error:'Tenant sender is not configured; message remains queued'},{status:409});
     const claimed=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.updateMany({
       id:attempt.id,tenant_id:tenantId,status:'queued'
     },{$set:{status:'sending'}});
