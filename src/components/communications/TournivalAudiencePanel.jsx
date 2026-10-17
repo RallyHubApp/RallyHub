@@ -24,6 +24,21 @@ export default function TournivalAudiencePanel(){
    setAudience(r.data.audience||[]);
   }catch(e){setError(e?.response?.data?.error||e.message)}finally{setBusy(false)}
  };
+ const dispatch=async(item)=>{
+  if(item.channel!=='email'||item.deliveryStatus!=='queued'||!item.deliveryId)return;
+  if(!window.confirm('Send the selected queued email using the tenant Communications Centre sender? This will contact '+(item.email||item.name)+'.'))return;
+  setBusy(true);setError('');setNotice('');
+  try{
+   const r=await base44.functions.invoke('communicationsEngine',{
+    action:'dispatch_tournival',ownerScope:'tenant',tenantId:user.active_tenant_id,
+    clubId,purpose:item.purpose,attemptId:item.deliveryId,confirmDispatch:true
+   });
+   if(!r.data?.success)throw Error(r.data?.error||'Dispatch was not confirmed');
+   setNotice('Email handed to the configured tenant sender and recorded as sent.');
+   await refresh();
+  }catch(e){setError(e?.response?.data?.error||e.message)}
+  finally{setBusy(false)}
+ };
  const resend=async(item)=>{
   if(item.eligibility!=='eligible')return;
   const reason=window.prompt('Reason for this controlled resend (recorded in the audit):','');
@@ -55,7 +70,7 @@ export default function TournivalAudiencePanel(){
   {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
   {notice&&<p role="status" className="text-sm text-slate-700">{notice}</p>}
   <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr><th className="text-left p-2">Audience</th><th className="text-left p-2">Message</th><th className="text-left p-2">Delivery</th><th className="text-left p-2">Action</th></tr></thead><tbody>
-  {audience.map(a=><tr key={a.deliveryId||a.recipientId} className="border-t"><td className="p-2">{a.name}<div className="text-xs text-muted-foreground">{a.email||a.mobile}</div></td><td className="p-2">{a.purpose}</td><td className="p-2">{a.deliveryStatus} · attempt {a.attemptNumber}</td><td className="p-2"><button className="underline" type="button" disabled={busy||a.eligibility!=='eligible'} onClick={()=>resend(a)}>Queue resend</button></td></tr>)}
+  {audience.map(a=><tr key={a.deliveryId||a.recipientId} className="border-t"><td className="p-2">{a.name}<div className="text-xs text-muted-foreground">{a.email||a.mobile}</div></td><td className="p-2">{a.purpose}</td><td className="p-2">{a.deliveryStatus} · attempt {a.attemptNumber}</td><td className="p-2"><button className="underline" type="button" disabled={busy||a.eligibility!=='eligible'} onClick={()=>resend(a)}>Queue resend</button>{a.channel==='email'&&a.deliveryStatus==='queued'&&<button className="underline ml-3" type="button" disabled={busy} onClick={()=>dispatch(a)}>Send queued email</button>}</td></tr>)}
   {!audience.length&&<tr><td colSpan={4} className="p-3 text-muted-foreground">No queued Tournival recipients loaded.</td></tr>}
   </tbody></table></div>
  </section>;

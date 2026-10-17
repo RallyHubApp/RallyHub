@@ -18,7 +18,7 @@ export function makeTournivalDeliveryKey({tenantId,eventId,purpose,recipientId,c
  return ['tournival',tenantId,eventId,purpose,recipientId,channel,version].join('|');
 }
 export async function queueTournivalCommunication(base44:any,{
- tenantId,clubId,eventId,purpose,recipient,channel,fields,rendered,sourceRecordId,operationId,deliveryVersion
+ tenantId,clubId,eventId,purpose,recipient,channel,fields,rendered,sourceRecordId,operationId,deliveryVersion,resendReason
 }:any){
  if(!tenantId||!clubId||!eventId||!sourceRecordId||!recipient?.id||
   !Object.values(TOURNIVAL_EVENTS).includes(purpose)||
@@ -43,7 +43,7 @@ export async function queueTournivalCommunication(base44:any,{
   attempt=await ledger.create({tenant_id:tenantId,idempotency_key:key,
    campaign_id:'pending',recipient_id:sourceRecordId,channel,status:'queued',
    attempt_number:Number(deliveryVersion||1),provider:'none',queued_at:new Date().toISOString(),
-   metadata:{source_module:'Tournival',event_id:eventId,operation_id:operationId||'',delivery_version:deliveryVersion||1}
+   metadata:{source_module:'Tournival',event_id:eventId,operation_id:operationId||'',delivery_version:deliveryVersion||1,resend_reason:String(resendReason||'').slice(0,500)}
   });
  }catch(e){
   await base44.asServiceRole.entities.Tournament.updateMany({id:eventId,tenant_id:tenantId},
@@ -55,7 +55,7 @@ export async function queueTournivalCommunication(base44:any,{
   source_record_id:eventId,kind:'transactional',purpose,name:purpose,status:'queued',
   audience_definition:{source:'tournival',eventId,channel},recipient_count:1,
   eligible_count:1,idempotency_key:key,brand_kit_id:rendered.brandKitId,
-  created_by_user_id:'tournival-workflow',metadata:{sourceRecordId,operationId:operationId||'',deliveryVersion:deliveryVersion||1}
+  created_by_user_id:'tournival-workflow',metadata:{sourceRecordId,operationId:operationId||'',deliveryVersion:deliveryVersion||1,resendReason:String(resendReason||'').slice(0,500)}
  });
  const message=await base44.asServiceRole.entities.CommunicationMessage.create({
   campaign_id:campaign.id,tenant_id:tenantId,channel,template_id:rendered.templateId,
@@ -74,7 +74,7 @@ export async function queueTournivalCommunication(base44:any,{
  await base44.asServiceRole.entities.CommunicationEvent.create({
   campaign_id:campaign.id,message_id:message.id,recipient_id:audience.id,
   delivery_attempt_id:attempt.id,tenant_id:tenantId,event_type:'queued',
-  occurred_at:new Date().toISOString(),metadata:{purpose,sourceRecordId,operationId:operationId||''}
+  occurred_at:new Date().toISOString(),metadata:{purpose,sourceRecordId,operationId:operationId||'',resendReason:String(resendReason||'').slice(0,500)}
  });
  return {queued:true,duplicate:false,attemptId:attempt.id,campaignId:campaign.id,recipientId:audience.id};
 }

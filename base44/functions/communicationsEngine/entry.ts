@@ -64,7 +64,7 @@ Deno.serve(async(req)=>{
     const queued=await queueTournivalCommunication(base44,{
       tenantId,clubId,eventId,purpose,recipient,channel,fields:body.fields||{},
       rendered,sourceRecordId,operationId:clean(body.operationId,120),
-      deliveryVersion:version
+      deliveryVersion:version,resendReason:clean(body.resendReason,500)
     });
     return Response.json({success:true,deliveryPerformed:false,
       ...queued,channel,purpose,deliveryVersion:version});
