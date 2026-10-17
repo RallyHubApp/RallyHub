@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { resolveEmailTransport, sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { resolveApprovedTournivalTemplate } from './tournivalTemplates.ts';
-import {queueTournivalCommunication,listTournivalAudience,TOURNIVAL_EVENTS} from './tournivalDelivery.ts';
+import {queueTournivalCommunication,listTournivalAudience,TOURNIVAL_EVENTS,makeTournivalDeliveryKey} from './tournivalDelivery.ts';
 import {validateTournivalDeliveryEligibility} from './tournivalEligibility.ts';
 const clean=(v:any,max=5000)=>String(v??'').trim().slice(0,max);
 Deno.serve(async(req)=>{
@@ -76,11 +76,45 @@ Deno.serve(async(req)=>{
       return Response.json({error:'Valid source, recipient and delivery version required'},{status:400});
     if(action==='resend_tournival' && (version<=1||clean(body.resendReason,500).length<8))
       return Response.json({error:'Resend needs a new attempt number and documented reason'},{status:400});
+    let safeRecipient=recipient,safeFields=body.fields||{};
+    if(action==='resend_tournival'){
+      // An operator may choose an existing audience row but may not invent a
+      // target address or change a private payment/host/player magic link.
+      const prior=await base44.asServiceRole.entities.CommunicationRecipient.filter({
+        tenant_id:tenantId,source_module:'Tournival',
+        source_record_id:sourceRecordId
+      },'-created_date',100);
+      const associated=[];
+      for(const row of prior||[]){
+        const campaigns=await base44.asServiceRole.entities.CommunicationCampaign.filter({
+          id:row.campaign_id,tenant_id:tenantId,club_id:clubId,
+          source_record_id:eventId,purpose
+        },'-created_date',1);
+        if(campaigns?.length&&(row.selected_channels||[]).includes(channel))associated.push(row);
+      }
+      const canonical=associated[0];
+      if(!canonical||canonical.eligibility_status!=='eligible')
+        return Response.json({error:'Resend requires an eligible existing Tournival audience recipient'},{status:409});
+      if(String(recipient.email||'').trim().toLowerCase()!==String(canonical.email||'').trim().toLowerCase()||
+        String(recipient.mobile||'').trim()!==String(canonical.mobile||'').trim()||
+        JSON.stringify(body.fields||{})!==JSON.stringify(canonical.personalisation||{}))
+        return Response.json({error:'Resend cannot modify saved recipient, message fields or private links'},{status:409});
+      safeRecipient={id:sourceRecordId,name:canonical.display_name,email:canonical.email,
+        mobile:canonical.mobile,personId:canonical.person_id};
+      safeFields=canonical.personalisation||{};
+      const original=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({
+        tenant_id:tenantId,idempotency_key:makeTournivalDeliveryKey({
+          tenantId,eventId,purpose,recipientId:sourceRecordId,channel,version:'1'
+        })
+      },'-created_date',2);
+      if(!original?.length)
+        return Response.json({error:'Original Tournival communication is absent; cannot resend'},{status:409});
+    }
     const rendered=await resolveApprovedTournivalTemplate(base44,{
-      tenantId,clubId,purpose,channel,fields:body.fields||{}
+      tenantId,clubId,purpose,channel,fields:safeFields
     });
     const queued=await queueTournivalCommunication(base44,{
-      tenantId,clubId,eventId,purpose,recipient,channel,fields:body.fields||{},
+      tenantId,clubId,eventId,purpose,recipient:safeRecipient,channel,fields:safeFields,
       rendered,sourceRecordId,operationId:clean(body.operationId,120),
       deliveryVersion:version,resendReason:clean(body.resendReason,500)
     });
