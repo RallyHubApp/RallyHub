@@ -19,6 +19,8 @@ import TournivalKnockout from './TournivalKnockout';
 import TournivalRehearsal from './TournivalRehearsal';
 import TournivalPrintPack from './TournivalPrintPack';
 import TournivalHall from './TournivalHall';
+import TournivalLiveScoring from './TournivalLiveScoring';
+import { indexTournivalMatches } from '@/lib/tournivalScheduler';
 import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 
 const TABS = [
@@ -195,6 +197,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
       matchFormat,
       venueMinutes, matchMinutes, changeoverMinutes,
       rounds,
+      matches: indexTournivalMatches(rounds),
       results: {},
       currentRound: 1,
       status: 'In Progress',
@@ -426,7 +429,11 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
         />
       )}
 
-      {activeTab === 'scores' && state && (
+      {activeTab === 'scores' && state && state.matches?.length > 0 && (
+        <TournivalLiveScoring state={state} playerMap={playerMap} onSaveState={saveState} isAdmin={isAdmin} />
+      )}
+
+      {activeTab === 'scores' && state && !state.matches?.length && (
         <TournivalScoring
           rounds={state.rounds || []}
           results={state.results || {}}
