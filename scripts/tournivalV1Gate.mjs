@@ -38,6 +38,16 @@ assert.equal(pairs.length,8);
 assert.equal(createKnockoutBracket(pairs).length,4);
 assert.equal(createKnockoutBracket(pairs.slice(0,4))[0].match,'SF1');
 assert.equal(createKnockoutBracket(pairs.slice(0,2))[0].match,'Final');
+for(const n of [8,12,16,20,24,28,32]) {
+ const board=Array.from({length:n},(_,i)=>({id:'p'+i,name:'Player '+i}));
+ const qualified=createKnockoutPairs(board);
+ assert.ok(qualified.length>=2);
+ assert.equal((qualified.length & (qualified.length-1)),0,'qualifier count must be power of 2');
+ const bracket=createKnockoutBracket(qualified);
+ assert.ok(bracket.length>0);
+ assert.ok(['QF','SF','Final'].some(stage=>bracket[0].match.startsWith(stage)));
+}
+
 assert.equal(estimateDuration({numPlayers:16,numCourts:4,numRounds:1,matchFormat:'timed_10'}).valid,false);
 assert.equal(estimateDuration({numPlayers:16,numCourts:4,numRounds:6,matchFormat:'timed_10',venueMinutes:75}).venueValid,false);
 console.log('TOURNIVAL V1 GATE PASS:',checked,'sporting fixture/estimator scenarios; score validation, knockout, bounds.');

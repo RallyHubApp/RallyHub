@@ -220,6 +220,13 @@ export function computeLeaderboard(playerIds, rounds, results, playerMap) {
  * Then seeded: Seed1 v Seed8, Seed4 v Seed5, Seed3 v Seed6, Seed2 v Seed7
  */
 export function createKnockoutPairs(rankedPlayers) {
+  // A standard doubles knockout needs a power-of-two number of fixed pairs.
+  // Rank order is used to choose the highest qualified players; excess players
+  // are excluded explicitly, rather than producing a bracket that cannot advance.
+  const candidatePlayers = rankedPlayers.slice(0, 16);
+  const pairCount = 2 ** Math.floor(Math.log2(Math.floor(candidatePlayers.length / 2)));
+  if (pairCount < 2) return [];
+  rankedPlayers = candidatePlayers.slice(0, pairCount * 2);
   const n = rankedPlayers.length;
   const half = Math.floor(n / 2);
   const pairs = [];
