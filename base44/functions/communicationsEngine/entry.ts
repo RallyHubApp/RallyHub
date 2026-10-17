@@ -114,7 +114,7 @@ Deno.serve(async(req)=>{
       if(body.confirmManualSend!==true||attempt.status!=='sending')
         return Response.json({error:'Only an initiated handoff can be manually confirmed'},{status:409});
       const history=await base44.asServiceRole.entities.CommunicationEvent.filter({
-        delivery_attempt_id:attempt.id,event_type:'whatsapp_handoff_started'
+        delivery_attempt_id:attempt.id,event_type:'whatsapp_handoff_prepared'
       },'-occurred_at',5);
       if(!history?.length)return Response.json({error:'No recorded WhatsApp handoff to confirm'},{status:409});
       const updated=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.updateMany({
@@ -162,10 +162,10 @@ Deno.serve(async(req)=>{
     if(claimed.updated!==1)return Response.json({error:'Handoff already claimed'},{status:409});
     await base44.asServiceRole.entities.CommunicationEvent.create({
       campaign_id:campaign.id,message_id:message.id,recipient_id:recipient.id,
-      delivery_attempt_id:attempt.id,tenant_id:tenantId,event_type:'whatsapp_handoff_started',
+      delivery_attempt_id:attempt.id,tenant_id:tenantId,event_type:'whatsapp_handoff_prepared',
       occurred_at:new Date().toISOString(),actor_user_id:user.id
     });
-    return Response.json({success:true,sendPerformed:false,handoffStarted:true,
+    return Response.json({success:true,sendPerformed:false,handoffPrepared:true,
       handoffUrl:'https://wa.me/'+mobile.slice(1)+'?text='+encodeURIComponent(message.channel_body)});
   }
   // Only the operator can release a pre-queued email. Claim the attempt

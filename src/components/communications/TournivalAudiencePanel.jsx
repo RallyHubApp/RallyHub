@@ -5,7 +5,7 @@ export default function TournivalAudiencePanel(){
  const {user}=useAuth();
  const [events,setEvents]=useState([]),[eventId,setEventId]=useState('');
  const [audience,setAudience]=useState([]),[busy,setBusy]=useState(false),[error,setError]=useState('');
- const [notice,setNotice]=useState(''),[warnings,setWarnings]=useState([]);
+ const [notice,setNotice]=useState(''),[warnings,setWarnings]=useState([]),[handoff,setHandoff]=useState(null);
  const [selectedKeys,setSelectedKeys]=useState([]),[statusFilter,setStatusFilter]=useState('all');
  const clubId=user?.active_club_id||'';
  useEffect(()=>{if(!user?.active_tenant_id)return;let alive=true;
@@ -74,9 +74,9 @@ export default function TournivalAudiencePanel(){
     clubId,purpose:item.purpose,attemptId:item.deliveryId,confirmHandoff:true
    });
    if(!r.data?.success)throw Error(r.data?.error||'Handoff rejected');
-   window.open(r.data.handoffUrl,'_blank','noopener,noreferrer');
+   setHandoff({url:r.data.handoffUrl,name:item.name,attemptId:item.deliveryId});
    await refresh();
-   setNotice('WhatsApp handoff started. Confirm delivery after you press Send.');
+   setNotice('WhatsApp message prepared. Open the link below, press Send in WhatsApp, then confirm it here.');
   }catch(e){setError(e?.response?.data?.error||e.message)}finally{setBusy(false)}
  };
  const confirmWhatsapp=async(item)=>{
@@ -121,6 +121,7 @@ export default function TournivalAudiencePanel(){
   </div>
   {!clubId&&<p className="text-sm text-amber-700">Choose a tenant club before reviewing its audience.</p>}
   {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
+  {handoff?.url&&<div className="border rounded-lg p-3 text-sm"><b>Prepared WhatsApp for {handoff.name}</b><p className="mt-1">This does not send a message automatically.</p><a className="underline" href={handoff.url} target="_blank" rel="noopener noreferrer">Open approved message in WhatsApp</a></div>}
   {notice&&<p role="status" className="text-sm text-slate-700">{notice}</p>}
   <div className="flex flex-wrap items-center gap-2 text-sm"><label>Delivery status <select className="border rounded p-1" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="all">All statuses</option>{['queued','sent','sending','failed','delivered','cancelled','suppressed'].map(v=><option key={v}>{v}</option>)}</select></label><button type="button" className="rounded border px-3 py-2" disabled={busy||selectedKeys.length===0} onClick={queueSelected}>Queue selected resends ({selectedKeys.length})</button></div>
   {warnings.length>0&&<div role="status" className="border rounded-lg p-3 text-sm">
@@ -129,7 +130,7 @@ export default function TournivalAudiencePanel(){
    <p className="mt-2 text-xs text-muted-foreground">Approve the required template or reconcile the queue before attempting to resend; no fallback message was sent.</p>
   </div>}
   <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr><th className="text-left p-2">Select</th><th className="text-left p-2">Audience</th><th className="text-left p-2">Message</th><th className="text-left p-2">Delivery</th><th className="text-left p-2">Action</th></tr></thead><tbody>
-  {filteredAudience.map(a=><tr key={a.deliveryId||a.recipientId} className="border-t"><td className="p-2"><input type="checkbox" aria-label={'Select '+a.name} disabled={busy||a.eligibility!=='eligible'||a.deliveryStatus==='suppressed'} checked={selectedKeys.includes(a.deliveryId||a.recipientId)} onChange={()=>toggleSelected(a.deliveryId||a.recipientId)}/></td><td className="p-2">{a.name}<div className="text-xs text-muted-foreground">{a.email||a.mobile}</div></td><td className="p-2">{a.purpose}</td><td className="p-2">{a.deliveryStatus} · attempt {a.attemptNumber}</td><td className="p-2"><button className="underline" type="button" disabled={busy||a.eligibility!=='eligible'||a.deliveryStatus==='suppressed'} onClick={()=>resend(a)}>Queue resend</button>{a.channel==='email'&&a.deliveryStatus==='queued'&&<button className="underline ml-3" type="button" disabled={busy} onClick={()=>dispatch(a)}>Send queued email</button>}{a.channel==='whatsapp'&&a.deliveryStatus==='queued'&&<button className="underline ml-3" type="button" disabled={busy} onClick={()=>whatsappHandoff(a)}>Open WhatsApp</button>}{a.channel==='whatsapp'&&a.deliveryStatus==='sending'&&<button className="underline ml-3" type="button" disabled={busy} onClick={()=>confirmWhatsapp(a)}>Confirm WhatsApp sent</button>}</td></tr>)}
+  {filteredAudience.map(a=><tr key={a.deliveryId||a.recipientId} className="border-t"><td className="p-2"><input type="checkbox" aria-label={'Select '+a.name} disabled={busy||a.eligibility!=='eligible'||a.deliveryStatus==='suppressed'} checked={selectedKeys.includes(a.deliveryId||a.recipientId)} onChange={()=>toggleSelected(a.deliveryId||a.recipientId)}/></td><td className="p-2">{a.name}<div className="text-xs text-muted-foreground">{a.email||a.mobile}</div></td><td className="p-2">{a.purpose}</td><td className="p-2">{a.deliveryStatus} · attempt {a.attemptNumber}</td><td className="p-2"><button className="underline" type="button" disabled={busy||a.eligibility!=='eligible'||a.deliveryStatus==='suppressed'} onClick={()=>resend(a)}>Queue resend</button>{a.channel==='email'&&a.deliveryStatus==='queued'&&<button className="underline ml-3" type="button" disabled={busy} onClick={()=>dispatch(a)}>Send queued email</button>}{a.channel==='whatsapp'&&a.deliveryStatus==='queued'&&<button className="underline ml-3" type="button" disabled={busy} onClick={()=>whatsappHandoff(a)}>Prepare WhatsApp</button>}{a.channel==='whatsapp'&&a.deliveryStatus==='sending'&&<button className="underline ml-3" type="button" disabled={busy} onClick={()=>confirmWhatsapp(a)}>Confirm WhatsApp sent</button>}</td></tr>)}
   {!audience.length&&<tr><td colSpan={5} className="p-3 text-muted-foreground">No queued Tournival recipients loaded.</td></tr>}
   </tbody></table></div>
  </section>;
