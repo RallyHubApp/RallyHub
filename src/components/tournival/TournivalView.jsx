@@ -23,6 +23,7 @@ import TournivalLiveScoring from './TournivalLiveScoring';
 import TournivalRegistrations from './TournivalRegistrations';
 import TournivalDuprReview from './TournivalDuprReview';
 import TournivalAnnouncements from './TournivalAnnouncements';
+import TournivalTimingMonitor from './TournivalTimingMonitor';
 import { indexTournivalMatches } from '@/lib/tournivalScheduler';
 import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 
@@ -38,6 +39,7 @@ const TABS = [
   { id: 'registrations', label: 'Check-in', icon: Users },
   { id: 'dupr', label: 'DUPR', icon: Trophy },
   { id: 'announcements', label: 'Announcements', icon: Zap },
+  { id: 'timing', label: 'Schedule', icon: Zap },
 ];
 
 // ── Player Entry Panel ────────────────────────────────────────────────────────
@@ -211,6 +213,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
       duprEnabled:duprEnabled===true,
       venueMinutes, matchMinutes, changeoverMinutes,
       rounds,
+      actualStartedAt:new Date().toISOString(),
       matches: indexTournivalMatches(rounds),
       results: {},
       currentRound: 1,
@@ -418,6 +421,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
       />
 
       {activeTab === 'rehearsal' && isAdmin && <TournivalRehearsal />}
+      {activeTab === 'timing' && state && <TournivalTimingMonitor state={state} onSaveState={saveState} isAdmin={isAdmin} />}
       {activeTab === 'announcements' && state && isAdmin && <TournivalAnnouncements tournament={tournament} state={state} isAdmin={isAdmin} onSaveState={saveState} playerMap={playerMap} />}
       {activeTab === 'dupr' && isAdmin && <TournivalDuprReview tournament={tournament} state={state} isAdmin={isAdmin} />}
       {activeTab === 'registrations' && isAdmin && <TournivalRegistrations tournament={tournament} isAdmin={isAdmin} />}
