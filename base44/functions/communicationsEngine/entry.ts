@@ -4,6 +4,7 @@ import { resolveApprovedTournivalTemplate } from './tournivalTemplates.ts';
 import {queueTournivalCommunication,listTournivalAudience,TOURNIVAL_EVENTS,makeTournivalDeliveryKey} from './tournivalDelivery.ts';
 import {validateTournivalDeliveryEligibility} from './tournivalEligibility.ts';
 import {inspectTournivalQueue} from './tournivalRecovery.ts';
+import {assessTournivalConsent} from './tournivalConsent.ts';
 const clean=(v:any,max=5000)=>String(v??'').trim().slice(0,max);
 Deno.serve(async(req)=>{
  try{
@@ -230,11 +231,9 @@ Deno.serve(async(req)=>{
         owner_scope:'tenant',tenant_id:tenantId,person_id:personId,channel:'whatsapp'
       },'-updated_date',100):Promise.resolve([])
     ]);
-    const blocked=(suppressions||[]).some((x:any)=>
-      (personId&&x.person_id===personId)||(x.endpoint_hash&&x.endpoint_hash===endpointHash))||
-      (preferences||[]).some((x:any)=>x.status==='withdrawn'&&
-        (!x.purpose||x.purpose===campaign.purpose));
-    if(blocked)return Response.json({error:'WhatsApp recipient suppressed; no handoff started'},{status:409});
+    const consent=assessTournivalConsent({channel:'whatsapp',purpose:campaign.purpose,
+      personId,endpointHash,suppressions:suppressions||[],preferences:preferences||[]});
+    if(!consent.allowed)return Response.json({error:'WhatsApp handoff prohibited: '+consent.reason},{status:409});
     const claimed=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.updateMany({
       id:attempt.id,tenant_id:tenantId,status:'queued'
     },{$set:{status:'sending',provider:'manual_whatsapp_handoff'}});
@@ -313,11 +312,9 @@ Deno.serve(async(req)=>{
         owner_scope:'tenant',tenant_id:tenantId,person_id:personId,channel:'email'
       },'-updated_date',100):Promise.resolve([])
     ]);
-    const blocked=(suppressions||[]).some((r:any)=>
-      (personId&&r.person_id===personId)||(r.endpoint_hash&&r.endpoint_hash===endpointHash))||
-      (preferences||[]).some((r:any)=>r.status==='withdrawn'&&
-        (!r.purpose||r.purpose===campaign.purpose));
-    if(blocked){
+    const consent=assessTournivalConsent({channel:'email',purpose:campaign.purpose,
+      personId,endpointHash,suppressions:suppressions||[],preferences:preferences||[]});
+    if(!consent.allowed){
       await base44.asServiceRole.entities.CommunicationDeliveryAttempt.updateMany({
         id:attempt.id,tenant_id:tenantId,status:'queued'
       },{$set:{status:'suppressed',error_code:'recipient_suppressed'}});
