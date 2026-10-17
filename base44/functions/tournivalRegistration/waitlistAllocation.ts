@@ -13,7 +13,7 @@ export async function allocateTournivalWaitlistTicket({
   await tournaments.updateMany({...scope,tournival_waitlist_sequence:null},
     {$set:{tournival_waitlist_sequence:seed}});
   for(let i=0;i<attempts;i++){
-    const row=(await tournaments.filter(scope,'-created_date',1))?.[0];
+    const row=await tournaments.get(tournamentId);
     const seen=Number(row?.tournival_waitlist_sequence);
     if(!Number.isSafeInteger(seen)||seen<0||seen===Number.MAX_SAFE_INTEGER)
       throw Error('Waitlist sequence requires administrator reconciliation');

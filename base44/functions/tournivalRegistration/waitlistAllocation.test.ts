@@ -4,7 +4,7 @@ import {allocateTournivalWaitlistTicket} from './waitlistAllocation.ts';
 Deno.test('100 concurrent durable FIFO tickets are unique and contiguous',async()=>{
  let value:null|number=null;
  const tournaments={
-  async filter(){await Promise.resolve();return [{tournival_waitlist_sequence:value}]},
+  async get(){await Promise.resolve();return {tournival_waitlist_sequence:value}},
   async updateMany(query:any,update:any){
    await Promise.resolve();
    if(query.tournival_waitlist_sequence!==value)return {updated:0};
@@ -20,7 +20,7 @@ Deno.test('100 concurrent durable FIFO tickets are unique and contiguous',async(
  assert.equal(value,100);
 });
 Deno.test('full or corrupt sequence fails closed',async()=>{
- const tournaments={filter:async()=>[{tournival_waitlist_sequence:NaN}],updateMany:async()=>({updated:0})};
+ const tournaments={get:async()=>({tournival_waitlist_sequence:NaN}),updateMany:async()=>({updated:0})};
  await assert.rejects(allocateTournivalWaitlistTicket({
   tournaments,tournamentId:'test',tenantId:'synthetic',seed:0
  }),/reconciliation/);
