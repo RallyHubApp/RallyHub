@@ -24,6 +24,7 @@ import TournivalRegistrations from './TournivalRegistrations';
 import TournivalDuprReview from './TournivalDuprReview';
 import TournivalAnnouncements from './TournivalAnnouncements';
 import TournivalTimingMonitor from './TournivalTimingMonitor';
+import TournivalStatistics from './TournivalStatistics';
 import { indexTournivalMatches } from '@/lib/tournivalScheduler';
 import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 
@@ -40,6 +41,7 @@ const TABS = [
   { id: 'dupr', label: 'DUPR', icon: Trophy },
   { id: 'announcements', label: 'Announcements', icon: Zap },
   { id: 'timing', label: 'Schedule', icon: Zap },
+  { id: 'statistics', label: 'Statistics', icon: BarChart2 },
 ];
 
 // ── Player Entry Panel ────────────────────────────────────────────────────────
@@ -421,6 +423,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
       />
 
       {activeTab === 'rehearsal' && isAdmin && <TournivalRehearsal />}
+      {activeTab === 'statistics' && state && <TournivalStatistics state={state} playerMap={playerMap} />}
       {activeTab === 'timing' && state && <TournivalTimingMonitor state={state} onSaveState={saveState} isAdmin={isAdmin} />}
       {activeTab === 'announcements' && state && isAdmin && <TournivalAnnouncements tournament={tournament} state={state} isAdmin={isAdmin} onSaveState={saveState} playerMap={playerMap} />}
       {activeTab === 'dupr' && isAdmin && <TournivalDuprReview tournament={tournament} state={state} isAdmin={isAdmin} />}
