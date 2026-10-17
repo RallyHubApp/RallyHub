@@ -47,6 +47,7 @@
         "type": "string"
       }
     },
+    "tournival_communication_keys": {"type":"array", "items":{"type":"string"}, "description":"Atomic Communications Centre event deduplication ledger"},
     "tournival_waitlist_sequence": {
       "type": "number",
       "description": "Monotonic unique waitlist ticket allocator; never decrease or recycle tickets"

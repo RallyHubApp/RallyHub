@@ -31,15 +31,25 @@ export async function queueTournivalCommunication(base44:any,{
  const key=makeTournivalDeliveryKey({tenantId,eventId,purpose,recipientId:sourceRecordId,channel,version:String(deliveryVersion||1)});
  const existing=await ledger.filter({tenant_id:tenantId,idempotency_key:key},'-created_date',2);
  if(existing?.length)return {queued:false,duplicate:true,attemptId:existing[0].id,status:existing[0].status};
- // Reserve dedupe identity before allocating other rows. A server-side keyed
- // upsert prevents the same logical event creating a second queue entry.
- const lock=await ledger.upsert([{tenant_id:tenantId,idempotency_key:key,
-  campaign_id:'pending',recipient_id:sourceRecordId,channel,status:'queued',
-  attempt_number:1,provider:'none',queued_at:new Date().toISOString(),
-  metadata:{source_module:'Tournival',event_id:eventId,operation_id:operationId||'',delivery_version:deliveryVersion||1}
- }],{key:['tenant_id','idempotency_key']});
- if(lock.created!==1)return {queued:false,duplicate:true,attemptId:lock.records?.[0]?.id||'',status:lock.records?.[0]?.status};
- const attempt=lock.records[0];
+ // Base44 service role does not support upsert in every runtime. The event's
+ // dedupe-key array is conditionally updated atomically instead.
+ const claim=await base44.asServiceRole.entities.Tournament.updateMany({
+  id:eventId,tenant_id:tenantId,host_club_id:clubId,
+  tournival_communication_keys:{$ne:key}
+ },{$addToSet:{tournival_communication_keys:key}});
+ if(claim.updated!==1)return {queued:false,duplicate:true,status:'already_reserved'};
+ let attempt:any;
+ try{
+  attempt=await ledger.create({tenant_id:tenantId,idempotency_key:key,
+   campaign_id:'pending',recipient_id:sourceRecordId,channel,status:'queued',
+   attempt_number:Number(deliveryVersion||1),provider:'none',queued_at:new Date().toISOString(),
+   metadata:{source_module:'Tournival',event_id:eventId,operation_id:operationId||'',delivery_version:deliveryVersion||1}
+  });
+ }catch(e){
+  await base44.asServiceRole.entities.Tournament.updateMany({id:eventId,tenant_id:tenantId},
+   {$pull:{tournival_communication_keys:key}});
+  throw e;
+ }
  const campaign=await base44.asServiceRole.entities.CommunicationCampaign.create({
   owner_scope:'tenant',tenant_id:tenantId,club_id:clubId,source_module:'Tournival',
   source_record_id:eventId,kind:'transactional',purpose,name:purpose,status:'queued',
