@@ -16,6 +16,7 @@ import TournivalFixtures from './TournivalFixtures';
 import TournivalScoring from './TournivalScoring';
 import TournivalLeaderboard from './TournivalLeaderboard';
 import TournivalKnockout from './TournivalKnockout';
+import TournivalRehearsal from './TournivalRehearsal';
 import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 
 const TABS = [
@@ -24,6 +25,7 @@ const TABS = [
   { id: 'scores', label: 'Scores', icon: ClipboardList },
   { id: 'standings', label: 'Standings', icon: BarChart2 },
   { id: 'knockout', label: 'Cup', icon: Trophy },
+  { id: 'rehearsal', label: 'Rehearsal', icon: Zap },
 ];
 
 // ── Player Entry Panel ────────────────────────────────────────────────────────
@@ -393,6 +395,8 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
           queryClient.invalidateQueries({ queryKey: ['players'] });
         }}
       />
+
+      {activeTab === 'rehearsal' && isAdmin && <TournivalRehearsal />}
 
       {activeTab === 'setup' && (
         <TournivalSetup
