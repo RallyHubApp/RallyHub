@@ -322,11 +322,17 @@ Deno.serve(async (req) => {
       }
       const now=new Date().toISOString();
       if(session){
-        await base44.asServiceRole.entities.TournivalSession.update(session.id,{
+        const saved=await base44.asServiceRole.entities.TournivalSession.updateMany({
+          id:session.id,tenant_id:tournament.tenant_id,state_revision:expectedRevision
+        },{$set:{
           state_json:JSON.stringify(next),state_revision:next.revision,
           last_operation_id:operationId,updated_at:now,
           status:mappedStatus||session.status||'draft'
-        });
+        }});
+        if(saved.updated!==1)return Response.json({
+          error:'Another host saved this revision first; refresh and retry',
+          currentRevision:expectedRevision
+        },{status:409});
       }else{
         await base44.asServiceRole.entities.TournivalSession.create({
           tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,

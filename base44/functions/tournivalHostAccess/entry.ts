@@ -89,10 +89,17 @@ Deno.serve(async(req)=>{
   }
   next.revision=expectedRevision+1;
   next.lastOperationId=operationId;
-  await base44.asServiceRole.entities.TournivalSession.update(session.id,{
+  // Atomic compare-and-swap: reject contenders who read the same prior revision.
+  // Base44 updateMany applies the filter and $set in one database operation.
+  const save=await base44.asServiceRole.entities.TournivalSession.updateMany({
+   id:session.id,tenant_id:tournament.tenant_id,state_revision:expectedRevision
+  },{$set:{
    state_json:JSON.stringify(next),state_revision:next.revision,last_operation_id:operationId,
    updated_at:new Date().toISOString()
-  });
+  }});
+  if(save.updated!==1)return Response.json({
+   error:'Host state changed during save; refresh before retrying',revision:expectedRevision
+  },{status:409});
   await base44.asServiceRole.entities.Tournament.update(tournament.id,{
    tournival_state:JSON.stringify(next),
    status:next.status==='Group Complete'?'In Progress':tournament.status

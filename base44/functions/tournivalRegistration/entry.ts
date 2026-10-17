@@ -98,7 +98,20 @@ Deno.serve(async(req)=>{
       tenant_id:tournament.tenant_id,full_name:name,primary_email:email,mobile,
       source_system:'tournival_registration',profile_visibility:'private'
     });
-    const accepted=registered<event.capacity;
+    // Initialise the event's durable reservation counter exactly once. Existing
+    // registration history is counted at migration; concurrent initialisers are
+    // excluded by the $exists predicate. No read-check-create capacity gate.
+    await base44.asServiceRole.entities.Tournament.updateMany({
+      id:tournament.id,tenant_id:tournament.tenant_id,
+      tournival_reserved_count:{$exists:false}
+    },{$set:{tournival_reserved_count:registered}});
+    // Atomic capacity claim. At most 'capacity' contenders can increment from
+    // below the limit; all later contenders become waitlisted.
+    const reservation=await base44.asServiceRole.entities.Tournament.updateMany({
+      id:tournament.id,tenant_id:tournament.tenant_id,
+      tournival_reserved_count:{$lt:event.capacity}
+    },{$inc:{tournival_reserved_count:1}});
+    const accepted=reservation.updated===1;
     const fee=Number(event.fee)||0;
     const status=!accepted?'waitlisted':fee>0?'pending_payment':'confirmed';
     let registration=await base44.asServiceRole.entities.TournivalRegistration.create({
@@ -123,12 +136,11 @@ Deno.serve(async(req)=>{
       source_system:'tournival_registration',source_row:registration.id
     });
     if(status==='confirmed'){
-      const roster=Array.isArray(tournament.player_ids)?tournament.player_ids:[];
-      if(!roster.includes(player.id)){
-        await base44.asServiceRole.entities.Tournament.update(tournament.id,{
-          player_ids:[...roster,player.id]
-        });
-      }
+      // Atomic set insertion prevents two concurrent registrants overwriting
+      // each other's roster projection.
+      await base44.asServiceRole.entities.Tournament.updateMany({
+        id:tournament.id,tenant_id:tournament.tenant_id
+      },{$addToSet:{player_ids:player.id}});
     }
     // Issue a distinct persistent personalised player link, independent from
     // the event registration link; store a hash, never the bearer value.

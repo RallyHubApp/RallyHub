@@ -47,6 +47,10 @@
         "type": "string"
       }
     },
+    "tournival_reserved_count": {
+      "type": "number",
+      "description": "Atomic confirmed or pending-payment capacity reservations for Tournival only"
+    },
     "max_players": {
       "type": [
         "number",
