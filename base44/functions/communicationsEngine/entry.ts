@@ -69,6 +69,67 @@ Deno.serve(async(req)=>{
     return Response.json({success:true,deliveryPerformed:false,
       ...queued,channel,purpose,deliveryVersion:version});
   }
+  // Only the operator can release a pre-queued email. Claim the attempt
+  // atomically before provider contact. Ambiguous sends stay 'sending' and
+  // require investigation rather than unsafe automatic retries.
+  if(action==='dispatch_tournival'){
+    if(ownerScope!=='tenant'||!clubId||body.confirmDispatch!==true)
+      return Response.json({error:'Explicit tenant and operator send confirmation required'},{status:400});
+    const attemptId=clean(body.attemptId,120);
+    const attempts=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({
+      id:attemptId,tenant_id:tenantId
+    },'-created_date',1);
+    const attempt=attempts?.[0];
+    if(!attempt||attempt.status!=='queued')
+      return Response.json({error:'Delivery not queued or already claimed'},{status:409});
+    if(attempt.channel!=='email')
+      return Response.json({error:'WhatsApp provider is not connected for automatic delivery'},{status:409});
+    const [messages,recipients,campaigns]=await Promise.all([
+      base44.asServiceRole.entities.CommunicationMessage.filter({
+        id:attempt.message_id,tenant_id:tenantId
+      },'-created_date',1),
+      base44.asServiceRole.entities.CommunicationRecipient.filter({
+        id:attempt.recipient_id,tenant_id:tenantId
+      },'-created_date',1),
+      base44.asServiceRole.entities.CommunicationCampaign.filter({
+        id:attempt.campaign_id,tenant_id:tenantId,club_id:clubId
+      },'-created_date',1)
+    ]);
+    const [message,recipient,campaign]=[messages?.[0],recipients?.[0],campaigns?.[0]];
+    if(!message||!recipient||!campaign||campaign.source_module!=='Tournival'||
+       recipient.eligibility_status!=='eligible'||!recipient.email)
+      return Response.json({error:'Recipient or campaign is not authorised for delivery'},{status:409});
+    const transport=await resolveEmailTransport(base44,{
+      scopeType:'tenant',tenantId,clubId,purpose:campaign.purpose
+    });
+    if(transport.status!=='configured')
+      return Response.json({error:'Tenant sender is not configured'},{status:409});
+    const claimed=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.updateMany({
+      id:attempt.id,tenant_id:tenantId,status:'queued'
+    },{$set:{status:'sending'}});
+    if(claimed.updated!==1)return Response.json({error:'Another sender claimed this attempt'},{status:409});
+    try{
+      const sent=await sendWithConfiguredEmailTransport(base44,{
+        scopeType:'tenant',tenantId,clubId,purpose:campaign.purpose
+      },{to:recipient.email,subject:message.subject,textBody:message.plain_text_body,htmlBody:message.html_body});
+      await base44.asServiceRole.entities.CommunicationDeliveryAttempt.update(attempt.id,{
+        status:'sent',provider:sent.provider,sent_at:new Date().toISOString()
+      });
+      await base44.asServiceRole.entities.CommunicationEvent.create({
+        campaign_id:campaign.id,message_id:message.id,recipient_id:recipient.id,
+        delivery_attempt_id:attempt.id,tenant_id:tenantId,event_type:'sent',
+        occurred_at:new Date().toISOString(),actor_user_id:user.id
+      });
+      return Response.json({success:true,deliveryAttemptId:attempt.id,status:'sent'});
+    }catch(e:any){
+      // Unknown provider outcome. Do not requeue without a new operator audit.
+      await base44.asServiceRole.entities.CommunicationDeliveryAttempt.update(attempt.id,{
+        status:'failed',error_message:clean(e?.message||'Unverified provider outcome',500)
+      });
+      return Response.json({error:'Provider outcome unverified; investigate before resend',
+        deliveryAttemptId:attempt.id},{status:502});
+    }
+  }
   if(action==='transport_health'){
     const config=await resolveEmailTransport(base44,scope);
     return Response.json({success:true,provider:config.provider,status:config.status,senderName:config.sender_name,senderEmail:config.sender_email,replyTo:config.reply_to||config.sender_email});
