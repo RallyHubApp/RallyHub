@@ -51,18 +51,13 @@ export function generateGroupFixtures(playerIds, numCourts, numRounds = 4) {
 }
 
 function generateOneRound(playerIds, numCourts, partnerHistory, opponentHistory, roundNumber) {
-  const active = [...playerIds];
-  const bench = [];
-
-  // How many players can play (numCourts * 4)
-  const slots = numCourts * 4;
-  if (active.length > slots) {
-    // Use seed order as the source order and rotate bench predictably by round.
-    const offset = ((roundNumber - 1) * slots) % active.length;
-    const rotated = [...active.slice(offset), ...active.slice(0, offset)];
-    bench.push(...rotated.slice(slots));
-    active.splice(0, active.length, ...rotated.slice(0, slots));
-  }
+  // Rotate every participant through the bench, including a short final court.
+  // A fixture always requires four players; unallocated entrants must never vanish.
+  const slots = Math.max(0, Math.floor(Math.min(playerIds.length, numCourts * 4) / 4) * 4);
+  const offset = playerIds.length ? ((roundNumber - 1) * Math.max(1, slots)) % playerIds.length : 0;
+  const rotated = [...playerIds.slice(offset), ...playerIds.slice(0, offset)];
+  const active = rotated.slice(0, slots);
+  const bench = rotated.slice(slots);
 
   // Pair players into teams trying to minimise partner repeats, keeping seed order as the base order
   const players = [...active];
@@ -97,9 +92,10 @@ function generateOneRound(playerIds, numCourts, partnerHistory, opponentHistory,
 
     // Find best opposing team
     const remaining = teams.map((t, i) => ({ t, i })).filter(({ i }) => !usedTeams.has(i));
-    remaining.sort(({ t: ta }) => {
-      const seen = teamA.some(p => ta.some(q => opponentHistory[p].has(q)));
-      return seen ? 1 : -1;
+    remaining.sort(({ t: ta }, { t: tb }) => {
+      const repeats = team => teamA.reduce((sum, p) =>
+        sum + team.reduce((count, q) => count + Number(opponentHistory[p].has(q)), 0), 0);
+      return repeats(ta) - repeats(tb);
     });
     const { t: teamB, i: idxB } = remaining[0];
     usedTeams.add(idxB);
