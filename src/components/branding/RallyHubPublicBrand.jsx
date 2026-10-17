@@ -1,6 +1,7 @@
 import React from 'react';
 
-const RALLYHUB_MARK_URL = '/assets/brand/rallyhub-app-icon-approved.png';
+// The app icon is NOT the approved RallyHub wordmark. Use the locked original brand source.
+const RALLYHUB_MARK_URL = '/assets/rallyhub-logo-transparent.png';
 
 function ClubChip({ club }) {
   if (!club?.name && !club?.logo_url) return null;
