@@ -245,7 +245,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
       result: null,
     }));
 
-    const knockoutState = { pairs, bracket, currentStage: 'QF' };
+    const knockoutState = { pairs, bracket, currentStage: bracket[0]?.stage || 'Final' };
     await saveState({ ...state, knockoutState });
     toast.success('Cup matches created!');
     setActiveTab('knockout');

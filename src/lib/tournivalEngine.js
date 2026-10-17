@@ -240,6 +240,7 @@ export function createKnockoutPairs(rankedPlayers) {
  * Classic seeding: 1v8, 4v5, 3v6, 2v7
  */
 export function createKnockoutBracket(pairs) {
+  if (pairs.length === 2) return [{ match: 'Final', pair1: pairs[0], pair2: pairs[1] }];
   if (pairs.length === 8) {
     return [
       { match: 'QF1', pair1: pairs[0], pair2: pairs[7] }, // 1 v 8

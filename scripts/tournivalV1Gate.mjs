@@ -36,6 +36,8 @@ assert.equal(board.length,16);
 const pairs=createKnockoutPairs(board);
 assert.equal(pairs.length,8);
 assert.equal(createKnockoutBracket(pairs).length,4);
+assert.equal(createKnockoutBracket(pairs.slice(0,4))[0].match,'SF1');
+assert.equal(createKnockoutBracket(pairs.slice(0,2))[0].match,'Final');
 assert.equal(estimateDuration({numPlayers:16,numCourts:4,numRounds:1,matchFormat:'timed_10'}).valid,false);
 assert.equal(estimateDuration({numPlayers:16,numCourts:4,numRounds:6,matchFormat:'timed_10',venueMinutes:75}).venueValid,false);
 console.log('TOURNIVAL V1 GATE PASS:',checked,'sporting fixture/estimator scenarios; score validation, knockout, bounds.');
