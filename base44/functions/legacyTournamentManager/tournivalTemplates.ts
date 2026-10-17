@@ -4,7 +4,7 @@ export const TOURNIVAL_PURPOSES = new Set([
   'tournival_registration_received','tournival_payment_required',
   'tournival_payment_confirmed','tournival_waitlist_added',
   'tournival_waitlist_promoted','tournival_host_invite',
-  'tournival_player_link','tournival_results'
+  'tournival_player_link','tournival_results','tournival_post_event_thanks'
 ]);
 const escape=(v:string)=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;')
   .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');

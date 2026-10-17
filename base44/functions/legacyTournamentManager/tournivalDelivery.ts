@@ -9,7 +9,8 @@ export const TOURNIVAL_EVENTS={
  waitlisted:'tournival_waitlist_added',
  promoted:'tournival_waitlist_promoted',
  host:'tournival_host_invite',
- results:'tournival_results'
+ results:'tournival_results',
+ post_event_thanks:'tournival_post_event_thanks'
 } as const;
 const emailKey=(value:any)=>String(value||'').trim().toLowerCase();
 export function makeTournivalDeliveryKey({tenantId,eventId,purpose,recipientId,channel,version='1'}:any){
