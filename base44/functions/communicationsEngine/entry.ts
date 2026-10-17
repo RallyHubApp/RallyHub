@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { resolveEmailTransport, sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { resolveApprovedTournivalTemplate } from './tournivalTemplates.ts';
 import {queueTournivalCommunication,listTournivalAudience,TOURNIVAL_EVENTS} from './tournivalDelivery.ts';
+import {validateTournivalDeliveryEligibility} from './tournivalEligibility.ts';
 const clean=(v:any,max=5000)=>String(v??'').trim().slice(0,max);
 Deno.serve(async(req)=>{
  try{
@@ -198,6 +199,12 @@ Deno.serve(async(req)=>{
     if(!message||!recipient||!campaign||campaign.source_module!=='Tournival'||
        recipient.eligibility_status!=='eligible'||!recipient.email)
       return Response.json({error:'Recipient or campaign is not authorised for delivery'},{status:409});
+    const currentState=await validateTournivalDeliveryEligibility(base44,{
+      tenantId,clubId,campaign,recipient
+    });
+    if(!currentState.eligible)return Response.json({
+      error:'Tournival delivery is no longer eligible: '+currentState.reason
+    },{status:409});
     let transport:any;
     try{
       transport=await resolveEmailTransport(base44,{
