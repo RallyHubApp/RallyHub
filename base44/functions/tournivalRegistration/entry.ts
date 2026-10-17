@@ -103,7 +103,7 @@ Deno.serve(async(req)=>{
     // excluded by the $exists predicate. No read-check-create capacity gate.
     await base44.asServiceRole.entities.Tournament.updateMany({
       id:tournament.id,tenant_id:tournament.tenant_id,
-      tournival_reserved_count:{$exists:false}
+      tournival_reserved_count:null
     },{$set:{tournival_reserved_count:registered}});
     // Atomic capacity claim. At most 'capacity' contenders can increment from
     // below the limit; all later contenders become waitlisted.
