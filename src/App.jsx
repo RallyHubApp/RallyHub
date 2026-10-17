@@ -43,6 +43,7 @@ const PublicClubChallengeVote = lazy(() => import('@/pages/PublicClubChallengeVo
 const PublicClubChallengeShowcaseScorer = lazy(() => import('@/pages/PublicClubChallengeShowcaseScorer'));
 const PublicInterclubRegistration = lazy(() => import('@/pages/PublicInterclubRegistration'));
 const PublicTournivalRegistration = lazy(() => import('@/pages/PublicTournivalRegistration'));
+const PublicTournivalPlayer = lazy(() => import('@/pages/PublicTournivalPlayer'));
 const PublicInterclubTeamManager = lazy(() => import('@/pages/PublicInterclubTeamManager'));
 const PublicInterclubCommittee = lazy(() => import('@/pages/PublicInterclubCommittee'));
 const PublicGuestSessionBooking = lazy(() => import('@/pages/PublicGuestSessionBooking'));
@@ -292,6 +293,7 @@ function App() {
             <Route path="/t/:id" element={<PublicTournament />} />
             <Route path="/club-challenge/register/:token" element={<PublicInterclubRegistration />} />
             <Route path="/tournival/register/:token" element={<PublicTournivalRegistration />} />
+            <Route path="/tournival/player/:token" element={<PublicTournivalPlayer />} />
             <Route path="/club-challenge/team-manager/:token" element={<PublicInterclubTeamManager />} />
             <Route path="/club-challenge/committee/:token" element={<PublicInterclubCommittee />} />
             <Route path="/guest-session/:token" element={<PublicGuestSessionBooking />} />
