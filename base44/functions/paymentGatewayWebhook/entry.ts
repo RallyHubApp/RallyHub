@@ -345,6 +345,20 @@ Deno.serve(async(req)=>{
               confirmed_at:reg.confirmed_at||now,payment_record_id:payment.id,
               payment_reference:verified.transactionId||verified.transactionCode||checkoutId
             });
+            // Add only confirmed paid players to the Tournival sporting roster;
+            // keep the event's other sporting state and completed results intact.
+            const tournaments=await base44.asServiceRole.entities.Tournament.filter({
+              id:reg.tournament_id,tenant_id:reg.tenant_id
+            },'-created_date',5);
+            const eventTournament=tournaments?.[0];
+            if(eventTournament&&String(eventTournament.format).toLowerCase()==='tournival'){
+              const ids=Array.isArray(eventTournament.player_ids)?eventTournament.player_ids:[];
+              if(!ids.includes(reg.player_id)){
+                await base44.asServiceRole.entities.Tournament.update(eventTournament.id,{
+                  player_ids:[...ids,reg.player_id]
+                });
+              }
+            }
           }
         }
       }

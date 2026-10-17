@@ -110,6 +110,16 @@ Deno.serve(async(req)=>{
       ...(status==='confirmed'?{confirmed_at:new Date().toISOString()}:{}),
       ...(status==='waitlisted'?{waitlist_position:waitlisted+1}:{})
     });
+    // Confirmed free registration participates in the same player roster used
+    // by the existing Tournival Setup screen. Pending/waitlisted never enter it.
+    if(status==='confirmed'){
+      const roster=Array.isArray(tournament.player_ids)?tournament.player_ids:[];
+      if(!roster.includes(player.id)){
+        await base44.asServiceRole.entities.Tournament.update(tournament.id,{
+          player_ids:[...roster,player.id]
+        });
+      }
+    }
     // Issue a distinct persistent personalised player link, independent from
     // the event registration link; store a hash, never the bearer value.
     const random=crypto.getRandomValues(new Uint8Array(24));
