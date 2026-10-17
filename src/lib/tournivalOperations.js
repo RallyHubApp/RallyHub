@@ -12,7 +12,7 @@ export function createTournivalEvent({id,tenantId,clubId,capacity=32,fee=0,rehea
 }
 function update(event,type,actor,change,details={}) {
  const at=new Date().toISOString();
- return {...change,revision:event.revision+1,audit:[...event.audit,{revision:event.revision+1,type,actor,at,...details}]};
+ return {...event,...change,revision:event.revision+1,audit:[...event.audit,{revision:event.revision+1,type,actor,at,...details}]};
 }
 export function registerTournivalPlayer(event,{playerId,name,email='',operationId,actor='self'}) {
  if(event.phase!=='registration')throw Error('Registration closed');
