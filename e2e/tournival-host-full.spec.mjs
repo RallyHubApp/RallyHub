@@ -9,7 +9,7 @@ test(`Full Tournival host journey ${size.width}px`,async({page})=>{
  console.log('BODY:',(await page.locator('body').innerText()).slice(0,350));
  await expect(page.getByText('Tournival Setup')).toBeVisible();
  await expect(page.getByText('2 rounds').count()).resolves.toBeGreaterThanOrEqual(1).catch(()=>{});
- await page.getByRole('button',{name:'Confirm seed order'}).click();
+ await page.getByRole('button',{name:'Confirm seed order',exact:true}).click();
  await expect(page.getByText('Generate Fixtures & Start')).toBeEnabled();
  await page.getByText('Generate Fixtures & Start').click();
  await expect(page.getByText('Continuous Tournival Court Control')).toBeVisible();
