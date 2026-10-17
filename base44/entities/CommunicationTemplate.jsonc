@@ -12,6 +12,7 @@
     "tenant_id": {
       "type": "string"
     },
+    "club_id": {"type":"string"},
     "module": {
       "type": "string"
     },
