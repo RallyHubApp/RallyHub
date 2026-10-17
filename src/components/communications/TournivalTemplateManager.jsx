@@ -93,7 +93,7 @@ export default function TournivalTemplateManager(){
   <label className="block text-sm">Email body — plain text<textarea className="block border rounded-lg p-2 w-full mt-1 h-28" value={draft.plain_text_template||''} onChange={e=>edit('plain_text_template',e.target.value)}/></label>
   <label className="block text-sm">Email header title<input className="block border rounded-lg p-2 w-full mt-1" value={draft.channel_templates?.email?.header_title||''} onChange={e=>updateChannel('email','header_title',e.target.value)}/></label>
   <label className="block text-sm">Approved WhatsApp body (optional until channel configured)<textarea className="block border rounded-lg p-2 w-full mt-1 h-24" value={draft.channel_templates?.whatsapp?.text_template||''} onChange={e=>updateChannel('whatsapp','text_template',e.target.value)}/></label>
-  <p className="text-xs text-muted-foreground">Action merge fields include {{PAYMENT_LINK}}, {{PLAYER_LINK}}, {{HOST_LINK}}, {{RESULTS_LINK}} and {{EVENT_LINK}}. Links are resolved from the triggering event, not stored as permanent tenant text.</p>
+  <p className="text-xs text-muted-foreground">Action merge fields include {'{{PAYMENT_LINK}}'}, {'{{PLAYER_LINK}}'}, {'{{HOST_LINK}}'}, {'{{RESULTS_LINK}}'} and {'{{EVENT_LINK}}'}. Links are resolved from the triggering event, not stored as permanent tenant text.</p>
   {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
   {notice&&<p role="status" className="text-sm text-green-700">{notice}</p>}
   <div className="flex gap-2 flex-wrap">
