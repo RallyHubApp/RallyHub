@@ -71,3 +71,21 @@
 - Deployed existing `paymentGatewayWebhook` to isolated UAT. Negative test with an invented synthetic checkout/reference **PASSED**: webhook returned error without SumUp credentials, and PaymentRecord stayed pending, linked TournivalRegistration remained pending_payment, roster stayed empty. This is NOT a genuine SumUp-paid/failed/refunded callback test, and no external charge was performed.
 - Real isolated DUPR UAT `status` again showed `DUPR_CLIENT_ID`, `DUPR_CLIENT_KEY`, `DUPR_CLIENT_SECRET` all absent. `test_connection` returned a safe configuration error. The real `preview_tournival_uat` endpoint returned `dry_run_only`, zero eligible matches (event not opted in), `submissionPerformed:false`. Full SSO, identity mapping, batch submission and webhook reconciliation are **not tested** and remain release-blocked.
 - Deno waitlist allocator tests 2/2 PASS, Deno static checks PASS, Tournival pure regression gates PASS. **Remote full parallel FIFO throughput remains unresolved under Base44 service rate limits**; do not imply prod readiness.
+
+## Live persistent knockout-to-final acceptance — isolated backend PASS
+- Using existing eight-player **synthetic** UAT event `6ad371e4f550cb5c8e265b97` and its previously scored qualification results, called the **deployed** authenticated `legacyTournamentManager.update_tournival` endpoint.
+- Saved semifinal draw at persistent state revision 12; scored both semifinals and generated final + third-place playoff at revision 13.
+- Tried to complete tournament before recording final: correctly rejected (HTTP 409).
+- First final test script accidentally submitted contradictory third-place score and winner; validator correctly rejected it. Corrected test data and **resumed from persisted revision 13** without resetting fixtures.
+- Successfully saved both final (11–9) and third-place (7–11) results with consistent winners. Tournament status became `Completed`, persistent TournivalSession state revision **14**.
+- Fresh Base44 entity reads and `tournivalPublicRead` confirmed that Live Hall exposes the completed final result. No real customers/players or provider operations involved.
+- Subsequent remote negative test confirmed attempts to remove a completed final result are rejected (HTTP 409), stored result remains intact, and Live Hall returns `unchanged=true` for the up-to-date client revision.
+- **Phase 1 partial outcome:** persistent qualification-to-final sporting flow PASS. Remaining real player-score writing, device/browser hosting and throttled signup throughput acceptance not passed.
+
+## Base44 scaling decision criteria
+- A transient `Rate limit exceeded` response under 12 simultaneous multi-entity registrations is not evidence that Base44 cannot run a commercial application or proof that a migration is warranted.
+- First quantify per-registration entity and function operations, API request bursts, concurrent sessions, provider 429 incidence, latency p50/p95/p99 and error budget using repeatable measured loads.
+- Optimise operation count, secure server-side idempotency, exponential backoff on safe retryable reads, queue/actor/event-based handling of optional work, and explicit recovery where transactional atomicity is unavailable.
+- Prefer a supported higher-usage Base44 plan or agreed quota increases for demonstrated platform throttling, subject to actual contractual limits. Do not invent limits or performance numbers.
+- Review alternative architecture only if measured tournament peak traffic cannot meet requirements on supported Base44 plans, or fundamental transaction/isolation, observability, operational/residency/security or exportability constraints remain unresolved.
+- A potential future hybrid design would keep Base44 frontend/tenants and move only critical high-frequency transaction operations to approved dedicated transactional services **after owner approval**; do not bypass the Base44-managed GitHub/deployment pathway.
