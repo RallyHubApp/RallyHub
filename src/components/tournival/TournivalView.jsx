@@ -50,12 +50,19 @@ function PlayerPanel({ players, tournament, isAdmin, queryClient, onAddPlayer, o
 
   const [linkCopied, setLinkCopied] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
-  const handleCopyLink = () => {
-    const url = `${window.location.origin}/register/${tournament.id}`;
-    navigator.clipboard.writeText(url).then(() => {
+  const handleCopyLink = async () => {
+    try {
+      if (!isAdmin) throw new Error('Only organisers can issue registration links.');
+      const response = await base44.functions.invoke('legacyTournamentManager', {
+        tournamentId:tournament.id,action:'create_tournival_registration_link'
+      });
+      const data=response?.data||{};
+      if(!data.success || !data.path)throw new Error(data.error||'Could not issue registration link.');
+      await navigator.clipboard.writeText(`${window.location.origin}${data.path}`);
       setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2000);
-    });
+      toast.success('Secure Tournival registration link copied');
+      setTimeout(()=>setLinkCopied(false),2000);
+    }catch(e){toast.error(e?.message||'Unable to copy registration link');}
   };
   const handleCopyShare = () => {
     const url = `${window.location.origin}/tournament/${tournament.id}`;
@@ -75,7 +82,7 @@ function PlayerPanel({ players, tournament, isAdmin, queryClient, onAddPlayer, o
             <span className="text-sm font-semibold text-foreground">Players ({players.length})</span>
           </div>
           <div className="flex gap-1.5">
-            <Button variant="outline" size="sm" className={cn('text-xs gap-1', linkCopied && 'text-primary border-primary/40')} onClick={handleCopyLink}>
+            <Button variant="outline" size="sm" disabled={!isAdmin} className={cn('text-xs gap-1', linkCopied && 'text-primary border-primary/40')} onClick={handleCopyLink}>
               {linkCopied ? <><Check className="w-3 h-3" /> Copied!</> : <><Link2 className="w-3 h-3" /> Reg Link</>}
             </Button>
             <Button variant="outline" size="sm" className={cn('text-xs gap-1', shareCopied && 'text-accent border-accent/40')} onClick={handleCopyShare}>
