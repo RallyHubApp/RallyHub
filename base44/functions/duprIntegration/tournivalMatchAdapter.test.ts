@@ -1,4 +1,5 @@
-import {assertEquals,assert} from 'https://deno.land/std@0.224.0/assert/mod.ts';
+import {strict as assert} from 'node:assert';
+const assertEquals=(a:any,b:any)=>assert.deepEqual(a,b);
 import {prepareTournivalDuprBatch} from './tournivalMatchAdapter.ts';
 const ids=['a','b','c','d'];
 const players=Object.fromEntries(ids.map(id=>[id,{duprId:'UAT-'+id}]));
