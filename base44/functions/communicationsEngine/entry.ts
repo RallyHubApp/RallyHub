@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { resolveEmailTransport, sendWithConfiguredEmailTransport } from './emailRouter.ts';
+import { resolveApprovedTournivalTemplate } from './tournivalTemplates.ts';
 const clean=(v:any,max=5000)=>String(v??'').trim().slice(0,max);
 Deno.serve(async(req)=>{
  try{
@@ -12,6 +13,24 @@ Deno.serve(async(req)=>{
   const tenantId=clean(body.tenantId||user.active_tenant_id,180); const clubId=clean(body.clubId,180)||null;
   if(ownerScope==='tenant'&&!tenantId)return Response.json({error:'tenantId required for tenant communication'},{status:400});
   const scope:any=ownerScope==='platform'?{scopeType:'platform',purpose}:{scopeType:'tenant',purpose,tenantId,clubId};
+  // Read-only preview/validation. Tournival never dispatches via its own mailer.
+  // Actual deliveries must be registered, approved and sent by this Centre.
+  if(action==='preview_tournival'){
+    if(ownerScope!=='tenant'||!clubId)return Response.json({
+      error:'Tournival requires an explicit tenant and club scope'
+    },{status:400});
+    const channel=body.channel==='whatsapp'?'whatsapp':'email';
+    try{
+      const rendered=await resolveApprovedTournivalTemplate(base44,{
+        tenantId,clubId,purpose,channel,fields:body.fields||{}
+      });
+      return Response.json({success:true,previewOnly:true,deliveryPerformed:false,
+        ...rendered});
+    }catch(error:any){
+      return Response.json({success:false,deliveryPerformed:false,
+        error:error?.message||'Approved tenant template unavailable'},{status:409});
+    }
+  }
   if(action==='transport_health'){
     const config=await resolveEmailTransport(base44,scope);
     return Response.json({success:true,provider:config.provider,status:config.status,senderName:config.sender_name,senderEmail:config.sender_email,replyTo:config.reply_to||config.sender_email});
