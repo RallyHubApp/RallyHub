@@ -82,7 +82,9 @@ export async function listTournivalAudience(base44:any,{tenantId,eventId}:any){
    const delivery=(attempts||[]).filter((a:any)=>a.recipient_id===recipient.id).sort((a:any,b:any)=>Number(b.attempt_number)-Number(a.attempt_number))[0];
    result.push({campaignId:c.id,purpose:c.purpose,recipientId:recipient.id,
     name:recipient.display_name,email:recipient.email,mobile:recipient.mobile,
-    eligibility:recipient.eligibility_status,deliveryId:delivery?.id||null,
+    eligibility:recipient.eligibility_status,sourceRecordId:recipient.source_record_id,
+    fields:recipient.personalisation||{},channel:delivery?.channel||'email',
+    deliveryId:delivery?.id||null,
     deliveryStatus:delivery?.status||'not_queued',attemptNumber:delivery?.attempt_number||0});
   }
  }
