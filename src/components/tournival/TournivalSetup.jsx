@@ -32,6 +32,35 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
   const [saving, setSaving] = useState(false);
   const [entryFee, setEntryFee] = useState(String(tournament.event_fee_amount ?? 0));
   const [feeSaving, setFeeSaving] = useState(false);
+  const [playerStage,setPlayerStage]=useState(tournament.tournival_player_stage||'registration');
+  const [playerVenue,setPlayerVenue]=useState(tournament.location||'');
+  const [playerMap,setPlayerMap]=useState(tournament.event_map_url||'');
+  const [playerArrival,setPlayerArrival]=useState(tournament.event_player_info||'');
+  const [playerPhone,setPlayerPhone]=useState(tournament.event_contact_phone||'');
+  const [playerStart,setPlayerStart]=useState(tournament.event_start_time||'');
+  const [playerEnd,setPlayerEnd]=useState(tournament.event_end_time||'');
+  const [playerPublishing,setPlayerPublishing]=useState(false);
+  const useGalwayVenue=()=>{
+    setPlayerVenue('St Joseph’s Doora Barefield GAA Sports Hall, Gurteen, Ennis, Co. Clare, V95 PD36');
+    setPlayerMap('https://maps.google.com/?q=V95+PD36');
+    setPlayerArrival('When you arrive at Gurteen, head towards the right-hand side of the car park, towards the astroturf. There is ample parking on both sides, so park anywhere you can find a space.\n\nAs you drive in and face the main building, the entrance we are using is the very last door at the far right-hand end of the building, beside the astroturf pitch. It looks like an emergency exit rather than a main entrance. The door will be open.');
+  };
+  const savePlayerPublishing=async()=>{
+    if(!isAdmin)return;
+    setPlayerPublishing(true);
+    try{
+      const result=await base44.functions.invoke('legacyTournamentManager',{
+        action:'set_tournival_player_publishing',tournamentId:tournament.id,
+        stage:playerStage,venue:playerVenue,mapUrl:playerMap,arrivalInfo:playerArrival,
+        contactPhone:playerPhone,startTime:playerStart,endTime:playerEnd,confirmPublication:true
+      });
+      if(!result.data?.success)throw Error(result.data?.error||'Could not save player-link details');
+      toast.success('Player link publication stage and venue information saved');
+      window.dispatchEvent(new CustomEvent('tournival-player-stage-updated',{detail:{tournamentId:tournament.id}}));
+    }catch(e){toast.error(e.response?.data?.error||e.message||'Could not save player link')}
+    finally{setPlayerPublishing(false)}
+  };
+
   const saveEntryFee = async () => {
     const amount = Number(entryFee);
     if (!entryFee.trim() || !Number.isFinite(amount) || amount < 0 || amount > 10000 ||
@@ -152,6 +181,38 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
           </div>
         </div>
       </div>
+
+      {/* Persistent personal player link — organiser chooses when competition
+          sections are released. No separate links or hidden data leakage. */}
+      <section className="glass rounded-xl p-5 space-y-3">
+        <h3 className="font-semibold">Player link · staged publication</h3>
+        <p className="text-xs text-muted-foreground">Galway-style journey: registration, venue and contact first. Competition sections stay hidden until you release them. The player's personal link never changes.</p>
+        <Label htmlFor="tournival-player-stage">Information visible to players</Label>
+        <Select value={playerStage} onValueChange={setPlayerStage} disabled={!isAdmin||playerPublishing}>
+          <SelectTrigger id="tournival-player-stage"><SelectValue/></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="registration">Registration & Venue only (default)</SelectItem>
+            <SelectItem value="fixtures">Release qualification fixtures</SelectItem>
+            <SelectItem value="live">Live matches and scores</SelectItem>
+            <SelectItem value="knockout">Release knockout</SelectItem>
+            <SelectItem value="results">Final tournament results</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button type="button" variant="outline" disabled={!isAdmin||playerPublishing} onClick={useGalwayVenue}>Use approved St Joseph's Doora Barefield directions</Button>
+        <Label htmlFor="tournival-player-venue">Venue and address</Label>
+        <Input id="tournival-player-venue" value={playerVenue} onChange={e=>setPlayerVenue(e.target.value)} disabled={!isAdmin}/>
+        <Label htmlFor="tournival-player-map">Google Maps directions URL</Label>
+        <Input id="tournival-player-map" value={playerMap} onChange={e=>setPlayerMap(e.target.value)} disabled={!isAdmin}/>
+        <Label htmlFor="tournival-player-arrival">Parking and entrance instructions</Label>
+        <textarea id="tournival-player-arrival" rows={5} maxLength={2000} value={playerArrival} onChange={e=>setPlayerArrival(e.target.value)} disabled={!isAdmin} className="w-full rounded-md border bg-secondary px-3 py-2 text-sm"/>
+        <Label htmlFor="tournival-player-phone">Event contact phone</Label>
+        <Input id="tournival-player-phone" type="tel" value={playerPhone} onChange={e=>setPlayerPhone(e.target.value)} disabled={!isAdmin}/>
+        <div className="grid grid-cols-2 gap-3">
+         <div><Label htmlFor="tournival-player-start">Start time</Label><Input id="tournival-player-start" type="time" value={playerStart} onChange={e=>setPlayerStart(e.target.value)} disabled={!isAdmin}/></div>
+         <div><Label htmlFor="tournival-player-end">Finish time</Label><Input id="tournival-player-end" type="time" value={playerEnd} onChange={e=>setPlayerEnd(e.target.value)} disabled={!isAdmin}/></div>
+        </div>
+        <Button onClick={savePlayerPublishing} disabled={!isAdmin||playerPublishing} type="button">{playerPublishing?'Saving…':'Save player link & release stage'}</Button>
+      </section>
 
       {/* Event-scoped checkout configuration: never changes the connected club gateway. */}
       <div className="glass rounded-xl p-5 space-y-3">
