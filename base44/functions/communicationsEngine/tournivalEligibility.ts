@@ -4,7 +4,8 @@
  */
 export function reasonForTournivalDelivery(purpose:string,reg:any,payment:any,hasCheckIns:boolean){
  if(!reg)return 'Registration not found in this event';
- if(reg.registration_status==='withdrawn')return 'Registration withdrawn';
+ if(reg.registration_status==='withdrawn'&&purpose!=='tournival_refund_confirmed')
+  return 'Registration withdrawn';
  switch(purpose){
   case 'tournival_registration_received':
    if(reg.registration_status!=='confirmed')return 'Registration is no longer confirmed';
