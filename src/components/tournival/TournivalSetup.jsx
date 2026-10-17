@@ -34,7 +34,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
   const [feeSaving, setFeeSaving] = useState(false);
   const [playerStage,setPlayerStage]=useState(tournament.tournival_player_stage||'registration');
   const [playerVenue,setPlayerVenue]=useState(tournament.location||'');
-  const [playerMap,setPlayerMap]=useState(tournament.event_map_url||'');
+  const [playerMapUrl,setPlayerMapUrl]=useState(tournament.event_map_url||'');
   const [playerArrival,setPlayerArrival]=useState(tournament.event_player_info||'');
   const [playerPhone,setPlayerPhone]=useState(tournament.event_contact_phone||'');
   const [playerStart,setPlayerStart]=useState(tournament.event_start_time||'');
@@ -51,7 +51,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
     try{
       const result=await base44.functions.invoke('legacyTournamentManager',{
         action:'set_tournival_player_publishing',tournamentId:tournament.id,
-        stage:playerStage,venue:playerVenue,mapUrl:playerMap,arrivalInfo:playerArrival,
+        stage:playerStage,venue:playerVenue,mapUrl:playerMapUrl,arrivalInfo:playerArrival,
         contactPhone:playerPhone,startTime:playerStart,endTime:playerEnd,confirmPublication:true
       });
       if(!result.data?.success)throw Error(result.data?.error||'Could not save player-link details');
@@ -202,7 +202,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
         <Label htmlFor="tournival-player-venue">Venue and address</Label>
         <Input id="tournival-player-venue" value={playerVenue} onChange={e=>setPlayerVenue(e.target.value)} disabled={!isAdmin}/>
         <Label htmlFor="tournival-player-map">Google Maps directions URL</Label>
-        <Input id="tournival-player-map" value={playerMap} onChange={e=>setPlayerMap(e.target.value)} disabled={!isAdmin}/>
+        <Input id="tournival-player-map" value={playerMapUrl} onChange={e=>setPlayerMapUrl(e.target.value)} disabled={!isAdmin}/>
         <Label htmlFor="tournival-player-arrival">Parking and entrance instructions</Label>
         <textarea id="tournival-player-arrival" rows={5} maxLength={2000} value={playerArrival} onChange={e=>setPlayerArrival(e.target.value)} disabled={!isAdmin} className="w-full rounded-md border bg-secondary px-3 py-2 text-sm"/>
         <Label htmlFor="tournival-player-phone">Event contact phone</Label>
