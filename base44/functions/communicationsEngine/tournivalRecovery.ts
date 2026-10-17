@@ -26,7 +26,7 @@ export async function inspectTournivalQueue(base44:any,{tenantId,clubId,eventId}
  const attempts=await db.CommunicationDeliveryAttempt.filter({tenant_id:tenantId},'-created_date',1000);
  const scoped=(attempts||[]).filter((a:any)=>keys.includes(a.idempotency_key));
  const ids=(field:string)=>[...new Set(scoped.map((a:any)=>a[field]).filter(
-  (x:any)=>x&&x!=='pending'))];
+  (x:any)=>typeof x==='string'&&/^[0-9a-f]{24}$/i.test(x)))];
  const [campaigns,messages,recipients]=await Promise.all([
   ids('campaign_id').length?db.CommunicationCampaign.filter({tenant_id:tenantId,id:{$in:ids('campaign_id')}},'-created_date',1000):[],
   ids('message_id').length?db.CommunicationMessage.filter({tenant_id:tenantId,id:{$in:ids('message_id')}},'-created_date',1000):[],
