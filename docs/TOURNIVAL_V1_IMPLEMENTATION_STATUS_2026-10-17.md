@@ -98,3 +98,10 @@ These are sandbox code tests, NOT live production acceptance.
 - Added a second, independent Vite+Chromium full Tournival host harness, testing the actual `TournivalView` with a simulated versioned backend. Host setup, seed confirmation, two qualification rounds, independently released courts, standings, semifinals, final and podium progression passed at 390px and 1280px (2/2).
 - Under-pressure host test found a disabled-state defect on the Allocate button when all courts were occupied. That UI control now disables correctly.
 - Explicit test limitation: simulated `legacyTournamentManager` backend; this does **not** replace a persistent Base44 server/role/session concurrency test.
+
+
+## Delegated host bearer-link security and interface
+- Added 192-bit expiring, revocable delegated host links issued and revoked only from the authenticated organiser manager. Server stores SHA256 token hashes, not the bearer values. Default expiry 72 hours. Separate route `/tournival/host/:token` needs no Super Admin login.
+- Dedicated `tournivalHostAccess` backend only permits scoped sporting court/score commands and local operational timing/announcements. It cannot access registration finance, secrets, DUPR integration or tournament configuration. Validated against `validateDelegatedTournivalHostEdit` and `validateTournivalStateTransition`; 3/3 delegated permissions Deno unit tests passed.
+- Delegated host browser test exercises a score save, court assignment, read-only hall and role restrictions at 390px and 1280px (2/2 PASS with test-double backend).
+- The delegated host flow currently covers qualification scoring; knockout stage initiation/finalisation still belongs to the authenticated organiser interface. End-to-end real bearer-token backend execution has not been performed.
