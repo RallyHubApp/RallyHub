@@ -37,7 +37,7 @@ const responses={
  registration:{id:'registration-demo',status:'pending_payment',paymentStatus:'pending',
  checkoutUrl:'https://example.com/sandbox-payment-only',amountDue:5}},
  tournivalPlayerPortal:()=>({success:true,event,player:{id:'p0',name:'Test Player 1',registrationStatus:'confirmed',
-  paymentStatus:'paid',checkedIn:true},matches:[{id:'Q1',round:1,court:1,status:'completed',
+  paymentStatus:'paid',checkedIn:true},displayNames:names,matches:[{id:'Q1',round:1,court:1,status:'completed',
   teamA:['p0','p1'],teamB:['p2','p3'],result:{scoreA:8,scoreB:5}}],
  knockout:[],revision:4}),
  tournivalPublicRead:body=>body.clientRevision===4?{success:true,unchanged:true,revision:4}:

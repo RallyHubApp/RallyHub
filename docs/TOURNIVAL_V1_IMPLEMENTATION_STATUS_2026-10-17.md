@@ -105,3 +105,9 @@ These are sandbox code tests, NOT live production acceptance.
 - Dedicated `tournivalHostAccess` backend only permits scoped sporting court/score commands and local operational timing/announcements. It cannot access registration finance, secrets, DUPR integration or tournament configuration. Validated against `validateDelegatedTournivalHostEdit` and `validateTournivalStateTransition`; 3/3 delegated permissions Deno unit tests passed.
 - Delegated host browser test exercises a score save, court assignment, read-only hall and role restrictions at 390px and 1280px (2/2 PASS with test-double backend).
 - The delegated host flow currently covers qualification scoring; knockout stage initiation/finalisation still belongs to the authenticated organiser interface. End-to-end real bearer-token backend execution has not been performed.
+
+
+## Continued sandbox verification — 17 October
+- Restored Playwright Chromium and its runtime libraries after sandbox environment reset. Complete Tournival browser suite: 20/20 PASS at mobile/desktop with simulated backend. Pure sporting gates and 7 Deno validation/DUPR adapter tests also PASS.
+- Personal player portal now returns tenant-checked, event-roster-restricted display names only, and the player page displays partners and opponents. No emails, phone numbers or DUPR identifiers are returned.
+- Full persistent Base44 backend, payment provider and DUPR UAT integration remain unverified; browser harnesses are mocked and must not be mistaken for genuine server acceptance.
