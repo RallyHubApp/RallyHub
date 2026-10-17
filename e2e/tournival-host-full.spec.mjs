@@ -8,12 +8,10 @@ test(`Full Tournival host journey ${size.width}px`,async({page})=>{
  await page.goto('/e2e/tournivalHostHarness.html');
  console.log('BODY:',(await page.locator('body').innerText()).slice(0,350));
  await expect(page.getByText('Tournival Setup')).toBeVisible();
- await expect(page.getByText('2 rounds').count()).resolves.toBeGreaterThanOrEqual(1).catch(()=>{});
  await page.getByRole('button',{name:'Confirm seed order',exact:true}).click();
  await expect(page.getByText('Generate Fixtures & Start')).toBeEnabled();
  await page.getByText('Generate Fixtures & Start').click();
- console.log('AFTER START:',(await page.locator('body').innerText()).slice(0,600));
- console.log('REVISION:',await page.getByTestId('server-revision').innerText());
+ await page.getByRole('button',{name:'Scores',exact:true}).click();
  await expect(page.getByText('Continuous Tournival Court Control')).toBeVisible();
  const allocate=page.getByRole('button',{name:'Allocate free courts'});
  for(let i=0;i<8;i++){

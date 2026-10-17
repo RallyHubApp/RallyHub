@@ -14,14 +14,14 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('Continuous Tournival Court Control')
+Locator: getByText(/Qualification complete/)
 Expected: visible
 Timeout: 6000ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('Continuous Tournival Court Control') with timeout 6000ms
-  - waiting for getByText('Continuous Tournival Court Control')
+  - Expect "toBeVisible" getByText(/Qualification complete/) with timeout 6000ms
+  - waiting for getByText(/Qualification complete/)
 
 ```
 
@@ -70,31 +70,48 @@ Call log:
   - button "Statistics":
     - img
     - text: Statistics
-  - paragraph: Fairness Check
-  - button "Seed order locked" [disabled]:
-    - img
-    - text: Seed order locked
-  - img
-  - text: All fixtures look fair — no repeated partners or matchups. 1 Round 1 Court 1 Round 1
-  - paragraph: Team A
-  - text: S Simulated Player 1 S Simulated Player 2 vs
-  - paragraph: Team B
-  - text: S Simulated Player 15 S Simulated Player 16 Court 2 Round 1
-  - paragraph: Team A
-  - text: S Simulated Player 3 S Simulated Player 4 vs
-  - paragraph: Team B
-  - text: S Simulated Player 13 S Simulated Player 14 Court 3 Round 1
-  - paragraph: Team A
-  - text: S Simulated Player 5 S Simulated Player 6 vs
-  - paragraph: Team B
-  - text: S Simulated Player 11 S Simulated Player 12 Court 4 Round 1
-  - paragraph: Team A
-  - text: S Simulated Player 7 S Simulated Player 8 vs
-  - paragraph: Team B
-  - text: S Simulated Player 9 S Simulated Player 10
-  - button "Show all 4 rounds":
-    - img
-    - text: Show all 4 rounds
+  - heading "Continuous Tournival Court Control" [level=3]
+  - paragraph: 0/16 qualification matches confirmed · 4 active · 12 waiting · 4 courts
+  - button "Allocate free courts"
+  - button "Pause allocations"
+  - alert: First-to-11 (win by 1) must finish at 11 with the losing score 10 or lower.
+  - article:
+    - heading "Court 1 · Qualification 1" [level=4]
+    - paragraph: Simulated Player 1 & Simulated Player 2
+    - paragraph: v
+    - paragraph: Simulated Player 15 & Simulated Player 16
+    - spinbutton "A score qualification:1:1": "8"
+    - text: –
+    - spinbutton "B score qualification:1:1": "4"
+    - button "Save score"
+  - article:
+    - heading "Court 2 · Qualification 1" [level=4]
+    - paragraph: Simulated Player 3 & Simulated Player 4
+    - paragraph: v
+    - paragraph: Simulated Player 13 & Simulated Player 14
+    - spinbutton "A score qualification:1:2"
+    - text: –
+    - spinbutton "B score qualification:1:2"
+    - button "Save score"
+  - article:
+    - heading "Court 3 · Qualification 1" [level=4]
+    - paragraph: Simulated Player 5 & Simulated Player 6
+    - paragraph: v
+    - paragraph: Simulated Player 11 & Simulated Player 12
+    - spinbutton "A score qualification:1:3"
+    - text: –
+    - spinbutton "B score qualification:1:3"
+    - button "Save score"
+  - article:
+    - heading "Court 4 · Qualification 1" [level=4]
+    - paragraph: Simulated Player 7 & Simulated Player 8
+    - paragraph: v
+    - paragraph: Simulated Player 9 & Simulated Player 10
+    - spinbutton "A score qualification:1:4"
+    - text: –
+    - spinbutton "B score qualification:1:4"
+    - button "Save score"
+  - paragraph: 12 waiting fixtures are allocated as courts and eligible players become free.
 ```
 
 # Test source
@@ -110,28 +127,26 @@ Call log:
   8  |  await page.goto('/e2e/tournivalHostHarness.html');
   9  |  console.log('BODY:',(await page.locator('body').innerText()).slice(0,350));
   10 |  await expect(page.getByText('Tournival Setup')).toBeVisible();
-  11 |  await expect(page.getByText('2 rounds').count()).resolves.toBeGreaterThanOrEqual(1).catch(()=>{});
-  12 |  await page.getByRole('button',{name:'Confirm seed order',exact:true}).click();
-  13 |  await expect(page.getByText('Generate Fixtures & Start')).toBeEnabled();
-  14 |  await page.getByText('Generate Fixtures & Start').click();
-  15 |  console.log('AFTER START:',(await page.locator('body').innerText()).slice(0,600));
-  16 |  console.log('REVISION:',await page.getByTestId('server-revision').innerText());
-> 17 |  await expect(page.getByText('Continuous Tournival Court Control')).toBeVisible();
-     |                                                                     ^ Error: expect(locator).toBeVisible() failed
-  18 |  const allocate=page.getByRole('button',{name:'Allocate free courts'});
-  19 |  for(let i=0;i<8;i++){
-  20 |   if(await allocate.isEnabled())await allocate.click();
-  21 |   const active=page.locator('article').filter({has:page.getByText('Save score')}).first();
-  22 |   await expect(active).toBeVisible();
-  23 |   await active.getByRole('spinbutton',{name:/A score/}).fill('8');
-  24 |   await active.getByRole('spinbutton',{name:/B score/}).fill('4');
-  25 |   await active.getByText('Save score').click();
-  26 |  }
-  27 |  await expect(page.getByText(/Qualification complete/)).toBeVisible();
-  28 |  await page.getByRole('button',{name:'Standings'}).click();
-  29 |  await expect(page.getByRole('button',{name:/Create Cup|Create Knockout|Generate Cup|Cup Matches/i}).first()).toBeVisible();
-  30 |  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
-  31 |  expect(overflow).toBeLessThanOrEqual(1);
-  32 | });
-  33 | 
+  11 |  await page.getByRole('button',{name:'Confirm seed order',exact:true}).click();
+  12 |  await expect(page.getByText('Generate Fixtures & Start')).toBeEnabled();
+  13 |  await page.getByText('Generate Fixtures & Start').click();
+  14 |  await page.getByRole('button',{name:'Scores',exact:true}).click();
+  15 |  await expect(page.getByText('Continuous Tournival Court Control')).toBeVisible();
+  16 |  const allocate=page.getByRole('button',{name:'Allocate free courts'});
+  17 |  for(let i=0;i<8;i++){
+  18 |   if(await allocate.isEnabled())await allocate.click();
+  19 |   const active=page.locator('article').filter({has:page.getByText('Save score')}).first();
+  20 |   await expect(active).toBeVisible();
+  21 |   await active.getByRole('spinbutton',{name:/A score/}).fill('8');
+  22 |   await active.getByRole('spinbutton',{name:/B score/}).fill('4');
+  23 |   await active.getByText('Save score').click();
+  24 |  }
+> 25 |  await expect(page.getByText(/Qualification complete/)).toBeVisible();
+     |                                                         ^ Error: expect(locator).toBeVisible() failed
+  26 |  await page.getByRole('button',{name:'Standings'}).click();
+  27 |  await expect(page.getByRole('button',{name:/Create Cup|Create Knockout|Generate Cup|Cup Matches/i}).first()).toBeVisible();
+  28 |  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+  29 |  expect(overflow).toBeLessThanOrEqual(1);
+  30 | });
+  31 | 
 ```
