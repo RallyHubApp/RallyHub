@@ -89,7 +89,7 @@ export default function TournivalAudiencePanel(){
     clubId,purpose:item.purpose,attemptId:item.deliveryId,confirmManualSend:true
    });
    if(!r.data?.success)throw Error(r.data?.error||'Confirmation rejected');
-   await refresh();setNotice('Manual WhatsApp send confirmed in the Communications Centre audit.');
+   await refresh();setHandoff(null);setNotice('Manual WhatsApp send confirmed in the Communications Centre audit.');
   }catch(e){setError(e?.response?.data?.error||e.message)}finally{setBusy(false)}
  };
  const resend=async(item)=>{
@@ -116,7 +116,7 @@ export default function TournivalAudiencePanel(){
   <h3 className="font-bold">Tournival audience and delivery history</h3>
   <p className="text-sm text-muted-foreground">View saved recipients and message statuses. A controlled resend creates a new queued attempt using the approved tenant template. No automatic sending.</p>
   <div className="flex flex-wrap gap-2 items-center">
-   <select aria-label="Tournival event" className="border rounded p-2" value={eventId} onChange={e=>{setEventId(e.target.value);setAudience([])}}><option value="">Select Tournival</option>{events.map(e=><option value={e.id} key={e.id}>{e.name}</option>)}</select>
+   <select aria-label="Tournival event" className="border rounded p-2" value={eventId} onChange={e=>{setEventId(e.target.value);setAudience([]);setHandoff(null)}}><option value="">Select Tournival</option>{events.map(e=><option value={e.id} key={e.id}>{e.name}</option>)}</select>
    <button type="button" className="rounded border px-3 py-2" disabled={!eventId||busy||!clubId} onClick={()=>refresh()}>{busy?'Working…':'Load audience'}</button>
   </div>
   {!clubId&&<p className="text-sm text-amber-700">Choose a tenant club before reviewing its audience.</p>}
