@@ -76,7 +76,7 @@ export function validateTournivalStateTransition(current:any,next:any,{
  if(current?.matches?.length){
   const previous=new Map(current.matches.map((m:any)=>[m.id,m]));
   for(const match of next.matches||[]){
-   const old=previous.get(match.id);
+   const old:any=previous.get(match.id);
    if(!old) return fail('Unexpected fixture added; controlled redraw required.');
    if(old.status==='completed'&&JSON.stringify(old.result)!==JSON.stringify(match.result)
       &&String(correctionReason).trim().length<6)
