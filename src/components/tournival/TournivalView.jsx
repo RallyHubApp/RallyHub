@@ -67,7 +67,7 @@ function PlayerPanel({ players, tournament, isAdmin, queryClient, onAddPlayer, o
     }catch(e){toast.error(e?.message||'Unable to copy registration link');}
   };
   const handleCopyShare = () => {
-    const url = `${window.location.origin}/tournament/${tournament.id}`;
+    const url = `${window.location.origin}/tournival/live/${tournament.id}`;
     navigator.clipboard.writeText(url).then(() => {
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
