@@ -10,7 +10,7 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
     "test:tournival-v1": "node scripts/tournivalV1Gate.mjs && node scripts/tournivalSchedulerGate.mjs && node scripts/tournivalOperationsGate.mjs",
-    "test:tournival-browser": "playwright test e2e/tournival-v1.spec.mjs e2e/tournival-rehearsal.spec.mjs e2e/tournival-live-scoring.spec.mjs",
+    "test:tournival-browser": "playwright test e2e/tournival-v1.spec.mjs e2e/tournival-rehearsal.spec.mjs e2e/tournival-live-scoring.spec.mjs e2e/tournival-public-journeys.spec.mjs",
     "test:club-challenge-gate1": "node scripts/clubChallengeGate1.mjs",
     "test:club-challenge-robot": "node scripts/clubChallengeInteractionRobot.mjs",
     "test:club-challenge-browser-robot": "playwright test e2e/club-challenge-browser-robot.spec.mjs",
