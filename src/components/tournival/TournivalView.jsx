@@ -193,7 +193,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const handleStart = async ({ numCourts, numRounds, matchFormat, seedOrder, venueMinutes, matchMinutes, changeoverMinutes }) => {
+  const handleStart = async ({ numCourts, numRounds, matchFormat, duprEnabled, seedOrder, venueMinutes, matchMinutes, changeoverMinutes }) => {
     const playerIds = seedOrder?.length ? seedOrder : players.map(p => p.id);
     const rounds = generateGroupFixtures(playerIds, numCourts, numRounds);
     const newState = {
@@ -204,6 +204,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
       numCourts,
       numRounds,
       matchFormat,
+      duprEnabled:duprEnabled===true,
       venueMinutes, matchMinutes, changeoverMinutes,
       rounds,
       matches: indexTournivalMatches(rounds),

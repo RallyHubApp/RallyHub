@@ -73,6 +73,13 @@
     },
     "last_error": {
       "type": "string"
+    },
+    "dupr_consent": {
+      "type": "boolean",
+      "default": false
+    },
+    "dupr_consent_version": {
+      "type": "string"
     }
   },
   "required": [

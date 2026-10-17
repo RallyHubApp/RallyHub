@@ -108,12 +108,20 @@ Deno.serve(async(req)=>{
       amount_due:fee,currency:event.currency,
       payment_status:status==='waitlisted'?'not_required':fee>0?'pending':'not_required',
       consent_version:'tournival-participation-v1',consent_at:new Date().toISOString(),
+      dupr_consent:body.duprConsent===true,dupr_consent_version:'tournival-dupr-opt-in-v1',
       registered_at:new Date().toISOString(),
       ...(status==='confirmed'?{confirmed_at:new Date().toISOString()}:{}),
       ...(status==='waitlisted'?{waitlist_position:waitlisted+1}:{})
     });
     // Confirmed free registration participates in the same player roster used
     // by the existing Tournival Setup screen. Pending/waitlisted never enter it.
+    await base44.asServiceRole.entities.ConsentRecord.create({
+      tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,
+      person_id:person.id,consent_type:'tournival_dupr_result_reporting',
+      status:body.duprConsent===true?'accepted':'declined',
+      consent_version:'tournival-dupr-opt-in-v1',recorded_at:new Date().toISOString(),
+      source_system:'tournival_registration',source_row:registration.id
+    });
     if(status==='confirmed'){
       const roster=Array.isArray(tournament.player_ids)?tournament.player_ids:[];
       if(!roster.includes(player.id)){

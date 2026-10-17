@@ -14,7 +14,7 @@ export default function PublicTournivalRegistration(){
  const {token}=useParams(),operationRef=useRef(crypto.randomUUID());
  const [event,setEvent]=useState(null),[result,setResult]=useState(null);
  const [loading,setLoading]=useState(true),[submitting,setSubmitting]=useState(false),[error,setError]=useState('');
- const [form,setForm]=useState({fullName:'',email:'',mobile:'',consent:false});
+ const [form,setForm]=useState({fullName:'',email:'',mobile:'',consent:false,duprConsent:false});
  useEffect(()=>{
   let active=true;
   request({token,action:'get'}).then(data=>{if(!active)return;
@@ -60,6 +60,8 @@ export default function PublicTournivalRegistration(){
        <label className="block text-sm">Mobile <Input type="tel" autoComplete="tel" value={form.mobile} onChange={e=>setForm(f=>({...f,mobile:e.target.value}))}/></label>
        <label className="flex gap-2 text-xs"><input type="checkbox" required checked={form.consent} onChange={e=>setForm(f=>({...f,consent:e.target.checked}))}/>
         <span>I consent to my details being used for this tournament and agree to follow the published competition rules and organiser safety instructions.</span></label>
+       <label className="flex gap-2 text-xs"><input type="checkbox" checked={form.duprConsent} onChange={e=>setForm(f=>({...f,duprConsent:e.target.checked}))}/>
+        <span>Optional: I consent to eligible tournament results being prepared for DUPR reporting. A DUPR account is not required to participate, and reporting is subject to organiser and DUPR rules.</span></label>
        {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
        <Button className="w-full" type="submit" disabled={submitting||!form.consent}>{submitting?'Registering…':'Register for Tournival'}</Button>
       </form>}

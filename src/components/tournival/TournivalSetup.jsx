@@ -24,6 +24,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
   const [matchMinutes, setMatchMinutes] = useState(existingState?.matchMinutes ?? 18);
   const [changeoverMinutes, setChangeoverMinutes] = useState(existingState?.changeoverMinutes ?? 3);
   const [matchFormat, setMatchFormat] = useState(existingState?.matchFormat || 'first_11_by1');
+  const [duprEnabled, setDuprEnabled] = useState(existingState?.duprEnabled===true);
   const [seedOrder, setSeedOrder] = useState(existingState?.seedOrder || players.map(p => p.id));
   const [seedConfirmed, setSeedConfirmed] = useState(!!existingState?.seedOrderConfirmed);
   const [saving, setSaving] = useState(false);
@@ -45,7 +46,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
     if (!isValid) { toast.error('Add at least 4 players to start.'); return; }
     if (!seedConfirmed) { toast.error('Confirm seed order before generating fixtures.'); return; }
     setSaving(true);
-    await onStart({ numCourts: Number(numCourts), numRounds: Number(numRounds), matchFormat, seedOrder: currentSeedIds, venueMinutes, matchMinutes: duration.matchMinutes, changeoverMinutes });
+    await onStart({ numCourts: Number(numCourts), numRounds: Number(numRounds), matchFormat, duprEnabled, seedOrder: currentSeedIds, venueMinutes, matchMinutes: duration.matchMinutes, changeoverMinutes });
     setSaving(false);
   };
 
@@ -77,7 +78,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
   const handleConfirmSeeds = async () => {
     setSeedConfirmed(true);
     if (onSaveState) {
-      await onSaveState({ ...(existingState || {}), seedOrder: currentSeedIds, seedOrderConfirmed: true, seedOrderLocked: false, playerIds: currentSeedIds, rounds: existingState?.rounds || [], numCourts: Number(numCourts), numRounds: Number(numRounds), matchFormat, venueMinutes, matchMinutes: duration.matchMinutes, changeoverMinutes, results: existingState?.results || {}, currentRound: existingState?.currentRound || 0 });
+      await onSaveState({ ...(existingState || {}), seedOrder: currentSeedIds, seedOrderConfirmed: true, seedOrderLocked: false, playerIds: currentSeedIds, rounds: existingState?.rounds || [], numCourts: Number(numCourts), numRounds: Number(numRounds), matchFormat, duprEnabled, venueMinutes, matchMinutes: duration.matchMinutes, changeoverMinutes, results: existingState?.results || {}, currentRound: existingState?.currentRound || 0 });
     }
     toast.success('Seed order confirmed');
   };
@@ -191,6 +192,11 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
           </div>
         </div>
       </div>
+
+      <label className="flex items-center gap-2 text-xs glass rounded-xl p-4">
+        <input type="checkbox" checked={duprEnabled} onChange={e=>setDuprEnabled(e.target.checked)}/>
+        <span>Optional DUPR reporting review after this event. Does not prevent unrated or unlinked players participating.</span>
+      </label>
 
       {/* Seed ordering */}
       <TournivalSeedOrder
