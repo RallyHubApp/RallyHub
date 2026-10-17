@@ -64,7 +64,7 @@ export async function queueTournivalCommunication(base44:any,{
   merge_schema:fields||{},status:'queued',metadata:{eventId,purpose,sourceRecordId}
  });
  const audience=await base44.asServiceRole.entities.CommunicationRecipient.create({
-  campaign_id:campaign.id,tenant_id:tenantId,source_module:'Tournival',
+  campaign_id:campaign.id,tenant_id:tenantId,person_id:recipient.personId||undefined,source_module:'Tournival',
   source_record_id:sourceRecordId,display_name:String(recipient.name||'').slice(0,120),
   email:emailKey(recipient.email),mobile:String(recipient.mobile||'').slice(0,50),
   eligible_channels:[channel],selected_channels:[channel],eligibility_status:'eligible',

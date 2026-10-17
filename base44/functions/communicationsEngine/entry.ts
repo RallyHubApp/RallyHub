@@ -111,6 +111,40 @@ Deno.serve(async(req)=>{
       return Response.json({error:'Tenant sender is not configured; message remains queued'},{status:409});
     if(transport.provider==='base44_core')
       return Response.json({error:'This tenant sender cannot deliver the approved branded HTML email; message remains queued'},{status:409});
+    // Honour tenant channel suppressions and explicit withdrawn preferences
+    // immediately before any provider call, including operator resends.
+    const people=await base44.asServiceRole.entities.Person.filter({
+      tenant_id:tenantId,primary_email:recipient.email
+    },'-updated_date',2);
+    const personId=recipient.person_id||people?.[0]?.id||'';
+    const digest=await crypto.subtle.digest('SHA-256',
+      new TextEncoder().encode(recipient.email.trim().toLowerCase()));
+    const endpointHash=Array.from(new Uint8Array(digest),
+      b=>b.toString(16).padStart(2,'0')).join('');
+    const [suppressions,preferences]=await Promise.all([
+      base44.asServiceRole.entities.CommunicationSuppression.filter({
+        owner_scope:'tenant',tenant_id,channel:'email',active:true
+      },'-created_date',500),
+      personId?base44.asServiceRole.entities.CommunicationPreference.filter({
+        owner_scope:'tenant',tenant_id,person_id:personId,channel:'email'
+      },'-updated_date',100):Promise.resolve([])
+    ]);
+    const blocked=(suppressions||[]).some((r:any)=>
+      (personId&&r.person_id===personId)||(r.endpoint_hash&&r.endpoint_hash===endpointHash))||
+      (preferences||[]).some((r:any)=>r.status==='withdrawn'&&
+        (!r.purpose||r.purpose===campaign.purpose));
+    if(blocked){
+      await base44.asServiceRole.entities.CommunicationDeliveryAttempt.updateMany({
+        id:attempt.id,tenant_id:tenantId,status:'queued'
+      },{$set:{status:'suppressed',error_code:'recipient_suppressed'}});
+      await base44.asServiceRole.entities.CommunicationEvent.create({
+        campaign_id:campaign.id,message_id:message.id,recipient_id:recipient.id,
+        delivery_attempt_id:attempt.id,tenant_id:tenantId,
+        event_type:'suppressed',occurred_at:new Date().toISOString(),
+        actor_user_id:user.id,metadata:{reason:'centre_channel_suppression'}
+      });
+      return Response.json({error:'Recipient suppressed by tenant communications preferences; no message sent'},{status:409});
+    }
     const claimed=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.updateMany({
       id:attempt.id,tenant_id:tenantId,status:'queued'
     },{$set:{status:'sending'}});

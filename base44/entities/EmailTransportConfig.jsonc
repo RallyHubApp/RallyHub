@@ -36,6 +36,7 @@
       ],
       "default": "pending"
     },
+    "is_default": {"type":"boolean","description":"Explicit tenant-level sender fallback when no purpose-specific config exists"},
     "sender_email": {
       "type": "string"
     },

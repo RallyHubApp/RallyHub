@@ -2,12 +2,27 @@ export type EmailScope =
   | { scopeType:'platform'; purpose:string }
   | { scopeType:'tenant'; purpose:string; tenantId:string; clubId?:string|null };
 
-export async function resolveEmailTransport(base44:any, scope:EmailScope) {
+export async function resolveEmailTransport(base44:any,scope:EmailScope){
   const filter:any={scope_type:scope.scopeType,purpose:scope.purpose};
-  if(scope.scopeType==='tenant'){filter.tenant_id=scope.tenantId;if(scope.clubId)filter.club_id=scope.clubId;}
+  if(scope.scopeType==='tenant'){
+    filter.tenant_id=scope.tenantId;
+    if(scope.clubId)filter.club_id=scope.clubId;
+  }
   const rows=await base44.asServiceRole.entities.EmailTransportConfig.filter(filter,'-updated_date',20);
-  const config=(rows||[]).find((r:any)=>r.status!=='disabled')||null;
-  if(!config) throw new Error(`No email transport is configured for ${scope.scopeType}:${scope.purpose}.`);
+  let config=(rows||[]).find((r:any)=>r.status!=='disabled')||null;
+  // Reuse the same tenant sender for all approved Communications Centre
+  // templates. Never borrow a sender from another tenant or another club.
+  if(!config&&scope.scopeType==='tenant'){
+    const candidates=await base44.asServiceRole.entities.EmailTransportConfig.filter({
+      scope_type:'tenant',tenant_id:scope.tenantId,status:'configured'
+    },'-updated_date',100);
+    const relevant=(candidates||[]).filter((r:any)=>
+      !scope.clubId||!r.club_id||r.club_id===scope.clubId);
+    const marked=relevant.filter((r:any)=>r.is_default===true);
+    if(marked.length===1)config=marked[0];
+    else if(marked.length===0&&relevant.length===1)config=relevant[0];
+  }
+  if(!config)throw new Error('No authorised tenant sender is configured for this purpose.');
   return config;
 }
 export async function requireConfiguredEmailTransport(base44:any,scope:EmailScope){
