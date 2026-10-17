@@ -46,10 +46,12 @@ export async function queueTournivalCommunication(base44:any,{
    metadata:{source_module:'Tournival',event_id:eventId,operation_id:operationId||'',delivery_version:deliveryVersion||1,resend_reason:String(resendReason||'').slice(0,500)}
   });
  }catch(e){
-  await base44.asServiceRole.entities.Tournament.updateMany({id:eventId,tenant_id:tenantId},
-   {$pull:{tournival_communication_keys:key}});
+  // Do NOT release the durable reservation on an ambiguous entity-create
+  // failure: the create may have committed while its response was lost.
+  // Reconciliation is safer than a second externally deliverable attempt.
   throw e;
  }
+ try{
  const campaign=await base44.asServiceRole.entities.CommunicationCampaign.create({
   owner_scope:'tenant',tenant_id:tenantId,club_id:clubId,source_module:'Tournival',
   source_record_id:eventId,kind:'transactional',purpose,name:purpose,status:'queued',
@@ -77,6 +79,18 @@ export async function queueTournivalCommunication(base44:any,{
   occurred_at:new Date().toISOString(),metadata:{purpose,sourceRecordId,operationId:operationId||'',resendReason:String(resendReason||'').slice(0,500)}
  });
  return {queued:true,duplicate:false,attemptId:attempt.id,campaignId:campaign.id,recipientId:audience.id};
+ }catch(e:any){
+  // The key and initial attempt deliberately remain reserved. Never
+  // silently recreate the communication after a partial write or timeout.
+  try{
+   const current=(await ledger.filter({id:attempt.id,tenant_id:tenantId},'-created_date',1))?.[0];
+   if(current){
+    await ledger.update(attempt.id,{error_code:'incomplete_ledger',
+      error_message:String(e?.message||e).slice(0,250)});
+   }
+  }catch{}
+  throw e;
+ }
 }
 export async function listTournivalAudience(base44:any,{tenantId,eventId}:any){
  const campaigns=await base44.asServiceRole.entities.CommunicationCampaign.filter({
