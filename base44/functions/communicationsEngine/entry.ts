@@ -123,10 +123,10 @@ Deno.serve(async(req)=>{
       b=>b.toString(16).padStart(2,'0')).join('');
     const [suppressions,preferences]=await Promise.all([
       base44.asServiceRole.entities.CommunicationSuppression.filter({
-        owner_scope:'tenant',tenant_id,channel:'email',active:true
+        owner_scope:'tenant',tenant_id:tenantId,channel:'email',active:true
       },'-created_date',500),
       personId?base44.asServiceRole.entities.CommunicationPreference.filter({
-        owner_scope:'tenant',tenant_id,person_id:personId,channel:'email'
+        owner_scope:'tenant',tenant_id:tenantId,person_id:personId,channel:'email'
       },'-updated_date',100):Promise.resolve([])
     ]);
     const blocked=(suppressions||[]).some((r:any)=>
