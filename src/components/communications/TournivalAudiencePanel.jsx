@@ -64,6 +64,34 @@ export default function TournivalAudiencePanel(){
   }catch(e){setError(e?.response?.data?.error||e.message)}
   finally{setBusy(false)}
  };
+ const whatsappHandoff=async(item)=>{
+  if(item.channel!=='whatsapp'||item.deliveryStatus!=='queued')return;
+  if(!window.confirm('Open the approved WhatsApp message for '+item.name+'? You must press Send in WhatsApp and then confirm the outcome here.'))return;
+  setBusy(true);setError('');setNotice('');
+  try{
+   const r=await base44.functions.invoke('communicationsEngine',{
+    action:'handoff_tournival_whatsapp',ownerScope:'tenant',tenantId:user.active_tenant_id,
+    clubId,purpose:item.purpose,attemptId:item.deliveryId,confirmHandoff:true
+   });
+   if(!r.data?.success)throw Error(r.data?.error||'Handoff rejected');
+   window.open(r.data.handoffUrl,'_blank','noopener,noreferrer');
+   await refresh();
+   setNotice('WhatsApp handoff started. Confirm delivery after you press Send.');
+  }catch(e){setError(e?.response?.data?.error||e.message)}finally{setBusy(false)}
+ };
+ const confirmWhatsapp=async(item)=>{
+  if(item.channel!=='whatsapp'||item.deliveryStatus!=='sending')return;
+  if(!window.confirm('Confirm that YOU pressed Send in WhatsApp for '+item.name+'?'))return;
+  setBusy(true);setError('');setNotice('');
+  try{
+   const r=await base44.functions.invoke('communicationsEngine',{
+    action:'confirm_tournival_whatsapp',ownerScope:'tenant',tenantId:user.active_tenant_id,
+    clubId,purpose:item.purpose,attemptId:item.deliveryId,confirmManualSend:true
+   });
+   if(!r.data?.success)throw Error(r.data?.error||'Confirmation rejected');
+   await refresh();setNotice('Manual WhatsApp send confirmed in the Communications Centre audit.');
+  }catch(e){setError(e?.response?.data?.error||e.message)}finally{setBusy(false)}
+ };
  const resend=async(item)=>{
   if(item.eligibility!=='eligible')return;
   const reason=window.prompt('Reason for this controlled resend (recorded in the audit):','');
@@ -101,7 +129,7 @@ export default function TournivalAudiencePanel(){
    <p className="mt-2 text-xs text-muted-foreground">Approve the required template or reconcile the queue before attempting to resend; no fallback message was sent.</p>
   </div>}
   <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr><th className="text-left p-2">Select</th><th className="text-left p-2">Audience</th><th className="text-left p-2">Message</th><th className="text-left p-2">Delivery</th><th className="text-left p-2">Action</th></tr></thead><tbody>
-  {filteredAudience.map(a=><tr key={a.deliveryId||a.recipientId} className="border-t"><td className="p-2"><input type="checkbox" aria-label={'Select '+a.name} disabled={busy||a.eligibility!=='eligible'||a.deliveryStatus==='suppressed'} checked={selectedKeys.includes(a.deliveryId||a.recipientId)} onChange={()=>toggleSelected(a.deliveryId||a.recipientId)}/></td><td className="p-2">{a.name}<div className="text-xs text-muted-foreground">{a.email||a.mobile}</div></td><td className="p-2">{a.purpose}</td><td className="p-2">{a.deliveryStatus} · attempt {a.attemptNumber}</td><td className="p-2"><button className="underline" type="button" disabled={busy||a.eligibility!=='eligible'||a.deliveryStatus==='suppressed'} onClick={()=>resend(a)}>Queue resend</button>{a.channel==='email'&&a.deliveryStatus==='queued'&&<button className="underline ml-3" type="button" disabled={busy} onClick={()=>dispatch(a)}>Send queued email</button>}</td></tr>)}
+  {filteredAudience.map(a=><tr key={a.deliveryId||a.recipientId} className="border-t"><td className="p-2"><input type="checkbox" aria-label={'Select '+a.name} disabled={busy||a.eligibility!=='eligible'||a.deliveryStatus==='suppressed'} checked={selectedKeys.includes(a.deliveryId||a.recipientId)} onChange={()=>toggleSelected(a.deliveryId||a.recipientId)}/></td><td className="p-2">{a.name}<div className="text-xs text-muted-foreground">{a.email||a.mobile}</div></td><td className="p-2">{a.purpose}</td><td className="p-2">{a.deliveryStatus} · attempt {a.attemptNumber}</td><td className="p-2"><button className="underline" type="button" disabled={busy||a.eligibility!=='eligible'||a.deliveryStatus==='suppressed'} onClick={()=>resend(a)}>Queue resend</button>{a.channel==='email'&&a.deliveryStatus==='queued'&&<button className="underline ml-3" type="button" disabled={busy} onClick={()=>dispatch(a)}>Send queued email</button>}{a.channel==='whatsapp'&&a.deliveryStatus==='queued'&&<button className="underline ml-3" type="button" disabled={busy} onClick={()=>whatsappHandoff(a)}>Open WhatsApp</button>}{a.channel==='whatsapp'&&a.deliveryStatus==='sending'&&<button className="underline ml-3" type="button" disabled={busy} onClick={()=>confirmWhatsapp(a)}>Confirm WhatsApp sent</button>}</td></tr>)}
   {!audience.length&&<tr><td colSpan={5} className="p-3 text-muted-foreground">No queued Tournival recipients loaded.</td></tr>}
   </tbody></table></div>
  </section>;

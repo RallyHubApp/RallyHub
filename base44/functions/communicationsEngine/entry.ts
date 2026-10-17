@@ -86,6 +86,88 @@ Deno.serve(async(req)=>{
     return Response.json({success:true,deliveryPerformed:false,
       ...queued,channel,purpose,deliveryVersion:version});
   }
+  if(action==='handoff_tournival_whatsapp'||action==='confirm_tournival_whatsapp'){
+    if(ownerScope!=='tenant'||!clubId)
+      return Response.json({error:'Explicit tenant and club required'},{status:400});
+    const id=clean(body.attemptId,120);
+    const attempts=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({
+      id,tenant_id:tenantId,channel:'whatsapp'
+    },'-created_date',1);
+    const attempt=attempts?.[0];
+    if(!attempt)return Response.json({error:'WhatsApp attempt not found'},{status:404});
+    const [messages,recipients,campaigns]=await Promise.all([
+      base44.asServiceRole.entities.CommunicationMessage.filter({
+        id:attempt.message_id,tenant_id:tenantId
+      },'-created_date',1),
+      base44.asServiceRole.entities.CommunicationRecipient.filter({
+        id:attempt.recipient_id,tenant_id:tenantId
+      },'-created_date',1),
+      base44.asServiceRole.entities.CommunicationCampaign.filter({
+        id:attempt.campaign_id,tenant_id:tenantId,club_id:clubId
+      },'-created_date',1)
+    ]);
+    const [message,recipient,campaign]=[messages?.[0],recipients?.[0],campaigns?.[0]];
+    if(!message||!recipient||!campaign||campaign.source_module!=='Tournival'||
+       recipient.eligibility_status!=='eligible')
+      return Response.json({error:'WhatsApp audience record is not eligible for handoff'},{status:409});
+    if(action==='confirm_tournival_whatsapp'){
+      if(body.confirmManualSend!==true||attempt.status!=='sending')
+        return Response.json({error:'Only an initiated handoff can be manually confirmed'},{status:409});
+      const history=await base44.asServiceRole.entities.CommunicationEvent.filter({
+        delivery_attempt_id:attempt.id,event_type:'whatsapp_handoff_started'
+      },'-occurred_at',5);
+      if(!history?.length)return Response.json({error:'No recorded WhatsApp handoff to confirm'},{status:409});
+      const updated=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.updateMany({
+        id:attempt.id,tenant_id:tenantId,status:'sending'
+      },{$set:{status:'sent',provider:'manual_whatsapp_handoff',
+        sent_at:new Date().toISOString()}});
+      if(updated.updated!==1)return Response.json({error:'WhatsApp attempt already confirmed'},{status:409});
+      await base44.asServiceRole.entities.CommunicationEvent.create({
+        campaign_id:campaign.id,message_id:message.id,recipient_id:recipient.id,
+        delivery_attempt_id:attempt.id,tenant_id:tenantId,event_type:'whatsapp_send_confirmed',
+        occurred_at:new Date().toISOString(),actor_user_id:user.id
+      });
+      return Response.json({success:true,status:'sent',manuallyConfirmed:true});
+    }
+    if(attempt.status!=='queued'||body.confirmHandoff!==true)
+      return Response.json({error:'Only one approved WhatsApp handoff per queued attempt'},{status:409});
+    const mobile=String(recipient.mobile||'').trim();
+    if(!/^\+[1-9]\d{7,14}$/.test(mobile))
+      return Response.json({error:'Recipient requires an internationally formatted WhatsApp number'},{status:409});
+    if(!String(message.channel_body||'').trim())
+      return Response.json({error:'Approved WhatsApp body missing'},{status:409});
+    const personRows=await base44.asServiceRole.entities.Person.filter({
+      tenant_id:tenantId,mobile
+    },'-created_date',2);
+    const personId=recipient.person_id||personRows?.[0]?.id||'';
+    const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(mobile));
+    const endpointHash=Array.from(new Uint8Array(digest),
+      b=>b.toString(16).padStart(2,'0')).join('');
+    const [suppressions,preferences]=await Promise.all([
+      base44.asServiceRole.entities.CommunicationSuppression.filter({
+        owner_scope:'tenant',tenant_id:tenantId,channel:'whatsapp',active:true
+      },'-created_date',500),
+      personId?base44.asServiceRole.entities.CommunicationPreference.filter({
+        owner_scope:'tenant',tenant_id:tenantId,person_id:personId,channel:'whatsapp'
+      },'-updated_date',100):Promise.resolve([])
+    ]);
+    const blocked=(suppressions||[]).some((x:any)=>
+      (personId&&x.person_id===personId)||(x.endpoint_hash&&x.endpoint_hash===endpointHash))||
+      (preferences||[]).some((x:any)=>x.status==='withdrawn'&&
+        (!x.purpose||x.purpose===campaign.purpose));
+    if(blocked)return Response.json({error:'WhatsApp recipient suppressed; no handoff started'},{status:409});
+    const claimed=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.updateMany({
+      id:attempt.id,tenant_id:tenantId,status:'queued'
+    },{$set:{status:'sending',provider:'manual_whatsapp_handoff'}});
+    if(claimed.updated!==1)return Response.json({error:'Handoff already claimed'},{status:409});
+    await base44.asServiceRole.entities.CommunicationEvent.create({
+      campaign_id:campaign.id,message_id:message.id,recipient_id:recipient.id,
+      delivery_attempt_id:attempt.id,tenant_id:tenantId,event_type:'whatsapp_handoff_started',
+      occurred_at:new Date().toISOString(),actor_user_id:user.id
+    });
+    return Response.json({success:true,sendPerformed:false,handoffStarted:true,
+      handoffUrl:'https://wa.me/'+mobile.slice(1)+'?text='+encodeURIComponent(message.channel_body)});
+  }
   // Only the operator can release a pre-queued email. Claim the attempt
   // atomically before provider contact. Ambiguous sends stay 'sending' and
   // require investigation rather than unsafe automatic retries.
