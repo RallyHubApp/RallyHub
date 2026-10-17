@@ -519,6 +519,8 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Unknown action' }, { status: 400 });
   } catch (error) {
     console.error('legacyTournamentManager error', (error as any)?.message || error);
+    if(/rate limit/i.test(String((error as any)?.message||error)))
+      return Response.json({error:'Tournival service is busy. Retry after a short interval.'},{status:429});
     return Response.json({ error: 'Unable to process the tournament request right now.' }, { status: 500 });
   }
 });

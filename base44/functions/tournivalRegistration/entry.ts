@@ -123,7 +123,9 @@ Deno.serve(async(req)=>{
           tournamentId:tournament.id,tenantId:tournament.tenant_id,
           seed:Math.max(0,...rows.map((r:any)=>Number(r.waitlist_position)||0))
         });
-      }catch{
+      }catch(error){
+        if(/rate limit/i.test(String((error as any)?.message||error)))
+          return safeError('Registration service is busy. Retry the same operation shortly.',429);
         return safeError('Waitlist is busy or needs reconciliation. Please retry the same registration operation.',503);
       }
     }
@@ -202,6 +204,8 @@ Deno.serve(async(req)=>{
     }
   }catch(error){
     console.error('Tournival public registration failed:',(error as any)?.message||error);
+    if(/rate limit/i.test(String((error as any)?.message||error)))
+      return safeError('Registration service is temporarily busy. Retry using the same operation ID.',429);
     return safeError('Unable to process registration safely. Please contact organiser.',500);
   }
 });
