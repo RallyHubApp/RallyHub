@@ -278,17 +278,34 @@ Deno.serve(async (req) => {
       await audit(base44,user,tournament,'tournival_waitlist_promoted',{
         registrationId:earliest.id,waitlistPosition:earliest.waitlist_position
       });
-      await safelyQueueTournivalNotice(base44,{
+      // A promotion requires a freshly issued opaque private player link.
+      // Existing bearer tokens are hashed and cannot be reconstructed.
+      const promotedBytes=crypto.getRandomValues(new Uint8Array(24));
+      const promotedToken='trp_'+Array.from(promotedBytes,
+        b=>b.toString(16).padStart(2,'0')).join('');
+      const promotedDigest=await crypto.subtle.digest('SHA-256',
+        new TextEncoder().encode(promotedToken));
+      const promotedHash=Array.from(new Uint8Array(promotedDigest),
+        b=>b.toString(16).padStart(2,'0')).join('');
+      await base44.asServiceRole.entities.TournivalAccessToken.create({
+        tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,
+        tournament_id:tournament.id,token_hash:promotedHash,token_type:'player',
+        player_id:earliest.player_id,registration_id:earliest.id,
+        created_at:new Date().toISOString(),created_by_user_id:user.id
+      });
+      const promotedNotice=await safelyQueueTournivalNotice(base44,{
         tenantId:tournament.tenant_id,clubId:tournament.host_club_id||tournament.tenant_id,
         eventId:tournament.id,sourceRecordId:'promoted:'+earliest.id,
         operationId:'promoted:'+earliest.id,purpose:'tournival_waitlist_promoted',
         recipient:{id:earliest.id,name:earliest.full_name,email:earliest.email,mobile:earliest.mobile},
         fields:{FIRST_NAME:String(earliest.full_name||'Player').split(' ')[0],
           EVENT_NAME:String(tournament.name||''),
-          EVENT_LINK:'https://rallyhub.ie/tournival/register/'+tournament.id}
+          PLAYER_LINK:'https://rallyhub.ie/tournival/player/'+promotedToken}
       });
       return Response.json({success:true,registrationId:earliest.id,
-        waitlistPosition:earliest.waitlist_position,playerId:earliest.player_id});
+        waitlistPosition:earliest.waitlist_position,playerId:earliest.player_id,
+        communicationQueued:promotedNotice.queued===true,
+        needsCommunicationReview:(promotedNotice as any).needsCommunicationReview===true});
     }
 
     if (action === 'register_player') {

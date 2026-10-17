@@ -363,6 +363,19 @@ Deno.serve(async(req)=>{
               await base44.asServiceRole.entities.Tournament.updateMany({
                 id:eventTournament.id,tenant_id:reg.tenant_id
               },{$addToSet:{player_ids:reg.player_id}});
+              const paidBytes=crypto.getRandomValues(new Uint8Array(24));
+              const paidToken='trp_'+Array.from(paidBytes,
+                b=>b.toString(16).padStart(2,'0')).join('');
+              const paidDigest=await crypto.subtle.digest('SHA-256',
+                new TextEncoder().encode(paidToken));
+              const paidHash=Array.from(new Uint8Array(paidDigest),
+                b=>b.toString(16).padStart(2,'0')).join('');
+              await base44.asServiceRole.entities.TournivalAccessToken.create({
+                tenant_id:reg.tenant_id,club_id:reg.club_id,
+                tournament_id:eventTournament.id,token_hash:paidHash,token_type:'player',
+                player_id:reg.player_id,registration_id:reg.id,
+                created_at:new Date().toISOString(),created_by_user_id:'verified_payment_webhook'
+              });
               await safelyQueueTournivalNotice(base44,{
                 tenantId:reg.tenant_id,clubId:reg.club_id,eventId:eventTournament.id,
                 sourceRecordId:'paid:'+reg.id,operationId:'payment:'+payment.id,
@@ -370,7 +383,8 @@ Deno.serve(async(req)=>{
                 recipient:{id:reg.id,name:reg.full_name,email:reg.email,mobile:reg.mobile},
                 fields:{FIRST_NAME:String(reg.full_name||'Player').split(' ')[0],
                   EVENT_NAME:String(eventTournament.name||''),
-                  PAYMENT_STATUS:'Paid',PAYMENT_REFERENCE:String(payment.provider_payment_reference||'')}
+                  PAYMENT_STATUS:'Paid',PAYMENT_REFERENCE:String(payment.provider_payment_reference||''),
+                  PLAYER_LINK:'https://rallyhub.ie/tournival/player/'+paidToken}
               });
             }
           }
