@@ -169,17 +169,17 @@ Deno.serve(async(req)=>{
       created_at:new Date().toISOString(),created_by_user_id:'self_registration'
     });
     const personalPath=`/tournival/player/${playerToken}`;
-    await safelyQueueTournivalNotice(base44,{
-      tenantId:tournament.tenant_id,clubId:tournament.host_club_id||tournament.tenant_id,
-      eventId:tournament.id,sourceRecordId:registration.id,operationId,
-      purpose:status==='waitlisted'?'tournival_waitlist_added':
-        status==='pending_payment'?'tournival_payment_required':'tournival_registration_received',
-      recipient:{id:registration.id,name,email,mobile},
-      fields:{FIRST_NAME:name.split(' ')[0]||name,FULL_NAME:name,EVENT_NAME:String(tournament.name||''),
-        PLAYER_LINK:'https://rallyhub.ie'+personalPath,
-        PAYMENT_LINK:'https://rallyhub.ie/tournival/register/'+encodeURIComponent(token),
-        PAYMENT_STATUS:status==='pending_payment'?'Pending':'Not required'}
-    });
+    if(status!=='pending_payment'){
+      await safelyQueueTournivalNotice(base44,{
+        tenantId:tournament.tenant_id,clubId:tournament.host_club_id||tournament.tenant_id,
+        eventId:tournament.id,sourceRecordId:registration.id,operationId,
+        purpose:status==='waitlisted'?'tournival_waitlist_added':'tournival_registration_received',
+        recipient:{id:registration.id,name,email,mobile},
+        fields:{FIRST_NAME:name.split(' ')[0]||name,FULL_NAME:name,EVENT_NAME:String(tournament.name||''),
+          PLAYER_LINK:'https://rallyhub.ie'+personalPath,
+          PAYMENT_STATUS:'Not required'}
+      });
+    }
     if(status==='waitlisted'||fee===0)return Response.json({...publicReceipt(registration,event),personalPath},{status:201});
 
     // Hold the registration if payment infrastructure is temporarily unavailable.
@@ -207,6 +207,16 @@ Deno.serve(async(req)=>{
         provider_status:checkout.providerStatus,provider_account_id:checkout.merchantAccountId
       });
       registration=await base44.asServiceRole.entities.TournivalRegistration.update(registration.id,{payment_record_id:payment.id});
+      // Queue only after the verified checkout URL is actually stored.
+      await safelyQueueTournivalNotice(base44,{
+        tenantId:tournament.tenant_id,clubId:tournament.host_club_id||tournament.tenant_id,
+        eventId:tournament.id,sourceRecordId:'payment-required:'+registration.id,operationId,
+        purpose:'tournival_payment_required',
+        recipient:{id:registration.id,name,email,mobile},
+        fields:{FIRST_NAME:name.split(' ')[0]||name,FULL_NAME:name,
+          EVENT_NAME:String(tournament.name||''),PAYMENT_LINK:checkout.checkoutUrl,
+          PAYMENT_STATUS:'Pending',PLAYER_LINK:'https://rallyhub.ie'+personalPath}
+      });
       return Response.json({...publicReceipt(registration,event,checkout.checkoutUrl),personalPath},{status:201});
     }catch(error){
       // Do not blindly create a second checkout after a network timeout.

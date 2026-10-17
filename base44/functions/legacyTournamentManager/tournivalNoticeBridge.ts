@@ -23,6 +23,16 @@ export async function safelyQueueTournivalNotice(base44:any,details:any){
   // No send, no fallback, and do not fail a completed payment/registration.
   console.warn('Tournival Centre queue requires review',details?.purpose,
    details?.eventId,String(e?.message||e).slice(0,180));
+  // Track failed automation centrally without disclosing magic links or PII.
+  try{
+   await base44.asServiceRole.entities.CommunicationEvent.create({
+    tenant_id:details?.tenantId||'',
+    event_type:'tournival_queue_blocked',occurred_at:new Date().toISOString(),
+    metadata:{source_module:'Tournival',eventId:details?.eventId||'',
+      purpose:details?.purpose||'',sourceRecordId:details?.sourceRecordId||'',
+      error:String(e?.message||e).slice(0,160)}
+   });
+  }catch{}
   return {queued:false,needsCommunicationReview:true};
  }
 }
