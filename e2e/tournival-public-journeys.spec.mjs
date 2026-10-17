@@ -8,7 +8,7 @@ for(const viewport of [{width:390,height:844},{width:1280,height:800}]) {
   await page.getByRole('textbox',{name:'Email'}).fill('sandbox@example.com');
   await page.getByRole('button',{name:'Register for Tournival'}).click({force:true});
   await expect(page.getByText('Registration received')).toHaveCount(0);
-  await page.getByRole('checkbox').check();
+  await page.getByRole('checkbox',{name:/I consent to my details/}).check();
   await page.getByRole('button',{name:'Register for Tournival'}).click();
   await expect(page.getByText('Registration received')).toBeVisible();
   await expect(page.getByText('Proceed to secure payment')).toBeVisible();
