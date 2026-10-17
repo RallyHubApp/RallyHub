@@ -1,5 +1,6 @@
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.29';
 import {validateTournivalStateTransition} from '../legacyTournamentManager/tournivalStateValidation.ts';
+import {validateDelegatedTournivalHostEdit} from './permissions.ts';
 const clean=(v:any,max=160)=>String(v??'').trim().slice(0,max);
 const SPORT_FIELDS=['rounds','seedOrder','playerIds','numCourts','numRounds','matchFormat',
   'knockoutPairs','knockoutState','duprEnabled','venueMinutes','matchMinutes','changeoverMinutes'];
@@ -69,6 +70,8 @@ Deno.serve(async(req)=>{
   if(next.status==='Completed')return Response.json({error:'Finalisation requires organiser review'},{status:403});
   if(next.status==='Group Complete'&&!(next.matches||[]).every((m:any)=>m.status==='completed'))
    return Response.json({error:'Cannot complete qualification with unfinished matches'},{status:409});
+  const hostPermissions=validateDelegatedTournivalHostEdit(state,next);
+  if(!hostPermissions.valid)return Response.json({error:(hostPermissions as any).error},{status:403});
   const guard=validateTournivalStateTransition(state,next,{
    playerIds:Array.isArray(tournament.player_ids)?tournament.player_ids:[],
    correctionReason:clean(body.correctionReason,500)
