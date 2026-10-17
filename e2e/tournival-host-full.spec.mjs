@@ -23,7 +23,7 @@ test(`Full Tournival host journey ${size.width}px`,async({page})=>{
  let commits=0;
  while(commits<8) {
   const allocate=page.getByRole('button',{name:'Allocate free courts'});
-  if(await allocate.isEnabled()){
+  if(await page.locator('article').filter({has:page.getByText('Save score')}).count()===0){
    prior=await revision();await allocate.click();await changed(prior);
   }
   const active=page.locator('article').filter({has:page.getByText('Save score')}).first();

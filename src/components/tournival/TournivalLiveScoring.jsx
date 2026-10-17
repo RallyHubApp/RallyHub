@@ -58,7 +58,7 @@ export default function TournivalLiveScoring({state,playerMap={},onSaveState,isA
    <p className="text-xs text-muted-foreground">{complete.length}/{matches.length} qualification matches confirmed · {active.length} active · {waiting.length} waiting · {courtLimit} courts</p>
   </div>
   {isAdmin&&<div className="flex gap-2">
-    <Button onClick={allocate} disabled={busy||missing||waiting.length===0}>Allocate free courts</Button>
+    <Button onClick={allocate} disabled={busy||missing||state.paused===true||waiting.length===0||active.length>=courtLimit}>Allocate free courts</Button>
     <Button variant="outline" onClick={()=>apply(()=>({...state,paused:!state.paused}))} disabled={busy||missing}>{state.paused?'Resume allocations':'Pause allocations'}</Button>
    </div>}
   {state.paused&&<p className="text-xs text-amber-400">Court allocations paused. Existing matches remain visible.</p>}
