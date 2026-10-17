@@ -9,6 +9,7 @@
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
+    "test:tournival-backend-preflight": "node scripts/tournivalBackendSafetyGate.mjs",
     "test:tournival-persistent": "python3 scripts/tournivalPersistentGate.py",
     "test:tournival-v1": "node scripts/tournivalV1Gate.mjs && node scripts/tournivalSchedulerGate.mjs && node scripts/tournivalOperationsGate.mjs && node scripts/tournivalTimingGate.mjs && node scripts/tournivalPressureGate.mjs && node scripts/tournivalStatsGate.mjs",
     "test:tournival-browser": "playwright test e2e/tournival-v1.spec.mjs e2e/tournival-rehearsal.spec.mjs e2e/tournival-live-scoring.spec.mjs e2e/tournival-public-journeys.spec.mjs",

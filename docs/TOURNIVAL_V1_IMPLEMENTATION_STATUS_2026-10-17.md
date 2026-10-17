@@ -125,3 +125,10 @@ These are sandbox code tests, NOT live production acceptance.
 - 80 simultaneous host scoring attempts: exactly one accepted, 79 stale/concurrent updates rejected. Persisted match and session revision checked.
 - 80 simultaneous verified-status payment callback operations persisted consistently; replay rejected, incorrect amount/currency rejected, late failed callback did not reverse paid registration; SQLite integrity passed.
 - External SumUp callbacks and persistent Base44 endpoints were NOT invoked. Next safe execution needs a verified isolated Base44 data environment or an authorised atomic backend primitive, without exposing live tenant data.
+
+## Real Base44 backend environment discovery / safety gate
+- The Base44 app list contains RallyHub and unrelated apps, but no verified isolated Tournival clone. Base44 `list_branches` returns `main` only.
+- Direct Base44 CLI `base44 dev --port 4400` requested a **new device login** and could not start an isolated backend without its user authorisation. The tool action timed out waiting; no development data server was started.
+- The CLI `base44 exec` supports `--data-env dev`, but it must not be assumed isolated from production without confirmation; no remote test record writes attempted.
+- Added `scripts/tournivalBackendSafetyGate.mjs` to refuse production app ID, non-dev environment, and unverified isolation. Preflight and explicit production-target rejection passed.
+- The prohibited Base44 AI Builder was never invoked. Neither an isolated app nor live provider/real DUPR test has been created or claimed here.
