@@ -36,3 +36,11 @@ These are sandbox code tests, NOT live production acceptance.
 - The existing DUPR integration has UAT partner-token status and connection checks only. Full SSO/player mapping/eligible result submission/webhook reconciliation remains pending external endpoint-contract verification and development.
 - The Interclub payment infrastructure supplies reusable SumUp checkout, provider verification and refund helpers. It has not yet been correctly bound to dedicated Tournival registrations and verified provider webhook receipts.
 - The rehearsal end-to-end browser journeys pass for 390px and 1280px after correcting a checkout state bug found in browser testing.
+
+
+## Continuous courts, Live Hall and operational Print Pack
+- New Tournival host Live Scoring view is connected to the version-aware authenticated manager save. It schedules free courts independently, allows scoring active courts, releases courts on confirmation, schedules the next eligible known fixtures without waiting for a whole qualification round, and advances to knockout readiness once all qualification results exist.
+- New read-only Tournival Hall projection and A4 Print Pack display confirmed scores and standings. Print Pack includes event revision and paper interruption/reconciliation instructions. The print-pack staleness comparison exists but requires a refreshed latest revision in the hosting application to be meaningful.
+- Public Tournival UI uses read-only Hall for the new persistent match structure; legacy round-based public scoring remains restricted to manager-authenticated operations.
+- `e2e/tournival-live-scoring.spec.mjs`: 2/2 desktop/mobile complete qualification scoring journeys passed. The separate manual rehearsal end-to-end browser gate also passed 2/2, and the engine widget 6/6.
+- Important: the new browser host flow is still a Vite isolated harness with in-memory saves. A real authenticated Base44 database concurrency test has **not** passed. Neither payment nor DUPR UAT workflows were exercised.
