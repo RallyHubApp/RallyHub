@@ -6,7 +6,7 @@
  * a payment paid on browser return. Verified webhook/reconcile only.
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
-import { createCheckout, providerConfigured, type ProviderAccount } from '../guestSessionBooking/payments.ts';
+import { createCheckout, providerConfigured, type ProviderAccount } from './payments.ts';
 const clean=(value:any,max=240)=>String(value??'').trim().replace(/\s+/g,' ').slice(0,max);
 const emailKey=(value:any)=>clean(value,180).toLowerCase();
 const safeError=(error:string,status=400)=>Response.json({success:false,error},{status});

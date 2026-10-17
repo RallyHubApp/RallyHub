@@ -1,5 +1,5 @@
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.29';
-import {validateTournivalStateTransition} from '../legacyTournamentManager/tournivalStateValidation.ts';
+import {validateTournivalStateTransition} from './tournivalStateValidation.ts';
 import {validateDelegatedTournivalHostEdit} from './permissions.ts';
 const clean=(v:any,max=160)=>String(v??'').trim().slice(0,max);
 const SPORT_FIELDS=['rounds','seedOrder','playerIds','numCourts','numRounds','matchFormat',
