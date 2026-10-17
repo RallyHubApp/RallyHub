@@ -6,6 +6,7 @@ export default function TournivalAudiencePanel(){
  const [events,setEvents]=useState([]),[eventId,setEventId]=useState('');
  const [audience,setAudience]=useState([]),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const [notice,setNotice]=useState(''),[warnings,setWarnings]=useState([]),[handoff,setHandoff]=useState(null);
+ const [queueAudit,setQueueAudit]=useState(null);
  const [selectedKeys,setSelectedKeys]=useState([]),[statusFilter,setStatusFilter]=useState('all');
  const clubId=user?.active_club_id||'';
  useEffect(()=>{if(!user?.active_tenant_id)return;let alive=true;
@@ -23,6 +24,11 @@ export default function TournivalAudiencePanel(){
    });
    if(!r.data?.success)throw Error(r.data?.error||'Audience not available');
    setAudience(r.data.audience||[]);setWarnings(r.data.warnings||[]);setSelectedKeys([]);
+   const audit=await base44.functions.invoke('communicationsEngine',{
+    action:'audit_tournival_queue',ownerScope:'tenant',tenantId:user.active_tenant_id,
+    clubId,eventId:id,purpose:'tournival_results'
+   });
+   setQueueAudit(audit.data?.success?audit.data:null);
   }catch(e){setError(e?.response?.data?.error||e.message)}finally{setBusy(false)}
  };
  const filteredAudience=audience.filter(a=>statusFilter==='all'||a.deliveryStatus===statusFilter);
@@ -47,6 +53,23 @@ export default function TournivalAudiencePanel(){
    await refresh();
    setNotice(queued+' queued, '+skipped+' previously queued or skipped. No messages sent.');
   }catch(e){setError('Stopped after '+queued+' queued: '+(e?.response?.data?.error||e.message)+'; reload audience before retrying.')}
+  finally{setBusy(false)}
+ };
+ const reconcile=async(row)=>{
+  if(row.action!=='quarantine'||row.state!=='incomplete'||!row.attemptId)return;
+  const reason=window.prompt('Reason for quarantining this incomplete, unsent attempt (minimum 8 characters):','');
+  if(!reason||reason.trim().length<8)return;
+  if(!window.confirm('Quarantine this incomplete attempt? Its duplicate-prevention key will remain reserved and no message will be sent.'))return;
+  setBusy(true);setError('');setNotice('');
+  try{
+   const r=await base44.functions.invoke('communicationsEngine',{
+    action:'reconcile_tournival_queue',ownerScope:'tenant',tenantId:user.active_tenant_id,
+    clubId,eventId,purpose:'tournival_results',attemptId:row.attemptId,
+    reason,confirmReconcile:true
+   });
+   if(!r.data?.success)throw Error(r.data?.error||'Recovery was not confirmed');
+   await refresh();setNotice('Incomplete attempt quarantined and audited. No message sent.');
+  }catch(e){setError(e?.response?.data?.error||e.message)}
   finally{setBusy(false)}
  };
  const dispatch=async(item)=>{
@@ -129,6 +152,14 @@ export default function TournivalAudiencePanel(){
    <ul className="mt-2 space-y-1">{warnings.map((w,i)=><li key={i}>{w.purpose||w.type}: {w.reason}</li>)}</ul>
    <p className="mt-2 text-xs text-muted-foreground">Approve the required template or reconcile the queue before attempting to resend; no fallback message was sent.</p>
   </div>}
+  {queueAudit&&<details className="border rounded-lg p-3 text-sm">
+   <summary className="cursor-pointer font-semibold">Queue integrity audit · {queueAudit.counts?.incomplete||0} incomplete · {queueAudit.counts?.unsafe||0} require provider investigation</summary>
+   <p className="text-xs text-muted-foreground mt-2">Recovery never automatically resends or frees duplicate-protection keys. Sending/unknown provider outcomes require manual investigation.</p>
+   <div className="mt-2 space-y-2">{(queueAudit.rows||[]).filter(x=>x.action!=='none').map(row=><div className="flex gap-2 items-center justify-between border-t py-2" key={row.key}>
+    <span>{row.state} · {row.action} · {row.status||'no attempt'}</span>
+    {row.action==='quarantine'&&<button type="button" disabled={busy} onClick={()=>reconcile(row)} className="border rounded px-2 py-1">Quarantine unsent attempt</button>}
+   </div>)}</div>
+  </details>}
   <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr><th className="text-left p-2">Select</th><th className="text-left p-2">Audience</th><th className="text-left p-2">Message</th><th className="text-left p-2">Delivery</th><th className="text-left p-2">Action</th></tr></thead><tbody>
   {filteredAudience.map(a=><tr key={a.deliveryId||a.recipientId} className="border-t"><td className="p-2"><input type="checkbox" aria-label={'Select '+a.name} disabled={busy||a.eligibility!=='eligible'||['suppressed','queued','sending'].includes(a.deliveryStatus)} checked={selectedKeys.includes(a.deliveryId||a.recipientId)} onChange={()=>toggleSelected(a.deliveryId||a.recipientId)}/></td><td className="p-2">{a.name}<div className="text-xs text-muted-foreground">{a.email||a.mobile}</div></td><td className="p-2">{a.purpose}</td><td className="p-2">{a.deliveryStatus} · attempt {a.attemptNumber}</td><td className="p-2"><button className="underline" type="button" disabled={busy||a.eligibility!=='eligible'||['suppressed','queued','sending'].includes(a.deliveryStatus)} onClick={()=>resend(a)}>Queue resend</button>{a.channel==='email'&&a.deliveryStatus==='queued'&&<button className="underline ml-3" type="button" disabled={busy} onClick={()=>dispatch(a)}>Send queued email</button>}{a.channel==='whatsapp'&&a.deliveryStatus==='queued'&&<button className="underline ml-3" type="button" disabled={busy} onClick={()=>whatsappHandoff(a)}>Prepare WhatsApp</button>}{a.channel==='whatsapp'&&a.deliveryStatus==='sending'&&<button className="underline ml-3" type="button" disabled={busy} onClick={()=>confirmWhatsapp(a)}>Confirm WhatsApp sent</button>}</td></tr>)}
   {!audience.length&&<tr><td colSpan={5} className="p-3 text-muted-foreground">No queued Tournival recipients loaded.</td></tr>}
