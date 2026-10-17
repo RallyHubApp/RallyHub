@@ -60,7 +60,7 @@ async function resolveSessionHostContact(base44:any,session:any){
     const people=await base44.asServiceRole.entities.Person.filter({tenant_id:session.tenant_id},'full_name',500);
     const person=(people||[]).find((p:any)=>nameKey(p.full_name)===nameKey(hostName));
     return {name:clean(person?.full_name||hostName,120),email:emailKey(person?.primary_email||''),mobile:clean(person?.mobile||'',80)};
-  }catch(e){console.error('webhook session host resolution failed',e?.message||e);return null}
+  }catch(e){console.error('webhook session host resolution failed',(e as any)?.message||e);return null}
 }
 
 async function sendHostBookingEmail(base44:any,scope:any,club:any,session:any,booking:any,host:any,summary:string){
@@ -150,7 +150,7 @@ Powered by RallyHub`;
       admin_notes:`${clean(application.admin_notes,1200)} paid-confirmation-sent`.trim(),follow_up_status:'complete'
     });
   }catch(e){
-    console.error('membership webhook confirmation email failed',e?.message||e);
+    console.error('membership webhook confirmation email failed',(e as any)?.message||e);
     return application;
   }
 }
@@ -432,7 +432,7 @@ Deno.serve(async(req)=>{
     }
     return new Response('',{status:204});
   }catch(e){
-    console.error('paymentGatewayWebhook failed',e?.message||e);
+    console.error('paymentGatewayWebhook failed',(e as any)?.message||e);
     return new Response('',{status:500});
   }
 });
