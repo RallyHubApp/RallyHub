@@ -32,3 +32,9 @@
 - Full knockout/final persistence, permitted player score entry and stress / negative-permission tests on remote UAT endpoints.
 - DUPR partner UAT credentials and actual approved API scope/endpoints; no production results submitted.
 - Cross-device UI tests running against the remote UAT backend rather than browser mocks.
+
+## Subsequent acceptance run — registration / payment boundaries
+- Real isolated Base44 test event `6ad374ae2ae0b5d3a3982ea7`, capacity 4, sequential synthetic submissions. 4 confirmed, 2 waitlisted in correct positions [1,2], roster 4. Idempotent repeat returned identical registration ID. Same email with a different operation correctly returned 409. Missing consent returned 400; invalid token 404; revoked link 404. All verified through the deployed registration endpoint and fresh entity reads.
+- **CRITICAL CAPACITY CONCURRENCY FAILURE:** separate synthetic event `6ad374d6da9d020cd2151008`, capacity 1, 12 parallel registration requests. ALL **12** returned confirmed and were persisted as confirmed; roster contained only **one** ID. This is genuine confirmed overbooking and roster lost-update behaviour. Strict release blocker; cannot be repaired by an in-memory test gate or client-side retry. Requires server-authoritative atomic capacity reservation and roster reconciliation/retest before production.
+- Payment-unavailable negative test: independent €5.50 synthetic event `6ad374f75ca144c1c0be0070`, NO gateway credentials and no checkout. Registration and payment remained `pending_payment`, roster stayed empty, no PaymentRecord/charge created. This is a correct safe hold. Real SumUp checkout and verified webhook not tested.
+- No production data or external financial transaction used. DUPR partner testing remains blocked by UAT credentials and allowed submission scope.
