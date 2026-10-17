@@ -92,7 +92,7 @@ Deno.serve(async(req)=>{
       const matchedIds=new Set((matchedCampaigns||[]).map((c:any)=>c.id));
       const associated=(prior||[]).filter((r:any)=>matchedIds.has(r.campaign_id)&&
         (r.selected_channels||[]).includes(channel));
-      const canonical=associated[0];
+      const canonical=associated.find((r:any)=>String(r.dedupe_key||'').endsWith('|1'));
       if(!canonical||canonical.eligibility_status!=='eligible')
         return Response.json({error:'Resend requires an eligible existing Tournival audience recipient'},{status:409});
       if(String(recipient.email||'').trim().toLowerCase()!==String(canonical.email||'').trim().toLowerCase()||
