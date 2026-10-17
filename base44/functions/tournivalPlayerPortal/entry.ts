@@ -32,6 +32,14 @@ Deno.serve(async(req)=>{
   const raw=sessions?.[0]?.state_json||event.tournival_state;
   let state:any=null;
   try{state=raw?(typeof raw==='string'?JSON.parse(raw):raw):null}catch{}
+  // Only non-sensitive roster display names: never return email, contact,
+  // DUPR identity, fees or another player's registration details.
+  const rosterIds=Array.isArray(state?.playerIds)?state.playerIds:[];
+  const roster=rosterIds.length?await base44.asServiceRole.entities.Player.filter({
+    tenant_id:event.tenant_id
+  },'-created_date',500):[];
+  const displayNames=Object.fromEntries((roster||[]).filter((p:any)=>rosterIds.includes(p.id))
+    .map((p:any)=>[p.id,clean(p.full_name,120)]));
   const playerId=registration.player_id;
   const assigned=(state?.matches||[]).filter((m:any)=>[...(m.teamA||[]),...(m.teamB||[])].includes(playerId));
   const roundLegacy=(state?.rounds||[]).flatMap((r:any)=>r.courts.map((c:any,i:number)=>({
@@ -44,6 +52,7 @@ Deno.serve(async(req)=>{
   return Response.json({success:true,event:{id:event.id,name:event.name,date:event.start_date,venue:event.location,status:event.status},
    player:{id:playerId,name:registration.full_name,registrationStatus:registration.registration_status,
     paymentStatus:registration.payment_status,checkedIn:!!registration.checked_in_at},
+   displayNames,
    matches:matches.map((m:any)=>({id:m.id,round:m.round,court:m.court,status:m.status||'scheduled',
     teamA:m.teamA,teamB:m.teamB,result:m.result})),
    knockout:knockout.map((m:any)=>({id:m.id,stage:m.stage,result:m.result,pair1:m.pair1,pair2:m.pair2})),

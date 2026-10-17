@@ -26,6 +26,16 @@ export default function PublicTournivalPlayer(){
   return ()=>{mounted=false;clearTimeout(timeout);};
  },[token,refreshCounter]);
  const player=data?.player,upcoming=data?.matches?.find(m=>['waiting','playing','scheduled'].includes(m.status));
+ const describeTeams=(match)=>{
+  if(!match||!player)return null;
+  const ownA=(match.teamA||[]).includes(player.id);
+  const team=ownA?match.teamA||[]:match.teamB||[];
+  const other=ownA?match.teamB||[]:match.teamA||[];
+  const labels=ids=>ids.map(id=>data?.displayNames?.[id]||'Participant').join(' & ');
+  return {partner:labels(team.filter(id=>id!==player.id)),
+    opponents:labels(other),side:ownA?'A':'B'};
+ };
+
  return <main className="min-h-screen bg-background text-foreground p-4"><div className="max-w-lg mx-auto space-y-4">
   <RallyHubPublicBrand moduleName="Tournival" pageLabel="My Player Link"/>
   {loading?<p>Loading your tournament…</p>:error?<p role="alert" className="text-destructive">{error}</p>:data&&<>
@@ -40,11 +50,14 @@ export default function PublicTournivalPlayer(){
     <h2 className="font-semibold">Your next match</h2>
     <p className="text-sm">Round {upcoming.round} · {upcoming.court?'Court '+upcoming.court:'Court to be allocated'}</p>
     <p className="text-xs">Status: {upcoming.status}</p>
+    {describeTeams(upcoming)&&<><p className="text-sm">Partner: {describeTeams(upcoming).partner}</p>
+      <p className="text-sm">Opponents: {describeTeams(upcoming).opponents}</p></>}
    </section>}
    <section className="glass rounded-xl p-5">
     <h2 className="font-semibold">Your qualification matches</h2>
     {data.matches?.length?data.matches.map(m=><div key={m.id} className="border-t border-border py-2 text-sm">
       Round {m.round} · Court {m.court||'TBC'} · {m.result?`${m.result.scoreA}–${m.result.scoreB}`:m.status||'scheduled'}
+      {describeTeams(m)&&<p className="text-xs text-muted-foreground">Partner: {describeTeams(m).partner} · Opponents: {describeTeams(m).opponents}</p>}
     </div>):<p className="text-xs">Fixtures will appear after the draw is published.</p>}
    </section>
    <section className="glass rounded-xl p-5">
