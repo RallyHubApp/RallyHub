@@ -109,6 +109,20 @@ Deno.serve(async(req)=>{
       },'-created_date',2);
       if(!original?.length)
         return Response.json({error:'Original Tournival communication is absent; cannot resend'},{status:409});
+      const attempts=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({
+        tenant_id:tenantId
+      },'-created_date',1000);
+      const family=makeTournivalDeliveryKey({
+        tenantId,eventId,purpose,recipientId:sourceRecordId,channel,version:'1'
+      }).slice(0,-1);
+      const relevant=(attempts||[]).filter((x:any)=>
+        String(x.idempotency_key||'').startsWith(family));
+      // Replaying an already-queued version is harmless and must remain idempotent.
+      const same=relevant.find((x:any)=>x.idempotency_key===family+String(version));
+      if(!same&&relevant.some((x:any)=>['queued','sending'].includes(x.status)))
+        return Response.json({error:'Previous delivery is still queued or has an uncertain send outcome; reconcile it before resending'},{status:409});
+      if(!same&&!relevant.some((x:any)=>['sent','delivered','opened','clicked','failed','soft_bounce'].includes(x.status)))
+        return Response.json({error:'Resend requires a completed or verified failed earlier delivery'},{status:409});
     }
     const rendered=await resolveApprovedTournivalTemplate(base44,{
       tenantId,clubId,purpose,channel,fields:safeFields
