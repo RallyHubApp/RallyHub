@@ -21,7 +21,7 @@ Deno.test('Tournival and membership use the same Clare Pickleball logo and rever
  const membership=renderBasicBrandedEmail(body,kit,club,club.name,'Membership welcome');
  const tournival=renderApprovedTournivalTemplate({
   template,brand:kit,club,channel:'email',fields:{FIRST_NAME:'Brian',EVENT_NAME:'UAT Tournament'}
- }).html;
+ }).html||'';
  for(const html of [membership,tournival]){
   assert.ok(html.includes('src="'+mark+'"'),'Must preserve approved yellow Clare header logo');
   assert.ok(html.includes('src="'+reverse+'"'),'Must preserve approved reverse-colour footer logo');
