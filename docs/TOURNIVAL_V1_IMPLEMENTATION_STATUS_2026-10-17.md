@@ -27,3 +27,12 @@ These are sandbox code tests, NOT live production acceptance.
 - Backend source now includes the authenticated `update_tournival` management action, format checking, state-shape validation and a guard against replacing a scored draw. The player-facing host link now sends this action rather than `update_kotc`. This is sandbox source only and the endpoint is **not deployed or remotely integration-tested**.
 - Playwright Chromium installed with OS dependencies; `npm run test:tournival-browser`: **6/6 PASS**, isolated simulation harness at 390px and 1280px, 2/4/6 rounds. This does NOT exercise the actual authenticated Tournival host or player application screens. Real-device / host acceptance remains NOT RUN.
 - Do not publish or deploy until all master specification acceptance requirements are satisfied and owner gives separate explicit production approval.
+
+
+## Additional sandbox integration checkpoint
+- Added `tournivalOperations.js`: isolated domain handling registration capacity/waitlists, check-in, provider-confirmed payment transitions, withdrawals, safe public snapshot, notices, print-data versioning and conservative DUPR eligibility. These operations are pure and their payment/DUPR checks are **not wired to live providers**.
+- Added a Tournival Rehearsal tab for authorised organiser views, running in local browser state only. It supplies synthetic check-ins, qualification match scheduling, manual synthetic score entry, knockout progression and final completion, with no Base44 entity mutation or external effect. This is an operational simulation **not a persistent server sandbox**.
+- Tournival host and delegated manager save paths now use the authenticated `legacyTournamentManager` action `update_tournival`, with revision checks and duplicate operation ID responses. This protects ordinary stale saves but **is not an atomic database compare-and-swap**; racing writers may still conflict without serial transaction enforcement.
+- The existing DUPR integration has UAT partner-token status and connection checks only. Full SSO/player mapping/eligible result submission/webhook reconciliation remains pending external endpoint-contract verification and development.
+- The Interclub payment infrastructure supplies reusable SumUp checkout, provider verification and refund helpers. It has not yet been correctly bound to dedicated Tournival registrations and verified provider webhook receipts.
+- The rehearsal end-to-end browser journeys pass for 390px and 1280px after correcting a checkout state bug found in browser testing.
