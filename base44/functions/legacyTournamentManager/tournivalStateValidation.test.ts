@@ -41,3 +41,18 @@ Deno.test('continuous match state rejects overlapping active players and courts'
  assert.equal(validate(setup,{...setup,matches:[matches[0],{...matches[1],id:'new'}]},{playerIds:ids}).valid,false);
  assert.equal(validate(null,{...setup,matches:[{...matches[0],status:'completed',result:null},matches[1]]},{playerIds:ids}).valid,false);
 });
+
+Deno.test('completed fixtures and substitutions retain sporting integrity',()=>{
+ const roster=['a','b','c','d','e'];
+ const before={...base,matches:[{id:'m1',round:1,teamA:['a','b'],teamB:['c','d'],
+   status:'completed',court:null,result:{scoreA:11,scoreB:8,winner:'A'}}]};
+ const changed={...before,matches:[{...before.matches[0],teamA:['a','e']}]};
+ assert.equal(validate(before,changed,{playerIds:roster,correctionReason:'substitution approved'}).valid,false);
+ const reopen={...before,matches:[{...before.matches[0],status:'waiting',result:null}]};
+ assert.equal(validate(before,reopen,{playerIds:roster,correctionReason:'host wants reopening'}).valid,false);
+ const waiting={...base,matches:[{id:'m2',round:1,teamA:['a','b'],teamB:['c','d'],
+    status:'waiting',court:null,result:null}]};
+ const replaced={...waiting,matches:[{...waiting.matches[0],teamA:['a','e']}]};
+ assert.equal(validate(waiting,replaced,{playerIds:roster}).valid,false);
+ assert.equal(validate(waiting,replaced,{playerIds:roster,correctionReason:'player injured; approved replacement'}).valid,true);
+});

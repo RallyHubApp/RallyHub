@@ -112,6 +112,14 @@ export function validateTournivalStateTransition(current:any,next:any,{
   for(const match of next.matches||[]){
    const old:any=previous.get(match.id);
    if(!old) return fail('Unexpected fixture added; controlled redraw required.');
+   const changedTeams=JSON.stringify(old.teamA)!==JSON.stringify(match.teamA) ||
+    JSON.stringify(old.teamB)!==JSON.stringify(match.teamB);
+   if(changedTeams && old.status==='completed')
+    return fail('Completed fixture participants cannot be silently replaced.');
+   if(changedTeams && String(correctionReason).trim().length<6)
+    return fail('Fixture substitutions require a documented correction reason.');
+   if(old.status==='completed' && match.status!=='completed')
+    return fail('Confirmed match cannot be silently reopened.');
    if(old.status==='completed'&&JSON.stringify(old.result)!==JSON.stringify(match.result)
       &&String(correctionReason).trim().length<6)
     return fail('Completed match cannot be changed without correction reason.');
