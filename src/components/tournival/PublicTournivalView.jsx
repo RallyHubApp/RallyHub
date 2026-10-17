@@ -212,9 +212,8 @@ export default function PublicTournivalView({ tournament, players, liveIndicator
     const newState = { ...state, results: newResults };
     await callPublicRegister({
       tournamentId: tournament.id,
-      action: 'update_kotc',
+      action: 'update_tournival',
       tournival_state: JSON.stringify(newState),
-      kotc_current_round: state.kotc_current_round || currentRound,
       status: 'In Progress',
     });
     await onRefresh();
@@ -232,9 +231,8 @@ export default function PublicTournivalView({ tournament, players, liveIndicator
     };
     await callPublicRegister({
       tournamentId: tournament.id,
-      action: 'update_kotc',
+      action: 'update_tournival',
       tournival_state: JSON.stringify(newState),
-      kotc_current_round: nextRound,
       status: isGroupComplete ? 'Group Complete' : 'In Progress',
     });
     await onRefresh();
@@ -279,9 +277,8 @@ export default function PublicTournivalView({ tournament, players, liveIndicator
     const newState = { ...state, knockoutState: newKnockoutState };
     await callPublicRegister({
       tournamentId: tournament.id,
-      action: 'update_kotc',
+      action: 'update_tournival',
       tournival_state: JSON.stringify(newState),
-      kotc_current_round: state.kotc_current_round || currentRound,
       status: tournament.status,
     });
     await onRefresh();

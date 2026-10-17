@@ -138,6 +138,45 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, player: { id: player.id, full_name: player.full_name } });
     }
 
+    // Independent Tournival transport; never writes the KOTC sporting state.
+    // The existing manager's authenticated access checks apply above.
+    if (action === 'update_tournival') {
+      if (String(tournament.format).toLowerCase() !== 'tournival') {
+        return Response.json({ error: 'Not a Tournival tournament' }, { status: 400 });
+      }
+      if (typeof body.tournival_state !== 'string' || body.tournival_state.length > 1_000_000) {
+        return Response.json({ error: 'Invalid Tournival state payload' }, { status: 400 });
+      }
+      let next:any;
+      try { next = JSON.parse(body.tournival_state); }
+      catch { return Response.json({ error: 'Invalid Tournival JSON' }, { status: 400 }); }
+      if (!next || typeof next !== 'object' || !Array.isArray(next.rounds) ||
+          !Number.isInteger(next.numRounds) || next.numRounds < 2 || next.numRounds > 6 ||
+          !Number.isInteger(next.numCourts) || next.numCourts < 1 || next.numCourts > 16) {
+        return Response.json({ error: 'Invalid Tournival sporting configuration' }, { status: 400 });
+      }
+      const currentRaw = tournament.tournival_state;
+      const current = currentRaw ? (typeof currentRaw === 'string' ? JSON.parse(currentRaw) : currentRaw) : null;
+      if (current?.rounds?.length && JSON.stringify(next.rounds) !== JSON.stringify(current.rounds)) {
+        const recorded = Object.values(current.results || {}).some((round:any) => Object.keys(round || {}).length);
+        if (recorded) return Response.json({ error: 'Draw cannot be replaced after results are recorded' }, { status: 409 });
+      }
+      const permittedStatus = ['Draft', 'Registration Open', 'In Progress', 'Completed', 'Cancelled'];
+      const mappedStatus = body.status === 'Group Complete' ? 'In Progress' : body.status;
+      if (mappedStatus !== undefined && !permittedStatus.includes(mappedStatus)) {
+        return Response.json({ error: 'Invalid tournament status' }, { status: 400 });
+      }
+      await base44.asServiceRole.entities.Tournament.update(tournament.id, {
+        tournival_state: body.tournival_state,
+        ...(mappedStatus === undefined ? {} : { status: mappedStatus }),
+      });
+      await audit(base44, user, tournament, 'tournival_state_updated', {
+        rounds: next.numRounds, courts: next.numCourts, currentRound: next.currentRound,
+        status: mappedStatus || tournament.status,
+      });
+      return Response.json({ success: true });
+    }
+
     if (action === 'update_kotc' || action === 'start_kotc') {
       const updateData:any = {};
 
