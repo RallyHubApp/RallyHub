@@ -39,6 +39,22 @@ test(`Full Tournival host journey ${size.width}px`,async({page})=>{
  await expect(page.getByText(/Qualification complete/)).toBeVisible();
  await page.getByRole('button',{name:'Standings'}).click();
  await expect(page.getByRole('button',{name:/Create Cup|Create Knockout|Generate Cup|Cup Matches/i}).first()).toBeVisible();
+ prior=await revision();
+ await page.getByRole('button',{name:/Create Cup|Create Knockout|Generate Cup|Cup Matches/i}).first().click();
+ await changed(prior);
+ await page.getByRole('button',{name:'Cup',exact:true}).click();
+ for(let i=0;i<4;i++){
+   const saveButton=page.getByRole('button',{name:'Save Result'}).first();
+   await expect(saveButton).toBeVisible();
+   const card=saveButton.locator('xpath=ancestor::div[contains(@class, "glass")][1]');
+   await card.getByPlaceholder('P1').fill('8');
+   await card.getByPlaceholder('P2').fill('4');
+   prior=await revision();
+   await saveButton.click();
+   await changed(prior);
+ }
+ await expect(page.getByTestId('server-status')).toHaveText('Completed');
+
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
  expect(overflow).toBeLessThanOrEqual(1);
 });

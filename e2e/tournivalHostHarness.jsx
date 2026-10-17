@@ -45,6 +45,7 @@ function App(){
   <TournivalView tournament={tournament} players={players} allPlayers={players}
     isAdmin={true} queryClient={{invalidateQueries:()=>{}}}/>
   <pre data-testid="server-revision" style={{display:'none'}}>{currentState?.revision||0}</pre>
+  <pre data-testid="server-status" style={{display:'none'}}>{currentState?.status||'Draft'}</pre>
  </main>;
 }
 createRoot(document.getElementById('root')).render(<MemoryRouter><App/></MemoryRouter>);
