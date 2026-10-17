@@ -60,6 +60,7 @@ function PlayerPanel({ players, tournament, isAdmin, queryClient, onAddPlayer, o
 
   const [linkCopied, setLinkCopied] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [hostCopied, setHostCopied] = useState(false);
   const handleCopyLink = async () => {
     try {
       if (!isAdmin) throw new Error('Only organisers can issue registration links.');

@@ -216,6 +216,35 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, player: { id: player.id, full_name: player.full_name } });
     }
 
+    if (action === 'create_tournival_host_link') {
+      if (String(tournament.format).toLowerCase() !== 'tournival')
+        return Response.json({error:'Not a Tournival tournament'},{status:400});
+      const random=crypto.getRandomValues(new Uint8Array(24));
+      const token='th_'+Array.from(random,b=>b.toString(16).padStart(2,'0')).join('');
+      const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token));
+      const tokenHash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+      const expiresAt=new Date(Date.now()+72*60*60*1000).toISOString();
+      await base44.asServiceRole.entities.TournivalAccessToken.create({
+        tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,
+        tournament_id:tournament.id,token_hash:tokenHash,token_type:'host',
+        created_at:new Date().toISOString(),expires_at:expiresAt,created_by_user_id:user.id
+      });
+      await audit(base44,user,tournament,'tournival_delegated_host_link_created',{expiresAt});
+      return Response.json({success:true,path:`/tournival/host/${token}`,expiresAt});
+    }
+    if (action === 'revoke_tournival_host_links') {
+      if(String(tournament.format).toLowerCase()!=='tournival')
+        return Response.json({error:'Not a Tournival tournament'},{status:400});
+      const links=await base44.asServiceRole.entities.TournivalAccessToken.filter({
+        tournament_id:tournament.id,tenant_id:tournament.tenant_id,token_type:'host'
+      },'-created_at',100);
+      const now=new Date().toISOString();
+      for(const link of links||[])if(!link.revoked_at)
+        await base44.asServiceRole.entities.TournivalAccessToken.update(link.id,{revoked_at:now});
+      await audit(base44,user,tournament,'tournival_delegated_host_links_revoked',{count:(links||[]).length});
+      return Response.json({success:true,revoked:(links||[]).length});
+    }
+
     // Issue an opaque, revocable registration link. Only the SHA-256 digest is stored.
     if (action === 'create_tournival_registration_link') {
       if (String(tournament.format).toLowerCase() !== 'tournival')
