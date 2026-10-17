@@ -200,7 +200,9 @@ Deno.serve(async(req)=>{
       const checkout=await createCheckout({
         provider:'sumup',account,amount:fee,currency:event.currency,reference,
         description:`Tournival: ${clean(tournament.name,75)}`,
-        redirectUrl:`https://rallyhub.ie/tournival/register/${encodeURIComponent(token)}`
+        redirectUrl:`https://rallyhub.ie/tournival/register/${encodeURIComponent(token)}`,
+        // Reuse the same SumUp payment callback as Clare Pickleball guest bookings.
+        returnUrl:'https://rallyhub.ie/api/apps/6a01dc00702b7dd2a2978c28/functions/paymentGatewayWebhook?provider=sumup'
       });
       await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{
         provider_checkout_id:checkout.checkoutId,provider_checkout_url:checkout.checkoutUrl,

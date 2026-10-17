@@ -31,3 +31,5 @@ if (process.argv[1]?.endsWith('tournivalBackendSafetyGate.mjs')) {
   }
   console.log('Tournival remote backend safety preflight PASS; no records touched.');
 }
+
+// SumUp callback must be set on Tournival hosted checkout, as on guest booking.
