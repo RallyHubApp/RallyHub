@@ -138,6 +138,24 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, player: { id: player.id, full_name: player.full_name } });
     }
 
+    // Issue an opaque, revocable registration link. Only the SHA-256 digest is stored.
+    if (action === 'create_tournival_registration_link') {
+      if (String(tournament.format).toLowerCase() !== 'tournival')
+        return Response.json({ error:'Not a Tournival tournament' }, { status:400 });
+      const random = crypto.getRandomValues(new Uint8Array(24));
+      const token='trn_'+Array.from(random,b=>b.toString(16).padStart(2,'0')).join('');
+      const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token));
+      const tokenHash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+      const expiresAt=new Date(Date.now()+1000*60*60*24*30).toISOString();
+      await base44.asServiceRole.entities.TournivalAccessToken.create({
+        tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,
+        tournament_id:tournament.id,token_hash:tokenHash,token_type:'registration',
+        created_at:new Date().toISOString(),expires_at:expiresAt,created_by_user_id:user.id
+      });
+      await audit(base44,user,tournament,'tournival_registration_link_created',{expiresAt});
+      return Response.json({success:true,path:`/tournival/register/${token}`,expiresAt});
+    }
+
     // Independent Tournival transport; never writes the KOTC sporting state.
     // The existing manager's authenticated access checks apply above.
     if (action === 'update_tournival') {
