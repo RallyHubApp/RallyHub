@@ -149,6 +149,7 @@ export function checkFairness(rounds) {
 
 // ── Score validation ──────────────────────────────────────────────────────────
 export function validateTournivalScore(scoreA, scoreB, matchFormat = 'first_11_by1') {
+  if (scoreA === '' || scoreB === '' || scoreA === null || scoreB === null || scoreA === undefined || scoreB === undefined) return { valid: false, error: 'Both scores are required.' };
   const a = Number(scoreA), b = Number(scoreB);
   if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0) return { valid: false, error: 'Scores must be non-negative whole numbers.' };
   if (a === b) return { valid: false, error: 'Scores cannot be equal — there must be a winner.' };
