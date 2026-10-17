@@ -114,6 +114,27 @@ Deno.serve(async(req)=>{
     const accepted=reservation.updated===1;
     const fee=Number(event.fee)||0;
     const status=!accepted?'waitlisted':fee>0?'pending_payment':'confirmed';
+    let waitlistTicket:number|null=null;
+    if(!accepted){
+      // Allocate a durable, unique FIFO ticket by CAS; do NOT use the stale
+      // number of waitlisted records observed at request start.
+      await base44.asServiceRole.entities.Tournament.updateMany({
+        id:tournament.id,tenant_id:tournament.tenant_id,tournival_waitlist_sequence:null
+      },{$set:{tournival_waitlist_sequence:Math.max(0,...rows.map((r:any)=>Number(r.waitlist_position)||0))}});
+      let won=false;
+      for(let attempt=0;attempt<60;attempt++){
+        const current=(await base44.asServiceRole.entities.Tournament.filter({
+          id:tournament.id,tenant_id:tournament.tenant_id
+        },'-created_date',1))?.[0];
+        const seen=Number(current?.tournival_waitlist_sequence);
+        if(!Number.isSafeInteger(seen)||seen<0)break;
+        const updated=await base44.asServiceRole.entities.Tournament.updateMany({
+          id:tournament.id,tenant_id:tournament.tenant_id,tournival_waitlist_sequence:seen
+        },{$inc:{tournival_waitlist_sequence:1}});
+        if(updated.updated===1){waitlistTicket=seen+1;won=true;break;}
+      }
+      if(!won)return safeError('Waitlist is busy. Please retry with the same registration operation ID.',503);
+    }
     let registration=await base44.asServiceRole.entities.TournivalRegistration.create({
       tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,
       tournament_id:tournament.id,player_id:player.id,full_name:name,email,mobile,
@@ -124,7 +145,7 @@ Deno.serve(async(req)=>{
       dupr_consent:body.duprConsent===true,dupr_consent_version:'tournival-dupr-opt-in-v1',
       registered_at:new Date().toISOString(),
       ...(status==='confirmed'?{confirmed_at:new Date().toISOString()}:{}),
-      ...(status==='waitlisted'?{waitlist_position:waitlisted+1}:{})
+      ...(status==='waitlisted'?{waitlist_position:waitlistTicket}:{})
     });
     // Confirmed free registration participates in the same player roster used
     // by the existing Tournival Setup screen. Pending/waitlisted never enter it.

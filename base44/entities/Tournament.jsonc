@@ -47,6 +47,10 @@
         "type": "string"
       }
     },
+    "tournival_waitlist_sequence": {
+      "type": "number",
+      "description": "Monotonic unique waitlist ticket allocator; never decrease or recycle tickets"
+    },
     "tournival_reserved_count": {
       "type": "number",
       "description": "Atomic confirmed or pending-payment capacity reservations for Tournival only"
