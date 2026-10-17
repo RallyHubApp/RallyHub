@@ -40,7 +40,24 @@ Deno.serve(async(req)=>{
     },'-created_date',1);
     if(!event?.length)return Response.json({error:'Tournament not in selected tenant and club'},{status:404});
     const audience=await listTournivalAudience(base44,{tenantId,eventId:event[0].id});
-    return Response.json({success:true,sourceModule:'Tournival',eventId:event[0].id,audience});
+    const [blocked,stalled]=await Promise.all([
+      base44.asServiceRole.entities.CommunicationEvent.filter({
+        tenant_id:tenantId,event_type:'tournival_queue_blocked'
+      },'-occurred_at',500),
+      base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({
+        tenant_id:tenantId,campaign_id:'pending'
+      },'-created_date',250)
+    ]);
+    const warnings=(blocked||[]).filter((r:any)=>r.metadata?.eventId===event[0].id).map((r:any)=>({
+      type:'queue_blocked',purpose:r.metadata?.purpose||'',sourceRecordId:r.metadata?.sourceRecordId||'',
+      reason:r.metadata?.error||'Template or queue review required',time:r.occurred_at
+    }));
+    warnings.push(...(stalled||[]).filter((r:any)=>r.metadata?.event_id===event[0].id).map((r:any)=>({
+      type:'queue_incomplete',purpose:'',sourceRecordId:r.recipient_id||'',
+      reason:'Reserved communication attempt needs manual reconciliation',time:r.queued_at
+    })));
+    return Response.json({success:true,sourceModule:'Tournival',eventId:event[0].id,
+      audience,warnings});
   }
   if(action==='queue_tournival'||action==='resend_tournival'){
     if(ownerScope!=='tenant'||!clubId||!Object.values(TOURNIVAL_EVENTS).includes(purpose as any))
