@@ -64,7 +64,7 @@ async function audit(base44:any, user:any, tournament:any, action:string, after:
       reason: 'legacy_tournament_manager',
     });
   } catch (error) {
-    console.warn('legacyTournamentManager audit failed', error?.message || error);
+    console.warn('legacyTournamentManager audit failed', (error as any)?.message || error);
   }
 }
 
@@ -328,7 +328,7 @@ Deno.serve(async (req) => {
 
     return Response.json({ error: 'Unknown action' }, { status: 400 });
   } catch (error) {
-    console.error('legacyTournamentManager error', error?.message || error);
+    console.error('legacyTournamentManager error', (error as any)?.message || error);
     return Response.json({ error: 'Unable to process the tournament request right now.' }, { status: 500 });
   }
 });
