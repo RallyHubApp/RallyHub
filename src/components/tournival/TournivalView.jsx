@@ -21,6 +21,7 @@ import TournivalPrintPack from './TournivalPrintPack';
 import TournivalHall from './TournivalHall';
 import TournivalLiveScoring from './TournivalLiveScoring';
 import TournivalRegistrations from './TournivalRegistrations';
+import TournivalDuprReview from './TournivalDuprReview';
 import { indexTournivalMatches } from '@/lib/tournivalScheduler';
 import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 
@@ -34,6 +35,7 @@ const TABS = [
   { id: 'hall', label: 'Live Hall', icon: Trophy },
   { id: 'print', label: 'Print Pack', icon: List },
   { id: 'registrations', label: 'Check-in', icon: Users },
+  { id: 'dupr', label: 'DUPR', icon: Trophy },
 ];
 
 // ── Player Entry Panel ────────────────────────────────────────────────────────
@@ -358,7 +360,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
     ? computeLeaderboard(state.playerIds || players.map(p => p.id), state.rounds || [], state.results || {}, playerMap)
     : [];
 
-  const visibleTabs = TABS.filter(t => (isStarted || t.id === 'setup' || ((t.id === 'rehearsal'||t.id === 'registrations') && isAdmin)) && (t.id !== 'rehearsal' && t.id !== 'registrations' || isAdmin));
+  const visibleTabs = TABS.filter(t => (isStarted || t.id === 'setup' || ((t.id === 'rehearsal'||t.id === 'registrations'||t.id === 'dupr') && isAdmin)) && (t.id !== 'rehearsal' && t.id !== 'registrations' && t.id !== 'dupr' || isAdmin));
 
   return (
     <div className="space-y-4">
@@ -414,6 +416,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
       />
 
       {activeTab === 'rehearsal' && isAdmin && <TournivalRehearsal />}
+      {activeTab === 'dupr' && isAdmin && <TournivalDuprReview tournament={tournament} state={state} isAdmin={isAdmin} />}
       {activeTab === 'registrations' && isAdmin && <TournivalRegistrations tournament={tournament} isAdmin={isAdmin} />}
       {activeTab === 'print' && state && <TournivalPrintPack tournament={tournament} state={state} playerMap={playerMap} currentRevision={state.revision} />}
       {activeTab === 'hall' && state && <TournivalHall tournament={tournament} state={state} playerMap={playerMap} />}
