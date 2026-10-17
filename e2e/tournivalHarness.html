@@ -1,0 +1,27 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/></head><body>
+<main style="max-width:480px;margin:auto;font:16px system-ui;padding:12px">
+<h1>Tournival V1 browser simulation</h1><label for="courts">Courts</label>
+<input id="courts" type="number" min="1" max="8" value="4"/>
+<label for="rounds">Rounds</label><select id="rounds"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option></select>
+<button id="simulate">Simulate</button><output id="result" aria-live="polite"></output>
+</main>
+<script type="module">
+import {estimateDuration,generateGroupFixtures,validateTournivalScore} from '/src/lib/tournivalEngine.js';
+import {indexTournivalMatches,scheduleTournivalCourts,recordTournivalResult} from '/src/lib/tournivalScheduler.js';
+document.querySelector('#simulate').addEventListener('click',()=>{
+const courts=Number(document.querySelector('#courts').value),rounds=Number(document.querySelector('#rounds').value);
+const ids=Array.from({length:16},(_,i)=>'player'+i);
+const duration=estimateDuration({numPlayers:16,numCourts:courts,numRounds:rounds,matchFormat:'timed_10',venueMinutes:120});
+if(!duration.valid)throw Error(duration.error);
+let matches=indexTournivalMatches(generateGroupFixtures(ids,courts,rounds)), completed=0;
+while(matches.some(m=>m.status!=='completed')){
+ const assigned=scheduleTournivalCourts(matches,{courts});matches=assigned.matches;
+ if(!assigned.assignments.length)throw Error('No progress');
+ for(const match of matches.filter(m=>m.status==='playing')){
+  const r=recordTournivalResult(matches,{matchId:match.id,expectedRevision:match.revision,idempotencyKey:'browser-'+match.id,scoreA:8,scoreB:7,matchFormat:'timed_10'},validateTournivalScore);
+  matches=r.matches;completed++;
+ }
+}
+document.querySelector('#result').textContent=`PASS: ${completed} matches; ${duration.formatted}; knockout final included`;
+});
+</script></body></html>
