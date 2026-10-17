@@ -167,10 +167,12 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
       : hasGeneratedFixtures
         ? 'In Progress'
         : tournament.status;
-    await base44.entities.Tournament.update(tournament.id, {
-      tournival_state: JSON.stringify(newState),
-      status: tournamentStatus,
+    const response = await base44.functions.invoke('legacyTournamentManager', {
+      tournamentId: tournament.id, action: 'update_tournival',
+      expectedRevision: state?.revision ?? 0, operationId: crypto.randomUUID(),
+      tournival_state: JSON.stringify(newState), status: tournamentStatus,
     });
+    if (response?.data?.error) throw new Error(response.data.error);
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
   };
 

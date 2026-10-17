@@ -213,6 +213,7 @@ export default function PublicTournivalView({ tournament, players, liveIndicator
     await callPublicRegister({
       tournamentId: tournament.id,
       action: 'update_tournival',
+      expectedRevision: state.revision ?? 0, operationId: crypto.randomUUID(),
       tournival_state: JSON.stringify(newState),
       status: 'In Progress',
     });
@@ -232,6 +233,7 @@ export default function PublicTournivalView({ tournament, players, liveIndicator
     await callPublicRegister({
       tournamentId: tournament.id,
       action: 'update_tournival',
+      expectedRevision: state.revision ?? 0, operationId: crypto.randomUUID(),
       tournival_state: JSON.stringify(newState),
       status: isGroupComplete ? 'Group Complete' : 'In Progress',
     });
@@ -278,6 +280,7 @@ export default function PublicTournivalView({ tournament, players, liveIndicator
     await callPublicRegister({
       tournamentId: tournament.id,
       action: 'update_tournival',
+      expectedRevision: state.revision ?? 0, operationId: crypto.randomUUID(),
       tournival_state: JSON.stringify(newState),
       status: tournament.status,
     });

@@ -157,6 +157,20 @@ Deno.serve(async (req) => {
       }
       const currentRaw = tournament.tournival_state;
       const current = currentRaw ? (typeof currentRaw === 'string' ? JSON.parse(currentRaw) : currentRaw) : null;
+      const expectedRevision = Number(body.expectedRevision);
+      const operationId = clean(body.operationId,120);
+      if (!Number.isInteger(expectedRevision) || expectedRevision < 0 || !operationId) {
+        return Response.json({ error: 'Tournival revision and operation ID required' }, { status: 400 });
+      }
+      if (current?.lastOperationId === operationId) {
+        return Response.json({ success: true, duplicate: true, revision: current.revision || 0 });
+      }
+      if (Number(current?.revision || 0) !== expectedRevision) {
+        return Response.json({ error: 'Stale Tournival state. Refresh and reconcile before retrying.', currentRevision: current?.revision || 0 }, { status: 409 });
+      }
+      next.revision = expectedRevision + 1;
+      next.lastOperationId = operationId;
+
       if (current?.rounds?.length && JSON.stringify(next.rounds) !== JSON.stringify(current.rounds)) {
         const recorded = Object.values(current.results || {}).some((round:any) => Object.keys(round || {}).length);
         if (recorded) return Response.json({ error: 'Draw cannot be replaced after results are recorded' }, { status: 409 });
@@ -167,7 +181,7 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Invalid tournament status' }, { status: 400 });
       }
       await base44.asServiceRole.entities.Tournament.update(tournament.id, {
-        tournival_state: body.tournival_state,
+        tournival_state: JSON.stringify(next),
         ...(mappedStatus === undefined ? {} : { status: mappedStatus }),
       });
       await audit(base44, user, tournament, 'tournival_state_updated', {
