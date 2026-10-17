@@ -306,6 +306,13 @@ Deno.serve(async(req)=>{
     const status=verified.status;
     const now=new Date().toISOString();
 
+    // A late failed/cancelled provider notification must never reverse an already
+    // verified paid Tournival registration. Refund is a separate audited workflow.
+    if(payment.purpose_type==='event'&&payment.payment_type==='tournival_registration'&&
+       payment.payment_status==='paid'&&status!=='PAID'){
+      return new Response('',{status:204});
+    }
+
     if(status==='PAID'){
       const update:any={
         payment_status:'paid',payment_date:now.slice(0,10),provider_status:'PAID',

@@ -76,12 +76,14 @@ Deno.serve(async(req)=>{
       return safeError('Valid name, email and registration operation required');
     if(body.consent!==true||body.consentVersion!=='tournival-participation-v1')
       return safeError('Participation and privacy consent required');
-    const duplicate=rows.find((r:any)=>
-      r.registration_operation_id===operationId||
-      (emailKey(r.email)===email && r.registration_status!=='withdrawn'));
-    if(duplicate){
-      const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'event',purpose_id:duplicate.id},'-created_date',5);
-      return Response.json(publicReceipt(duplicate,event,payments?.[0]?.provider_checkout_url||''));
+    const duplicateOperation=rows.find((r:any)=>r.registration_operation_id===operationId);
+    if(duplicateOperation){
+      const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'event',purpose_id:duplicateOperation.id},'-created_date',5);
+      return Response.json(publicReceipt(duplicateOperation,event,payments?.[0]?.provider_checkout_url||''));
+    }
+    if(rows.some((r:any)=>emailKey(r.email)===email && r.registration_status!=='withdrawn')){
+      // Public links must not reveal another person's registration/payment details.
+      return Response.json({error:'This email may already be registered. Please contact the event organiser.'},{status:409});
     }
     // Reuse existing RallyHub Player identity when email already belongs to this tenant.
     const players=await base44.asServiceRole.entities.Player.filter({tenant_id:tournament.tenant_id,email},'-created_date',5);
