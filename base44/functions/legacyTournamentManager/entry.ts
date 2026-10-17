@@ -524,7 +524,7 @@ Deno.serve(async (req) => {
       }catch(e:any){
         // Provider outcome can be unknown even if the HTTP request failed.
         await base44.asServiceRole.entities.PaymentRefund.update(refund.id,{
-          status:'unknown',failure_message:clean(e?.message||'Provider outcome unverified',300),
+          status:'processing',failure_message:clean(e?.message||'Provider outcome unverified',300),
           completed_at:new Date().toISOString()
         });
         return Response.json({error:'Refund outcome unverified with SumUp. Check merchant dashboard before retrying',
