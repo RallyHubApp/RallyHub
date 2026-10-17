@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { resolveEmailTransport, sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { resolveApprovedTournivalTemplate } from './tournivalTemplates.ts';
+import {queueTournivalCommunication,listTournivalAudience,TOURNIVAL_EVENTS} from './tournivalDelivery.ts';
 const clean=(v:any,max=5000)=>String(v??'').trim().slice(0,max);
 Deno.serve(async(req)=>{
  try{
@@ -30,6 +31,43 @@ Deno.serve(async(req)=>{
       return Response.json({success:false,deliveryPerformed:false,
         error:error?.message||'Approved tenant template unavailable'},{status:409});
     }
+  }
+  if(action==='tournival_audience'){
+    if(ownerScope!=='tenant'||!clubId||!clean(body.eventId,120))
+      return Response.json({error:'Tenant, club and event required'},{status:400});
+    const event=await base44.asServiceRole.entities.Tournament.filter({
+      id:clean(body.eventId,120),tenant_id:tenantId,host_club_id:clubId
+    },'-created_date',1);
+    if(!event?.length)return Response.json({error:'Tournament not in selected tenant and club'},{status:404});
+    const audience=await listTournivalAudience(base44,{tenantId,eventId:event[0].id});
+    return Response.json({success:true,sourceModule:'Tournival',eventId:event[0].id,audience});
+  }
+  if(action==='queue_tournival'||action==='resend_tournival'){
+    if(ownerScope!=='tenant'||!clubId||!Object.values(TOURNIVAL_EVENTS).includes(purpose as any))
+      return Response.json({error:'Explicit tenant, club and approved event purpose required'},{status:400});
+    const eventId=clean(body.eventId,120),sourceRecordId=clean(body.sourceRecordId,120);
+    const event=await base44.asServiceRole.entities.Tournament.filter({
+      id:eventId,tenant_id:tenantId,host_club_id:clubId
+    },'-created_date',1);
+    if(!event?.length||String(event[0].format).toLowerCase()!=='tournival')
+      return Response.json({error:'Tournival event not found within selected tenant'},{status:404});
+    const recipient=body.recipient||{};
+    const channel=body.channel==='whatsapp'?'whatsapp':'email';
+    const version=Number(body.deliveryVersion||1);
+    if(!sourceRecordId||!recipient.id||!Number.isSafeInteger(version)||version<1||version>100)
+      return Response.json({error:'Valid source, recipient and delivery version required'},{status:400});
+    if(action==='resend_tournival' && (version<=1||clean(body.resendReason,500).length<8))
+      return Response.json({error:'Resend needs a new attempt number and documented reason'},{status:400});
+    const rendered=await resolveApprovedTournivalTemplate(base44,{
+      tenantId,clubId,purpose,channel,fields:body.fields||{}
+    });
+    const queued=await queueTournivalCommunication(base44,{
+      tenantId,clubId,eventId,purpose,recipient,channel,fields:body.fields||{},
+      rendered,sourceRecordId,operationId:clean(body.operationId,120),
+      deliveryVersion:version
+    });
+    return Response.json({success:true,deliveryPerformed:false,
+      ...queued,channel,purpose,deliveryVersion:version});
   }
   if(action==='transport_health'){
     const config=await resolveEmailTransport(base44,scope);

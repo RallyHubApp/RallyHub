@@ -18,7 +18,7 @@ export function makeTournivalDeliveryKey({tenantId,eventId,purpose,recipientId,c
  return ['tournival',tenantId,eventId,purpose,recipientId,channel,version].join('|');
 }
 export async function queueTournivalCommunication(base44:any,{
- tenantId,clubId,eventId,purpose,recipient,channel,fields,rendered,sourceRecordId,operationId
+ tenantId,clubId,eventId,purpose,recipient,channel,fields,rendered,sourceRecordId,operationId,deliveryVersion
 }:any){
  if(!tenantId||!clubId||!eventId||!sourceRecordId||!recipient?.id||
   !Object.values(TOURNIVAL_EVENTS).includes(purpose)||
@@ -28,7 +28,7 @@ export async function queueTournivalCommunication(base44:any,{
  if(!address||(channel==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)))
   throw Error('Recipient channel address unavailable');
  const ledger=base44.asServiceRole.entities.CommunicationDeliveryAttempt;
- const key=makeTournivalDeliveryKey({tenantId,eventId,purpose,recipientId:sourceRecordId,channel});
+ const key=makeTournivalDeliveryKey({tenantId,eventId,purpose,recipientId:sourceRecordId,channel,version:String(deliveryVersion||1)});
  const existing=await ledger.filter({tenant_id:tenantId,idempotency_key:key},'-created_date',2);
  if(existing?.length)return {queued:false,duplicate:true,attemptId:existing[0].id,status:existing[0].status};
  // Reserve dedupe identity before allocating other rows. A server-side keyed
@@ -36,7 +36,7 @@ export async function queueTournivalCommunication(base44:any,{
  const lock=await ledger.upsert([{tenant_id:tenantId,idempotency_key:key,
   campaign_id:'pending',recipient_id:sourceRecordId,channel,status:'queued',
   attempt_number:1,provider:'none',queued_at:new Date().toISOString(),
-  metadata:{source_module:'Tournival',event_id:eventId,operation_id:operationId||''}
+  metadata:{source_module:'Tournival',event_id:eventId,operation_id:operationId||'',delivery_version:deliveryVersion||1}
  }],{key:['tenant_id','idempotency_key']});
  if(lock.created!==1)return {queued:false,duplicate:true,attemptId:lock.records?.[0]?.id||'',status:lock.records?.[0]?.status};
  const attempt=lock.records[0];
@@ -45,7 +45,7 @@ export async function queueTournivalCommunication(base44:any,{
   source_record_id:eventId,kind:'transactional',purpose,name:purpose,status:'queued',
   audience_definition:{source:'tournival',eventId,channel},recipient_count:1,
   eligible_count:1,idempotency_key:key,brand_kit_id:rendered.brandKitId,
-  created_by_user_id:'tournival-workflow',metadata:{sourceRecordId,operationId:operationId||''}
+  created_by_user_id:'tournival-workflow',metadata:{sourceRecordId,operationId:operationId||'',deliveryVersion:deliveryVersion||1}
  });
  const message=await base44.asServiceRole.entities.CommunicationMessage.create({
   campaign_id:campaign.id,tenant_id:tenantId,channel,template_id:rendered.templateId,
