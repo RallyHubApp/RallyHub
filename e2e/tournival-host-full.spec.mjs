@@ -8,6 +8,7 @@ test(`Full Tournival host journey ${size.width}px`,async({page})=>{
  // Select 2 qualification rounds from the real setup form.
  await page.getByRole('combobox').filter({hasText:'4 rounds'}).click();
  await page.getByRole('option',{name:'2 rounds'}).click();
+ await page.getByText('10-min timed').click();
  const revision=()=>page.getByTestId('server-revision').innerText().then(Number);
  const changed=async(before)=>await expect.poll(revision,{timeout:7500}).toBeGreaterThan(before);
  let prior=await revision();
