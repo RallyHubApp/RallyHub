@@ -201,7 +201,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const handleStart = async ({ numCourts, numRounds, matchFormat, duprEnabled, seedOrder, venueMinutes, matchMinutes, changeoverMinutes }) => {
+  const handleStart = async ({ numCourts, numRounds, matchFormat, duprEnabled, knockoutPairs, seedOrder, venueMinutes, matchMinutes, changeoverMinutes }) => {
     const playerIds = seedOrder?.length ? seedOrder : players.map(p => p.id);
     const rounds = generateGroupFixtures(playerIds, numCourts, numRounds);
     const newState = {
@@ -213,6 +213,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
       numRounds,
       matchFormat,
       duprEnabled:duprEnabled===true,
+      knockoutPairs,
       venueMinutes, matchMinutes, changeoverMinutes,
       rounds,
       actualStartedAt:new Date().toISOString(),
@@ -267,7 +268,8 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
 
   const handleCreateKnockout = async () => {
     const leaderboard = computeLeaderboard(state.playerIds, state.rounds, state.results, playerMap);
-    const pairs = createKnockoutPairs(leaderboard);
+    const qualified=leaderboard.slice(0,Math.max(4,Number(state.knockoutPairs||8)*2));
+    const pairs = createKnockoutPairs(qualified);
     const bracketMatchups = createKnockoutBracket(pairs);
 
     const bracket = bracketMatchups.map((m, i) => ({

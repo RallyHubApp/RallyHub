@@ -20,6 +20,7 @@ const MATCH_FORMATS = [
 export default function TournivalSetup({ players, tournament, onStart, isAdmin, locked, existingState, onSaveState }) {
   const [numCourts, setNumCourts] = useState(existingState?.numCourts || tournament.kotc_num_courts || 4);
   const [numRounds, setNumRounds] = useState(existingState?.numRounds || 4);
+  const [knockoutPairs, setKnockoutPairs] = useState(existingState?.knockoutPairs || 4);
   const [venueMinutes, setVenueMinutes] = useState(existingState?.venueMinutes || 120);
   const [matchMinutes, setMatchMinutes] = useState(existingState?.matchMinutes ?? 18);
   const [changeoverMinutes, setChangeoverMinutes] = useState(existingState?.changeoverMinutes ?? 3);
@@ -38,7 +39,10 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
   const currentSeedIds = fullOrderedPlayers.map(p => p.id);
   const seedLocked = locked;
 
-  const duration = estimateDuration({ numPlayers, numCourts, numRounds, matchFormat, matchMinutes: matchFormat.startsWith('timed_') ? undefined : matchMinutes, changeoverMinutes, venueMinutes });
+  const maxKnockoutPairs=Math.min(8,2**Math.floor(Math.log2(Math.max(1,Math.floor(numPlayers/2)))));
+  const selectedKnockoutPairs=Math.min(knockoutPairs,maxKnockoutPairs);
+  const duration = estimateDuration({ numPlayers, numCourts, numRounds, matchFormat,
+    knockoutPairs:selectedKnockoutPairs, matchMinutes: matchFormat.startsWith('timed_') ? undefined : matchMinutes, changeoverMinutes, venueMinutes });
   const activePlayers = Math.min(numPlayers, numCourts * 4);
   const benchPlayers = Math.max(0, numPlayers - activePlayers);
 
@@ -46,7 +50,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
     if (!isValid) { toast.error('Add at least 4 players to start.'); return; }
     if (!seedConfirmed) { toast.error('Confirm seed order before generating fixtures.'); return; }
     setSaving(true);
-    await onStart({ numCourts: Number(numCourts), numRounds: Number(numRounds), matchFormat, duprEnabled, seedOrder: currentSeedIds, venueMinutes, matchMinutes: duration.matchMinutes, changeoverMinutes });
+    await onStart({ numCourts: Number(numCourts), numRounds: Number(numRounds), matchFormat, duprEnabled, knockoutPairs:selectedKnockoutPairs, seedOrder: currentSeedIds, venueMinutes, matchMinutes: duration.matchMinutes, changeoverMinutes });
     setSaving(false);
   };
 
@@ -78,7 +82,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
   const handleConfirmSeeds = async () => {
     setSeedConfirmed(true);
     if (onSaveState) {
-      await onSaveState({ ...(existingState || {}), seedOrder: currentSeedIds, seedOrderConfirmed: true, seedOrderLocked: false, playerIds: currentSeedIds, rounds: existingState?.rounds || [], numCourts: Number(numCourts), numRounds: Number(numRounds), matchFormat, duprEnabled, venueMinutes, matchMinutes: duration.matchMinutes, changeoverMinutes, results: existingState?.results || {}, currentRound: existingState?.currentRound || 0 });
+      await onSaveState({ ...(existingState || {}), seedOrder: currentSeedIds, seedOrderConfirmed: true, seedOrderLocked: false, playerIds: currentSeedIds, rounds: existingState?.rounds || [], numCourts: Number(numCourts), numRounds: Number(numRounds), matchFormat, duprEnabled, knockoutPairs:selectedKnockoutPairs, venueMinutes, matchMinutes: duration.matchMinutes, changeoverMinutes, results: existingState?.results || {}, currentRound: existingState?.currentRound || 0 });
     }
     toast.success('Seed order confirmed');
   };
@@ -150,6 +154,16 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
           </div>
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs text-muted-foreground">Knockout pairs</Label>
+            <Select value={String(selectedKnockoutPairs)} onValueChange={v=>setKnockoutPairs(Number(v))}>
+              <SelectTrigger className="mt-1 bg-secondary border-border"><SelectValue/></SelectTrigger>
+              <SelectContent>{[2,4,8].filter(n=>n<=maxKnockoutPairs).map(n=>
+                <SelectItem key={n} value={String(n)}>{n} pairs / {n*2} players</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className="text-xs text-muted-foreground">Venue booked (minutes)</Label>
