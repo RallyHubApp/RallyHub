@@ -1,0 +1,96 @@
+{
+  "name": "TournivalSession",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "tournament_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "rehearsal": {
+      "type": "boolean"
+    },
+    "num_courts": {
+      "type": "number"
+    },
+    "qualification_rounds": {
+      "type": "number"
+    },
+    "scoring_format": {
+      "type": "string"
+    },
+    "venue_minutes": {
+      "type": "number"
+    },
+    "match_minutes": {
+      "type": "number"
+    },
+    "changeover_minutes": {
+      "type": "number"
+    },
+    "dupr_enabled": {
+      "type": "boolean"
+    },
+    "registration_fee": {
+      "type": "number"
+    },
+    "capacity": {
+      "type": "number"
+    },
+    "state_json": {
+      "type": "string"
+    },
+    "state_revision": {
+      "type": "number"
+    },
+    "last_operation_id": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "completed_at": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "tournament_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

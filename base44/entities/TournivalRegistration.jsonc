@@ -1,0 +1,105 @@
+{
+  "name": "TournivalRegistration",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "tournament_id": {
+      "type": "string"
+    },
+    "player_id": {
+      "type": "string"
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "mobile": {
+      "type": "string"
+    },
+    "registration_status": {
+      "type": "string"
+    },
+    "payment_status": {
+      "type": "string"
+    },
+    "payment_record_id": {
+      "type": "string"
+    },
+    "payment_reference": {
+      "type": "string"
+    },
+    "amount_due": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string"
+    },
+    "registered_at": {
+      "type": "string"
+    },
+    "checked_in_at": {
+      "type": "string"
+    },
+    "withdrawn_at": {
+      "type": "string"
+    },
+    "confirmed_at": {
+      "type": "string"
+    },
+    "consent_version": {
+      "type": "string"
+    },
+    "consent_at": {
+      "type": "string"
+    },
+    "registration_operation_id": {
+      "type": "string"
+    },
+    "waitlist_position": {
+      "type": "number"
+    },
+    "rehearsal": {
+      "type": "boolean"
+    },
+    "last_error": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "tournament_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

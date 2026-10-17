@@ -1,0 +1,108 @@
+{
+  "name": "TournivalMatch",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "tournament_id": {
+      "type": "string"
+    },
+    "fixture_key": {
+      "type": "string"
+    },
+    "stage": {
+      "type": "string"
+    },
+    "round_number": {
+      "type": "number"
+    },
+    "court_number": {
+      "type": "number"
+    },
+    "team_a_player_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "team_b_player_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "match_status": {
+      "type": "string"
+    },
+    "score_a": {
+      "type": "number"
+    },
+    "score_b": {
+      "type": "number"
+    },
+    "winner": {
+      "type": "string"
+    },
+    "revision": {
+      "type": "number"
+    },
+    "operation_id": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "completed_at": {
+      "type": "string"
+    },
+    "result_method": {
+      "type": "string"
+    },
+    "scored_by_user_id": {
+      "type": "string"
+    },
+    "dispute_reason": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "rehearsal": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "tournament_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
