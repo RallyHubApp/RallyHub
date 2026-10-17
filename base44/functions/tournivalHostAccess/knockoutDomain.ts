@@ -71,8 +71,9 @@ export function scoreTournivalKnockout(state:any,{
   if(String(correctionReason).trim().length<6)throw Error('Correction requires written reason');
   // Corrections that may invalidate subsequent completed games require
   // organiser review; do not silently redraw or overwrite downstream fixtures.
-  if(knockout.bracket.some((m:any)=>m.stage!==match.stage&&m.result))
-   throw Error('Downstream matches already scored; organiser must review correction impact');
+  if(knockout.bracket.some((m:any)=>m.stage!==match.stage&&
+     ['QF','SF','Final'].indexOf(m.stage)>['QF','SF','Final'].indexOf(match.stage)))
+   throw Error('Downstream bracket exists; organiser must review correction impact');
  }
  const revision={scoreA,scoreB,winner:scoreA>scoreB?'A':'B'};
  const bracket=knockout.bracket.map((m:any)=>m.id===matchId?{...m,result:revision}:m);
