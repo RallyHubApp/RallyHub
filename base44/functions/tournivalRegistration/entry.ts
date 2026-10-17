@@ -107,7 +107,7 @@ Deno.serve(async(req)=>{
     },{$set:{tournival_reserved_count:registered}});
     // Atomic capacity claim. At most 'capacity' contenders can increment from
     // below the limit; all later contenders become waitlisted.
-    const reservation=await base44.asServiceRole.entities.Tournament.updateMany({
+    const reservation=waitlisted>0?{updated:0}:await base44.asServiceRole.entities.Tournament.updateMany({
       id:tournament.id,tenant_id:tournament.tenant_id,
       tournival_reserved_count:{$lt:event.capacity}
     },{$inc:{tournival_reserved_count:1}});

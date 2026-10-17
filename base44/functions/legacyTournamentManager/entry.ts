@@ -197,6 +197,55 @@ Deno.serve(async (req) => {
         message:'Registration withdrawn. Any payment refund must be reviewed separately.'});
     }
 
+    if (action === 'tournival_promote_waitlist') {
+      if (String(tournament.format).toLowerCase()!=='tournival')
+        return Response.json({error:'Not a Tournival tournament'},{status:400});
+      if (!['Draft','Registration Open'].includes(tournament.status))
+        return Response.json({error:'Promotion requires registration to be open and the sporting draw not started'},{status:409});
+      // Paid promotions require a new authorised checkout journey; never imply
+      // payment or silently bypass the payment gateway.
+      if(Number(tournament.event_fee_amount||0)>0)
+        return Response.json({error:'Paid waitlist promotion requires a verified checkout flow; no free promotion permitted'},{status:409});
+      const sessions=await base44.asServiceRole.entities.TournivalSession.filter({
+        tournament_id:tournament.id,tenant_id:tournament.tenant_id
+      },'-created_at',3);
+      if(sessions.some((x:any)=>{try{return JSON.parse(x.state_json||'{}').rounds?.length>0}catch{return true}}))
+        return Response.json({error:'Draw already exists; promotion would change the playing roster'},{status:409});
+      const candidates=await base44.asServiceRole.entities.TournivalRegistration.filter({
+        tournament_id:tournament.id,tenant_id:tournament.tenant_id,registration_status:'waitlisted'
+      },'waitlist_position',500);
+      candidates.sort((a:any,b:any)=>Number(a.waitlist_position||Infinity)-Number(b.waitlist_position||Infinity)
+        ||String(a.registered_at||'').localeCompare(String(b.registered_at||'')));
+      const earliest=candidates[0];
+      if(!earliest)return Response.json({success:true,nothingToPromote:true});
+      const capacity=Number(tournament.max_players||32);
+      const claim=await base44.asServiceRole.entities.Tournament.updateMany({
+        id:tournament.id,tenant_id:tournament.tenant_id,tournival_reserved_count:{$lt:capacity}
+      },{$inc:{tournival_reserved_count:1}});
+      if(claim.updated!==1)
+        return Response.json({error:'No available capacity for promotion'},{status:409});
+      const promote=await base44.asServiceRole.entities.TournivalRegistration.updateMany({
+        id:earliest.id,tenant_id:tournament.tenant_id,registration_status:'waitlisted'
+      },{$set:{
+        registration_status:'confirmed',payment_status:'not_required',
+        confirmed_at:new Date().toISOString(),waitlist_position:earliest.waitlist_position
+      }});
+      if(promote.updated!==1){
+        await base44.asServiceRole.entities.Tournament.updateMany({
+          id:tournament.id,tenant_id:tournament.tenant_id,tournival_reserved_count:{$gt:0}
+        },{$inc:{tournival_reserved_count:-1}});
+        return Response.json({error:'Waitlist changed during promotion; refresh'},{status:409});
+      }
+      await base44.asServiceRole.entities.Tournament.updateMany({
+        id:tournament.id,tenant_id:tournament.tenant_id
+      },{$addToSet:{player_ids:earliest.player_id}});
+      await audit(base44,user,tournament,'tournival_waitlist_promoted',{
+        registrationId:earliest.id,waitlistPosition:earliest.waitlist_position
+      });
+      return Response.json({success:true,registrationId:earliest.id,
+        waitlistPosition:earliest.waitlist_position,playerId:earliest.player_id});
+    }
+
     if (action === 'register_player') {
       const fullName = clean(body.full_name, 120);
       const email = clean(body.email, 200).toLowerCase();
