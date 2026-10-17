@@ -17,6 +17,8 @@ import TournivalScoring from './TournivalScoring';
 import TournivalLeaderboard from './TournivalLeaderboard';
 import TournivalKnockout from './TournivalKnockout';
 import TournivalRehearsal from './TournivalRehearsal';
+import TournivalPrintPack from './TournivalPrintPack';
+import TournivalHall from './TournivalHall';
 import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 
 const TABS = [
@@ -26,6 +28,8 @@ const TABS = [
   { id: 'standings', label: 'Standings', icon: BarChart2 },
   { id: 'knockout', label: 'Cup', icon: Trophy },
   { id: 'rehearsal', label: 'Rehearsal', icon: Zap },
+  { id: 'hall', label: 'Live Hall', icon: Trophy },
+  { id: 'print', label: 'Print Pack', icon: List },
 ];
 
 // ── Player Entry Panel ────────────────────────────────────────────────────────
@@ -397,6 +401,8 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
       />
 
       {activeTab === 'rehearsal' && isAdmin && <TournivalRehearsal />}
+      {activeTab === 'print' && state && <TournivalPrintPack tournament={tournament} state={state} playerMap={playerMap} currentRevision={state.revision} />}
+      {activeTab === 'hall' && state && <TournivalHall tournament={tournament} state={state} playerMap={playerMap} />}
 
       {activeTab === 'setup' && (
         <TournivalSetup
