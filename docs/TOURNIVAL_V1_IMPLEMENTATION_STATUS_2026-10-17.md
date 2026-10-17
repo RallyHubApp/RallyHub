@@ -57,3 +57,36 @@ These are sandbox code tests, NOT live production acceptance.
 - **Open risk**: The Base44 entity update interface currently used for sporting state does not expose an atomic compare-and-swap primitive. Two simultaneous host writers may both pass revision validation before writes; this is not accepted as a concurrency-safe final release.
 - **Open risk**: registration capacity check and insert are not transactional. Under simultaneous submissions, capacity might be oversubscribed; do not claim financial/capacity release readiness until fixed and independently tested.
 - **Open risk**: dynamic external DUPR player SSO/token consent callback, verified partner permissions, webhook signatures and identity-scoped rated-match submission are not complete. Existing manual CSV export remains fallback.
+
+
+## Latest operational development and regression evidence
+- Tournival-specific hall announcement controls now use the existing `rallyHubHallAudio.js` service, supporting local unlock, mute/volume, manual editable templates and court call-ups; unavailable audio cannot prevent sporting progression. This is local hall audio and in-app event-state records, not customer email/WhatsApp integration.
+- Added live schedule monitor `tournivalTiming.js` and `TournivalTimingMonitor.jsx`; court utilisation, remaining workload, projected finish and venue overrun warnings are advisory. Host chooses any rule/timing changes. 18 focused projection cases passed. Forecast is a work estimate rather than an operational SLA.
+- Added event-level statistics projection `tournivalStatistics.js` and UI. Computes appearances, wins/losses, points for/against, partner/opponent history and podium from unique confirmed match IDs; duplicate read projections do not double-count. Rehearsal is excluded. Not yet integrated with the permanent player career-statistics store.
+- Corrected knockout selection for non-power-of-two participant counts (e.g. 24 players), selecting the highest-qualified legal power-of-two bracket instead of producing an unresolvable 12-pair stage.
+- Pressure engine test `scripts/tournivalPressureGate.mjs`: 24 simulated six-round schedules; 624 confirmed match commits, 624 duplicate retries and 624 conflicting-model writes rejected. These are pure in-memory model tests, **not simultaneous Base44 database transactions**.
+- Regression gates after these additions: `npm run test:tournival-v1` passed; `npm run test:tournival-browser` 16/16 passed; `npm run test:kotc-readiness` 372 scenarios / 34,833 checks passed; `npm run test:interclub-reliability` 37/37 passed; `npm run build` passed; official DUPR adapter Deno tests 3/3 passed.
+- The DUPR host review UI requests only `preview_tournival_uat`; it never calls a submission endpoint. The UAT partner auth URL/version was verified against the 17 Oct 2026 DUPR UAT OpenAPI document. Actual partner token authentication and scopes have not yet been exercised in a separately deployed sandbox.
+- New ongoing release blockers: absence of atomic provider/DB transaction guarantees, full permitted player score editing, revocable delegated host token journey, verified DUPR SSO/UAT rights, provider payment-refund E2E, server-integrated automated browser tests and an isolated backend deployment environment. These are not silently marked PASSED.
+
+## Feature-to-code summary
+| Feature | Code | Status |
+| --- | --- | --- |
+| Qualification/knockout sporting rules | `src/lib/tournivalEngine.js` | IMPLEMENTED / unit TESTED |
+| Duration estimator 2–6 / booking | `TournivalSetup.jsx` and engine | IMPLEMENTED / unit TESTED |
+| Continuous-court queue | `src/lib/tournivalScheduler.js`; `TournivalLiveScoring.jsx` | IMPLEMENTED / browser simulated |
+| Authoritative Tournival entity state | `base44/entities/TournivalSession.jsonc`; `legacyTournamentManager/entry.ts` | SOURCE IMPLEMENTED / remote consistency NOT VERIFIED |
+| Public registration / payment checkout | `tournivalRegistration`; `paymentGatewayWebhook` | SOURCE IMPLEMENTED / mocked browser TESTED / provider E2E BLOCKED |
+| Roster, check-in, withdrawal | `TournivalRegistrations.jsx`; manager backend | SOURCE IMPLEMENTED / remote E2E NOT RUN |
+| Personal player link | `tournivalPlayerPortal`; `PublicTournivalPlayer.jsx` | SOURCE IMPLEMENTED / mocked browser TESTED |
+| Public Live Hall | `tournivalPublicRead`; `PublicTournivalHall.jsx` | SOURCE IMPLEMENTED / mocked browser TESTED |
+| Operational audio | `TournivalAnnouncements.jsx`; shared hall audio | SOURCE IMPLEMENTED / physical-device NOT RUN |
+| Forecast/venue monitor | `src/lib/tournivalTiming.js` | IMPLEMENTED / unit TESTED |
+| Spond import | Reused `SpondXlsxImportModal` | EXISTING REUSE / Tournival reconciliation NOT RUN |
+| DUPR UAT eligibility/dry-run | `duprIntegration`, `tournivalMatchAdapter.ts`, `duprCsvExport` | SOURCE IMPLEMENTED / unit TESTED / UAT write BLOCKED |
+| Print pack | `TournivalPrintPack.jsx` | IMPLEMENTED / manual print verification NOT RUN |
+| Local rehearsal | `TournivalRehearsal.jsx` | IMPLEMENTED / full simulated browser PASS |
+| Event statistics | `tournivalStatistics.js` | IMPLEMENTED / unit TESTED / career persistence NOT RUN |
+| Real payment refunds and notifications | Existing gateway / Communications Centre | NOT FULLY WIRED |
+| Delegated host / player-scored permissions | Existing TournamentUserAccess plus legacy manager | PARTIAL / E2E NOT RUN |
+| Atomic concurrent writes/capacity | Base44 entity facade | BLOCKED / strict live safety gate |
