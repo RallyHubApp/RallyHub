@@ -34,7 +34,7 @@ export default function TournivalRehearsal() {
    let next=createTournivalEvent({id:'REHEARSAL-LOCAL',tenantId:'simulation',clubId:'simulation',capacity:players,fee:5,rehearsal:true});
    for(const id of syntheticIds(players)){
      next=registerTournivalPlayer(next,{playerId:id,name:playerNames[id],operationId:`register:${id}`}).event;
-     next=checkInTournivalPlayer(next,{playerId:id}).event;
+     next=checkInTournivalPlayer(next,{playerId:id});
    }
    const fixtures=generateGroupFixtures(syntheticIds(players),courts,rounds);
    const matches=indexTournivalMatches(fixtures);
