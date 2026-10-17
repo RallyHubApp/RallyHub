@@ -95,6 +95,14 @@ export async function listTournivalAudience(base44:any,{tenantId,eventId}:any){
   },'-created_date',1000)
  ]);
  const byCampaign=new Map((campaigns||[]).map((c:any)=>[c.id,c]));
+ const originalByKey=new Map<string,any>();
+ for(const r of recipients||[]){
+  const key=String(r.dedupe_key||'');
+  if(!key.endsWith('|1'))continue;
+  const parts=key.split('|');
+  if(parts.length<7)continue;
+  originalByKey.set(parts.slice(0,-1).join('|'),r);
+ }
  const result=[];
  for(const recipient of recipients||[]){
   const c:any=byCampaign.get(recipient.campaign_id);
@@ -104,7 +112,11 @@ export async function listTournivalAudience(base44:any,{tenantId,eventId}:any){
   result.push({campaignId:c.id,purpose:c.purpose,recipientId:recipient.id,
    name:recipient.display_name,email:recipient.email,mobile:recipient.mobile,
    eligibility:recipient.eligibility_status,sourceRecordId:recipient.source_record_id,
-   fields:recipient.personalisation||{},channel:delivery?.channel||'email',
+   // All resends must reuse original private links and address snapshot, never
+   // later ad-hoc copies that may have omitted personalisation.
+   fields:originalByKey.get(String(recipient.dedupe_key||'').split('|').slice(0,-1).join('|'))?.personalisation||
+      recipient.personalisation||{},
+   channel:delivery?.channel||'email',
    deliveryId:delivery?.id||null,deliveryStatus:delivery?.status||'not_queued',
    attemptNumber:delivery?.attempt_number||0});
  }
