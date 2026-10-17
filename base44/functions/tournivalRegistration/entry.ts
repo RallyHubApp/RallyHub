@@ -8,6 +8,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 import { createCheckout, providerConfigured, type ProviderAccount } from './payments.ts';
 import { allocateTournivalWaitlistTicket } from './waitlistAllocation.ts';
+import { safelyQueueTournivalNotice } from './tournivalNoticeBridge.ts';
 const clean=(value:any,max=240)=>String(value??'').trim().replace(/\s+/g,' ').slice(0,max);
 const emailKey=(value:any)=>clean(value,180).toLowerCase();
 const safeError=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -168,6 +169,17 @@ Deno.serve(async(req)=>{
       created_at:new Date().toISOString(),created_by_user_id:'self_registration'
     });
     const personalPath=`/tournival/player/${playerToken}`;
+    await safelyQueueTournivalNotice(base44,{
+      tenantId:tournament.tenant_id,clubId:tournament.host_club_id||tournament.tenant_id,
+      eventId:tournament.id,sourceRecordId:registration.id,operationId,
+      purpose:status==='waitlisted'?'tournival_waitlist_added':
+        status==='pending_payment'?'tournival_payment_required':'tournival_registration_received',
+      recipient:{id:registration.id,name,email,mobile},
+      fields:{FIRST_NAME:name.split(' ')[0]||name,FULL_NAME:name,EVENT_NAME:String(tournament.name||''),
+        PLAYER_LINK:'https://rallyhub.ie'+personalPath,
+        PAYMENT_LINK:'https://rallyhub.ie/tournival/register/'+encodeURIComponent(token),
+        PAYMENT_STATUS:status==='pending_payment'?'Pending':'Not required'}
+    });
     if(status==='waitlisted'||fee===0)return Response.json({...publicReceipt(registration,event),personalPath},{status:201});
 
     // Hold the registration if payment infrastructure is temporarily unavailable.

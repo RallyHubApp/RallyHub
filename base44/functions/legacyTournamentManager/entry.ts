@@ -1,5 +1,6 @@
 import { validateTournivalStateTransition } from './tournivalStateValidation.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
+import { safelyQueueTournivalNotice } from './tournivalNoticeBridge.ts';
 
 function activeNow(access:any) {
   if (!access || access.status !== 'active') return false;
@@ -329,6 +330,18 @@ Deno.serve(async (req) => {
         created_at:new Date().toISOString(),expires_at:expiresAt,created_by_user_id:user.id
       });
       await audit(base44,user,tournament,'tournival_delegated_host_link_created',{expiresAt});
+      const hostEmail=clean(body.hostEmail,180).toLowerCase();
+      if(hostEmail&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(hostEmail)){
+        await safelyQueueTournivalNotice(base44,{
+          tenantId:tournament.tenant_id,clubId:tournament.host_club_id||tournament.tenant_id,
+          eventId:tournament.id,sourceRecordId:'host:'+hostEmail,operationId:'host:'+expiresAt,
+          purpose:'tournival_host_invite',
+          recipient:{id:'host:'+hostEmail,name:clean(body.hostName,120)||'Host',email:hostEmail},
+          fields:{FIRST_NAME:(clean(body.hostName,120)||'Host').split(' ')[0],
+            EVENT_NAME:String(tournament.name||''),
+            HOST_LINK:'https://rallyhub.ie/tournival/host/'+token}
+        });
+      }
       return Response.json({success:true,path:`/tournival/host/${token}`,expiresAt});
     }
     if (action === 'revoke_tournival_host_links') {
