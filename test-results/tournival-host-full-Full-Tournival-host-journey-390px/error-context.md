@@ -114,22 +114,24 @@ Call log:
   12 |  await page.getByRole('button',{name:'Confirm seed order',exact:true}).click();
   13 |  await expect(page.getByText('Generate Fixtures & Start')).toBeEnabled();
   14 |  await page.getByText('Generate Fixtures & Start').click();
-> 15 |  await expect(page.getByText('Continuous Tournival Court Control')).toBeVisible();
+  15 |  console.log('AFTER START:',(await page.locator('body').innerText()).slice(0,600));
+  16 |  console.log('REVISION:',await page.getByTestId('server-revision').innerText());
+> 17 |  await expect(page.getByText('Continuous Tournival Court Control')).toBeVisible();
      |                                                                     ^ Error: expect(locator).toBeVisible() failed
-  16 |  const allocate=page.getByRole('button',{name:'Allocate free courts'});
-  17 |  for(let i=0;i<8;i++){
-  18 |   if(await allocate.isEnabled())await allocate.click();
-  19 |   const active=page.locator('article').filter({has:page.getByText('Save score')}).first();
-  20 |   await expect(active).toBeVisible();
-  21 |   await active.getByRole('spinbutton',{name:/A score/}).fill('8');
-  22 |   await active.getByRole('spinbutton',{name:/B score/}).fill('4');
-  23 |   await active.getByText('Save score').click();
-  24 |  }
-  25 |  await expect(page.getByText(/Qualification complete/)).toBeVisible();
-  26 |  await page.getByRole('button',{name:'Standings'}).click();
-  27 |  await expect(page.getByRole('button',{name:/Create Cup|Create Knockout|Generate Cup|Cup Matches/i}).first()).toBeVisible();
-  28 |  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
-  29 |  expect(overflow).toBeLessThanOrEqual(1);
-  30 | });
-  31 | 
+  18 |  const allocate=page.getByRole('button',{name:'Allocate free courts'});
+  19 |  for(let i=0;i<8;i++){
+  20 |   if(await allocate.isEnabled())await allocate.click();
+  21 |   const active=page.locator('article').filter({has:page.getByText('Save score')}).first();
+  22 |   await expect(active).toBeVisible();
+  23 |   await active.getByRole('spinbutton',{name:/A score/}).fill('8');
+  24 |   await active.getByRole('spinbutton',{name:/B score/}).fill('4');
+  25 |   await active.getByText('Save score').click();
+  26 |  }
+  27 |  await expect(page.getByText(/Qualification complete/)).toBeVisible();
+  28 |  await page.getByRole('button',{name:'Standings'}).click();
+  29 |  await expect(page.getByRole('button',{name:/Create Cup|Create Knockout|Generate Cup|Cup Matches/i}).first()).toBeVisible();
+  30 |  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+  31 |  expect(overflow).toBeLessThanOrEqual(1);
+  32 | });
+  33 | 
 ```

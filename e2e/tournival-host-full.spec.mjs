@@ -12,6 +12,8 @@ test(`Full Tournival host journey ${size.width}px`,async({page})=>{
  await page.getByRole('button',{name:'Confirm seed order',exact:true}).click();
  await expect(page.getByText('Generate Fixtures & Start')).toBeEnabled();
  await page.getByText('Generate Fixtures & Start').click();
+ console.log('AFTER START:',(await page.locator('body').innerText()).slice(0,600));
+ console.log('REVISION:',await page.getByTestId('server-revision').innerText());
  await expect(page.getByText('Continuous Tournival Court Control')).toBeVisible();
  const allocate=page.getByRole('button',{name:'Allocate free courts'});
  for(let i=0;i<8;i++){
