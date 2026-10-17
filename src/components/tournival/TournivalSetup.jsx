@@ -9,6 +9,7 @@ import { estimateDuration, generateGroupFixtures } from '@/lib/tournivalEngine';
 import TournivalSeedOrder from './TournivalSeedOrder';
 import TournivalFixtures from './TournivalFixtures';
 import { toast } from 'sonner';
+import { base44 } from '@/api/base44Client';
 
 const MATCH_FORMATS = [
   { value: 'timed_10', label: '10-min timed', icon: Timer, desc: 'Most points wins' },
@@ -29,6 +30,28 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
   const [seedOrder, setSeedOrder] = useState(existingState?.seedOrder || players.map(p => p.id));
   const [seedConfirmed, setSeedConfirmed] = useState(!!existingState?.seedOrderConfirmed);
   const [saving, setSaving] = useState(false);
+  const [entryFee, setEntryFee] = useState(String(tournament.event_fee_amount ?? 0));
+  const [feeSaving, setFeeSaving] = useState(false);
+  const saveEntryFee = async () => {
+    const amount = Number(entryFee);
+    if (!entryFee.trim() || !Number.isFinite(amount) || amount < 0 || amount > 10000 ||
+        Math.round(amount * 100) !== amount * 100) {
+      toast.error('Enter a valid EUR amount with up to two decimal places.');
+      return;
+    }
+    setFeeSaving(true);
+    try {
+      const response = await base44.functions.invoke('legacyTournamentManager', {
+        tournamentId: tournament.id, action: 'set_tournival_entry_fee', amount, currency: 'EUR'
+      });
+      if (!response?.data?.success) throw Error(response?.data?.error || 'Could not update tournament fee.');
+      toast.success('Tournival entry fee saved. New registrations will use this amount.');
+      window.dispatchEvent(new CustomEvent('tournival-fee-updated', {detail:{tournamentId:tournament.id}}));
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error.message || 'Could not save fee.');
+    } finally { setFeeSaving(false); }
+  };
+
 
   const numPlayers = players.length;
   const isValid = numPlayers >= 4;
@@ -128,6 +151,25 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
             <p className="text-[10px] text-muted-foreground">Est. duration</p>
           </div>
         </div>
+      </div>
+
+      {/* Event-scoped checkout configuration: never changes the connected club gateway. */}
+      <div className="glass rounded-xl p-5 space-y-3">
+        <h3 className="text-sm font-semibold text-foreground">Event entry fee · Clare Pickleball SumUp (club account)</h3>
+        <p className="text-xs text-muted-foreground">Choose the fee for this tournament only. Free events do not create a SumUp checkout. The amount is locked once the first registration is received.</p>
+        <div className="flex items-end gap-3 flex-wrap">
+          <div className="w-40">
+            <Label className="text-xs text-muted-foreground" htmlFor="tournival-event-fee">Entry fee (€)</Label>
+            <Input id="tournival-event-fee" type="number" min="0" max="10000" step="0.01"
+              value={entryFee} onChange={e=>setEntryFee(e.target.value)}
+              disabled={!isAdmin || feeSaving || !!existingState?.rounds?.length} />
+          </div>
+          <Button type="button" variant="outline" onClick={saveEntryFee}
+            disabled={!isAdmin || feeSaving || !!existingState?.rounds?.length}>
+            {feeSaving?'Saving…':'Save event fee'}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">Payment account is selected from this event's tenant and host club at checkout, not from a manually entered merchant ID.</p>
       </div>
 
       {/* Configuration */}

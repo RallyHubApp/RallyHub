@@ -278,6 +278,12 @@ async function resolveGateway(base44:any,payment:any){
 
 async function verifyCheckout(base44:any,payment:any,checkoutId:string){
   const {apiKey,merchantCode}=await resolveGateway(base44,payment);
+  // Bind webhook verification to the merchant captured on checkout creation.
+  // A club switching its default gateway must not verify another merchant's sale.
+  if(payment.payment_type==='tournival_registration' && payment.provider_account_id &&
+     String(payment.provider_account_id)!==merchantCode)
+    throw new Error('Tournival checkout merchant differs from the recorded club merchant; manual reconciliation required.');
+
   const response=await fetch(`https://api.sumup.com/v0.1/checkouts/${encodeURIComponent(checkoutId)}`,{headers:{Authorization:`Bearer ${apiKey}`}});
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data?.message||`SumUp checkout verification failed (${response.status}).`);

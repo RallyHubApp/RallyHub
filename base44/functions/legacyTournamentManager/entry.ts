@@ -383,6 +383,50 @@ Deno.serve(async (req) => {
       return Response.json({success:true,revoked:(links||[]).length});
     }
 
+    // Fee is an event setting, not a sporting-state mutation. Lock it as soon as
+    // someone registers so existing payment offers can never change price.
+    if (action === 'set_tournival_entry_fee') {
+      if (String(tournament.format).toLowerCase() !== 'tournival')
+        return Response.json({error:'Not a Tournival tournament'},{status:400});
+      const raw=body.amount;
+      const amount=typeof raw==='number'?raw:NaN;
+      if(!Number.isFinite(amount)||amount<0||amount>10000||
+         Math.round(amount*100)!==amount*100)
+        return Response.json({error:'Enter a fee between €0 and €10,000, with no more than two decimal places.'},{status:400});
+      if(body.currency !== 'EUR')
+        return Response.json({error:'Only EUR event fees are currently supported.'},{status:400});
+      if(!['Draft','Registration Open'].includes(tournament.status))
+        return Response.json({error:'Entry fees cannot change after the event begins.'},{status:409});
+      const registrations=await base44.asServiceRole.entities.TournivalRegistration.filter({
+        tournament_id:tournament.id,tenant_id:tournament.tenant_id
+      },'-created_date',1);
+      if(registrations?.length)
+        return Response.json({error:'Entry fee is locked after the first registration; reconcile refunds and offers before changing it.'},{status:409});
+      // Restrict commercial event settings to tenant / club admins rather than
+      // allowing a delegated event host to change what players are charged.
+      if(user.role!=='admin'){
+        const tenantGrants=await base44.asServiceRole.entities.TenantUserAccess.filter({
+          tenant_id:tournament.tenant_id,user_id:user.id,status:'active'
+        });
+        const clubGrants=tournament.host_club_id?
+          await base44.asServiceRole.entities.ClubUserAccess.filter({
+            tenant_id:tournament.tenant_id,club_id:tournament.host_club_id,user_id:user.id,status:'active'
+          }):[];
+        if(!(tenantGrants||[]).some((g:any)=>activeNow(g)&&['owner','admin'].includes(g.role)) &&
+           !(clubGrants||[]).some((g:any)=>activeNow(g)&&g.permission_bundle==='club_admin'))
+          return Response.json({error:'Only club or tenant administrators may change event fees.'},{status:403});
+      }
+      const prior=Number(tournament.event_fee_amount||0);
+      const updated=await base44.asServiceRole.entities.Tournament.updateMany({
+        id:tournament.id,tenant_id:tournament.tenant_id,
+        event_fee_amount:tournament.event_fee_amount??null
+      },{$set:{event_fee_amount:amount,event_currency:'EUR',
+        event_fee_text:amount===0?'Free':new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR'}).format(amount)}});
+      if(updated.updated!==1)return Response.json({error:'Tournament fee changed concurrently. Refresh and retry.'},{status:409});
+      await audit(base44,user,tournament,'tournival_entry_fee_set',{previousAmount:prior,amount,currency:'EUR'});
+      return Response.json({success:true,amount,currency:'EUR'});
+    }
+
     // Issue an opaque, revocable registration link. Only the SHA-256 digest is stored.
     if (action === 'create_tournival_registration_link') {
       if (String(tournament.format).toLowerCase() !== 'tournival')
