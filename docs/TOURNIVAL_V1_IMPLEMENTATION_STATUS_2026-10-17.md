@@ -111,3 +111,9 @@ These are sandbox code tests, NOT live production acceptance.
 - Restored Playwright Chromium and its runtime libraries after sandbox environment reset. Complete Tournival browser suite: 20/20 PASS at mobile/desktop with simulated backend. Pure sporting gates and 7 Deno validation/DUPR adapter tests also PASS.
 - Personal player portal now returns tenant-checked, event-roster-restricted display names only, and the player page displays partners and opponents. No emails, phone numbers or DUPR identifiers are returned.
 - Full persistent Base44 backend, payment provider and DUPR UAT integration remain unverified; browser harnesses are mocked and must not be mistaken for genuine server acceptance.
+
+## Chat continuation — server sport integrity
+- Hardened the central authenticated Tournival transition validator for **all** manager writes: enforces unique stable match IDs, fixed fixture count and identity after creation, four unique tenant-roster players per match, permitted lifecycle statuses, one active match per court, no overlapping active player, and confirmed scores on completed matches.
+- Removed duplicate counting in correction diagnostics; corrections still require an explicit audit reason.
+- Focused new regression test rejects court collision, player overlap, duplicate IDs, removed/replaced matches and fake completed results. Deno validation 5/5 PASS, full Tournival in-memory gate PASS, application build PASS.
+- **Safety boundary unchanged:** this strengthens validation but does NOT make Base44 entity updates atomic; real cross-session races still require a supported transaction/locking mechanism and independent backend verification.
