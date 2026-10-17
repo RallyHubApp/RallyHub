@@ -278,6 +278,15 @@ Deno.serve(async (req) => {
       await audit(base44,user,tournament,'tournival_waitlist_promoted',{
         registrationId:earliest.id,waitlistPosition:earliest.waitlist_position
       });
+      await safelyQueueTournivalNotice(base44,{
+        tenantId:tournament.tenant_id,clubId:tournament.host_club_id||tournament.tenant_id,
+        eventId:tournament.id,sourceRecordId:'promoted:'+earliest.id,
+        operationId:'promoted:'+earliest.id,purpose:'tournival_waitlist_promoted',
+        recipient:{id:earliest.id,name:earliest.full_name,email:earliest.email,mobile:earliest.mobile},
+        fields:{FIRST_NAME:String(earliest.full_name||'Player').split(' ')[0],
+          EVENT_NAME:String(tournament.name||''),
+          EVENT_LINK:'https://rallyhub.ie/tournival/register/'+tournament.id}
+      });
       return Response.json({success:true,registrationId:earliest.id,
         waitlistPosition:earliest.waitlist_position,playerId:earliest.player_id});
     }
@@ -469,6 +478,23 @@ Deno.serve(async (req) => {
         rounds: next.numRounds, courts: next.numCourts, currentRound: next.currentRound,
         status: mappedStatus || tournament.status,
       });
+      if(next.status==='Completed'&&current?.status!=='Completed'){
+        const confirmed=await base44.asServiceRole.entities.TournivalRegistration.filter({
+          tournament_id:tournament.id,tenant_id:tournament.tenant_id,
+          registration_status:'confirmed'
+        },'-registered_at',500);
+        for(const r of confirmed||[]){
+          await safelyQueueTournivalNotice(base44,{
+            tenantId:tournament.tenant_id,clubId:tournament.host_club_id||tournament.tenant_id,
+            eventId:tournament.id,sourceRecordId:'results:'+r.id,
+            operationId:operationId,purpose:'tournival_results',
+            recipient:{id:r.id,name:r.full_name,email:r.email,mobile:r.mobile},
+            fields:{FIRST_NAME:String(r.full_name||'Player').split(' ')[0],
+              EVENT_NAME:String(tournament.name||''),
+              RESULTS_LINK:'https://rallyhub.ie/tournival/hall/'+tournament.id}
+          });
+        }
+      }
       return Response.json({ success: true });
     }
 

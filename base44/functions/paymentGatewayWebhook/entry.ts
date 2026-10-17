@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { membershipPaidTemplate } from './membershipPaidTemplate.ts';
+import { safelyQueueTournivalNotice } from './tournivalNoticeBridge.ts';
 
 function clean(v:any,max=500){return String(v??'').trim().slice(0,max)}
 function nameKey(v:any){return clean(v,180).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
@@ -362,6 +363,15 @@ Deno.serve(async(req)=>{
               await base44.asServiceRole.entities.Tournament.updateMany({
                 id:eventTournament.id,tenant_id:reg.tenant_id
               },{$addToSet:{player_ids:reg.player_id}});
+              await safelyQueueTournivalNotice(base44,{
+                tenantId:reg.tenant_id,clubId:reg.club_id,eventId:eventTournament.id,
+                sourceRecordId:'paid:'+reg.id,operationId:'payment:'+payment.id,
+                purpose:'tournival_payment_confirmed',
+                recipient:{id:reg.id,name:reg.full_name,email:reg.email,mobile:reg.mobile},
+                fields:{FIRST_NAME:String(reg.full_name||'Player').split(' ')[0],
+                  EVENT_NAME:String(eventTournament.name||''),
+                  PAYMENT_STATUS:'Paid',PAYMENT_REFERENCE:String(payment.provider_payment_reference||'')}
+              });
             }
           }
         }
