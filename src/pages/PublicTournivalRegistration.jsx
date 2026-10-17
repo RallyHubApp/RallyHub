@@ -50,6 +50,7 @@ export default function PublicTournivalRegistration(){
        {result.registration?.checkoutUrl?
        <a href={result.registration.checkoutUrl} rel="noopener noreferrer" className="inline-block rounded-md bg-primary text-primary-foreground px-4 py-2">Proceed to secure payment</a>:
        result.registration?.paymentStatus==='pending'?<p>Payment checkout is pending. Your place has not been marked paid.</p>:null}
+       {result.personalPath&&<a className="text-sm text-primary underline block" href={result.personalPath}>Open your personal tournament link — keep this link safe</a>}
        {result.message&&<p className="text-sm">{result.message}</p>}
        <p className="text-xs text-muted-foreground">Payment is confirmed only when the provider verifies it. Closing this page does not complete a payment.</p>
       </section>:

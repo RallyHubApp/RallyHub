@@ -110,12 +110,23 @@ Deno.serve(async(req)=>{
       ...(status==='confirmed'?{confirmed_at:new Date().toISOString()}:{}),
       ...(status==='waitlisted'?{waitlist_position:waitlisted+1}:{})
     });
-    if(status==='waitlisted'||fee===0)return Response.json(publicReceipt(registration,event),{status:201});
+    // Issue a distinct persistent personalised player link, independent from
+    // the event registration link; store a hash, never the bearer value.
+    const random=crypto.getRandomValues(new Uint8Array(24));
+    const playerToken='trp_'+Array.from(random,b=>b.toString(16).padStart(2,'0')).join('');
+    await base44.asServiceRole.entities.TournivalAccessToken.create({
+      tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,
+      tournament_id:tournament.id,token_hash:await sha256(playerToken),token_type:'player',
+      player_id:player.id,registration_id:registration.id,
+      created_at:new Date().toISOString(),created_by_user_id:'self_registration'
+    });
+    const personalPath=`/tournival/player/${playerToken}`;
+    if(status==='waitlisted'||fee===0)return Response.json({...publicReceipt(registration,event),personalPath},{status:201});
 
     // Hold the registration if payment infrastructure is temporarily unavailable.
     const account=await accountFor(base44,tournament);
     if(!providerConfigured('sumup',account)){
-      return Response.json({...publicReceipt(registration,event),paymentUnavailable:true,
+      return Response.json({...publicReceipt(registration,event),personalPath,paymentUnavailable:true,
         message:'Registration held; payment checkout currently unavailable. Contact organiser.'},{status:202});
     }
     const reference=`RH-TRN-${registration.id}`.slice(0,64);
@@ -137,11 +148,11 @@ Deno.serve(async(req)=>{
         provider_status:checkout.providerStatus,provider_account_id:checkout.merchantAccountId
       });
       registration=await base44.asServiceRole.entities.TournivalRegistration.update(registration.id,{payment_record_id:payment.id});
-      return Response.json(publicReceipt(registration,event,checkout.checkoutUrl),{status:201});
+      return Response.json({...publicReceipt(registration,event,checkout.checkoutUrl),personalPath},{status:201});
     }catch(error){
       // Do not blindly create a second checkout after a network timeout.
       console.warn('Tournival payment checkout requires reconciliation',registration.id);
-      return Response.json({...publicReceipt(registration,event),paymentUnavailable:true,
+      return Response.json({...publicReceipt(registration,event),personalPath,paymentUnavailable:true,
         message:'Registration held. Payment checkout pending review; no payment confirmed.'},{status:202});
     }
   }catch(error){
