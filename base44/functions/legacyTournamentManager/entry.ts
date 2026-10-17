@@ -197,6 +197,41 @@ Deno.serve(async (req) => {
         message:'Registration withdrawn. Any payment refund must be reviewed separately.'});
     }
 
+    if (action === 'tournival_capacity_audit' || action === 'tournival_reconcile_capacity') {
+      if (String(tournament.format).toLowerCase() !== 'tournival')
+        return Response.json({error:'Not a Tournival tournament'},{status:400});
+      const registrations=await base44.asServiceRole.entities.TournivalRegistration.filter({
+        tournament_id:tournament.id,tenant_id:tournament.tenant_id
+      },'-registered_at',500);
+      const active=registrations.filter((r:any)=>['confirmed','pending_payment'].includes(r.registration_status));
+      const waiting=registrations.filter((r:any)=>r.registration_status==='waitlisted');
+      const count=Number(tournament.tournival_reserved_count);
+      const tickets=waiting.map((r:any)=>Number(r.waitlist_position));
+      const duplicateTickets=tickets.length-new Set(tickets).size+
+        tickets.filter(x=>!Number.isSafeInteger(x)||x<1).length;
+      const report={active:active.length,waitlisted:waiting.length,
+        reserved:Number.isFinite(count)?count:null,capacity:Number(tournament.max_players||32),
+        duplicateWaitlistTickets:duplicateTickets,
+        needsReconciliation:!Number.isFinite(count)||count!==active.length||duplicateTickets>0};
+      if(action==='tournival_capacity_audit')return Response.json({success:true,report});
+      // Freeze new registrations first. CAS prevents stale reconciliation writes.
+      if(['Draft','Registration Open'].includes(tournament.status))
+        return Response.json({error:'Close registration before capacity reconciliation'},{status:409});
+      if(duplicateTickets)return Response.json({error:'Waitlist tickets require manual investigation'},{status:409});
+      if(!Number.isFinite(Number(body.expectedReservedCount))||
+        Number(body.expectedReservedCount)!==count)
+        return Response.json({error:'Reservation count changed; rerun audit'},{status:409});
+      const repaired=await base44.asServiceRole.entities.Tournament.updateMany({
+        id:tournament.id,tenant_id:tournament.tenant_id,
+        tournival_reserved_count:count
+      },{$set:{tournival_reserved_count:active.length}});
+      if(repaired.updated!==1)return Response.json({error:'Capacity changed during reconciliation'},{status:409});
+      await audit(base44,user,tournament,'tournival_capacity_reconciled',{
+        previous:count,reconciled:active.length
+      });
+      return Response.json({success:true,report:{...report,reserved:active.length,needsReconciliation:false}});
+    }
+
     if (action === 'tournival_promote_waitlist') {
       if (String(tournament.format).toLowerCase()!=='tournival')
         return Response.json({error:'Not a Tournival tournament'},{status:400});
