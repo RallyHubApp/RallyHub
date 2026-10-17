@@ -89,7 +89,7 @@ export async function verifyProviderConnection(provider:PaymentProvider,account?
     const merchantName=String(data?.merchant_profile?.business_name||data?.merchant_profile?.doing_business_as?.business_name||data?.business_name||'');
     return {ok:true,provider:'sumup',merchantAccountId:profileCode||merchantAccountId,merchantName};
   }catch(e){
-    return {ok:false,provider:'sumup',merchantAccountId:'',error:e?.message||'SumUp verification failed.'};
+    return {ok:false,provider:'sumup',merchantAccountId:'',error:(e as any)?.message||'SumUp verification failed.'};
   }
 }
 

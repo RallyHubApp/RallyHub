@@ -89,6 +89,13 @@ Deno.serve(async(req)=>{
       tenant_id:tournament.tenant_id,full_name:name,email,
       phone:mobile||undefined,status:'Active',club_id:tournament.host_club_id||undefined
     });
+    let person:any=(await base44.asServiceRole.entities.Person.filter({
+      tenant_id:tournament.tenant_id,primary_email:email
+    },'-updated_date',5))?.[0];
+    if(!person)person=await base44.asServiceRole.entities.Person.create({
+      tenant_id:tournament.tenant_id,full_name:name,primary_email:email,mobile,
+      source_system:'tournival_registration',profile_visibility:'private'
+    });
     const accepted=registered<event.capacity;
     const fee=Number(event.fee)||0;
     const status=!accepted?'waitlisted':fee>0?'pending_payment':'confirmed';
@@ -114,7 +121,7 @@ Deno.serve(async(req)=>{
     const reference=`RH-TRN-${registration.id}`.slice(0,64);
     const payment=await base44.asServiceRole.entities.PaymentRecord.create({
       tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,
-      person_id:player.id,purpose_type:'event',purpose_id:registration.id,
+      person_id:person.id,purpose_type:'event',purpose_id:registration.id,
       payment_type:'tournival_registration',amount:fee,currency:event.currency,
       provider:'sumup',payment_method:'online',payment_status:'pending',
       provider_payment_reference:reference
@@ -138,7 +145,7 @@ Deno.serve(async(req)=>{
         message:'Registration held. Payment checkout pending review; no payment confirmed.'},{status:202});
     }
   }catch(error){
-    console.error('Tournival public registration failed:',error?.message||error);
+    console.error('Tournival public registration failed:',(error as any)?.message||error);
     return safeError('Unable to process registration safely. Please contact organiser.',500);
   }
 });
