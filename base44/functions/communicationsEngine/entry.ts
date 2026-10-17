@@ -84,14 +84,14 @@ Deno.serve(async(req)=>{
         tenant_id:tenantId,source_module:'Tournival',
         source_record_id:sourceRecordId
       },'-created_date',100);
-      const associated=[];
-      for(const row of prior||[]){
-        const campaigns=await base44.asServiceRole.entities.CommunicationCampaign.filter({
-          id:row.campaign_id,tenant_id:tenantId,club_id:clubId,
-          source_record_id:eventId,purpose
-        },'-created_date',1);
-        if(campaigns?.length&&(row.selected_channels||[]).includes(channel))associated.push(row);
-      }
+      const priorCampaignIds=[...new Set((prior||[]).map((r:any)=>r.campaign_id))];
+      const matchedCampaigns=priorCampaignIds.length?await base44.asServiceRole.entities.CommunicationCampaign.filter({
+        id:{$in:priorCampaignIds},tenant_id:tenantId,club_id:clubId,
+        source_record_id:eventId,purpose
+      },'-created_date',100):[];
+      const matchedIds=new Set((matchedCampaigns||[]).map((c:any)=>c.id));
+      const associated=(prior||[]).filter((r:any)=>matchedIds.has(r.campaign_id)&&
+        (r.selected_channels||[]).includes(channel));
       const canonical=associated[0];
       if(!canonical||canonical.eligibility_status!=='eligible')
         return Response.json({error:'Resend requires an eligible existing Tournival audience recipient'},{status:409});
