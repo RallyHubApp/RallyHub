@@ -283,7 +283,7 @@ async function verifyCheckout(base44:any,payment:any,checkoutId:string){
   const returnedMerchant=clean(data?.merchant_code,120);
   if(returnedMerchant&&merchantCode&&returnedMerchant!==merchantCode)throw new Error('SumUp checkout merchant does not match the RallyHub tenant gateway.');
   const tx=(Array.isArray(data?.transactions)?data.transactions:[]).find((t:any)=>String(t?.status||'').toUpperCase()==='SUCCESSFUL')||data?.transactions?.[0]||{};
-  return {status:String(data?.status||'PENDING').toUpperCase(),transactionId:clean(tx?.id||data?.transaction_id,160),transactionCode:clean(tx?.transaction_code||data?.transaction_code,160),merchantCode:returnedMerchant||merchantCode};
+  return {status:String(data?.status||'PENDING').toUpperCase(),transactionId:clean(tx?.id||data?.transaction_id,160),transactionCode:clean(tx?.transaction_code||data?.transaction_code,160),merchantCode:returnedMerchant||merchantCode,amount:Number(data?.amount),currency:clean(data?.currency,10).toUpperCase()};
 }
 
 Deno.serve(async(req)=>{
@@ -314,8 +314,40 @@ Deno.serve(async(req)=>{
         provider_payment_reference:verified.transactionCode||payment.provider_payment_reference||'',
         external_payment_reference:verified.transactionCode||payment.external_payment_reference||'',
       };
+      if(payment.purpose_type==='event'&&payment.payment_type==='tournival_registration'){
+        if(!Number.isFinite(verified.amount)||
+          Math.round(verified.amount*100)!==Math.round(Number(payment.amount)*100)||
+          verified.currency!==String(payment.currency||'EUR').toUpperCase()) {
+          console.warn('Tournival checkout not confirmed due to amount/currency mismatch',payment.id);
+          return new Response('',{status:204});
+        }
+      }
       await base44.asServiceRole.entities.PaymentRecord.update(payment.id,update);
 
+      // Tournival event fees: never confirm without verified SumUp checkout and
+      // exact amount/currency match. This is independent of sporting state.
+      if(payment.purpose_type==='event'&&payment.payment_type==='tournival_registration'&&payment.purpose_id){
+        const registrations=await base44.asServiceRole.entities.TournivalRegistration.filter({
+          id:payment.purpose_id,tenant_id:payment.tenant_id,club_id:payment.club_id
+        },'-created_date',5);
+        const reg=registrations?.[0]||null;
+        if(reg && reg.registration_status!=='withdrawn'){
+          if(!Number.isFinite(verified.amount)||
+            Math.round(verified.amount*100)!==Math.round(Number(payment.amount)*100)||
+            verified.currency!==String(payment.currency||'EUR').toUpperCase()) {
+            console.warn('Tournival SumUp checkout amount/currency reconciliation required:',payment.id);
+            await base44.asServiceRole.entities.TournivalRegistration.update(reg.id,{
+              last_error:'Provider amount/currency mismatch; manual reconciliation required.'
+            });
+          }else if(reg.payment_status!=='paid'){
+            await base44.asServiceRole.entities.TournivalRegistration.update(reg.id,{
+              payment_status:'paid',registration_status:'confirmed',
+              confirmed_at:reg.confirmed_at||now,payment_record_id:payment.id,
+              payment_reference:verified.transactionId||verified.transactionCode||checkoutId
+            });
+          }
+        }
+      }
       if(payment.purpose_type==='booking'&&payment.purpose_id){
         const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({id:payment.purpose_id},'-created_date',5);
         let booking=bookings?.[0]||null;
@@ -366,6 +398,14 @@ Deno.serve(async(req)=>{
     if(status==='FAILED'||status==='EXPIRED'){
       const local='failed';
       await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{payment_status:local,provider_status:status});
+      if(payment.purpose_type==='event'&&payment.payment_type==='tournival_registration'&&payment.purpose_id){
+        const registrations=await base44.asServiceRole.entities.TournivalRegistration.filter({
+          id:payment.purpose_id,tenant_id:payment.tenant_id,club_id:payment.club_id
+        },'-created_date',5);
+        const reg=registrations?.[0];
+        if(reg&&reg.payment_status!=='paid')
+          await base44.asServiceRole.entities.TournivalRegistration.update(reg.id,{payment_status:local});
+      }
       if(payment.purpose_type==='booking'&&payment.purpose_id){
         const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({id:payment.purpose_id},'-created_date',5);
         const booking=bookings?.[0]||null;
