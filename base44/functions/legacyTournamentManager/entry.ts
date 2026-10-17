@@ -1,6 +1,7 @@
 import { validateTournivalStateTransition } from './tournivalStateValidation.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 import { safelyQueueTournivalNotice } from './tournivalNoticeBridge.ts';
+import {refundPayment,retrievePayment} from './payments.ts';
 
 function activeNow(access:any) {
   if (!access || access.status !== 'active') return false;
@@ -425,6 +426,153 @@ Deno.serve(async (req) => {
       if(updated.updated!==1)return Response.json({error:'Tournament fee changed concurrently. Refresh and retry.'},{status:409});
       await audit(base44,user,tournament,'tournival_entry_fee_set',{previousAmount:prior,amount,currency:'EUR'});
       return Response.json({success:true,amount,currency:'EUR'});
+    }
+
+    // Owner-approved, full-value Tournival online refund. The duplicate/processing
+    // claim happens BEFORE any external SumUp API call. Refunded registration
+    // vacates its reserved place; no automated waitlist promotion is invented.
+    if(action==='refund_tournival_registration'){
+      if(String(tournament.format).toLowerCase()!=='tournival')
+        return Response.json({error:'Not a Tournival tournament'},{status:400});
+      if(body.confirmRefund!==true||clean(body.reason,500).length<5)
+        return Response.json({error:'Explicit refund confirmation and a reason are required'},{status:400});
+      // A delegated host cannot move club money. The same commercial admin
+      // permission rules used for the event entry fee apply.
+      if(user.role!=='admin'){
+        const [tenantGrants,clubGrants]=await Promise.all([
+          base44.asServiceRole.entities.TenantUserAccess.filter({
+            tenant_id:tournament.tenant_id,user_id:user.id,status:'active'
+          }),
+          base44.asServiceRole.entities.ClubUserAccess.filter({
+            tenant_id:tournament.tenant_id,club_id:tournament.host_club_id,user_id:user.id,status:'active'
+          })
+        ]);
+        if(!(tenantGrants||[]).some((g:any)=>activeNow(g)&&['owner','admin'].includes(g.role))&&
+           !(clubGrants||[]).some((g:any)=>activeNow(g)&&g.permission_bundle==='club_admin'))
+          return Response.json({error:'Only club/tenant administrators can refund payments'},{status:403});
+      }
+      const regId=clean(body.registrationId,120);
+      const registrations=await base44.asServiceRole.entities.TournivalRegistration.filter({
+        id:regId,tournament_id:tournament.id,tenant_id:tournament.tenant_id,
+        club_id:tournament.host_club_id
+      },'-registered_at',1);
+      const reg=registrations?.[0];
+      if(!reg||reg.registration_status!=='confirmed'||reg.payment_status!=='paid')
+        return Response.json({error:'Only a verified paid registration can be refunded'},{status:409});
+      const payments=await base44.asServiceRole.entities.PaymentRecord.filter({
+        id:reg.payment_record_id,tenant_id:tournament.tenant_id,
+        club_id:tournament.host_club_id,purpose_type:'event',
+        purpose_id:reg.id,payment_type:'tournival_registration'
+      },'-created_date',1);
+      const payment=payments?.[0];
+      if(!payment||payment.payment_status!=='paid'||payment.provider!=='sumup'||
+         !payment.provider_transaction_id||!payment.provider_checkout_id||
+         payment.currency!=='EUR'||!Number.isFinite(Number(payment.amount))||
+         Number(payment.amount)<=0||Number(payment.amount)>10000)
+        return Response.json({error:'Verified eligible SumUp payment not found'},{status:409});
+      const accounts=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({
+        tenant_id:tournament.tenant_id,club_id:tournament.host_club_id,
+        provider:'sumup',status:'connected',is_default:true
+      },'-updated_date',5);
+      const gateway=accounts?.[0];
+      if(!gateway||String(gateway.merchant_account_id)!==String(payment.provider_account_id))
+        return Response.json({error:'SumUp merchant account mismatch; refund blocked'},{status:409});
+      const account={provider:'sumup',merchantAccountId:gateway.merchant_account_id,
+        credentialSecretName:gateway.credential_reference||'SUMUP_API_KEY',
+        connectionMode:gateway.connection_mode||'api_key'};
+      // Confirm the provider still recognises the original transaction and merchant.
+      const provider=await retrievePayment('sumup',payment.provider_checkout_id,account);
+      if(provider.transactionId!==payment.provider_transaction_id||
+         provider.merchantAccountId!==gateway.merchant_account_id||
+         !['paid','refunded'].includes(provider.normalizedStatus))
+        return Response.json({error:'SumUp refund preflight mismatch; reconcile provider first'},{status:409});
+      if(provider.normalizedStatus==='refunded')
+        return Response.json({error:'SumUp already reports a refund; reconcile without another refund request'},{status:409});
+      const previous=await base44.asServiceRole.entities.PaymentRefund.filter({
+        payment_record_id:payment.id,tenant_id:tournament.tenant_id
+      },'-requested_at',30);
+      if((previous||[]).some((r:any)=>['processing','succeeded','pending','unknown'].includes(r.status)))
+        return Response.json({error:'A refund is already processing or completed. Do not retry'},{status:409});
+      const now=new Date().toISOString();
+      // Payment status CAS blocks concurrent refund requests across two operators.
+      const claim=await base44.asServiceRole.entities.PaymentRecord.updateMany({
+        id:payment.id,tenant_id:tournament.tenant_id,payment_status:'paid'
+      },{$set:{payment_status:'refund_processing'}});
+      if(claim.updated!==1)return Response.json({error:'Refund already claimed or payment status changed'},{status:409});
+      let refund:any;
+      try{
+        refund=await base44.asServiceRole.entities.PaymentRefund.create({
+          tenant_id:tournament.tenant_id,club_id:tournament.host_club_id,
+          payment_record_id:payment.id,person_id:payment.person_id||'',
+          purpose_type:'event',purpose_id:reg.id,provider:'sumup',
+          provider_account_id:gateway.merchant_account_id,
+          provider_transaction_id:payment.provider_transaction_id,
+          amount:Number(payment.amount),currency:'EUR',
+          status:'processing',reason:clean(body.reason,500),
+          requested_by_user_id:user.id,requested_at:now,
+          source_system:'rallyhub_tournival'
+        });
+      }catch(e){
+        // Claim is deliberately not released on an ambiguous database error.
+        return Response.json({error:'Refund claim requires manual reconciliation; no retry'},{status:503});
+      }
+      let confirmed:any;
+      try{
+        confirmed=await refundPayment({
+          provider:'sumup',account,transactionId:payment.provider_transaction_id,currency:'EUR'
+        });
+      }catch(e:any){
+        // Provider outcome can be unknown even if the HTTP request failed.
+        await base44.asServiceRole.entities.PaymentRefund.update(refund.id,{
+          status:'unknown',failure_message:clean(e?.message||'Provider outcome unverified',300),
+          completed_at:new Date().toISOString()
+        });
+        return Response.json({error:'Refund outcome unverified with SumUp. Check merchant dashboard before retrying',
+          refundId:refund.id},{status:502});
+      }
+      const completedAt=new Date().toISOString();
+      await base44.asServiceRole.entities.PaymentRefund.update(refund.id,{
+        status:'succeeded',provider_refund_id:confirmed.refundId||'',
+        provider_status:confirmed.providerStatus||'REFUNDED',completed_at:completedAt
+      });
+      await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{
+        payment_status:'refunded',provider_status:confirmed.providerStatus||'REFUNDED',
+        amount_refunded:Number(payment.amount),last_refund_at:completedAt
+      });
+      await base44.asServiceRole.entities.TournivalRegistration.update(reg.id,{
+        payment_status:'refunded',registration_status:'withdrawn'
+      });
+      // Release only the reservation for this registration; do not modify
+      // any unrelated court assignment, already-played result or other event.
+      await base44.asServiceRole.entities.Tournament.updateMany({
+        id:tournament.id,tenant_id:tournament.tenant_id,
+        tournival_reserved_count:{$gt:0}
+      },{$inc:{tournival_reserved_count:-1},$pull:{player_ids:reg.player_id}});
+      const club=(await base44.asServiceRole.entities.Club.filter({
+        id:tournament.host_club_id,tenant_id:tournament.tenant_id
+      },'-updated_date',1))?.[0];
+      const amountLabel=new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR'}).format(Number(payment.amount));
+      const notice=await safelyQueueTournivalNotice(base44,{
+        tenantId:tournament.tenant_id,clubId:tournament.host_club_id,
+        eventId:tournament.id,sourceRecordId:'refund:'+reg.id,
+        operationId:'refund:'+refund.id,purpose:'tournival_refund_confirmed',
+        recipient:{id:reg.id,name:reg.full_name,email:reg.email,mobile:reg.mobile},
+        fields:{FIRST_NAME:String(reg.full_name||'Player').split(' ')[0],
+          EVENT_NAME:String(tournament.name||''),REFUND_AMOUNT:amountLabel,
+          PAYMENT_REFERENCE:String(payment.provider_payment_reference||''),
+          REFUND_DATE:new Intl.DateTimeFormat('en-IE',{day:'numeric',month:'long',year:'numeric',
+            timeZone:'Europe/Dublin'}).format(new Date(completedAt)),
+          ORGANISER_NAME:club?.name||'Your tournament organiser',
+          CLUB_NAME:club?.name||'The organising club'}
+      });
+      await audit(base44,user,tournament,'tournival_sumup_full_refund',{
+        registrationId:reg.id,paymentId:payment.id,refundId:refund.id,
+        amount:Number(payment.amount),noticeSent:notice.automaticallySent===true
+      });
+      return Response.json({success:true,refundId:refund.id,amount:Number(payment.amount),
+        paymentStatus:'refunded',registrationStatus:'withdrawn',
+        emailSent:notice.automaticallySent===true,
+        emailNeedsReview:notice.automaticallySent!==true});
     }
 
     // Issue an opaque, revocable registration link. Only the SHA-256 digest is stored.

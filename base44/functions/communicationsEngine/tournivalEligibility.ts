@@ -21,6 +21,10 @@ export function reasonForTournivalDelivery(purpose:string,reg:any,payment:any,ha
    if(!payment||payment.payment_status!=='pending'||!payment.provider_checkout_url)
     return 'A verified pending checkout is missing';
    break;
+  case 'tournival_refund_confirmed':
+   if(reg.payment_status!=='refunded')
+    return 'Refund has not been verified and recorded';
+   break;
   case 'tournival_payment_confirmed':
    if(reg.registration_status!=='confirmed'||reg.payment_status!=='paid')
     return 'Payment has not been verified as paid';
@@ -62,6 +66,7 @@ export async function validateTournivalDeliveryEligibility(base44:any,{
  const prefix=purpose==='tournival_post_event_thanks'?'thanks:':
   purpose==='tournival_results'?'results:':
   purpose==='tournival_waitlist_promoted'?'promoted:':
+  purpose==='tournival_refund_confirmed'?'refund:':
   purpose==='tournival_payment_confirmed'?'paid:':
   purpose==='tournival_payment_required'?'payment-required:':'';
  if(prefix&&!source.startsWith(prefix))return {eligible:false,reason:'Unexpected source record for purpose'};
@@ -70,6 +75,13 @@ export async function validateTournivalDeliveryEligibility(base44:any,{
   id:regId,tournament_id:t.id,tenant_id:tenantId
  },'-created_date',1))?.[0];
  let payment=null,checkIns=false;
+ if(purpose==='tournival_refund_confirmed'){
+  if(!reg?.payment_record_id)return {eligible:false,reason:'Refund payment is unavailable'};
+  const refundRows=await base44.asServiceRole.entities.PaymentRefund.filter({
+   payment_record_id:reg.payment_record_id,tenant_id:tenantId,purpose_id:reg.id,status:'succeeded'
+  },'-completed_at',3);
+  if(!refundRows?.length)return {eligible:false,reason:'No successful SumUp refund recorded'};
+ }
  if(purpose==='tournival_payment_required'&&reg?.payment_record_id)
   payment=(await base44.asServiceRole.entities.PaymentRecord.filter({
    id:reg.payment_record_id,tenant_id:tenantId,purpose_id:reg.id
