@@ -12,9 +12,13 @@ Deno.serve(async(req)=>{
   if(!tournament||String(tournament.format).toLowerCase()!=='tournival'||
     !['In Progress','Completed'].includes(tournament.status))
     return Response.json({error:'Live Hall is not published for this event'},{status:404});
+  const sessions=await base44.asServiceRole.entities.TournivalSession.filter({
+   tournament_id:tournament.id,tenant_id:tournament.tenant_id
+  },'-created_at',5);
+  if(sessions?.length>1)return Response.json({error:'Tournament state requires reconciliation'},{status:409});
   let state:any;
   try {
-   const raw=tournament.tournival_state??tournament.kotc_state;
+   const raw=sessions?.[0]?.state_json??tournament.tournival_state??tournament.kotc_state;
    state=raw?(typeof raw==='string'?JSON.parse(raw):raw):null;
   }catch {state=null}
   if(!state)return Response.json({error:'Confirmed sporting state is unavailable'},{status:404});

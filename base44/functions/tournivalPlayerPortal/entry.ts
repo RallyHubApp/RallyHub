@@ -25,7 +25,11 @@ Deno.serve(async(req)=>{
   if(!event||!registration||event.tenant_id!==link.tenant_id||registration.player_id!==link.player_id||
      String(event.format).toLowerCase()!=='tournival')
     return Response.json({error:'Personal tournament record is unavailable'},{status:404});
-  const raw=event.tournival_state;
+  const sessions=await base44.asServiceRole.entities.TournivalSession.filter({
+   tournament_id:event.id,tenant_id:event.tenant_id
+  },'-created_at',5);
+  if(sessions?.length>1)return Response.json({error:'Tournament state under reconciliation'},{status:409});
+  const raw=sessions?.[0]?.state_json||event.tournival_state;
   let state:any=null;
   try{state=raw?(typeof raw==='string'?JSON.parse(raw):raw):null}catch{}
   const playerId=registration.player_id;

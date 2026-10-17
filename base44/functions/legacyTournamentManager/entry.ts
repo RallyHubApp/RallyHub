@@ -89,6 +89,23 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: tournament management access required' }, { status: 403 });
     }
 
+    if (action === 'get_state' && String(tournament.format).toLowerCase()==='tournival') {
+      const sessions=await base44.asServiceRole.entities.TournivalSession.filter({
+        tournament_id:tournament.id,tenant_id:tournament.tenant_id
+      },'-created_at',5);
+      if(sessions?.length>1)return Response.json({error:'Multiple Tournival sessions detected; administrator reconciliation required'},{status:409});
+      const session=sessions?.[0];
+      const playerIds=Array.isArray(tournament.player_ids)?tournament.player_ids:[];
+      const players=playerIds.length?await base44.asServiceRole.entities.Player.filter({
+        tenant_id:tournament.tenant_id
+      },'-created_date',500):[];
+      return Response.json({success:true,tournament:{
+        ...tournament,tournival_state:session?.state_json||tournament.tournival_state
+      },players:(players||[]).filter((p:any)=>playerIds.includes(p.id)).map((p:any)=>({
+        id:p.id,full_name:p.full_name,skill_rating:p.skill_rating,avatar_url:p.avatar_url
+      }))});
+    }
+
     if (action === 'get_state') {
       const playerIds = Array.isArray(tournament.player_ids) ? tournament.player_ids : [];
       const clubs = tournament.host_club_id ? await base44.asServiceRole.entities.Club.filter({ id:tournament.host_club_id }) : [];
@@ -233,7 +250,12 @@ Deno.serve(async (req) => {
           !Number.isInteger(next.numCourts) || next.numCourts < 1 || next.numCourts > 16) {
         return Response.json({ error: 'Invalid Tournival sporting configuration' }, { status: 400 });
       }
-      const currentRaw = tournament.tournival_state;
+      const sessions=await base44.asServiceRole.entities.TournivalSession.filter({
+        tournament_id:tournament.id,tenant_id:tournament.tenant_id
+      },'-created_at',5);
+      if(sessions?.length>1)return Response.json({error:'Multiple Tournival sessions; no updates accepted'},{status:409});
+      const session=sessions?.[0];
+      const currentRaw = session?.state_json || tournament.tournival_state;
       const current = currentRaw ? (typeof currentRaw === 'string' ? JSON.parse(currentRaw) : currentRaw) : null;
       const expectedRevision = Number(body.expectedRevision);
       const operationId = clean(body.operationId,120);
@@ -241,6 +263,11 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Tournival revision and operation ID required' }, { status: 400 });
       }
       if (current?.lastOperationId === operationId) {
+        if(tournament.tournival_state!==JSON.stringify(current)){
+          await base44.asServiceRole.entities.Tournament.update(tournament.id,{
+            tournival_state:JSON.stringify(current)
+          });
+        }
         return Response.json({ success: true, duplicate: true, revision: current.revision || 0 });
       }
       if (Number(current?.revision || 0) !== expectedRevision) {
@@ -258,6 +285,28 @@ Deno.serve(async (req) => {
       if (mappedStatus !== undefined && !permittedStatus.includes(mappedStatus)) {
         return Response.json({ error: 'Invalid tournament status' }, { status: 400 });
       }
+      const now=new Date().toISOString();
+      if(session){
+        await base44.asServiceRole.entities.TournivalSession.update(session.id,{
+          state_json:JSON.stringify(next),state_revision:next.revision,
+          last_operation_id:operationId,updated_at:now,
+          status:mappedStatus||session.status||'draft'
+        });
+      }else{
+        await base44.asServiceRole.entities.TournivalSession.create({
+          tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,
+          tournament_id:tournament.id,status:mappedStatus||'draft',rehearsal:false,
+          num_courts:next.numCourts,qualification_rounds:next.numRounds,
+          scoring_format:next.matchFormat,venue_minutes:next.venueMinutes||120,
+          match_minutes:next.matchMinutes||18,changeover_minutes:next.changeoverMinutes||3,
+          capacity:tournament.max_players||32,registration_fee:tournament.event_fee_amount||0,
+          dupr_enabled:!!next.duprEnabled,
+          state_json:JSON.stringify(next),state_revision:next.revision,
+          last_operation_id:operationId,created_at:now,updated_at:now
+        });
+      }
+      // Backwards-compatible projection only. TournivalSession is the
+      // authoritative sporting record; a failed projection can be repaired.
       await base44.asServiceRole.entities.Tournament.update(tournament.id, {
         tournival_state: JSON.stringify(next),
         ...(mappedStatus === undefined ? {} : { status: mappedStatus }),
