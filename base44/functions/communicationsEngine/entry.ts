@@ -3,6 +3,7 @@ import { resolveEmailTransport, sendWithConfiguredEmailTransport } from './email
 import { resolveApprovedTournivalTemplate } from './tournivalTemplates.ts';
 import {queueTournivalCommunication,listTournivalAudience,TOURNIVAL_EVENTS,makeTournivalDeliveryKey} from './tournivalDelivery.ts';
 import {validateTournivalDeliveryEligibility} from './tournivalEligibility.ts';
+import {inspectTournivalQueue} from './tournivalRecovery.ts';
 const clean=(v:any,max=5000)=>String(v??'').trim().slice(0,max);
 Deno.serve(async(req)=>{
  try{
@@ -32,6 +33,35 @@ Deno.serve(async(req)=>{
       return Response.json({success:false,deliveryPerformed:false,
         error:error?.message||'Approved tenant template unavailable'},{status:409});
     }
+  }
+  if(action==='audit_tournival_queue'||action==='reconcile_tournival_queue'){
+    if(ownerScope!=='tenant'||!clubId||!clean(body.eventId,120))
+      return Response.json({error:'Tenant club and event required'},{status:400});
+    let report;
+    try{report=await inspectTournivalQueue(base44,{
+      tenantId,clubId,eventId:clean(body.eventId,120)
+    });}catch(e:any){return Response.json({error:String(e?.message||e)},{status:404});}
+    if(action==='audit_tournival_queue')
+      return Response.json({success:true,dryRun:true,...report});
+    if(body.confirmReconcile!==true||clean(body.reason,500).length<8)
+      return Response.json({error:'Explicit recovery confirmation and audit reason required'},{status:400});
+    const target=report.rows.find((x:any)=>x.attemptId===clean(body.attemptId,120));
+    if(!target||target.state!=='incomplete'||target.action!=='quarantine')
+      return Response.json({error:'Only unsent incomplete queued attempts may be quarantined'},{status:409});
+    const changed=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.updateMany({
+      id:target.attemptId,tenant_id:tenantId,status:'queued'
+    },{$set:{status:'cancelled',error_code:'incomplete_ledger_quarantined'}});
+    if(changed.updated!==1)
+      return Response.json({error:'Recovery state changed; repeat audit'},{status:409});
+    await base44.asServiceRole.entities.CommunicationEvent.create({
+      tenant_id:tenantId,delivery_attempt_id:target.attemptId,
+      event_type:'tournival_partial_queue_quarantined',
+      occurred_at:new Date().toISOString(),actor_user_id:user.id,
+      metadata:{eventId:report.eventId,reason:clean(body.reason,500)}
+    });
+    return Response.json({success:true,reconciled:true,attemptId:target.attemptId,
+      status:'cancelled',deliveryPerformed:false,
+      note:'Deduplication reservation preserved; issue a controlled replacement with freshly generated secure links.'});
   }
   if(action==='tournival_audience'){
     if(ownerScope!=='tenant'||!clubId||!clean(body.eventId,120))
