@@ -26,3 +26,18 @@ Deno.test('score correction always requires an audit reason',()=>{
 Deno.test('no fake completed state without knockout final',()=>{
  assert.equal(validate(base,{...base,status:'Completed'},{playerIds:ids}).valid,false);
 });
+Deno.test('continuous match state rejects overlapping active players and courts',()=>{
+ const ids=['a','b','c','d','e','f','g','h'];
+ const matches=[
+  {id:'m1',round:1,teamA:['a','b'],teamB:['c','d'],court:1,status:'playing'},
+  {id:'m2',round:1,teamA:['e','f'],teamB:['g','h'],court:2,status:'playing'}
+ ];
+ const setup={...base,numCourts:2,matches};
+ assert.equal(validate(null,setup,{playerIds:ids}).valid,true);
+ assert.equal(validate(null,{...setup,matches:[matches[0],{...matches[1],court:1}]},{playerIds:ids}).valid,false);
+ assert.equal(validate(null,{...setup,matches:[matches[0],{...matches[1],teamA:['a','f']}]},{playerIds:ids}).valid,false);
+ assert.equal(validate(null,{...setup,matches:[matches[0],{...matches[1],id:'m1'}]},{playerIds:ids}).valid,false);
+ assert.equal(validate(setup,{...setup,matches:[matches[0]]},{playerIds:ids}).valid,false);
+ assert.equal(validate(setup,{...setup,matches:[matches[0],{...matches[1],id:'new'}]},{playerIds:ids}).valid,false);
+ assert.equal(validate(null,{...setup,matches:[{...matches[0],status:'completed',result:null},matches[1]]},{playerIds:ids}).valid,false);
+});
