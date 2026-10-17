@@ -14,21 +14,30 @@ export async function dispatchNewTournivalNotice(base44:any,details:any,queued:a
  if(!queued?.queued||!queued.attemptId)return {sent:false,skipped:true};
  const {tenantId,clubId}=details;
  const ledger=base44.asServiceRole.entities.CommunicationDeliveryAttempt;
- const found=await ledger.filter({id:queued.attemptId,tenant_id:tenantId},'-created_date',1);
- const attempt=found?.[0];
- if(!attempt||attempt.status!=='queued'||attempt.channel!=='email'||
-    !attempt.campaign_id||attempt.campaign_id==='pending'||!attempt.message_id)
-   return {sent:false,skipped:true,reason:'Attempt incomplete or not ready'};
- const [messages,recipients,campaigns]=await Promise.all([
-  base44.asServiceRole.entities.CommunicationMessage.filter({id:attempt.message_id,tenant_id:tenantId},'-created_date',1),
-  base44.asServiceRole.entities.CommunicationRecipient.filter({id:attempt.recipient_id,tenant_id:tenantId},'-created_date',1),
-  base44.asServiceRole.entities.CommunicationCampaign.filter({id:attempt.campaign_id,tenant_id:tenantId,club_id:clubId},'-created_date',1)
- ]);
- const [message,recipient,campaign]=[messages?.[0],recipients?.[0],campaigns?.[0]];
- if(!message||!recipient||!campaign||campaign.source_module!=='Tournival'||
+ // Base44's freshly written queue rows may not be query-visible immediately.
+ // Bounded read-after-write retries use the SAME attempt; never recreate a send.
+ let attempt:any=null,message:any=null,recipient:any=null,campaign:any=null;
+ for(let retry=0;retry<6;retry++){
+  const found=await ledger.filter({id:queued.attemptId,tenant_id:tenantId},'-created_date',1);
+  attempt=found?.[0]||null;
+  if(attempt?.status&&attempt.status!=='queued')
+   return {sent:false,skipped:true,reason:'Already claimed or no longer queued'};
+  if(attempt?.channel==='email'&&attempt.campaign_id&&attempt.campaign_id!=='pending'&&
+     attempt.message_id&&attempt.recipient_id){
+   const [messages,recipients,campaigns]=await Promise.all([
+    base44.asServiceRole.entities.CommunicationMessage.filter({id:attempt.message_id,tenant_id:tenantId},'-created_date',1),
+    base44.asServiceRole.entities.CommunicationRecipient.filter({id:attempt.recipient_id,tenant_id:tenantId},'-created_date',1),
+    base44.asServiceRole.entities.CommunicationCampaign.filter({id:attempt.campaign_id,tenant_id:tenantId,club_id:clubId},'-created_date',1)
+   ]);
+   [message,recipient,campaign]=[messages?.[0],recipients?.[0],campaigns?.[0]];
+   if(message&&recipient&&campaign)break;
+  }
+  if(retry<5)await new Promise(resolve=>setTimeout(resolve,200*(retry+1)));
+ }
+ if(!message||!recipient||!campaign||!attempt||campaign.source_module!=='Tournival'||
     campaign.purpose!==details.purpose||recipient.eligibility_status!=='eligible'||
     !recipient.email||recipient.email.toLowerCase()!==String(details.recipient?.email||'').toLowerCase())
-   return {sent:false,skipped:true,reason:'Incomplete or mismatched Centre audience'};
+   return {sent:false,skipped:true,reason:'New Centre audience not visible or mismatched after bounded retries'};
  const allowed=await validateTournivalDeliveryEligibility(base44,{tenantId,clubId,campaign,recipient});
  if(!allowed.eligible)return {sent:false,skipped:true,reason:allowed.reason};
  let transport:any;

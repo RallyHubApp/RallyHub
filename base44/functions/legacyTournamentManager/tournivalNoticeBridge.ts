@@ -25,6 +25,14 @@ export async function safelyQueueTournivalNotice(base44:any,details:any){
   if(!queued.queued)return queued;
   try{
    const dispatch=await dispatchNewTournivalNotice(base44,details,queued);
+   if(dispatch.sent!==true){
+    try{await base44.asServiceRole.entities.CommunicationEvent.create({
+      tenant_id:details.tenantId,delivery_attempt_id:queued.attemptId,
+      event_type:'tournival_auto_delivery_needs_review',occurred_at:new Date().toISOString(),
+      metadata:{purpose:details.purpose,eventId:details.eventId,
+        reason:String(dispatch.reason||'Unverified provider delivery').slice(0,170)}
+    })}catch{}
+   }
    return {...queued,automaticallySent:dispatch.sent===true,
     deliveryNeedsReview:dispatch.sent!==true};
   }catch(e:any){
