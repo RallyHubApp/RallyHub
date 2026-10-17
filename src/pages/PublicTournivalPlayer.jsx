@@ -66,6 +66,10 @@ export default function PublicTournivalPlayer(){
     <h2 className="flex items-center gap-2 font-bold"><MapPin className="h-4 w-4"/> Venue & Directions</h2>
     <p className="text-sm">{data.event.venue||'Venue to be confirmed by the organiser'}</p>
     {mapLink&&<a href={mapLink} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">Open directions in Google Maps</a>}
+    {data.event.venue&&/st\.?\s*joseph|doora\s*barefield/i.test(data.event.venue)&&<img
+      src="https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/3e5dfe5f6_StJosephsGAAParkingEntrance.png"
+      alt="Parking and sports hall entrance directions at St Joseph’s Doora Barefield GAA"
+      loading="lazy" className="w-full rounded-xl border bg-background object-contain"/>}
     {data.event.arrivalInfo&&<div className="rounded-lg border bg-secondary/30 p-4">
      <h3 className="text-sm font-bold">Parking & arrival information</h3>
      <p className="mt-2 whitespace-pre-line text-sm">{data.event.arrivalInfo}</p>
