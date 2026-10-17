@@ -339,9 +339,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
     ? computeLeaderboard(state.playerIds || players.map(p => p.id), state.rounds || [], state.results || {}, playerMap)
     : [];
 
-  const visibleTabs = isStarted
-    ? TABS
-    : TABS.filter(t => t.id === 'setup');
+  const visibleTabs = TABS.filter(t => (isStarted || t.id === 'setup' || (t.id === 'rehearsal' && isAdmin)) && (t.id !== 'rehearsal' || isAdmin));
 
   return (
     <div className="space-y-4">
