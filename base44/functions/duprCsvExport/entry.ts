@@ -110,6 +110,74 @@ async function generateClubChallenge(base44:any,eventId:string){
   return {tenantId:challenge.tenant_id,clubId:challenge.host_club_id,sourceType:'club_challenge',sourceId:challenge.id,event,date,rows,excluded};
 }
 
+async function generateTournival(base44:any,tournamentId:string){
+  const tournament=(await base44.asServiceRole.entities.Tournament.filter({id:tournamentId}))?.[0];
+  if(!tournament||String(tournament.format).toLowerCase()!=='tournival')
+    throw new Error('Tournival tournament not found.');
+  const sessions=await base44.asServiceRole.entities.TournivalSession.filter({
+    tournament_id:tournamentId,tenant_id:tournament.tenant_id
+  },'-created_at',5);
+  if(!sessions?.length||sessions.length>1)throw new Error('Tournival session unavailable or requires reconciliation.');
+  const session=sessions[0];
+  const state=JSON.parse(session.state_json||'{}');
+  if(!state.duprEnabled)throw new Error('DUPR reporting is not enabled for this Tournival event.');
+  if(String(session.status).toLowerCase()!=='completed'&&state.status!=='Completed')
+    throw new Error('DUPR export requires a finalised tournament.');
+  if(!state.knockoutState?.bracket?.some((m:any)=>m.stage==='Final'&&m.result))
+    throw new Error('Tournival final must be confirmed before export.');
+  const date=toDate(tournament.start_date||session.completed_at||tournament.created_date);
+  if(!date)throw new Error('Valid Tournival date required.');
+  const event=clean(tournament.name||'RallyHub Tournival');
+  const ids=(state.playerIds||[]).map((id:any)=>clean(id));
+  const players=await playerDuprMap(base44,ids);
+  const registrations=await base44.asServiceRole.entities.TournivalRegistration.filter({
+    tournament_id:tournamentId,tenant_id:tournament.tenant_id
+  },'-registered_at',500);
+  const consents=new Set((registrations||[]).filter((r:any)=>r.dupr_consent===true&&
+    !['withdrawn'].includes(r.registration_status)).map((r:any)=>String(r.player_id)));
+  const rows:string[]=[],excluded:any[]=[];
+  const add=(id:string,teamA:string[],teamB:string[],scoreA:any,scoreB:any,matchFormat:string)=>{
+    if(String(matchFormat).startsWith('timed_')){
+      excluded.push({matchId:id,reason:'timed_format_not_reportable_without_approval'});return;
+    }
+    if(!['first_11_by1','first_11_by2'].includes(String(matchFormat))){
+      excluded.push({matchId:id,reason:'unverified_match_format'});return;
+    }
+    if(!Number.isInteger(Number(scoreA))||!Number.isInteger(Number(scoreB))||
+      Number(scoreA)<0||Number(scoreB)<0||Number(scoreA)===Number(scoreB)){
+      excluded.push({matchId:id,reason:'unconfirmed_score'});return;
+    }
+    const participantIds=[...teamA,...teamB];
+    if(teamA.length!==2||teamB.length!==2||new Set(participantIds).size!==4){
+      excluded.push({matchId:id,reason:'invalid_doubles_roster'});return;
+    }
+    if(participantIds.some(pid=>!consents.has(pid))){
+      excluded.push({matchId:id,reason:'player_consent_missing'});return;
+    }
+    if(participantIds.some(pid=>!players[pid]?.duprId)){
+      excluded.push({matchId:id,reason:'missing_exact_dupr_id'});return;
+    }
+    rows.push(duprRow({event,date,a1:players[teamA[0]],a2:players[teamA[1]],
+      b1:players[teamB[0]],b2:players[teamB[1]],scoreA,scoreB}));
+  };
+  for(const round of state.rounds||[]){
+    for(const [index,court] of (round.courts||[]).entries()){
+      const id=`qualification:${round.roundNumber}:${index+1}`;
+      const result=state.results?.[round.roundNumber]?.[court.courtNumber];
+      if(!result){excluded.push({matchId:id,reason:'unconfirmed_result'});continue;}
+      add(id,court.teamA||[],court.teamB||[],result.scoreA,result.scoreB,state.matchFormat);
+    }
+  }
+  for(const m of state.knockoutState.bracket||[]){
+    if(!m.result){excluded.push({matchId:m.id,reason:'unconfirmed_result'});continue;}
+    const a=[m.pair1?.player1?.id,m.pair1?.player2?.id].filter(Boolean);
+    const b=[m.pair2?.player1?.id,m.pair2?.player2?.id].filter(Boolean);
+    add(m.id,a,b,m.result.scoreA,m.result.scoreB,state.knockoutMatchFormat||state.matchFormat);
+  }
+  return {tenantId:tournament.tenant_id,clubId:tournament.host_club_id,
+    sourceType:'tournival',sourceId:tournament.id,event,date,rows,excluded};
+}
+
 Deno.serve(async(req)=>{
   try{
     const base44=createClientFromRequest(req);
@@ -124,7 +192,8 @@ Deno.serve(async(req)=>{
     let result:any;
     if(sourceType==='kotc')result=await generateKotc(base44,sourceId);
     else if(sourceType==='club_challenge')result=await generateClubChallenge(base44,sourceId);
-    else return Response.json({error:'Phase 1 supports sourceType kotc or club_challenge.'},{status:400});
+    else if(sourceType==='tournival')result=await generateTournival(base44,sourceId);
+    else return Response.json({error:'Phase 1 supports sourceType kotc, club_challenge or tournival.'},{status:400});
 
     if(!result.rows.length){
       return Response.json({success:false,error:'No DUPR-importable matches were found.',event:result.event,date:result.date,excluded:result.excluded},{status:409});
@@ -168,6 +237,6 @@ Deno.serve(async(req)=>{
     });
   }catch(error){
     console.error('duprCsvExport failed',error);
-    return Response.json({error:error?.message||'Unable to generate DUPR CSV export.'},{status:500});
+    return Response.json({error:(error as any)?.message||'Unable to generate DUPR CSV export.'},{status:500});
   }
 });
