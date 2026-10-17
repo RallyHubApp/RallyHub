@@ -20,6 +20,9 @@ const MATCH_FORMATS = [
 export default function TournivalSetup({ players, tournament, onStart, isAdmin, locked, existingState, onSaveState }) {
   const [numCourts, setNumCourts] = useState(existingState?.numCourts || tournament.kotc_num_courts || 4);
   const [numRounds, setNumRounds] = useState(existingState?.numRounds || 4);
+  const [venueMinutes, setVenueMinutes] = useState(existingState?.venueMinutes || 120);
+  const [matchMinutes, setMatchMinutes] = useState(existingState?.matchMinutes ?? 18);
+  const [changeoverMinutes, setChangeoverMinutes] = useState(existingState?.changeoverMinutes ?? 3);
   const [matchFormat, setMatchFormat] = useState(existingState?.matchFormat || 'first_11_by1');
   const [seedOrder, setSeedOrder] = useState(existingState?.seedOrder || players.map(p => p.id));
   const [seedConfirmed, setSeedConfirmed] = useState(!!existingState?.seedOrderConfirmed);
@@ -34,7 +37,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
   const currentSeedIds = fullOrderedPlayers.map(p => p.id);
   const seedLocked = locked;
 
-  const duration = estimateDuration({ numPlayers, numCourts, numRounds, matchFormat });
+  const duration = estimateDuration({ numPlayers, numCourts, numRounds, matchFormat, matchMinutes: matchFormat.startsWith('timed_') ? undefined : matchMinutes, changeoverMinutes, venueMinutes });
   const activePlayers = Math.min(numPlayers, numCourts * 4);
   const benchPlayers = Math.max(0, numPlayers - activePlayers);
 
@@ -42,7 +45,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
     if (!isValid) { toast.error('Add at least 4 players to start.'); return; }
     if (!seedConfirmed) { toast.error('Confirm seed order before generating fixtures.'); return; }
     setSaving(true);
-    await onStart({ numCourts: Number(numCourts), numRounds: Number(numRounds), matchFormat, seedOrder: currentSeedIds });
+    await onStart({ numCourts: Number(numCourts), numRounds: Number(numRounds), matchFormat, seedOrder: currentSeedIds, venueMinutes, matchMinutes: duration.matchMinutes, changeoverMinutes });
     setSaving(false);
   };
 
@@ -116,7 +119,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
             <p className="text-[10px] text-muted-foreground">Bench</p>
           </div>
           <div className="glass rounded-lg p-3">
-            <p className="text-xl font-bold text-accent">{duration.formatted}</p>
+            <p className="text-xl font-bold text-accent">{duration.valid ? duration.formatted : 'Check setup'}</p>
             <p className="text-[10px] text-muted-foreground">Est. duration</p>
           </div>
         </div>
@@ -140,12 +143,34 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
             <Select value={String(numRounds)} onValueChange={v => setNumRounds(Number(v))}>
               <SelectTrigger className="mt-1 bg-secondary border-border"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {[3, 4, 5, 6].map(n => <SelectItem key={n} value={String(n)}>{n} rounds</SelectItem>)}
+                {[2, 3, 4, 5, 6].map(n => <SelectItem key={n} value={String(n)}>{n} rounds</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs text-muted-foreground">Venue booked (minutes)</Label>
+            <Select value={String(venueMinutes)} onValueChange={v => setVenueMinutes(Number(v))}>
+              <SelectTrigger className="mt-1 bg-secondary border-border"><SelectValue /></SelectTrigger>
+              <SelectContent>{Array.from({ length: 15 }, (_, i) => 60 + i * 30).map(n =>
+                <SelectItem key={n} value={String(n)}>{n} min</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Changeover (minutes)</Label>
+            <Input type="number" min={0} max={30} value={changeoverMinutes}
+              onChange={e => setChangeoverMinutes(Math.max(0, Math.min(30, Number(e.target.value))))}
+              className="mt-1 bg-secondary border-border" />
+          </div>
+          {!matchFormat.startsWith('timed_') && <div>
+            <Label className="text-xs text-muted-foreground">Average points match (minutes)</Label>
+            <Input type="number" min={1} max={90} value={matchMinutes}
+              onChange={e => setMatchMinutes(Math.max(1, Math.min(90, Number(e.target.value))))}
+              className="mt-1 bg-secondary border-border" />
+          </div>}
+        </div>
         <div>
           <Label className="text-xs text-muted-foreground mb-2 block">Match Format</Label>
           <div className="grid grid-cols-2 gap-2">
@@ -206,14 +231,17 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
             <span className="text-foreground font-medium">{duration.groupMinutes}min</span>
           </div>
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">QF + SF + Final + 3rd/4th</span>
+            <span className="text-muted-foreground">Knockout including final ({duration.knockoutPairs || 0} pairs)</span>
             <span className="text-foreground font-medium">{duration.knockoutMinutes}min</span>
           </div>
+          <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Setup and changeover allowance</span><span>{(duration.setupMinutes || 0) + (duration.changeoverMinutes || 0)}min</span></div>
           <div className="h-px bg-border" />
           <div className="flex items-center justify-between text-sm font-semibold">
             <span className="text-foreground">Total</span>
-            <span className="text-primary">{duration.formatted}</span>
+            <span className="text-primary">{duration.valid ? duration.formatted : 'Check setup'}</span>
           </div>
+          {duration.valid && !duration.fitsBooking && <p role="alert" className="text-xs text-amber-400">Warning: estimated overrun {duration.overrunMinutes} min beyond {venueMinutes}-minute booking. Host can still proceed.</p>}
+          {!duration.valid && <p role="alert" className="text-xs text-destructive">{duration.error}</p>}
         </div>
       </div>
 
@@ -226,7 +254,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
       <Button
         className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2 h-12"
         onClick={handleStart}
-        disabled={!isValid || saving || !seedConfirmed}
+        disabled={!isValid || saving || !seedConfirmed || !duration.valid}
       >
         {saving
           ? <><div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> Generating Fixtures…</>

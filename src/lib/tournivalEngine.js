@@ -261,32 +261,66 @@ export function createKnockoutBracket(pairs) {
   return bracket;
 }
 
-// ── Duration Estimate ─────────────────────────────────────────────────────────
-export function estimateDuration({ numPlayers, numCourts, numRounds, matchFormat }) {
-  const playersPerCourt = 4;
-  const activePlayers = Math.min(numPlayers, numCourts * playersPerCourt);
-
-  let minutesPerMatch;
-  if (matchFormat?.startsWith('timed_')) {
-    minutesPerMatch = parseInt(matchFormat.split('_')[1]) + 3; // +3 changeover
-  } else if (matchFormat === 'first_7') {
-    minutesPerMatch = 15;
-  } else if (matchFormat === 'first_11_by1') {
-    minutesPerMatch = 20;
-  } else {
-    minutesPerMatch = 25; // first_11_by2
+// ── Duration Estimate (qualification AND mandatory knockout) ────────────────
+/**
+ * Conservative court-wave forecast. Timed matches use their clock; point matches
+ * use a host-configurable average. Does not promise a finish time.
+ */
+export function estimateDuration({
+  numPlayers, numCourts, numRounds, matchFormat,
+  matchMinutes, changeoverMinutes = 3, venueMinutes = 120,
+  knockoutPairs, setupMinutes = 10, breakMinutes = 0,
+}) {
+  const players = Number(numPlayers), courts = Number(numCourts), rounds = Number(numRounds);
+  if (!Number.isInteger(players) || players < 4 || !Number.isInteger(courts) || courts < 1 ||
+      !Number.isInteger(rounds) || rounds < 2 || rounds > 6) {
+    return { valid: false, error: 'Requires at least four players, one court and 2–6 qualification rounds.' };
   }
-
-  const groupMinutes = numRounds * minutesPerMatch;
-  const knockoutMinutes = 4 * 15 + 2 * 15 + 1 * 15 + 1 * 15; // QF + SF + F + 3rd/4th
-  const totalMinutes = groupMinutes + knockoutMinutes + 15; // +15 for setup/transitions
-
+  const timed = String(matchFormat || '').startsWith('timed_');
+  const inferredMinutes = timed ? Number(String(matchFormat).split('_')[1]) :
+    matchFormat === 'first_11_by2' ? 22 : 18;
+  const playMinutes = Number(matchMinutes ?? inferredMinutes);
+  const change = Number(changeoverMinutes), setup = Number(setupMinutes), breaks = Number(breakMinutes);
+  if (![playMinutes, change, setup, breaks].every(v => Number.isFinite(v) && v >= 0) || playMinutes <= 0) {
+    return { valid: false, error: 'Match and changeover assumptions must be valid non-negative minutes.' };
+  }
+  const matchesPerRound = Math.floor(Math.min(players, courts * 4) / 4);
+  if (!matchesPerRound) return { valid: false, error: 'No complete doubles match can be scheduled.' };
+  // A rotating qualification round can include only players assigned at that time.
+  const qualificationWaves = rounds;
+  const groupMinutes = qualificationWaves * playMinutes + Math.max(0, rounds - 1) * change;
+  // Qualified pairs must be a power of two; maximum feasible pairs follows roster.
+  const maxPairs = Math.floor(players / 2);
+  const suggestedPairs = Math.min(8, 2 ** Math.floor(Math.log2(maxPairs)));
+  const pairs = Number(knockoutPairs ?? suggestedPairs);
+  if (!Number.isInteger(pairs) || pairs < 2 || pairs > maxPairs || (pairs & (pairs - 1)) !== 0) {
+    return { valid: false, error: 'Knockout pairs must be a power of two, at least two, within the roster.' };
+  }
+  let remaining = pairs, knockoutMinutes = 0, knockoutMatches = 0, knockoutWaves = 0;
+  const stages = [];
+  while (remaining > 1) {
+    const matches = remaining / 2;
+    const waves = Math.ceil(matches / courts);
+    const minutes = waves * playMinutes + Math.max(0, waves - 1) * change;
+    stages.push({ pairs: remaining, matches, waves, minutes, final: remaining === 2 });
+    knockoutMinutes += minutes;
+    knockoutMatches += matches;
+    knockoutWaves += waves;
+    remaining = matches;
+  }
+  const stageTransitions = Math.max(0, stages.length - 1) * change;
+  knockoutMinutes += stageTransitions;
+  const totalMinutes = Math.ceil(groupMinutes + knockoutMinutes + setup + breaks + change);
+  const booking = Number(venueMinutes);
+  const bookingValid = Number.isInteger(booking) && booking >= 60 && booking % 30 === 0;
   return {
-    groupMinutes,
-    knockoutMinutes,
-    totalMinutes,
-    formatted: totalMinutes >= 60
-      ? `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`
-      : `${totalMinutes}m`,
+    valid: true, numPlayers: players, numCourts: courts, numRounds: rounds,
+    qualificationMatches: rounds * matchesPerRound, knockoutMatches, knockoutPairs: pairs,
+    stages, qualificationWaves, knockoutWaves, matchMinutes: playMinutes,
+    changeoverMinutes: change, groupMinutes, knockoutMinutes, setupMinutes: setup,
+    breakMinutes: breaks, totalMinutes, venueMinutes: booking,
+    venueValid: bookingValid, overrunMinutes: bookingValid ? Math.max(0, totalMinutes - booking) : null,
+    fitsBooking: bookingValid && totalMinutes <= booking,
+    formatted: totalMinutes >= 60 ? `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m` : `${totalMinutes}m`,
   };
 }
