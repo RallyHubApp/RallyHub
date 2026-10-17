@@ -4,7 +4,7 @@
  * are permitted after partial failures; duplicates are not.
  */
 export async function allocateTournivalWaitlistTicket({
-  tournaments,tournamentId,tenantId,seed,attempts=100
+  tournaments,tournamentId,tenantId,seed,attempts=160
 }:{
   tournaments:any;tournamentId:string;tenantId:string;seed:number;attempts?:number
 }):Promise<number>{
@@ -20,6 +20,9 @@ export async function allocateTournivalWaitlistTicket({
     const claim=await tournaments.updateMany({...scope,tournival_waitlist_sequence:seen},
       {$inc:{tournival_waitlist_sequence:1}});
     if(claim.updated===1)return seen+1;
+    // Backend reads can lag a competing conditional write; give them time
+    // to converge instead of spinning through all retries on one stale value.
+    if(i>0)await new Promise(resolve=>setTimeout(resolve,Math.min(80,10+Math.floor(i/8)*5)));
   }
   throw Error('Waitlist is busy; retry the registration');
 }
