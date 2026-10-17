@@ -141,12 +141,13 @@ Call log:
   22 |   await active.getByRole('spinbutton',{name:/B score/}).fill('4');
   23 |   await active.getByText('Save score').click();
   24 |  }
-> 25 |  await expect(page.getByText(/Qualification complete/)).toBeVisible();
+  25 |  console.log('AFTER SCORES REV:',await page.getByTestId('server-revision').innerText(),'TEXT:',(await page.locator('body').innerText()).slice(0,350));
+> 26 |  await expect(page.getByText(/Qualification complete/)).toBeVisible();
      |                                                         ^ Error: expect(locator).toBeVisible() failed
-  26 |  await page.getByRole('button',{name:'Standings'}).click();
-  27 |  await expect(page.getByRole('button',{name:/Create Cup|Create Knockout|Generate Cup|Cup Matches/i}).first()).toBeVisible();
-  28 |  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
-  29 |  expect(overflow).toBeLessThanOrEqual(1);
-  30 | });
-  31 | 
+  27 |  await page.getByRole('button',{name:'Standings'}).click();
+  28 |  await expect(page.getByRole('button',{name:/Create Cup|Create Knockout|Generate Cup|Cup Matches/i}).first()).toBeVisible();
+  29 |  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+  30 |  expect(overflow).toBeLessThanOrEqual(1);
+  31 | });
+  32 | 
 ```

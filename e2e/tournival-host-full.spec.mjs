@@ -22,6 +22,7 @@ test(`Full Tournival host journey ${size.width}px`,async({page})=>{
   await active.getByRole('spinbutton',{name:/B score/}).fill('4');
   await active.getByText('Save score').click();
  }
+ console.log('AFTER SCORES REV:',await page.getByTestId('server-revision').innerText(),'TEXT:',(await page.locator('body').innerText()).slice(0,350));
  await expect(page.getByText(/Qualification complete/)).toBeVisible();
  await page.getByRole('button',{name:'Standings'}).click();
  await expect(page.getByRole('button',{name:/Create Cup|Create Knockout|Generate Cup|Cup Matches/i}).first()).toBeVisible();
