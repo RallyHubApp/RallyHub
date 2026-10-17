@@ -28,14 +28,17 @@ export default function PublicTournivalRegistration(){
   setError('');setSubmitting(true);
   try{
    const data=await request({...form,token,action:'register',consentVersion:CONSENT,operationId:operationRef.current});
-   if(data.success)setResult(data);
+   if(data.success){
+     if(data.event)setEvent(data.event);
+     setResult(data);
+   }
    else setError(data.error||'Registration could not be completed.');
   }catch(e){setError(e?.response?.data?.error||'Unable to register safely. Please contact organiser.');}
   finally{setSubmitting(false);}
  };
  return <main className="min-h-screen bg-background text-foreground p-4">
   <div className="mx-auto max-w-lg space-y-4">
-   <RallyHubPublicBrand moduleName="Tournival" pageLabel="Tournament Registration"/>
+   <RallyHubPublicBrand moduleName="Tournival" pageLabel="Tournament Registration" club={event?.organiser||null} clubFirst={true}/>
    <section className="glass rounded-2xl p-6 space-y-4">
     {loading?<p>Loading registration…</p>:!event?<p role="alert">{error||'Event not found'}</p>:<>
      <header><h1 className="text-xl font-bold">{event.name}</h1>
@@ -52,7 +55,7 @@ export default function PublicTournivalRegistration(){
        result.registration?.paymentStatus==='pending'?<p>Payment checkout is pending. Your place has not been marked paid.</p>:null}
        {result.personalPath&&<a className="text-sm text-primary underline block" href={result.personalPath}>Open your personal tournament link — keep this link safe</a>}
        {result.message&&<p className="text-sm">{result.message}</p>}
-       <p className="text-xs text-muted-foreground">Payment is confirmed only when the provider verifies it. Closing this page does not complete a payment.</p>
+       {result.registration?.paymentStatus==='pending'&&<p className="text-xs text-muted-foreground">Payment is confirmed only when the provider verifies it. Closing this page does not complete a payment.</p>}
       </section>:
       <form onSubmit={submit} className="space-y-3">
        <label className="block text-sm">Full name <Input required autoComplete="name" minLength={2} maxLength={120} value={form.fullName} onChange={e=>setForm(f=>({...f,fullName:e.target.value}))}/></label>

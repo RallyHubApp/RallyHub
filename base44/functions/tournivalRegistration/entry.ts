@@ -19,11 +19,11 @@ async function sha256(value:string) {
 function activeAccess(row:any) {
   return row&&!row.revoked_at&&(!row.expires_at||Date.parse(row.expires_at)>Date.now());
 }
-function safeEvent(t:any,registered:number,waitlisted:number){
+function safeEvent(t:any,registered:number,waitlisted:number,organiser:any=null){
   const fee=Number(t.event_fee_amount||0);
   return {id:t.id,name:t.name,date:t.start_date||'',venue:t.location||'',
     capacity:Number(t.max_players||32),registered,waitlisted,fee,currency:t.event_currency||'EUR',
-    status:t.status,format:'Tournival',minimumPlayers:4};
+    status:t.status,format:'Tournival',minimumPlayers:4,organiser};
 }
 function publicReceipt(row:any,event:any,checkoutUrl='') {
   return {success:true,event,registration:{
@@ -68,7 +68,19 @@ Deno.serve(async(req)=>{
     const rows=all||[];
     const registered=rows.filter((r:any)=>['confirmed','pending_payment'].includes(r.registration_status)).length;
     const waitlisted=rows.filter((r:any)=>r.registration_status==='waitlisted').length;
-    const event=safeEvent(tournament,registered,waitlisted);
+    // Public-facing event is presented by the tenant's organising club, not
+    // by the RallyHub platform. Read only public club branding fields.
+    const organiserRows=await base44.asServiceRole.entities.Club.filter({
+      id:tournament.host_club_id,tenant_id:tournament.tenant_id
+    },'-updated_date',1);
+    const c=organiserRows?.[0];
+    const organiser=c?{
+      id:c.id,name:String(c.name||'').slice(0,120),
+      logo_url:String(c.logo_url||'').slice(0,2048),
+      primary_colour:String(c.primary_colour||'').slice(0,32),
+      secondary_colour:String(c.secondary_colour||'').slice(0,32)
+    }:null;
+    const event=safeEvent(tournament,registered,waitlisted,organiser);
     if(action==='get')return Response.json({success:true,event,consentVersion:'tournival-participation-v1'});
     if(action!=='register')return safeError('Unsupported registration action',400);
     if(!['Draft','Registration Open'].includes(tournament.status))return safeError('Registration closed',409);
@@ -116,6 +128,10 @@ Deno.serve(async(req)=>{
     const accepted=reservation.updated===1;
     const fee=Number(event.fee)||0;
     const status=!accepted?'waitlisted':fee>0?'pending_payment':'confirmed';
+    // A registration response must reflect its own new reservation, instead
+    // of returning the snapshot counted before the registration was written.
+    const updatedEvent={...event,registered:registered+(accepted?1:0),
+      waitlisted:waitlisted+(accepted?0:1)};
     let waitlistTicket:number|null=null;
     if(!accepted){
       try{
@@ -180,12 +196,12 @@ Deno.serve(async(req)=>{
           PAYMENT_STATUS:'Not required'}
       });
     }
-    if(status==='waitlisted'||fee===0)return Response.json({...publicReceipt(registration,event),personalPath},{status:201});
+    if(status==='waitlisted'||fee===0)return Response.json({...publicReceipt(registration,updatedEvent),personalPath},{status:201});
 
     // Hold the registration if payment infrastructure is temporarily unavailable.
     const account=await accountFor(base44,tournament);
     if(!providerConfigured('sumup',account)){
-      return Response.json({...publicReceipt(registration,event),personalPath,paymentUnavailable:true,
+      return Response.json({...publicReceipt(registration,updatedEvent),personalPath,paymentUnavailable:true,
         message:'Registration held; payment checkout currently unavailable. Contact organiser.'},{status:202});
     }
     const reference=`RH-TRN-${registration.id}`.slice(0,64);
@@ -219,11 +235,11 @@ Deno.serve(async(req)=>{
           EVENT_NAME:String(tournament.name||''),PAYMENT_LINK:checkout.checkoutUrl,
           PAYMENT_STATUS:'Pending',PLAYER_LINK:'https://rallyhub.ie'+personalPath}
       });
-      return Response.json({...publicReceipt(registration,event,checkout.checkoutUrl),personalPath},{status:201});
+      return Response.json({...publicReceipt(registration,updatedEvent,checkout.checkoutUrl),personalPath},{status:201});
     }catch(error){
       // Do not blindly create a second checkout after a network timeout.
       console.warn('Tournival payment checkout requires reconciliation',registration.id);
-      return Response.json({...publicReceipt(registration,event),personalPath,paymentUnavailable:true,
+      return Response.json({...publicReceipt(registration,updatedEvent),personalPath,paymentUnavailable:true,
         message:'Registration held. Payment checkout pending review; no payment confirmed.'},{status:202});
     }
   }catch(error){
