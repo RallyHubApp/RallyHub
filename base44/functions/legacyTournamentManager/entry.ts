@@ -1,3 +1,4 @@
+import { validateTournivalStateTransition } from './tournivalStateValidation.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 
 function activeNow(access:any) {
@@ -273,6 +274,11 @@ Deno.serve(async (req) => {
       if (Number(current?.revision || 0) !== expectedRevision) {
         return Response.json({ error: 'Stale Tournival state. Refresh and reconcile before retrying.', currentRevision: current?.revision || 0 }, { status: 409 });
       }
+      const transition=validateTournivalStateTransition(current,next,{
+        playerIds:Array.isArray(tournament.player_ids)?tournament.player_ids:[],
+        correctionReason:clean(body.correctionReason,500)
+      });
+      if(!transition.valid)return Response.json({error:transition.error},{status:409});
       next.revision = expectedRevision + 1;
       next.lastOperationId = operationId;
 
@@ -312,6 +318,7 @@ Deno.serve(async (req) => {
         ...(mappedStatus === undefined ? {} : { status: mappedStatus }),
       });
       await audit(base44, user, tournament, 'tournival_state_updated', {
+        correctionReason:clean(body.correctionReason,500)||undefined,
         rounds: next.numRounds, courts: next.numCourts, currentRound: next.currentRound,
         status: mappedStatus || tournament.status,
       });

@@ -183,7 +183,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
 
   const playerMap = Object.fromEntries(players.map(p => [p.id, p.full_name || p.id]));
 
-  const saveState = async (newState) => {
+  const saveState = async (newState, {correctionReason=''} = {}) => {
     const hasGeneratedFixtures = !!newState.rounds?.length;
     const tournamentStatus = newState.status === 'Completed'
       ? 'Completed'
@@ -193,7 +193,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
     const response = await base44.functions.invoke('legacyTournamentManager', {
       tournamentId: tournament.id, action: 'update_tournival',
       expectedRevision: state?.revision ?? 0, operationId: crypto.randomUUID(),
-      tournival_state: JSON.stringify(newState), status: tournamentStatus,
+      correctionReason, tournival_state: JSON.stringify(newState), status: tournamentStatus,
     });
     if (response?.data?.error) throw new Error(response.data.error);
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
@@ -242,7 +242,11 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
         [courtNumber]: result,
       },
     };
-    await saveState({ ...state, results: newResults });
+    const old=state.results?.[state.currentRound]?.[courtNumber];
+    const changed=old&&JSON.stringify(old)!==JSON.stringify(result);
+    const correctionReason=changed?window.prompt('Reason for correcting the confirmed score (required):'):'';
+    if(changed&&(!correctionReason||correctionReason.trim().length<6))throw Error('Score correction cancelled; a reason is required.');
+    await saveState({ ...state, results: newResults },{correctionReason:correctionReason||''});
   };
 
   const handleCompleteRound = async () => {
@@ -337,7 +341,11 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
     const finalResult = newKnockoutState.bracket.find(m => m.stage === 'Final')?.result;
     const thirdPlace = newKnockoutState.bracket.find(m => m.stage === '3rd');
     const knockoutComplete = !!finalResult && (!thirdPlace || !!thirdPlace.result);
-    await saveState({ ...state, knockoutState: newKnockoutState, status: knockoutComplete ? 'Completed' : state.status });
+    const oldMatch=state.knockoutState.bracket.find(m=>m.id===matchId);
+    const knockoutChanged=oldMatch?.result&&JSON.stringify(oldMatch.result)!==JSON.stringify(result);
+    const correctionReason=knockoutChanged?window.prompt('Reason for correcting confirmed knockout score (required):'):'';
+    if(knockoutChanged&&(!correctionReason||correctionReason.trim().length<6))throw Error('Knockout correction cancelled; a reason is required.');
+    await saveState({ ...state, knockoutState: newKnockoutState, status: knockoutComplete ? 'Completed' : state.status },{correctionReason:correctionReason||''});
     if (knockoutComplete) toast.success('Tournival complete! Final standings are now locked in.');
   };
 
