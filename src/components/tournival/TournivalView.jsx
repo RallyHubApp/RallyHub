@@ -75,6 +75,18 @@ function PlayerPanel({ players, tournament, isAdmin, queryClient, onAddPlayer, o
       setTimeout(()=>setLinkCopied(false),2000);
     }catch(e){toast.error(e?.message||'Unable to copy registration link');}
   };
+  const handleCopyHost = async () => {
+    try{
+      const response=await base44.functions.invoke('legacyTournamentManager',{
+        tournamentId:tournament.id,action:'create_tournival_host_link'
+      });
+      if(!response?.data?.success)throw Error(response?.data?.error||'Host link not available');
+      await navigator.clipboard.writeText(`${window.location.origin}${response.data.path}`);
+      setHostCopied(true);
+      toast.success('Delegated Tournival host link copied. Valid for 72 hours.');
+      setTimeout(()=>setHostCopied(false),2000);
+    }catch(e){toast.error(e?.message||'Unable to issue delegated host link');}
+  };
   const handleCopyShare = () => {
     const url = `${window.location.origin}/tournival/live/${tournament.id}`;
     navigator.clipboard.writeText(url).then(() => {
@@ -99,6 +111,9 @@ function PlayerPanel({ players, tournament, isAdmin, queryClient, onAddPlayer, o
             <Button variant="outline" size="sm" className={cn('text-xs gap-1', shareCopied && 'text-accent border-accent/40')} onClick={handleCopyShare}>
               {shareCopied ? <><Check className="w-3 h-3" /> Copied!</> : <><Link2 className="w-3 h-3" /> Live View</>}
             </Button>
+            {isAdmin&&<Button variant="outline" size="sm" className="text-xs" onClick={handleCopyHost}>
+              <Link2 className="w-3 h-3"/> {hostCopied?'Host link copied':'Host Link'}
+            </Button>}
           </div>
         </div>
 
