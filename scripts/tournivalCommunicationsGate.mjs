@@ -13,6 +13,15 @@ const templates=readFileSync('base44/functions/communicationsEngine/tournivalTem
 assert.match(templates,/status!=='approved'/);
 assert.match(templates,/status!=='active'/);
 assert.match(templates,/renderBasicBrandedEmail/);
+const auto=readFileSync('base44/functions/communicationsEngine/tournivalAutoDispatch.ts','utf8');
+const bridge=readFileSync('base44/functions/communicationsEngine/tournivalNoticeBridge.ts','utf8');
+assert.match(bridge,/if\(!queued.queued\)return queued/,'Original-only automatic dispatch required');
+assert.match(bridge,/dispatchNewTournivalNotice/);
+assert.match(auto,/status:'queued'/);assert.match(auto,/status:'sending'/);
+assert.match(auto,/updateMany/);assert.match(auto,/validateTournivalDeliveryEligibility/);
+assert.match(auto,/assessTournivalConsent/);assert.match(auto,/sendWithConfiguredEmailTransport/);
+assert.match(auto,/unverified_provider_outcome/);
+assert.doesNotMatch(auto,/status:'queued'\s*\}\s*\)/,'No resetting delivery after unknown provider outcome');
 assert.match(templates,/tournival_post_event_thanks/);
 assert.match(readFileSync('src/components/communications/TournivalTemplateManager.jsx','utf8'),/tournival_post_event_thanks/);
 assert.match(templates,/deliveryPerformed:false|templateId:template.id/);

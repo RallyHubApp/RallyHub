@@ -9,7 +9,7 @@ assert.match(read('base44/functions/tournivalHostAccess/entry.ts'),/from '\.\/to
 assert.match(read('base44/functions/tournivalRegistration/entry.ts'),/from '\.\/payments\.ts'/);
 
 for(const folder of ['tournivalRegistration','legacyTournamentManager','paymentGatewayWebhook']){
- for(const file of ['communicationsBasicRenderer.ts','tournivalTemplates.ts','tournivalDelivery.ts','tournivalNoticeBridge.ts']){
+ for(const file of ['communicationsBasicRenderer.ts','tournivalTemplates.ts','tournivalDelivery.ts','tournivalNoticeBridge.ts','tournivalAutoDispatch.ts','tournivalConsent.ts','tournivalEligibility.ts','emailRouter.ts']){
   const central=read('base44/functions/communicationsEngine/'+file);
   const bundled=read('base44/functions/'+folder+'/'+file);
   assert.equal(bundled,central,
