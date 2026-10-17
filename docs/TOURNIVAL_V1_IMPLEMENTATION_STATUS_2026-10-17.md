@@ -90,3 +90,11 @@ These are sandbox code tests, NOT live production acceptance.
 | Real payment refunds and notifications | Existing gateway / Communications Centre | NOT FULLY WIRED |
 | Delegated host / player-scored permissions | Existing TournamentUserAccess plus legacy manager | PARTIAL / E2E NOT RUN |
 | Atomic concurrent writes/capacity | Base44 entity facade | BLOCKED / strict live safety gate |
+
+
+## Sporting state validation and complete host harness
+- Added Deno `tournivalStateValidation.ts`, imported by the authenticated Tournival update action. It checks configured rounds, valid four-player doubles fixtures, roster ownership, scored match format, final before completion, and forbids changing a confirmed score/knockout result without an audited correction reason. The corresponding 4/4 unit tests pass. This is still not an atomic database transaction.
+- Added host-configurable qualifying knockout field (2/4/8 pairs, bounded by roster), with legal power-of-two bracket generation.
+- Added a second, independent Vite+Chromium full Tournival host harness, testing the actual `TournivalView` with a simulated versioned backend. Host setup, seed confirmation, two qualification rounds, independently released courts, standings, semifinals, final and podium progression passed at 390px and 1280px (2/2).
+- Under-pressure host test found a disabled-state defect on the Allocate button when all courts were occupied. That UI control now disables correctly.
+- Explicit test limitation: simulated `legacyTournamentManager` backend; this does **not** replace a persistent Base44 server/role/session concurrency test.
