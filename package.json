@@ -9,7 +9,7 @@
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
-    "test:tournival-v1": "node scripts/tournivalV1Gate.mjs && node scripts/tournivalSchedulerGate.mjs",
+    "test:tournival-v1": "node scripts/tournivalV1Gate.mjs && node scripts/tournivalSchedulerGate.mjs && node scripts/tournivalOperationsGate.mjs",
     "test:tournival-browser": "playwright test e2e/tournival-v1.spec.mjs",
     "test:club-challenge-gate1": "node scripts/clubChallengeGate1.mjs",
     "test:club-challenge-robot": "node scripts/clubChallengeInteractionRobot.mjs",

@@ -91,3 +91,28 @@ export function assertRehearsalIsolation(event) {
    throw Error('Rehearsal external side effect detected');
  return true;
 }
+
+export function startTournival(event,{matches,actor='host',scoring='timed_10'}) {
+ if(event.phase!=='registration')throw Error('Already started');
+ if(!Array.isArray(matches)||matches.length<1)throw Error('Fixtures required');
+ const checked=new Set(event.registrations.filter(r=>r.checkedIn&&r.status==='confirmed').map(r=>r.playerId));
+ if(matches.some(m=>[...m.teamA,...m.teamB].some(id=>!checked.has(id))))
+   throw Error('Fixture contains player not checked in');
+ return update(event,'tournament_start',actor,{phase:'qualification',matches:matches.map(m=>({...m,matchFormat:scoring}))});
+}
+export function applyTournivalMatchChange(event,{matches,actor='host',action='court_update'}) {
+ if(!['qualification','knockout'].includes(event.phase))throw Error('Event is not playing');
+ if(!Array.isArray(matches)||matches.length!==event.matches.length)throw Error('Match count changed unexpectedly');
+ const byId=new Map(event.matches.map(m=>[m.id,m]));
+ if(matches.some(m=>!byId.has(m.id)))throw Error('Unknown match');
+ if(event.matches.some(m=>m.status==='completed' && JSON.stringify(matches.find(n=>n.id===m.id)?.result)!==JSON.stringify(m.result)))
+   throw Error('Completed result cannot be silently changed');
+ return update(event,action,actor,{matches});
+}
+export function finishTournival(event,{actor='host',podium}) {
+ if(event.phase!=='knockout')throw Error('Knockout and final required');
+ if(!event.matches.some(m=>m.stage==='Final'&&m.status==='completed'))throw Error('Final not completed');
+ if(event.matches.some(m=>m.status==='playing'||m.status==='waiting'))throw Error('Unresolved matches');
+ if(!podium?.first||!podium?.second)throw Error('Verified podium required');
+ return update(event,'tournament_finalised',actor,{phase:'completed',finalised:true,podium});
+}
