@@ -104,6 +104,66 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, tournament, players, club_brand:clubBrand });
     }
 
+    if (action === 'tournival_registrations') {
+      if (String(tournament.format).toLowerCase() !== 'tournival')
+        return Response.json({error:'Not a Tournival tournament'},{status:400});
+      const registrations=await base44.asServiceRole.entities.TournivalRegistration.filter({
+        tournament_id:tournament.id,tenant_id:tournament.tenant_id
+      },'-registered_at',500);
+      return Response.json({success:true,registrations:(registrations||[]).map((r:any)=>({
+        id:r.id,playerId:r.player_id,name:r.full_name,email:r.email,mobile:r.mobile,
+        status:r.registration_status,paymentStatus:r.payment_status,
+        amountDue:r.amount_due,waitlistPosition:r.waitlist_position||null,
+        checkedIn:!!r.checked_in_at,registeredAt:r.registered_at
+      }))});
+    }
+    if (action === 'tournival_check_in') {
+      if (String(tournament.format).toLowerCase() !== 'tournival')
+        return Response.json({error:'Not a Tournival tournament'},{status:400});
+      const registrationId=clean(body.registrationId,120);
+      const rows=await base44.asServiceRole.entities.TournivalRegistration.filter({
+        id:registrationId,tournament_id:tournament.id,tenant_id:tournament.tenant_id
+      },'-registered_at',5);
+      const row=rows?.[0];
+      if(!row||row.registration_status!=='confirmed'||
+        !['paid','not_required','simulated'].includes(row.payment_status))
+        return Response.json({error:'Check-in requires a confirmed, payment-complete registration'},{status:409});
+      const checkedIn=body.checkedIn!==false;
+      await base44.asServiceRole.entities.TournivalRegistration.update(row.id,{
+        checked_in_at:checkedIn?new Date().toISOString():''
+      });
+      await audit(base44,user,tournament,'tournival_check_in',{registrationId,checkedIn});
+      return Response.json({success:true,checkedIn});
+    }
+    if (action === 'tournival_withdraw') {
+      if (String(tournament.format).toLowerCase() !== 'tournival')
+        return Response.json({error:'Not a Tournival tournament'},{status:400});
+      const registrationId=clean(body.registrationId,120),reason=clean(body.reason,240);
+      if(reason.length<3)return Response.json({error:'Withdrawal reason is required'},{status:400});
+      const rows=await base44.asServiceRole.entities.TournivalRegistration.filter({
+        id:registrationId,tournament_id:tournament.id,tenant_id:tournament.tenant_id
+      },'-registered_at',5);
+      const row=rows?.[0];
+      if(!row)return Response.json({error:'Registration not found'},{status:404});
+      if(row.registration_status==='withdrawn')return Response.json({success:true,duplicate:true});
+      await base44.asServiceRole.entities.TournivalRegistration.update(row.id,{
+        registration_status:'withdrawn',checked_in_at:'',withdrawn_at:new Date().toISOString()
+      });
+      // Played matches are NEVER redrawn or deleted as a consequence.
+      const raw=tournament.tournival_state;
+      let state:any=null;
+      try{state=typeof raw==='string'?JSON.parse(raw):raw}catch{}
+      if(!state?.rounds?.length){
+        const playerIds=(tournament.player_ids||[]).filter((id:string)=>id!==row.player_id);
+        await base44.asServiceRole.entities.Tournament.update(tournament.id,{player_ids:playerIds});
+      }
+      await audit(base44,user,tournament,'tournival_withdrawal',{
+        registrationId,playerId:row.player_id,reason,requiresRefund:row.payment_status==='paid'
+      });
+      return Response.json({success:true,requiresRefund:row.payment_status==='paid',
+        message:'Registration withdrawn. Any payment refund must be reviewed separately.'});
+    }
+
     if (action === 'register_player') {
       const fullName = clean(body.full_name, 120);
       const email = clean(body.email, 200).toLowerCase();
