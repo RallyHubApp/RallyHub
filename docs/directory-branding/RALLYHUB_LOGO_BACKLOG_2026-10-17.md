@@ -13,3 +13,4 @@ Research-only batch. No production changes or deployment. Facebook was searched 
 | Edenderry `edenderry-pickleball-club` | Community mentions, no official page verified | Indexed official https://www.instagram.com/edenderry_pickleball/ | Venue-only court page, not club logo | SOCIAL LEAD: photo inaccessible; no visual approval |
 | Fenside `fenside-pickleball` | No official Kilkenny club page found | No official profile found | Search results were unrelated overseas venues | HOLD |
 | Iveragh `iveragh-pickleball-club` | Kingdom/Castlegregory posts are different groups | No Iveragh profile found | Club-list entry only | HOLD |
+| Killeshandra `killeshandra-pickleball-club` | East Cavan Facebook mentions Killeshandra, not its logo | No verified Instagram | Official town page confirms group, no logo | HOLD |
