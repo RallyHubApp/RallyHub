@@ -109,6 +109,8 @@ Deno.serve(async(req)=>{
     }
     if(transport.status!=='configured')
       return Response.json({error:'Tenant sender is not configured; message remains queued'},{status:409});
+    if(transport.provider==='base44_core')
+      return Response.json({error:'This tenant sender cannot deliver the approved branded HTML email; message remains queued'},{status:409});
     const claimed=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.updateMany({
       id:attempt.id,tenant_id:tenantId,status:'queued'
     },{$set:{status:'sending'}});
@@ -129,7 +131,8 @@ Deno.serve(async(req)=>{
     }catch(e:any){
       // Unknown provider outcome. Do not requeue without a new operator audit.
       await base44.asServiceRole.entities.CommunicationDeliveryAttempt.update(attempt.id,{
-        status:'failed',error_message:clean(e?.message||'Unverified provider outcome',500)
+        status:'sending',error_code:'unverified_provider_outcome',
+        error_message:clean(e?.message||'Unverified provider outcome',500)
       });
       return Response.json({error:'Provider outcome unverified; investigate before resend',
         deliveryAttemptId:attempt.id},{status:502});

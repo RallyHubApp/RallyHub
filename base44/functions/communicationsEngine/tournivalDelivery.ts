@@ -82,21 +82,31 @@ export async function listTournivalAudience(base44:any,{tenantId,eventId}:any){
  const campaigns=await base44.asServiceRole.entities.CommunicationCampaign.filter({
   tenant_id:tenantId,source_module:'Tournival',source_record_id:eventId
  },'-created_date',250);
+ const ids=(campaigns||[]).map((c:any)=>c.id);
+ if(!ids.length)return [];
+ // Batch tenant-scoped reads: constant query count rather than two calls per
+ // campaign during host/operator bursts.
+ const [recipients,attempts]=await Promise.all([
+  base44.asServiceRole.entities.CommunicationRecipient.filter({
+   tenant_id:tenantId,campaign_id:{$in:ids}
+  },'-created_date',1000),
+  base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({
+   tenant_id:tenantId,campaign_id:{$in:ids}
+  },'-created_date',1000)
+ ]);
+ const byCampaign=new Map((campaigns||[]).map((c:any)=>[c.id,c]));
  const result=[];
- for(const c of campaigns||[]){
-  const [recipients,attempts]=await Promise.all([
-   base44.asServiceRole.entities.CommunicationRecipient.filter({tenant_id:tenantId,campaign_id:c.id},'-created_date',250),
-   base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({tenant_id:tenantId,campaign_id:c.id},'-created_date',250)
-  ]);
-  for(const recipient of recipients||[]){
-   const delivery=(attempts||[]).filter((a:any)=>a.recipient_id===recipient.id).sort((a:any,b:any)=>Number(b.attempt_number)-Number(a.attempt_number))[0];
-   result.push({campaignId:c.id,purpose:c.purpose,recipientId:recipient.id,
-    name:recipient.display_name,email:recipient.email,mobile:recipient.mobile,
-    eligibility:recipient.eligibility_status,sourceRecordId:recipient.source_record_id,
-    fields:recipient.personalisation||{},channel:delivery?.channel||'email',
-    deliveryId:delivery?.id||null,
-    deliveryStatus:delivery?.status||'not_queued',attemptNumber:delivery?.attempt_number||0});
-  }
+ for(const recipient of recipients||[]){
+  const c:any=byCampaign.get(recipient.campaign_id);
+  if(!c)continue;
+  const delivery=(attempts||[]).filter((a:any)=>a.recipient_id===recipient.id).sort(
+   (a:any,b:any)=>Number(b.attempt_number)-Number(a.attempt_number))[0];
+  result.push({campaignId:c.id,purpose:c.purpose,recipientId:recipient.id,
+   name:recipient.display_name,email:recipient.email,mobile:recipient.mobile,
+   eligibility:recipient.eligibility_status,sourceRecordId:recipient.source_record_id,
+   fields:recipient.personalisation||{},channel:delivery?.channel||'email',
+   deliveryId:delivery?.id||null,deliveryStatus:delivery?.status||'not_queued',
+   attemptNumber:delivery?.attempt_number||0});
  }
  return result;
 }

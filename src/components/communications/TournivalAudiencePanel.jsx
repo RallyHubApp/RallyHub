@@ -44,8 +44,8 @@ export default function TournivalAudiencePanel(){
    });
    if(r.data?.queued)queued++;else skipped++;
   }
-   setNotice(queued+' queued, '+skipped+' previously queued or skipped. No messages sent.');
    await refresh();
+   setNotice(queued+' queued, '+skipped+' previously queued or skipped. No messages sent.');
   }catch(e){setError('Stopped after '+queued+' queued: '+(e?.response?.data?.error||e.message)+'; reload audience before retrying.')}
   finally{setBusy(false)}
  };
@@ -59,8 +59,8 @@ export default function TournivalAudiencePanel(){
     clubId,purpose:item.purpose,attemptId:item.deliveryId,confirmDispatch:true
    });
    if(!r.data?.success)throw Error(r.data?.error||'Dispatch was not confirmed');
-   setNotice('Email handed to the configured tenant sender and recorded as sent.');
    await refresh();
+   setNotice('Email handed to the configured tenant sender and recorded as sent.');
   }catch(e){setError(e?.response?.data?.error||e.message)}
   finally{setBusy(false)}
  };
@@ -80,8 +80,8 @@ export default function TournivalAudiencePanel(){
     fields:item.fields
    });
    if(!r.data?.success)throw Error(r.data?.error||'Cannot queue resend');
-   setNotice(r.data.duplicate?'This resend is already in the queue.':'Resend queued for authorised review; no message sent.');
    await refresh();
+   setNotice(r.data.duplicate?'This resend is already in the queue.':'Resend queued for authorised review; no message sent.');
   }catch(e){setError(e?.response?.data?.error||e.message)}finally{setBusy(false)}
  };
  return <section className="rounded-xl border p-4 space-y-3">
