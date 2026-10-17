@@ -49,11 +49,23 @@
     },
     "tournival_player_stage": {
       "type": "string",
-      "enum": ["registration", "fixtures", "live", "knockout", "results"],
+      "enum": [
+        "registration",
+        "fixtures",
+        "live",
+        "knockout",
+        "results"
+      ],
       "default": "registration",
-      "description": "Host-controlled player link publication stage; preregistration never exposes sporting draws"
+      "description": "Host controlled Tournival player publication stage"
     },
-    "tournival_communication_keys": {"type":"array", "items":{"type":"string"}, "description":"Atomic Communications Centre event deduplication ledger"},
+    "tournival_communication_keys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Atomic Communications Centre event deduplication ledger"
+    },
     "tournival_waitlist_sequence": {
       "type": "number",
       "description": "Monotonic unique waitlist ticket allocator; never decrease or recycle tickets"
@@ -135,7 +147,11 @@
       }
     },
     "tournival_state": {
-      "type": ["string", "object", "null"],
+      "type": [
+        "string",
+        "object",
+        "null"
+      ],
       "description": "Independent Tournival V1 state; never shared with King of the Court"
     },
     "kotc_state": {
