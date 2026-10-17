@@ -5,7 +5,7 @@
 export function validateTournivalStateTransition(current:any,next:any,{
   playerIds=[],correctionReason=''
 }: {playerIds?:string[];correctionReason?:string}={}) {
- const fail=(message:string)=>({valid:false,error:message});
+ const fail=(message:string):{valid:false;error:string;corrections?:number;added?:number}=>({valid:false,error:message});
  if(!next||typeof next!=='object'||!Array.isArray(next.rounds))
   return fail('A valid Tournival fixture structure is required.');
  if(!Number.isInteger(next.numRounds)||next.numRounds<2||next.numRounds>6)

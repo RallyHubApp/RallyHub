@@ -278,7 +278,7 @@ Deno.serve(async (req) => {
         playerIds:Array.isArray(tournament.player_ids)?tournament.player_ids:[],
         correctionReason:clean(body.correctionReason,500)
       });
-      if(!transition.valid)return Response.json({error:transition.error},{status:409});
+      if(!transition.valid)return Response.json({error:(transition as any).error},{status:409});
       next.revision = expectedRevision + 1;
       next.lastOperationId = operationId;
 
