@@ -92,6 +92,40 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: tournament management access required' }, { status: 403 });
     }
 
+    // Host-controlled public player-link stages and pre-event travel information.
+    // This is intentionally separate from sporting state and does not reset links.
+    if(action==='set_tournival_player_publishing'){
+      if(String(tournament.format).toLowerCase()!=='tournival')
+        return Response.json({error:'Not a Tournival event'},{status:400});
+      const stage=clean(body.stage,30);
+      if(!['registration','fixtures','live','knockout','results'].includes(stage))
+        return Response.json({error:'Invalid player publication stage'},{status:400});
+      if(!body.confirmPublication)
+        return Response.json({error:'Confirm the intended player publication stage'},{status:400});
+      if(['fixtures','live','knockout','results'].includes(stage)&&
+         ['Draft','Registration Open'].includes(tournament.status) && stage!=='fixtures')
+        return Response.json({error:'Start the event before publishing live or final sections'},{status:409});
+      const venue=clean(body.venue,240),mapUrl=clean(body.mapUrl,800),
+        arrival=clean(body.arrivalInfo,2000),phone=clean(body.contactPhone,60);
+      if(mapUrl&&!/^https:\/\/(maps\.google\.com|www\.google\.com\/maps|goo\.gl\/maps|maps\.app\.goo\.gl)\//i.test(mapUrl))
+        return Response.json({error:'Only approved Google Maps venue URLs are accepted'},{status:400});
+      const startTime=clean(body.startTime,5),endTime=clean(body.endTime,5);
+      for(const time of [startTime,endTime])
+        if(time&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(time))
+          return Response.json({error:'Enter times in 24-hour HH:MM format'},{status:400});
+      const changed=await base44.asServiceRole.entities.Tournament.updateMany({
+        id:tournament.id,tenant_id:tournament.tenant_id,
+        tournival_player_stage:tournament.tournival_player_stage??null
+      },{$set:{
+        tournival_player_stage:stage,location:venue,event_map_url:mapUrl,
+        event_player_info:arrival,event_contact_phone:phone,
+        event_start_time:startTime,event_end_time:endTime
+      }});
+      if(changed.updated!==1)return Response.json({error:'Event details changed; refresh before saving'},{status:409});
+      await audit(base44,user,tournament,'tournival_player_publication_updated',{stage});
+      return Response.json({success:true,stage});
+    }
+
     if (action === 'get_state' && String(tournament.format).toLowerCase()==='tournival') {
       const sessions=await base44.asServiceRole.entities.TournivalSession.filter({
         tournament_id:tournament.id,tenant_id:tournament.tenant_id

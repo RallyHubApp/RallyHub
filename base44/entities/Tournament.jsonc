@@ -47,6 +47,12 @@
         "type": "string"
       }
     },
+    "tournival_player_stage": {
+      "type": "string",
+      "enum": ["registration", "fixtures", "live", "knockout", "results"],
+      "default": "registration",
+      "description": "Host-controlled player link publication stage; preregistration never exposes sporting draws"
+    },
     "tournival_communication_keys": {"type":"array", "items":{"type":"string"}, "description":"Atomic Communications Centre event deduplication ledger"},
     "tournival_waitlist_sequence": {
       "type": "number",
