@@ -13,6 +13,8 @@ const templates=readFileSync('base44/functions/communicationsEngine/tournivalTem
 assert.match(templates,/status!=='approved'/);
 assert.match(templates,/status!=='active'/);
 assert.match(templates,/renderBasicBrandedEmail/);
+assert.match(templates,/tournival_post_event_thanks/);
+assert.match(readFileSync('src/components/communications/TournivalTemplateManager.jsx','utf8'),/tournival_post_event_thanks/);
 assert.match(templates,/deliveryPerformed:false|templateId:template.id/);
 for(const [name,eventMarkers] of Object.entries({
   tournivalRegistration:['tournival_registration_received','tournival_payment_required','tournival_waitlist_added','checkout.checkoutUrl'],

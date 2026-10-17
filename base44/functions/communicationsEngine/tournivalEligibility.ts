@@ -25,6 +25,7 @@ export function reasonForTournivalDelivery(purpose:string,reg:any,payment:any,ha
    if(reg.registration_status!=='confirmed'||reg.payment_status!=='paid')
     return 'Payment has not been verified as paid';
    break;
+  case 'tournival_post_event_thanks':
   case 'tournival_results':
    if(reg.registration_status!=='confirmed'||!['paid','not_required','simulated'].includes(reg.payment_status))
     return 'Recipient is not confirmed and payment complete';
@@ -58,7 +59,8 @@ export async function validateTournivalDeliveryEligibility(base44:any,{
    {eligible:true}:{eligible:false,reason:'Host link expired or revoked'};
  }
  const source=String(recipient.source_record_id||'');
- const prefix=purpose==='tournival_results'?'results:':
+ const prefix=purpose==='tournival_post_event_thanks'?'thanks:':
+  purpose==='tournival_results'?'results:':
   purpose==='tournival_waitlist_promoted'?'promoted:':
   purpose==='tournival_payment_confirmed'?'paid:':
   purpose==='tournival_payment_required'?'payment-required:':'';
@@ -72,7 +74,7 @@ export async function validateTournivalDeliveryEligibility(base44:any,{
   payment=(await base44.asServiceRole.entities.PaymentRecord.filter({
    id:reg.payment_record_id,tenant_id:tenantId,purpose_id:reg.id
   },'-created_date',1))?.[0]||null;
- if(purpose==='tournival_results'){
+ if(['tournival_results','tournival_post_event_thanks'].includes(purpose)){
   const all=await base44.asServiceRole.entities.TournivalRegistration.filter({
    tournament_id:t.id,tenant_id:tenantId,registration_status:'confirmed'
   },'-created_date',500);

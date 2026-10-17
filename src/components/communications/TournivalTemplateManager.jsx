@@ -9,7 +9,8 @@ const purposes=[
  ['tournival_waitlist_added','Waitlist entry'],
  ['tournival_waitlist_promoted','Waitlist promotion'],
  ['tournival_host_invite','Host invitation'],
- ['tournival_results','Tournament results']
+ ['tournival_results','Tournament results'],
+ ['tournival_post_event_thanks','Thank you & what’s next']
 ];
 const empty=(purpose)=>({purpose,subject_template:'',plain_text_template:'',html_template:'',
  channel_templates:{email:{header_title:''},whatsapp:{text_template:''}}});
