@@ -68,11 +68,45 @@ export function validateTournivalStateTransition(current:any,next:any,{
   for(const [courtNumber,prior] of Object.entries((record||{}) as any)){
    const updated=nextResults?.[roundNumber]?.[courtNumber];
    if(!updated)return fail('A confirmed score cannot be silently removed.');
-   if(JSON.stringify(prior)!==JSON.stringify(updated))corrections++;
   }
  }
  if(corrections&&String(correctionReason).trim().length<6)
   return fail('Score corrections require an audit reason.');
+ // Validate the server-authoritative continuous-court projection for EVERY
+ // writer, not just delegated hosts. A stale/malformed host snapshot may not
+ // remove matches, invent players, or double-book a player/court.
+ if(next.matches!==undefined) {
+  if(!Array.isArray(next.matches))return fail('Invalid match list.');
+  const seenMatchIds=new Set<string>(),activeCourts=new Set<number>(),activePlayers=new Set<string>();
+  for(const match of next.matches){
+   if(typeof match.id!=='string'||!match.id||seenMatchIds.has(match.id))
+    return fail('Missing or duplicate match identity.');
+   seenMatchIds.add(match.id);
+   const ids=[...(match.teamA||[]),...(match.teamB||[])];
+   if(ids.length!==4||new Set(ids).size!==4||ids.some(id=>!eligible.has(id)))
+    return fail('Match has unknown, missing or repeated players.');
+   if(!['waiting','playing','completed'].includes(match.status))
+    return fail('Invalid match lifecycle.');
+   if(match.status==='playing'){
+    if(!Number.isInteger(match.court)||match.court<1||match.court>next.numCourts||activeCourts.has(match.court))
+     return fail('Two active matches cannot occupy one court.');
+    activeCourts.add(match.court);
+    for(const id of ids){
+     if(activePlayers.has(id))return fail('Player cannot play simultaneous matches.');
+     activePlayers.add(id);
+    }
+   }
+   if(match.status==='completed'&&!validScore(match.result,format))
+    return fail('Invalid completed match result.');
+  }
+  if(current?.matches?.length){
+   if(current.matches.length!==next.matches.length)
+    return fail('Existing match list cannot be silently shortened or expanded.');
+   const existingIds=new Set(current.matches.map((m:any)=>m.id));
+   if([...seenMatchIds].some(id=>!existingIds.has(id)))
+    return fail('Existing fixture identity cannot be replaced.');
+  }
+ }
  if(current?.matches?.length){
   const previous=new Map(current.matches.map((m:any)=>[m.id,m]));
   for(const match of next.matches||[]){
