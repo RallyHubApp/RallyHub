@@ -359,12 +359,9 @@ Deno.serve(async(req)=>{
             },'-created_date',5);
             const eventTournament=tournaments?.[0];
             if(eventTournament&&String(eventTournament.format).toLowerCase()==='tournival'){
-              const ids=Array.isArray(eventTournament.player_ids)?eventTournament.player_ids:[];
-              if(!ids.includes(reg.player_id)){
-                await base44.asServiceRole.entities.Tournament.update(eventTournament.id,{
-                  player_ids:[...ids,reg.player_id]
-                });
-              }
+              await base44.asServiceRole.entities.Tournament.updateMany({
+                id:eventTournament.id,tenant_id:reg.tenant_id
+              },{$addToSet:{player_ids:reg.player_id}});
             }
           }
         }

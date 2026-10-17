@@ -100,7 +100,7 @@ Deno.serve(async(req)=>{
     });
     // Initialise the event's durable reservation counter exactly once. Existing
     // registration history is counted at migration; concurrent initialisers are
-    // excluded by the $exists predicate. No read-check-create capacity gate.
+    // excluded by the null predicate. No read-check-create capacity gate.
     await base44.asServiceRole.entities.Tournament.updateMany({
       id:tournament.id,tenant_id:tournament.tenant_id,
       tournival_reserved_count:null

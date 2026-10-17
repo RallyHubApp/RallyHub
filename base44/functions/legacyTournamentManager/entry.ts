@@ -164,16 +164,31 @@ Deno.serve(async (req) => {
       const row=rows?.[0];
       if(!row)return Response.json({error:'Registration not found'},{status:404});
       if(row.registration_status==='withdrawn')return Response.json({success:true,duplicate:true});
-      await base44.asServiceRole.entities.TournivalRegistration.update(row.id,{
-        registration_status:'withdrawn',checked_in_at:'',withdrawn_at:new Date().toISOString()
-      });
+      const withdrew=await base44.asServiceRole.entities.TournivalRegistration.updateMany({
+        id:row.id,tenant_id:tournament.tenant_id,
+        registration_status:row.registration_status
+      },{$set:{registration_status:'withdrawn',checked_in_at:'',
+        withdrawn_at:new Date().toISOString()}});
+      if(withdrew.updated!==1)return Response.json({
+        error:'Registration changed during withdrawal. Refresh before retrying.'
+      },{status:409});
+      // Release exactly one reserved capacity unit for a previously confirmed
+      // or pending-payment registration, never for a waitlisted entry.
+      if(['confirmed','pending_payment'].includes(row.registration_status)){
+        const released=await base44.asServiceRole.entities.Tournament.updateMany({
+          id:tournament.id,tenant_id:tournament.tenant_id,
+          tournival_reserved_count:{$gt:0}
+        },{$inc:{tournival_reserved_count:-1}});
+        if(released.updated!==1)console.error('Tournival capacity counter requires reconciliation',tournament.id);
+      }
       // Played matches are NEVER redrawn or deleted as a consequence.
       const raw=tournament.tournival_state;
       let state:any=null;
       try{state=typeof raw==='string'?JSON.parse(raw):raw}catch{}
       if(!state?.rounds?.length){
-        const playerIds=(tournament.player_ids||[]).filter((id:string)=>id!==row.player_id);
-        await base44.asServiceRole.entities.Tournament.update(tournament.id,{player_ids:playerIds});
+        await base44.asServiceRole.entities.Tournament.updateMany({
+          id:tournament.id,tenant_id:tournament.tenant_id
+        },{$pull:{player_ids:row.player_id}});
       }
       await audit(base44,user,tournament,'tournival_withdrawal',{
         registrationId,playerId:row.player_id,reason,requiresRefund:row.payment_status==='paid'
