@@ -118,3 +118,10 @@ These are sandbox code tests, NOT live production acceptance.
 - Focused new regression test rejects court collision, player overlap, duplicate IDs, removed/replaced matches and fake completed results. Deno validation 5/5 PASS, full Tournival in-memory gate PASS, application build PASS.
 - **Safety boundary unchanged:** this strengthens validation but does NOT make Base44 entity updates atomic; real cross-session races still require a supported transaction/locking mechanism and independent backend verification.
 - Additional transition safeguards: a completed match cannot silently revert to waiting/play status or change participant composition; pending match substitutions require an explicit reason. New focused tests cover these cases. Deno transition tests 6/6 PASS and application build / complete pure sporting gate PASS. These checks do not provide database atomicity.
+
+## Persistent concurrency test gate (independent database)
+- **Base44 environment check:** only the `main` branch is exposed by the application backend. The remote schemas `TournivalSession`, `TournivalMatch`, `TournivalRegistration` and `PaymentRecord` exist. No isolated Base44 entity database branch is available through the connected tool, so NO test records were created there.
+- Added `scripts/tournivalPersistentGate.py` using ephemeral on-disk SQLite with genuine SQL transactions (`BEGIN IMMEDIATE`), persisted revision checks and an idempotency-operation table. This is a reference design for the missing Base44 concurrency primitive, **not a claim that Base44 writes are atomic**.
+- 80 simultaneous host scoring attempts: exactly one accepted, 79 stale/concurrent updates rejected. Persisted match and session revision checked.
+- 80 simultaneous verified-status payment callback operations persisted consistently; replay rejected, incorrect amount/currency rejected, late failed callback did not reverse paid registration; SQLite integrity passed.
+- External SumUp callbacks and persistent Base44 endpoints were NOT invoked. Next safe execution needs a verified isolated Base44 data environment or an authorised atomic backend primitive, without exposing live tenant data.
