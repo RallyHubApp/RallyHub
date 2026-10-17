@@ -16,7 +16,8 @@ Personalised player-link notices use supporting purpose tournival_player_link; *
 
 ## Owner's send controls
 - In the Communications Centre, view, personalise and edit any message/template before choosing to send. The eight approvals are baseline copy, not an obligation to send exactly that copy.
-- The existing workflow queues notices, and only an explicit operator dispatch releases email. WhatsApp is manual prepare/handoff, with consent checks.
+- Newly triggered approved **email** notifications automatically claim and send their own freshly queued Communications Centre attempt. Past queues, manual resends and uncertain attempts are never automatically drained/retried. WhatsApp remains manual prepare/handoff, with consent checks; automated WhatsApp is not claimed.
+- The Communications Centre retains the approved templates, personalised delivery history, edit capability and audited manual resend.
 - A revised email must be rendered/previewed with the active tenant brand kit and all secure action URLs. A previously queued rendered message is a snapshot; an edit to its base template **must not silently change the queued snapshot**. Rebuild or issue a new version through a controlled process after reviewing any change.
 - Guard sending on current registration/payment status, tenant permissions, suppression and valid personal links; simulated rehearsal must never send.
 - Post-event thank-you is a **distinct purpose** in the template manager, but requires a dedicated event queue trigger before automated delivery; do not confuse source availability with operational integration.

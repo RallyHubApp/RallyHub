@@ -1,5 +1,6 @@
 import {resolveApprovedTournivalTemplate} from './tournivalTemplates.ts';
 import {queueTournivalCommunication} from './tournivalDelivery.ts';
+import {dispatchNewTournivalNotice} from './tournivalAutoDispatch.ts';
 /**
  * Event-side bridge: ledger only. Never sends or fabricates a brand/template.
  * Missing approval leaves an auditable server warning and is recoverable
@@ -18,8 +19,20 @@ export async function queueApprovedTournivalNotice(base44:any,details:any){
  });
 }
 export async function safelyQueueTournivalNotice(base44:any,details:any){
- try{return await queueApprovedTournivalNotice(base44,details)}
- catch(e:any){
+ try{
+  const queued=await queueApprovedTournivalNotice(base44,details);
+  // New original event only; never trigger on duplicate, recovery or resend.
+  if(!queued.queued)return queued;
+  try{
+   const dispatch=await dispatchNewTournivalNotice(base44,details,queued);
+   return {...queued,automaticallySent:dispatch.sent===true,
+    deliveryNeedsReview:dispatch.sent!==true};
+  }catch(e:any){
+   console.warn('Tournival email dispatch needs Centre review',details.purpose,
+    String(e?.message||e).slice(0,160));
+   return {...queued,automaticallySent:false,deliveryNeedsReview:true};
+  }
+ }catch(e:any){
   // No send, no fallback, and do not fail a completed payment/registration.
   console.warn('Tournival Centre queue requires review',details?.purpose,
    details?.eventId,String(e?.message||e).slice(0,180));
