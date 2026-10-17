@@ -89,6 +89,16 @@ export async function dispatchNewTournivalNotice(base44:any,details:any,queued:a
    event_type:'sent',occurred_at:new Date().toISOString(),
    metadata:{automatic:true,trigger:campaign.purpose}
   });
+  // Keep the Centre's campaign and message view consistent with the provider
+  // delivery attempt. These are audit projections; never retry the provider
+  // merely because the projection update failed.
+  try{
+   await Promise.all([
+    base44.asServiceRole.entities.CommunicationMessage.update(message.id,{status:'sent'}),
+    base44.asServiceRole.entities.CommunicationCampaign.update(campaign.id,{status:'completed'})
+   ]);
+  }catch(e:any){console.warn('Tournival delivery history projection needs review',
+    attempt.id,String(e?.message||e).slice(0,120));}
   return {sent:true,attemptId:attempt.id};
  }catch(e:any){
   // The provider MAY have delivered before returning an error; never auto retry.
