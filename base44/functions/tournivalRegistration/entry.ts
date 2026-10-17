@@ -7,6 +7,7 @@
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 import { createCheckout, providerConfigured, type ProviderAccount } from './payments.ts';
+import { allocateTournivalWaitlistTicket } from './waitlistAllocation.ts';
 const clean=(value:any,max=240)=>String(value??'').trim().replace(/\s+/g,' ').slice(0,max);
 const emailKey=(value:any)=>clean(value,180).toLowerCase();
 const safeError=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -116,24 +117,15 @@ Deno.serve(async(req)=>{
     const status=!accepted?'waitlisted':fee>0?'pending_payment':'confirmed';
     let waitlistTicket:number|null=null;
     if(!accepted){
-      // Allocate a durable, unique FIFO ticket by CAS; do NOT use the stale
-      // number of waitlisted records observed at request start.
-      await base44.asServiceRole.entities.Tournament.updateMany({
-        id:tournament.id,tenant_id:tournament.tenant_id,tournival_waitlist_sequence:null
-      },{$set:{tournival_waitlist_sequence:Math.max(0,...rows.map((r:any)=>Number(r.waitlist_position)||0))}});
-      let won=false;
-      for(let attempt=0;attempt<60;attempt++){
-        const current=(await base44.asServiceRole.entities.Tournament.filter({
-          id:tournament.id,tenant_id:tournament.tenant_id
-        },'-created_date',1))?.[0];
-        const seen=Number(current?.tournival_waitlist_sequence);
-        if(!Number.isSafeInteger(seen)||seen<0)break;
-        const updated=await base44.asServiceRole.entities.Tournament.updateMany({
-          id:tournament.id,tenant_id:tournament.tenant_id,tournival_waitlist_sequence:seen
-        },{$inc:{tournival_waitlist_sequence:1}});
-        if(updated.updated===1){waitlistTicket=seen+1;won=true;break;}
+      try{
+        waitlistTicket=await allocateTournivalWaitlistTicket({
+          tournaments:base44.asServiceRole.entities.Tournament,
+          tournamentId:tournament.id,tenantId:tournament.tenant_id,
+          seed:Math.max(0,...rows.map((r:any)=>Number(r.waitlist_position)||0))
+        });
+      }catch{
+        return safeError('Waitlist is busy or needs reconciliation. Please retry the same registration operation.',503);
       }
-      if(!won)return safeError('Waitlist is busy. Please retry with the same registration operation ID.',503);
     }
     let registration=await base44.asServiceRole.entities.TournivalRegistration.create({
       tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,
