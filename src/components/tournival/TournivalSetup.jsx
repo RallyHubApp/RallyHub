@@ -77,7 +77,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
   const handleConfirmSeeds = async () => {
     setSeedConfirmed(true);
     if (onSaveState) {
-      await onSaveState({ ...(existingState || {}), seedOrder: currentSeedIds, seedOrderConfirmed: true, seedOrderLocked: false, playerIds: currentSeedIds, results: existingState?.results || {}, currentRound: existingState?.currentRound || 0 });
+      await onSaveState({ ...(existingState || {}), seedOrder: currentSeedIds, seedOrderConfirmed: true, seedOrderLocked: false, playerIds: currentSeedIds, rounds: existingState?.rounds || [], numCourts: Number(numCourts), numRounds: Number(numRounds), matchFormat, venueMinutes, matchMinutes: duration.matchMinutes, changeoverMinutes, results: existingState?.results || {}, currentRound: existingState?.currentRound || 0 });
     }
     toast.success('Seed order confirmed');
   };

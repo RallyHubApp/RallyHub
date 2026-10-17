@@ -6,6 +6,7 @@ import { Trophy, Zap, Wifi, BarChart2, ChevronRight, Check, Swords } from 'lucid
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { computeLeaderboard } from '@/lib/tournivalEngine';
+import TournivalHall from './TournivalHall';
 
 const STAGE_ORDER = ['QF', 'SF', 'Final', '3rd'];
 const STAGE_LABELS = { QF: 'Quarter-Finals', SF: 'Semi-Finals', Final: 'Final', '3rd': '3rd/4th Playoff' };
@@ -286,6 +287,8 @@ export default function PublicTournivalView({ tournament, players, liveIndicator
     });
     await onRefresh();
   };
+
+  if (state?.matches?.length) return <TournivalHall tournament={tournament} state={state} playerMap={playerMap} />;
 
   if (!state) {
     return (
