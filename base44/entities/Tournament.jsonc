@@ -119,6 +119,10 @@
         "type": "object"
       }
     },
+    "tournival_state": {
+      "type": ["string", "object", "null"],
+      "description": "Independent Tournival V1 state; never shared with King of the Court"
+    },
     "kotc_state": {
       "type": [
         "object",

@@ -173,7 +173,8 @@ const TABS = [
 
 // ── Main public Tournival view ─────────────────────────────────────────────────
 export default function PublicTournivalView({ tournament, players, liveIndicator, callPublicRegister, onRefresh }) {
-  const state = tournament.kotc_state ? JSON.parse(tournament.kotc_state) : null;
+  const storedState = tournament.tournival_state ?? (tournament.format?.toLowerCase() === 'tournival' ? tournament.kotc_state : null);
+  const state = storedState ? (typeof storedState === 'string' ? JSON.parse(storedState) : storedState) : null;
   const [activeTab, setActiveTab] = useState(state?.knockoutState ? 'knockout' : state ? 'scores' : 'scores');
   const [submitting, setSubmitting] = useState(false);
 
@@ -212,7 +213,7 @@ export default function PublicTournivalView({ tournament, players, liveIndicator
     await callPublicRegister({
       tournamentId: tournament.id,
       action: 'update_kotc',
-      kotc_state: JSON.stringify(newState),
+      tournival_state: JSON.stringify(newState),
       kotc_current_round: state.kotc_current_round || currentRound,
       status: 'In Progress',
     });
@@ -232,7 +233,7 @@ export default function PublicTournivalView({ tournament, players, liveIndicator
     await callPublicRegister({
       tournamentId: tournament.id,
       action: 'update_kotc',
-      kotc_state: JSON.stringify(newState),
+      tournival_state: JSON.stringify(newState),
       kotc_current_round: nextRound,
       status: isGroupComplete ? 'Group Complete' : 'In Progress',
     });
@@ -279,7 +280,7 @@ export default function PublicTournivalView({ tournament, players, liveIndicator
     await callPublicRegister({
       tournamentId: tournament.id,
       action: 'update_kotc',
-      kotc_state: JSON.stringify(newState),
+      tournival_state: JSON.stringify(newState),
       kotc_current_round: state.kotc_current_round || currentRound,
       status: tournament.status,
     });

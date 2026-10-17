@@ -136,9 +136,10 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
 
   // Parse state from tournament
   const state = useMemo(() => {
-    if (!tournament.kotc_state) return null;
-    try { return JSON.parse(tournament.kotc_state); } catch { return null; }
-  }, [tournament.kotc_state]);
+    const stored = tournament.tournival_state ?? (tournament.format?.toLowerCase() === 'tournival' ? tournament.kotc_state : null);
+    if (!stored) return null;
+    try { return typeof stored === 'string' ? JSON.parse(stored) : stored; } catch { return null; }
+  }, [tournament.kotc_state, tournament.tournival_state, tournament.format]);
 
   const hasFixtures = !!state?.rounds?.length;
   const isStarted = hasFixtures;
@@ -165,8 +166,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
         ? 'In Progress'
         : tournament.status;
     await base44.entities.Tournament.update(tournament.id, {
-      kotc_state: JSON.stringify(newState),
-      kotc_current_round: newState.currentRound ?? tournament.kotc_current_round ?? 0,
+      tournival_state: JSON.stringify(newState),
       status: tournamentStatus,
     });
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
