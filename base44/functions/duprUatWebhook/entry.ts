@@ -16,6 +16,7 @@ Deno.serve(async req=>{
  if(req.method!=='POST')return Response.json({error:'Method not allowed'},{status:405});
  let payload:any;
  try{payload=await req.json();}catch{return Response.json({error:'Invalid JSON'},{status:400});}
+ if(payload?.event==='TEST'&&payload?.clientId===clientId)return Response.json({success:true,handshake:true});
  if(!validRatingEnvelope(payload,clientId))return Response.json({error:'Invalid DUPR rating envelope'},{status:400});
  const msg=payload.message||{};
  if(!/^[A-Za-z0-9]{6,12}$/.test(String(msg.duprId)))return Response.json({error:'Invalid DUPR ID'},{status:400});
