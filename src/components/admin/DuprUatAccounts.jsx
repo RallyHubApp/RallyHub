@@ -29,7 +29,8 @@ export default function DuprUatAccounts(){
   try{
    const preflight=await duprUatPreflight(call);
    const lifecycle=await duprUatSyntheticMatch(call,preflight.verified.accounts,preflight.verified.clubId);
-   setResult({success:true,environment:'uat',preflight:preflight.verified,ratings:preflight.ratings,matchLifecycle:lifecycle});
+   const bulk=await duprUatBulkAcceptance(call,preflight.verified.accounts,preflight.verified.clubId);
+   setResult({success:true,environment:'uat',preflight:preflight.verified,ratings:preflight.ratings,matchLifecycle:lifecycle,bulk});
    await reload();
   }catch(e){setError(e?.response?.data?.error||e.message||'Independent DUPR UAT failed');}
   finally{setBusy('');}
