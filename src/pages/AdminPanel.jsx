@@ -2927,9 +2927,8 @@ Brian`;
               {!duprResult.authenticated && <p className="mt-2 text-sm text-destructive">{duprResult.message || 'Authentication failed.'}{duprResult.httpStatus ? ` (HTTP ${duprResult.httpStatus})` : ''}</p>}
             </div>}
           </GlassCard>
+          <DuprUatAccounts />
         </TabsContent>
-
-        <DuprUatAccounts />
         <TabsContent value="assets" className="mt-4">
           <GlassCard>
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Upload className="w-4 h-4 text-primary" /> RallyHub Asset Uploader</h3>
