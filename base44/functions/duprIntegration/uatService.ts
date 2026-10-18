@@ -161,14 +161,16 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
    if(players.some((id:string)=>!ids.has(id)))return fail('Only four verified UAT identities allowed',403);
    const previous=await entities(b).DuprUatSubmission.filter({identifier:match.identifier},'-submitted_at',5);
    if(previous?.length)return fail('Match identifier previously used or pending reconciliation',409);
+   const reserved=await entities(b).DuprUatSubmission.create({
+    identifier:match.identifier,status:'needs_reconciliation',submitted_by_user_id:user.id,
+    submitted_at:now(),last_action_at:now()
+   });
    const token=await partnerToken();
    const result=await duprRequest(UAT_PARTNER+'/match/v1.0/create',{method:'POST',token,body:match});
    const receipt=result.result||{};
-   await entities(b).DuprUatSubmission.create({
-    identifier:match.identifier,match_code:String(receipt.matchCode||''),
-    hashed_match_code:String(receipt.hashedMatchCode||''),
-    status:receipt.matchCode?'submitted':'needs_reconciliation',
-    submitted_by_user_id:user.id,submitted_at:now(),last_action_at:now()
+   await entities(b).DuprUatSubmission.update(reserved.id,{
+    match_code:String(receipt.matchCode||''),hashed_match_code:String(receipt.hashedMatchCode||''),
+    status:receipt.matchCode?'submitted':'needs_reconciliation',last_action_at:now()
    });
    return reply({success:true,acknowledged:!!receipt.matchCode,identifier:match.identifier,
     matchCode:receipt.matchCode||null});
