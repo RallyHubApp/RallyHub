@@ -13,6 +13,18 @@
     },
     "observed_at": {
       "type": "string"
+    },
+    "singles": {
+      "type": "number"
+    },
+    "doubles": {
+      "type": "number"
+    },
+    "connection_slot": {
+      "type": "string"
+    },
+    "raw_json": {
+      "type": "string"
     }
   },
   "required": [
