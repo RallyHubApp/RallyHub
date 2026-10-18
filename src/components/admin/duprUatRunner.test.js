@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {duprUatPreflight,duprUatSyntheticMatch,duprUatBulkAcceptance} from './duprUatRunner.js';
-const accounts=['brian','marie','roisin','rallyhub'].map((slot,i)=>({slot,duprId:'ABC12'+i}));
+const accounts=['brian','marie','roisin','rallyhub'].map((slot,i)=>({slot,duprId:'ABC12'+i,clubAdmin:i===0}));
 test('one-click DUPR preflight completes four account gates',async()=>{
  const calls=[];
  const call=async(action)=>{calls.push(action);if(action==='uat_match_preflight')return {ready:true,accounts,clubId:'6459394157'};return {success:true};};
