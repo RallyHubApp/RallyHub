@@ -66,6 +66,7 @@ export default function DuprUatAccounts(){
       <Button size="sm" disabled={!!busy} onClick={()=>begin(s.id)}>{row?.linked?'Reconnect':'Connect via DUPR SSO'}</Button>
       <Button size="sm" variant="outline" disabled={!row?.linked||!!busy} onClick={()=>execute('uat_verify',{slot:s.id})}>Verify & check ratings/club</Button>
       <Button size="sm" variant="outline" disabled={!row?.linked||!!busy} onClick={()=>execute('uat_refresh',{slot:s.id})}>Test refresh</Button>
+      <Button size="sm" variant="outline" disabled={!row?.linked||!!busy} onClick={()=>execute('uat_subscribe_rating',{slot:s.id})}>Subscribe ratings</Button>
      </div>
     </div>;
    })}
