@@ -39,9 +39,12 @@ export function basicDuprIdentity(body:any){
 }
 export function validSsoOrigin(origin:string){return origin===UAT_LOGIN;}
 export function entitled(value:any,tier:'basic'|'premium'|'verified'='basic'){
- const list=value?.entitlements?.tournaments;
- return Array.isArray(list)&&list.includes('BASIC_L1')
-   &&(tier==='basic'||list.includes(tier==='premium'?'PREMIUM_L1':'VERIFIED_L1'));
+ const response=value?.result||value;
+ const subscriptions=Array.isArray(response?.subscriptions)?response.subscriptions:[response];
+ const codes=new Set(subscriptions.flatMap((subscription:any)=>
+   Array.isArray(subscription?.entitlements?.tournaments)?subscription.entitlements.tournaments:[]));
+ return codes.has('BASIC_L1')
+   &&(tier==='basic'||codes.has(tier==='premium'?'PREMIUM_L1':'VERIFIED_L1'));
 }
 export function canManageUatClub(memberships:any,clubId:string=UAT_TEST_CLUB){
  const rows=Array.isArray(memberships)?memberships:memberships?.result||memberships?.results||[];
