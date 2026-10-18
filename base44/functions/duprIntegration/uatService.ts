@@ -130,6 +130,34 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
    return reply({success:true,environment:'uat',clubId:UAT_TEST_CLUB,eligible,authorised,
     accounts:rows,submissionPerformed:false,ready:eligible&&authorised});
   }
+  if(action==='uat_submit_match'){
+   if(body.confirmUatTest!==true)return fail('Explicit UAT confirmation required',400);
+   const preflight=await handleIndependentDuprUat('uat_match_preflight',{},b,user);
+   const gate=await preflight!.json();
+   if(!gate.ready)return fail('Four verified eligible test users and club organiser required',409);
+   const match=body.match;
+   const validation=validateMatch(match,true);
+   if(!validation.ok)return fail('Invalid UAT match: '+validation.reason,400);
+   if(match.matchSource!=='CLUB'||String(match.clubId)!==UAT_TEST_CLUB
+    ||!String(match.identifier).startsWith('RH-UAT-'))
+    return fail('UAT test club source and identifier required',403);
+   const ids=new Set((gate.accounts||[]).map((a:any)=>a.duprId));
+   const players=[match.teamA.player1,match.teamA.player2,match.teamB.player1,match.teamB.player2].filter(Boolean);
+   if(players.some((id:string)=>!ids.has(id)))return fail('Only four verified UAT identities allowed',403);
+   const previous=await entities(b).DuprUatSubmission.filter({identifier:match.identifier},'-submitted_at',5);
+   if(previous?.length)return fail('Match identifier previously used or pending reconciliation',409);
+   const token=await partnerToken();
+   const result=await duprRequest(UAT_PARTNER+'/match/v1.0/create',{method:'POST',token,body:match});
+   const receipt=result.result||{};
+   await entities(b).DuprUatSubmission.create({
+    identifier:match.identifier,match_code:String(receipt.matchCode||''),
+    hashed_match_code:String(receipt.hashedMatchCode||''),
+    status:receipt.matchCode?'submitted':'needs_reconciliation',
+    submitted_by_user_id:user.id,submitted_at:now(),last_action_at:now()
+   });
+   return reply({success:true,acknowledged:!!receipt.matchCode,identifier:match.identifier,
+    matchCode:receipt.matchCode||null});
+  }
   if(action==='uat_validate_match'){
    const match=body.match;
    const result=validateMatch(match,body.clubAdmin===true);
