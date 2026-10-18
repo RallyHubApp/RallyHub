@@ -158,6 +158,36 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
    return reply({success:true,acknowledged:!!receipt.matchCode,identifier:match.identifier,
     matchCode:receipt.matchCode||null});
   }
+  if(['uat_update_match','uat_delete_match'].includes(action)){
+   if(body.confirmUatTest!==true)return fail('Explicit UAT confirmation required',400);
+   const preflight=await handleIndependentDuprUat('uat_match_preflight',{},b,user);
+   const gate=await preflight!.json();
+   if(!gate.ready)return fail('Four verified test users and club organiser required',409);
+   const identifier=String(body.identifier||body.match?.identifier||'');
+   if(!identifier.startsWith('RH-UAT-'))return fail('Only UAT matches can be modified',403);
+   const records=await entities(b).DuprUatSubmission.filter({identifier},'-submitted_at',5);
+   if(records?.length!==1||!records[0].match_code||records[0].status==='deleted')
+    return fail('Original DUPR acknowledgement required',409);
+   const stored=records[0],token=await partnerToken();
+   if(action==='uat_delete_match'){
+    const receipt=await duprRequest(UAT_PARTNER+'/match/v1.0/delete',{method:'DELETE',token,
+     body:{identifier,matchCode:stored.match_code}});
+    await entities(b).DuprUatSubmission.update(stored.id,{status:'deleted',last_action_at:now()});
+    return reply({success:true,identifier,deleted:receipt.status==='SUCCESS'});
+   }
+   const m=body.match;
+   const valid=validateMatch(m,true);
+   if(!valid.ok||m.identifier!==identifier||m.matchSource!=='CLUB'
+    ||String(m.clubId)!==UAT_TEST_CLUB)return fail('Invalid UAT correction',400);
+   const ids=new Set((gate.accounts||[]).map((a:any)=>a.duprId));
+   if([m.teamA.player1,m.teamA.player2,m.teamB.player1,m.teamB.player2].filter(Boolean)
+     .some((id:string)=>!ids.has(id)))return fail('Non-UAT identity in correction',403);
+   const matchId=Number(stored.match_code);
+   if(!Number.isSafeInteger(matchId))return fail('DUPR match ID requires review',409);
+   const receipt=await duprRequest(UAT_PARTNER+'/match/v1.0/update',{method:'POST',token,body:{...m,matchId}});
+   await entities(b).DuprUatSubmission.update(stored.id,{status:'updated',last_action_at:now()});
+   return reply({success:true,identifier,updated:receipt.status==='SUCCESS'});
+  }
   if(action==='uat_validate_match'){
    const match=body.match;
    const result=validateMatch(match,body.clubAdmin===true);
