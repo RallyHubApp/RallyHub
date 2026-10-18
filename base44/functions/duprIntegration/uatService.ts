@@ -126,6 +126,12 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
    }
    return reply({success:true,environment:'uat',events});
   }
+  if(action==='uat_webhook_diagnostic'){
+   const endpoint=Deno.env.get('DUPR_UAT_WEBHOOK_URL')||'';
+   if(!endpoint)return fail('Webhook endpoint not configured',503);
+   const response=await fetch(endpoint,{method:'GET',signal:AbortSignal.timeout(10000)});
+   return reply({success:true,environment:'uat',handshakeStatus:response.status,handshakePassed:response.status===200});
+  }
   if(action==='uat_register_webhook'){
    const webhookUrl=Deno.env.get('DUPR_UAT_WEBHOOK_URL')||'';
    const secret=Deno.env.get('DUPR_UAT_WEBHOOK_KEY')||'';
