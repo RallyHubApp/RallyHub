@@ -2929,6 +2929,7 @@ Brian`;
           </GlassCard>
         </TabsContent>
 
+        <DuprUatAccounts />
         <TabsContent value="assets" className="mt-4">
           <GlassCard>
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Upload className="w-4 h-4 text-primary" /> RallyHub Asset Uploader</h3>
