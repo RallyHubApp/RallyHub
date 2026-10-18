@@ -20,7 +20,7 @@ Deno.serve(async req=>{
  // The URL secret was validated above; acknowledge test messages without recording them.
  if(!['RATING','RATING_SEED'].includes(payload?.event))return Response.json({success:true,handshake:true});
  if(!validRatingEnvelope(payload,clientId)){
-  console.warn('DUPR UAT webhook skipped malformed rating envelope');
+  console.warn('DUPR UAT webhook skipped malformed rating envelope', {clientIdMatches:payload?.clientId===clientId, eventRecognised:['RATING','RATING_SEED'].includes(payload?.event), messageObject:!!payload?.message&&typeof payload.message==='object', duprIdString:typeof payload?.message?.duprId==='string'});
   return Response.json({success:true,ignored:true});
  }
  const msg=payload.message||{};
