@@ -47,7 +47,8 @@ export function entitled(value:any,tier:'basic'|'premium'|'verified'='basic'){
    &&(tier==='basic'||codes.has(tier==='premium'?'PREMIUM_L1':'VERIFIED_L1'));
 }
 export function canManageUatClub(memberships:any,clubId:string=UAT_TEST_CLUB){
- const rows=Array.isArray(memberships)?memberships:memberships?.result||memberships?.results||[];
+ const value=memberships?.result||memberships;
+ const rows=Array.isArray(value)?value:value?.membership||value?.results||[];
  return Array.isArray(rows)&&rows.some((m:any)=>String(m.clubId)===clubId&&['DIRECTOR','ORGANIZER'].includes(m.role));
 }
 export function validateMatch(match:any,allowedClub:boolean){
