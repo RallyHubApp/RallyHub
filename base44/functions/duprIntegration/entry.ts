@@ -1,4 +1,5 @@
 import { prepareTournivalDuprBatch } from './tournivalMatchAdapter.ts';
+import { handleIndependentDuprUat } from './uatService.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
 const UAT_BASE = 'https://uat.mydupr.com/api';
@@ -23,6 +24,8 @@ Deno.serve(async (req) => {
     const clientKey = Deno.env.get('DUPR_CLIENT_KEY') || '';
     const clientSecret = Deno.env.get('DUPR_CLIENT_SECRET') || '';
     const configured = { clientId: !!clientId, clientKey: !!clientKey, clientSecret: !!clientSecret };
+    const independentUat = await handleIndependentDuprUat(action, body, base44, user);
+    if(independentUat)return independentUat;
 
     if (action === 'status') {
       return Response.json({ success: true, environment: 'uat', apiVersion: API_VERSION, configured, ready: configured.clientId && configured.clientKey && configured.clientSecret });
