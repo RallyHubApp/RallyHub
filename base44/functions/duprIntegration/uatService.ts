@@ -147,8 +147,10 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
     });
     return reply({success:true,registered:registered.status==='SUCCESS',topics:['RATING']});
    }catch(error){
+    const providerStatus=Number((error as any)?.status||0);
+    const diagnostic=String((error as any)?.providerMessage||'').replace(/https?:\/\/[^\s]+/g,'[redacted-url]').replace(/[a-f0-9]{64}/gi,'[redacted]').slice(0,350);
     return reply({success:false,error:'DUPR UAT webhook registration rejected',
-     providerHttpStatus:Number((error as any)?.status||0),
+     providerHttpStatus:providerStatus,providerDetail:diagnostic,
      requestId:String((error as any)?.requestId||'').slice(0,100)},502);
    }
   }
