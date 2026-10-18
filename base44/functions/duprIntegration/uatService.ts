@@ -20,7 +20,8 @@ async function verify(bearer:string){
 async function refreshStored(b:any,record:any,force=false){
  if(!record?.encrypted_token_pair||record.status!=='connected')throw Error('UAT SSO required');
  const pair=await unsealTokens(record.encrypted_token_pair,tokenSecret());
- if(force||Date.parse(record.token_expires_at||'')<Date.now()+5*60_000){
+ const expiry=Date.parse(record.token_expires_at||'');
+ if(force||!Number.isFinite(expiry)||expiry<Date.now()+5*60_000){
   const data=await duprRequest(UAT_PUBLIC+'/auth/v2.0/refresh',{refreshToken:pair.refreshToken});
   const next=data?.result||{};
   if(typeof next.accessToken!=='string'||typeof next.refreshToken!=='string')
