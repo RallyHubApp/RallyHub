@@ -32,3 +32,8 @@ export async function duprUatSyntheticMatch(call,accounts,clubId){
  if(!deleted.deleted)throw Error('DUPR deletion acknowledgement missing');
  return {identifier,created,updated,deleted,duplicateBlocked};
 }
+export async function duprUatBulkAcceptance(call,accounts,clubId){
+ const ids=accounts.map(x=>x.duprId);
+ const prefix='RH-UAT-BULK-'+Date.now();
+ return {ids,prefix,clubId};
+}
