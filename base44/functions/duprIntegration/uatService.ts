@@ -114,6 +114,18 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
     body:{duprIds:[person.duprId],topic:'RATING'}});
    return reply({success:true,slot,subscribed:action==='uat_subscribe_rating',acknowledgement:data?.status||'SUCCESS'});
   }
+  if(action==='uat_rating_events'){
+   const events=[];
+   for(const slot of slots){
+    const record=await recordFor(b,slot,user.id);
+    if(!record?.dupr_id||record.status!=='connected')continue;
+    const rows=await entities(b).DuprRatingUatAudit.filter({provider_id:record.dupr_id},'-observed_at',25);
+    events.push({slot,duprId:record.dupr_id,
+     ratings:(rows||[]).map((r:any)=>({event:r.topic,observedAt:r.observed_at,
+      singles:r.singles??null,doubles:r.doubles??null}))});
+   }
+   return reply({success:true,environment:'uat',events});
+  }
   if(action==='uat_register_webhook'){
    const webhookUrl=Deno.env.get('DUPR_UAT_WEBHOOK_URL')||'';
    const secret=Deno.env.get('DUPR_UAT_WEBHOOK_KEY')||'';
