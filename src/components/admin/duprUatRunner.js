@@ -42,5 +42,11 @@ export async function duprUatBulkAcceptance(call,accounts,clubId){
  const matches=[mk('A',7),mk('B',8)],confirmation={confirmUatTest:true};
  const result=await call('uat_submit_batch',{matches,...confirmation});
  if(!result.acknowledged)throw Error('DUPR bulk acknowledgement incomplete');
- return {submitted:result.submitted,identifiers:matches.map(x=>x.identifier)};
+ const deleted=[];
+ for(const match of matches){
+  const cleaned=await call('uat_delete_match',{identifier:match.identifier,...confirmation});
+  if(!cleaned.deleted)throw Error('DUPR UAT bulk cleanup incomplete');
+  deleted.push(match.identifier);
+ }
+ return {submitted:result.submitted,deleted};
 }
