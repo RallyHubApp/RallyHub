@@ -18,6 +18,9 @@ Deno.test('DUPR user entitlements and UAT club roles',()=>{
  assert(canManageUatClub([{clubId:6459394157,role:'DIRECTOR'}]));
  assert(!canManageUatClub([{clubId:6459394157,role:'PLAYER'}]));
  assert(!canManageUatClub([{clubId:123,role:'DIRECTOR'}]));
+ assert(canManageUatClub({membership:[{clubId:'6459394157',role:'DIRECTOR'}]}));
+ assert(canManageUatClub({result:{membership:[{clubId:'6459394157',role:'ORGANIZER'}]}}));
+ assert(!canManageUatClub({membership:[{clubId:'6459394157',role:'PLAYER'}]}));
 });
 Deno.test('DUPR documented subscriptions response and wrapped response',()=>{
  const subscriptions={subscriptions:[{status:'active',entitlements:{tournaments:['BASIC_L1','PREMIUM_L1']}}]};
