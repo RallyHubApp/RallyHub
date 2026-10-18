@@ -268,7 +268,7 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
    }
    const token=await partnerToken();
    const result=await duprRequest(UAT_PARTNER+'/match/v1.0/batch',{method:'POST',token,body:matches});
-   const successes=result.result?.successes||result.successes||[];
+   const successes=result.result?.matchCodes||result.result?.successes||result.matchCodes||result.successes||[];
    const errors=result.result?.errors||result.errors||[];
    const receipts=[];
    for(const item of successes){
