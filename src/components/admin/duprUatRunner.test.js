@@ -10,3 +10,14 @@ test('one-click DUPR preflight completes four account gates',async()=>{
  assert.equal(calls.filter(x=>x==='uat_refresh').length,4);
  assert.equal(calls.filter(x=>x==='uat_subscribe_rating').length,4);
 });
+test('synthetic UAT match creates, rejects duplicate, updates and deletes',async()=>{
+ let creates=0,updates=0,deletes=0;
+ const call=async(action)=>{
+  if(action==='uat_submit_match'){creates++;if(creates>1)throw Error('duplicate');return {acknowledged:true};}
+  if(action==='uat_update_match'){updates++;return {updated:true};}
+  if(action==='uat_delete_match'){deletes++;return {deleted:true};}
+  throw Error(action);
+ };
+ const out=await duprUatSyntheticMatch(call,accounts,'6459394157');
+ assert(out.duplicateBlocked);assert.equal(creates,2);assert.equal(updates,1);assert.equal(deletes,1);
+});
