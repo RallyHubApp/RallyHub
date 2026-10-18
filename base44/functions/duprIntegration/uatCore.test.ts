@@ -19,6 +19,17 @@ Deno.test('DUPR user entitlements and UAT club roles',()=>{
  assert(!canManageUatClub([{clubId:6459394157,role:'PLAYER'}]));
  assert(!canManageUatClub([{clubId:123,role:'DIRECTOR'}]));
 });
+Deno.test('DUPR documented subscriptions response and wrapped response',()=>{
+ const subscriptions={subscriptions:[{status:'active',entitlements:{tournaments:['BASIC_L1','PREMIUM_L1']}}]};
+ assert(entitled(subscriptions));
+ assert(entitled(subscriptions,'premium'));
+ assert(!entitled(subscriptions,'verified'));
+ assert(entitled({result:subscriptions}));
+ assert(entitled({subscriptions:[{entitlements:{tournaments:['BASIC_L1']}},{entitlements:{tournaments:['VERIFIED_L1']}}]},'verified'));
+ assert(!entitled({subscriptions:[{entitlements:{tournaments:['PREMIUM_L1']}}]},'premium'));
+ assert(!entitled({subscriptions:[]}));
+ assert(!entitled({subscriptions:[{entitlements:{tournaments:'BASIC_L1'}}]}));
+});
 Deno.test('DUPR match errors and allowed sources',()=>{
  assert(validateMatch(match,true).ok);
  assert.equal(validateMatch({...match,teamA:{...match.teamA,player2:'AAAAAA'}},true).reason,'duplicate_player');
