@@ -1,5 +1,5 @@
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
-import {validRatingEnvelope} from '../duprIntegration/ratingEnvelope.ts';
+function validRatingEnvelope(x:any,id:string){return x?.clientId===id&&['RATING','RATING_SEED'].includes(x?.event)&&typeof x?.message?.duprId==='string'}
 /** Only the independent DUPR UAT webhook. Not installed in production. */
 Deno.serve(async req=>{
  const secret=Deno.env.get('DUPR_UAT_WEBHOOK_KEY')||'';
