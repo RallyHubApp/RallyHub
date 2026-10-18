@@ -141,10 +141,16 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
     return fail('Secure UAT webhook endpoint not configured',503);
    if(!parsed.pathname.endsWith('/duprUatWebhook'))return fail('Incorrect DUPR UAT webhook path',400);
    const bearer=await partnerToken();
-   const registered=await duprRequest(UAT_PARTNER+'/v1.0/webhook',{
-    method:'POST',token:bearer,body:{webhookUrl:parsed.toString(),topics:['RATING']}
-   });
-   return reply({success:true,registered:registered.status==='SUCCESS',topics:['RATING']});
+   try{
+    const registered=await duprRequest(UAT_PARTNER+'/v1.0/webhook',{
+     method:'POST',token:bearer,body:{webhookUrl:parsed.toString(),topics:['RATING']}
+    });
+    return reply({success:true,registered:registered.status==='SUCCESS',topics:['RATING']});
+   }catch(error){
+    return reply({success:false,error:'DUPR UAT webhook registration rejected',
+     providerHttpStatus:Number((error as any)?.status||0),
+     requestId:String((error as any)?.requestId||'').slice(0,100)},502);
+   }
   }
   if(action==='uat_match_preflight'){
    const rows=[];
