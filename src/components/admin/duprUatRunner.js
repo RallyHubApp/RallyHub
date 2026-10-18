@@ -30,5 +30,5 @@ export async function duprUatSyntheticMatch(call,accounts,clubId){
  if(!updated.updated)throw Error('DUPR correction acknowledgement missing');
  const deleted=await call('uat_delete_match',{identifier,...flags});
  if(!deleted.deleted)throw Error('DUPR deletion acknowledgement missing');
- return {identifier,created,updated,deleted};
+ return {identifier,created,updated,deleted,duplicateBlocked};
 }
