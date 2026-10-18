@@ -25,6 +25,23 @@ Deno.test('rehearsals, opt-out and incomplete finals cannot be submitted',()=>{
   assertEquals(prepare(override).matches.length,0);
  }
 });
+Deno.test('impossible calendar dates are excluded',()=>{
+ const out=prepareTournivalDuprBatch({
+  state,tournamentId:'e1',eventName:'Test Tournival',matchDate:'2026-02-30',
+  location:'Ennis',players,consents:ids
+ });
+ assertEquals(out.matches.length,0);
+ assertEquals(out.excluded[0].reason,'event_metadata_missing');
+});
+Deno.test('distinct players cannot share a DUPR identity in one match',()=>{
+ const duplicatePlayers={...players,b:{duprId:players.a.duprId}};
+ const out=prepareTournivalDuprBatch({
+  state,tournamentId:'e1',eventName:'Test Tournival',matchDate:'2026-10-17',
+  location:'Ennis',players:duplicatePlayers,consents:ids
+ });
+ assertEquals(out.matches.length,0);
+ assert(out.excluded.every(x=>x.reason==='duplicate_dupr_identity'));
+});
 Deno.test('unconsented, timed and invalid scores are excluded',()=>{
  assertEquals(prepare({},['a','b','c']).matches.length,0);
  assertEquals(prepare({matchFormat:'timed_10'}).matches.length,0);
