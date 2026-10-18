@@ -132,7 +132,11 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
    const response=await fetch(endpoint,{method:'GET',signal:AbortSignal.timeout(10000)});
    const post=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientId:'uat-handshake',event:'TEST',message:{}}),signal:AbortSignal.timeout(10000)});
    const postText=(await post.text()).replace(/https?:\/\/[^\s"']+/g,'[redacted-url]').replace(/[a-f0-9]{64}/gi,'[redacted]').slice(0,360);
-   return reply({success:true,environment:'uat',handshakeStatus:response.status,postHandshakeStatus:post.status,postResponse:postText,handshakePassed:response.status===200&&post.status===200});
+   const previewUrl=new URL(endpoint);
+   previewUrl.hostname='rallyhub.base44.app';
+   const preview=await fetch(previewUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientId:'uat-handshake',event:'TEST',message:{}}),signal:AbortSignal.timeout(10000)});
+   const previewText=(await preview.text()).slice(0,160);
+   return reply({success:true,environment:'uat',handshakeStatus:response.status,postHandshakeStatus:post.status,postResponse:postText,previewPostStatus:preview.status,previewPostResponse:previewText,handshakePassed:response.status===200&&post.status===200});
   }
   if(action==='uat_register_webhook'){
    const webhookUrl=Deno.env.get('DUPR_UAT_WEBHOOK_URL')||'';
