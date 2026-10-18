@@ -224,6 +224,7 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
    const p=await handleIndependentDuprUat('uat_match_preflight',{},b,user);
    const gate=await p!.json();
    if(!gate.ready)return fail('Four verified UAT players and organiser required',409);
+   if(!gate.accounts?.some((a:any)=>a.slot===body.submitterSlot&&a.clubAdmin===true))return fail('DUPR submitting user must be club director or organiser',403);
    const matches=body.matches;
    if(!Array.isArray(matches)||matches.length<1||matches.length>100)return fail('DUPR bulk limit is 1 to 100 matches');
    const ids=new Set((gate.accounts||[]).map((r:any)=>r.duprId)),seen=new Set<string>();
