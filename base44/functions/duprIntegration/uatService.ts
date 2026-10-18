@@ -162,6 +162,7 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
    const preflight=await handleIndependentDuprUat('uat_match_preflight',{},b,user);
    const gate=await preflight!.json();
    if(!gate.ready)return fail('Four verified eligible test users and club organiser required',409);
+   if(!gate.accounts?.some((a:any)=>a.slot===body.submitterSlot&&a.clubAdmin===true))return fail('DUPR submitting user must be club director or organiser',403);
    const match=body.match;
    const validation=validateMatch(match,true);
    if(!validation.ok)return fail('Invalid UAT match: '+validation.reason,400);
