@@ -193,6 +193,7 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
    const preflight=await handleIndependentDuprUat('uat_match_preflight',{},b,user);
    const gate=await preflight!.json();
    if(!gate.ready)return fail('Four verified test users and club organiser required',409);
+   if(!gate.accounts?.some((a:any)=>a.slot===body.submitterSlot&&a.clubAdmin===true))return fail('DUPR submitting user must be club director or organiser',403);
    const identifier=String(body.identifier||body.match?.identifier||'');
    if(!identifier.startsWith('RH-UAT-'))return fail('Only UAT matches can be modified',403);
    const records=await entities(b).DuprUatSubmission.filter({identifier},'-submitted_at',5);
