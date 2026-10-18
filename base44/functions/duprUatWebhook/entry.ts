@@ -24,7 +24,10 @@ Deno.serve(async req=>{
   return Response.json({success:true,ignored:true});
  }
  const msg=payload.message||{};
- if(!/^[A-Za-z0-9]{6,12}$/.test(String(msg.duprId)))return Response.json({error:'Invalid DUPR ID'},{status:400});
+ if(!/^[A-Za-z0-9]{6,12}$/.test(String(msg.duprId))){
+  console.warn('DUPR UAT webhook skipped invalid test identity');
+  return Response.json({success:true,ignored:true});
+ }
  const base44=createClientFromRequest(req);
  const matched=await base44.asServiceRole.entities.DuprUatConnection.filter({dupr_id:msg.duprId,status:'connected'},'-verified_at',10);
  if(!matched?.length)return Response.json({success:true,ignored:true});
