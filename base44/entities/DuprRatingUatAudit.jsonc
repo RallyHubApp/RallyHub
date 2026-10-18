@@ -1,0 +1,23 @@
+{
+  "name": "DuprRatingUatAudit",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "provider_id": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "provider_id",
+    "topic"
+  ]
+}
