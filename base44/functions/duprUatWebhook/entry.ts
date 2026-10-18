@@ -19,7 +19,10 @@ Deno.serve(async req=>{
  // DUPR registration sends a POST handshake that is not a rating notification.
  // The URL secret was validated above; acknowledge test messages without recording them.
  if(!['RATING','RATING_SEED'].includes(payload?.event))return Response.json({success:true,handshake:true});
- if(!validRatingEnvelope(payload,clientId))return Response.json({error:'Invalid DUPR rating envelope'},{status:400});
+ if(!validRatingEnvelope(payload,clientId)){
+  console.warn('DUPR UAT webhook skipped malformed rating envelope');
+  return Response.json({success:true,ignored:true});
+ }
  const msg=payload.message||{};
  if(!/^[A-Za-z0-9]{6,12}$/.test(String(msg.duprId)))return Response.json({error:'Invalid DUPR ID'},{status:400});
  const base44=createClientFromRequest(req);
