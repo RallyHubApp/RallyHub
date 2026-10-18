@@ -7,6 +7,7 @@ export default function DuprUatAccounts(){
  const [accounts,setAccounts]=useState([]),[busy,setBusy]=useState(''),[error,setError]=useState(''),[result,setResult]=useState(null);
  const [iframe,setIframe]=useState(''),[slot,setSlot]=useState('');
  const waiting=useRef(false);
+ const loginFrame=useRef(null);
  const call=useCallback(async(action,payload={})=>{
   const res=await base44.functions.invoke('duprIntegration',{action,...payload});
   if(!res?.data?.success)throw Error(res?.data?.error||'DUPR UAT request unsuccessful');
