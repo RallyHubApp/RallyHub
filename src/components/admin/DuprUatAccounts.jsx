@@ -1,6 +1,6 @@
 import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {base44} from '@/api/base44Client';
-import {duprUatPreflight,duprUatSyntheticMatch} from './duprUatRunner';
+import {duprUatPreflight,duprUatSyntheticMatch,duprUatBulkAcceptance} from './duprUatRunner';
 import {Button} from '@/components/ui/button';
 const TEST_SLOTS=[{id:'brian',label:'Brian'},{id:'marie',label:'Marie'},{id:'roisin',label:'Róisín'},{id:'rallyhub',label:'RallyHub App'}];
 const ORIGIN='https://uat.dupr.gg';
