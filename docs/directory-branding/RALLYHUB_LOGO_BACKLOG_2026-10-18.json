@@ -1,0 +1,134 @@
+{
+  "date": "2026-10-18",
+  "live": {
+    "imported": 78,
+    "curated": 3,
+    "dynamicPublic": 21,
+    "unique": 102,
+    "effectiveLogoUrls": 62,
+    "missingOrHidden": 40,
+    "hiddenExisting": 7,
+    "genuinelyMissing": 33,
+    "counties": 27
+  },
+  "reviewed": 10,
+  "cases": [
+    {
+      "slug": "cumann-pickleball-a-chorrain",
+      "facebookCheck": "No official club Facebook page; Keel community result unrelated",
+      "instagramCheck": "No official Instagram",
+      "websiteCheck": "No official website",
+      "status": "hold_no_logo",
+      "source": null,
+      "visualVerified": false,
+      "stagedReceipt": null,
+      "liveLogo": null
+    },
+    {
+      "slug": "milltown-emper-moyvore-pickleball-club",
+      "facebookCheck": "Community Games page mentions pickleball, not club crest",
+      "instagramCheck": "No official Instagram",
+      "websiteCheck": "Westmeath Sports Partnership grant record only",
+      "status": "hold_related_brand",
+      "source": "https://www.facebook.com/p/Milltown-Emper-Moyvore-Community-Games-100091168901571/",
+      "visualVerified": false,
+      "stagedReceipt": null,
+      "liveLogo": null
+    },
+    {
+      "slug": "mullahoran-pickleball-club",
+      "facebookCheck": "Multyfarnham club post mentions Mullahoran; no own page verified",
+      "instagramCheck": "No official Instagram",
+      "websiteCheck": "Mullahoran GFC is venue, not logo",
+      "status": "hold_venue_brand",
+      "source": "https://www.pickleheads.com/courts/ie/county-cavan/ireland/mullahoran-gfc",
+      "visualVerified": false,
+      "stagedReceipt": null,
+      "liveLogo": null
+    },
+    {
+      "slug": "pickleball-iorrais",
+      "facebookCheck": "Ballycroy community pickleball post not same club",
+      "instagramCheck": "No official Instagram",
+      "websiteCheck": "Belmullet venue only",
+      "status": "hold_no_logo",
+      "source": "https://www.facebook.com/BallycroyCommunityCouncil/posts/1482775307230203/",
+      "visualVerified": false,
+      "stagedReceipt": null,
+      "liveLogo": null
+    },
+    {
+      "slug": "stepaside-pickleball",
+      "facebookCheck": "School session post, not club branding",
+      "instagramCheck": "No official Instagram",
+      "websiteCheck": "Stepaside ET school venue only",
+      "status": "hold_venue_brand",
+      "source": "https://www.pickleheads.com/courts/ie/county-dublin",
+      "visualVerified": false,
+      "stagedReceipt": null,
+      "liveLogo": null
+    },
+    {
+      "slug": "streete-sports-club-pickleball",
+      "facebookCheck": "No verified club Facebook",
+      "instagramCheck": "No official Instagram",
+      "websiteCheck": "Streete and District venue site has parent branding",
+      "status": "hold_related_brand",
+      "source": "https://streeteanddistrict.ie/",
+      "visualVerified": false,
+      "stagedReceipt": null,
+      "liveLogo": null
+    },
+    {
+      "slug": "clogh-sliders",
+      "facebookCheck": "Unrelated food/overseas Facebook hits rejected",
+      "instagramCheck": "No official Instagram",
+      "websiteCheck": "No official site",
+      "status": "hold_no_logo",
+      "source": null,
+      "visualVerified": false,
+      "stagedReceipt": null,
+      "liveLogo": null
+    },
+    {
+      "slug": "bandon-west-cork-pickleball",
+      "facebookCheck": "Cork Sports Partnership post is organiser/partner, not club logo",
+      "instagramCheck": "No verified club Instagram",
+      "websiteCheck": "Multiple West Cork groups and venues, exact identity unresolved",
+      "status": "hold_identity",
+      "source": "https://corksports.ie/latest-news/cork-pickleball-directory/",
+      "visualVerified": false,
+      "stagedReceipt": null,
+      "liveLogo": null
+    },
+    {
+      "slug": "cairdeas-camp-pickleball",
+      "facebookCheck": "No verified Cairdeas Facebook page",
+      "instagramCheck": "No verified Instagram",
+      "websiteCheck": "Age Friendly Ireland confirms pickleball activity, no logo",
+      "status": "hold_no_logo",
+      "source": "https://agefriendlyireland.ie/initiative/cairdeas-camp-le-cheile-combating-rural-isolation-and-improving-quality-of-life-of-seniors/",
+      "visualVerified": false,
+      "stagedReceipt": null,
+      "liveLogo": null
+    },
+    {
+      "slug": "ballinamore-pickleball-club",
+      "facebookCheck": "Community Council official Facebook mentions pickleball; council branding only",
+      "instagramCheck": "No verified club Instagram",
+      "websiteCheck": "Council sports complex site, not club logo",
+      "status": "hold_parent_brand",
+      "source": "https://www.facebook.com/BallinamoreAreaCommunityCouncil/",
+      "visualVerified": false,
+      "stagedReceipt": null,
+      "liveLogo": null
+    }
+  ],
+  "newVerified": 0,
+  "newStaged": 0,
+  "newPublished": 0,
+  "productionChanged": false,
+  "deployed": false,
+  "backlogComplete": false,
+  "monthlySwitch": false
+}
