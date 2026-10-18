@@ -78,6 +78,8 @@ export default function DuprUatAccounts(){
   </div>}
   <div className="flex flex-wrap gap-2">
    <Button disabled={!!busy} onClick={()=>execute('uat_match_preflight')}>Run 4-account club & rating preflight</Button>
+   <Button variant="outline" disabled={!!busy} onClick={()=>execute('uat_register_webhook')}>Register rating webhook</Button>
+   <Button variant="outline" disabled={!!busy} onClick={()=>execute('uat_rating_events')}>Review DUPR rating events</Button>
    <Button variant="outline" disabled={!!busy} onClick={reload}>Refresh status</Button>
   </div>
   {busy&&<p className="text-sm">Checking {busy}…</p>}
