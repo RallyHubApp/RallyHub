@@ -20,6 +20,7 @@ import DirectoryAnalyticsDashboard from '@/components/admin/DirectoryAnalyticsDa
 import DirectoryCategoryManager from '@/components/admin/DirectoryCategoryManager';
 import AnnouncementSettingsPanel from '@/components/admin/AnnouncementSettingsPanel';
 import ControlLibraryPanel from '@/components/admin/ControlLibraryPanel';
+import DuprUatAccounts from '@/components/admin/DuprUatAccounts';
 import { directoryClubs } from '@/data/directorySeed';
 
 export default function AdminPanel() {
