@@ -1,0 +1,82 @@
+{
+  "name": "DuprUatConnection",
+  "type": "object",
+  "properties": {
+    "test_slot": {
+      "type": "string",
+      "enum": [
+        "brian",
+        "marie",
+        "roisin",
+        "rallyhub"
+      ]
+    },
+    "owner_user_id": {
+      "type": "string"
+    },
+    "dupr_id": {
+      "type": "string"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sso_consent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "encrypted_token_pair": {
+      "type": "string"
+    },
+    "token_expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "refresh_expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "connected",
+        "revoked",
+        "expired"
+      ]
+    },
+    "last_error": {
+      "type": "string"
+    },
+    "last_tested_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "test_slot",
+    "owner_user_id",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
