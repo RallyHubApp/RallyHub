@@ -130,7 +130,8 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
    const endpoint=Deno.env.get('DUPR_UAT_WEBHOOK_URL')||'';
    if(!endpoint)return fail('Webhook endpoint not configured',503);
    const response=await fetch(endpoint,{method:'GET',signal:AbortSignal.timeout(10000)});
-   return reply({success:true,environment:'uat',handshakeStatus:response.status,handshakePassed:response.status===200});
+   const post=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientId:'uat-handshake',event:'TEST',message:{}}),signal:AbortSignal.timeout(10000)});
+   return reply({success:true,environment:'uat',handshakeStatus:response.status,postHandshakeStatus:post.status,handshakePassed:response.status===200&&post.status===200});
   }
   if(action==='uat_register_webhook'){
    const webhookUrl=Deno.env.get('DUPR_UAT_WEBHOOK_URL')||'';
