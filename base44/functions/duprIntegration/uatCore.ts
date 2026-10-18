@@ -56,7 +56,9 @@ export function validateMatch(match:any,allowedClub:boolean){
  if(!['SINGLES','DOUBLES'].includes(match.format))return bad('format_invalid');
  if(!['SIDEOUT','RALLY'].includes(match.matchType))return bad('scoring_invalid');
  const date=String(match.matchDate||'');
- if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||new Date(date+'T00:00:00Z').toISOString().slice(0,10)!==date)return bad('date_invalid');
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return bad('date_invalid');
+ const parsed=new Date(date+'T00:00:00Z');
+ if(!Number.isFinite(parsed.getTime())||parsed.toISOString().slice(0,10)!==date)return bad('date_invalid');
  const n=match.format==='SINGLES'?1:2,ids:string[]=[];
  for(const team of [match.teamA,match.teamB]){
   if(!team)return bad('team_missing');
