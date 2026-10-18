@@ -58,6 +58,7 @@ export function validateMatch(match:any,allowedClub:boolean){
  if(match.matchSource==='CLUB'&&(String(match.clubId)!==UAT_TEST_CLUB||!allowedClub))return bad('club_permission');
  if(match.matchSource==='PARTNER'&&match.clubId!=null)return bad('partner_has_club_id');
  if(!match.identifier||typeof match.identifier!=='string')return bad('identifier_missing');
+ if(typeof match.event!=='string'||!match.event.trim())return bad('event_missing');
  if(!['SINGLES','DOUBLES'].includes(match.format))return bad('format_invalid');
  if(!['SIDEOUT','RALLY'].includes(match.matchType))return bad('scoring_invalid');
  const date=String(match.matchDate||'');
