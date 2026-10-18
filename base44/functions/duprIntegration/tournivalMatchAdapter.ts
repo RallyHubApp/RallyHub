@@ -13,7 +13,11 @@ export type DuprMatchCandidate={
 type Excluded={matchId:string;reason:string};
 type Result={matches:DuprMatchCandidate[];excluded:Excluded[]};
 const clean=(v:any)=>String(v??'').trim();
-const validDate=(s:string)=>/^\d{4}-\d{2}-\d{2}$/.test(s)&&!Number.isNaN(Date.parse(s));
+const validDate=(s:string)=>{
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;
+ const date=new Date(`${s}T00:00:00.000Z`);
+ return !Number.isNaN(date.getTime())&&date.toISOString().slice(0,10)===s;
+};
 function validScore(a:any,b:any,format:string){
  const x=Number(a),y=Number(b);
  if(!Number.isInteger(x)||!Number.isInteger(y)||x<0||y<0||x===y)return false;
@@ -56,6 +60,9 @@ export function prepareTournivalDuprBatch({
    }
    if(ids.some(x=>!clean(players[x]?.duprId))){
     excluded.push({matchId:id,reason:'verified_dupr_id_missing'});return;
+   }
+   if(new Set(ids.map(x=>clean(players[x].duprId))).size!==4){
+    excluded.push({matchId:id,reason:'duplicate_dupr_identity'});return;
    }
    matches.push({
     identifier:`RH-TRN-${tournamentId}-${id}`.slice(0,180),
