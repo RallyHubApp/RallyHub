@@ -24,6 +24,16 @@ export default function DuprUatAccounts(){
   catch(e){setError(e.response?.data?.error||e.message||'DUPR UAT failed');}
   finally{setBusy('');}
  };
+ const runCompleteUat=async()=>{
+  setError('');setBusy('full acceptance');setResult(null);
+  try{
+   const preflight=await duprUatPreflight(call);
+   const lifecycle=await duprUatSyntheticMatch(call,preflight.verified.accounts,preflight.verified.clubId);
+   setResult({success:true,environment:'uat',preflight:preflight.verified,ratings:preflight.ratings,matchLifecycle:lifecycle});
+   await reload();
+  }catch(e){setError(e?.response?.data?.error||e.message||'Independent DUPR UAT failed');}
+  finally{setBusy('');}
+ };
  const begin=async(selected)=>{
   setError('');setResult(null);setBusy('start');
   try{
