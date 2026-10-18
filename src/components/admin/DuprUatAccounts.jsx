@@ -35,7 +35,7 @@ export default function DuprUatAccounts(){
  useEffect(()=>{
   if(!iframe||!slot)return;
   const listener=async event=>{
-   if(event.origin!==ORIGIN||waiting.current)return;
+   if(event.origin!==ORIGIN||event.source!==loginFrame.current?.contentWindow||waiting.current)return;
    const source=event.data;
    if(!source||typeof source!=='object')return;
    const payload=source.data&&typeof source.data==='object'?source.data:source;
