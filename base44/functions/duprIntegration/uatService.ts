@@ -203,6 +203,48 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
    await entities(b).DuprUatSubmission.update(stored.id,{status:'updated',last_action_at:now()});
    return reply({success:true,identifier,updated:receipt.status==='SUCCESS'});
   }
+  if(action==='uat_submit_batch'){
+   if(body.confirmUatTest!==true)return fail('Explicit UAT confirmation required',400);
+   const p=await handleIndependentDuprUat('uat_match_preflight',{},b,user);
+   const gate=await p!.json();
+   if(!gate.ready)return fail('Four verified UAT players and organiser required',409);
+   const matches=body.matches;
+   if(!Array.isArray(matches)||matches.length<1||matches.length>100)return fail('DUPR bulk limit is 1 to 100 matches');
+   const ids=new Set((gate.accounts||[]).map((r:any)=>r.duprId)),seen=new Set<string>();
+   for(const m of matches){
+    const valid=validateMatch(m,true);
+    if(!valid.ok)return fail('Invalid match in batch: '+valid.reason);
+    if(m.matchSource!=='CLUB'||String(m.clubId)!==UAT_TEST_CLUB||!String(m.identifier).startsWith('RH-UAT-'))
+     return fail('Batch requires unique UAT club identifiers',403);
+    if(seen.has(m.identifier))return fail('Duplicate identifier inside batch',409);
+    seen.add(m.identifier);
+    if([m.teamA.player1,m.teamA.player2,m.teamB.player1,m.teamB.player2].filter(Boolean)
+      .some((id:string)=>!ids.has(id)))return fail('Non-UAT player in batch',403);
+    const existing=await entities(b).DuprUatSubmission.filter({identifier:m.identifier},'-submitted_at',2);
+    if(existing?.length)return fail('Previously submitted identifier; reconcile before retry',409);
+   }
+   const submissionEntity=entities(b).DuprUatSubmission;
+   const pending=[];
+   for(const m of matches){
+    pending.push(await submissionEntity.create({identifier:m.identifier,status:'needs_reconciliation',
+      submitted_by_user_id:user.id,submitted_at:now(),last_action_at:now()}));
+   }
+   const token=await partnerToken();
+   const result=await duprRequest(UAT_PARTNER+'/match/v1.0/batch',{method:'POST',token,body:matches});
+   const successes=result.result?.successes||result.successes||[];
+   const errors=result.result?.errors||result.errors||[];
+   const receipts=[];
+   for(const item of successes){
+    const id=String(item.identifier||'');
+    const position=matches.findIndex((m:any)=>m.identifier===id);
+    if(position<0)continue;
+    await submissionEntity.update(pending[position].id,{match_code:String(item.matchCode||''),
+      hashed_match_code:String(item.hashedMatchCode||''),status:item.matchCode?'submitted':'needs_reconciliation',
+      last_action_at:now()});
+    receipts.push({identifier:id,matchCode:item.matchCode||null});
+   }
+   return reply({success:true,submitted:receipts,errors,acknowledged:receipts.length===matches.length&&errors.length===0});
+  }
   if(action==='uat_validate_match'){
    const match=body.match;
    const result=validateMatch(match,body.clubAdmin===true);
