@@ -15,7 +15,7 @@ Deno.serve(async req=>{
  if(req.method==='GET')return Response.json({success:true,environment:'uat'});
  if(req.method!=='POST')return Response.json({error:'Method not allowed'},{status:405});
  let payload:any;
- try{payload=await req.json();}catch{return Response.json({error:'Invalid JSON'},{status:400});}
+ try{payload=await req.json();}catch{return Response.json({success:true,handshake:true});}
  // DUPR registration sends a POST handshake that is not a rating notification.
  // The URL secret was validated above; acknowledge test messages without recording them.
  if(!['RATING','RATING_SEED'].includes(payload?.event))return Response.json({success:true,handshake:true});
