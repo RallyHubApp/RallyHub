@@ -1,6 +1,6 @@
 import {strict as assert} from 'node:assert';
 import {basicDuprIdentity,validSsoOrigin,entitled,canManageUatClub,validateMatch,sealTokens,unsealTokens,duprRequest} from './uatCore.ts';
-const match={identifier:'uat-001',matchSource:'CLUB',clubId:6459394157,format:'DOUBLES',
+const match={identifier:'uat-001',event:'UAT Test Match',matchSource:'CLUB',clubId:6459394157,format:'DOUBLES',
  matchType:'RALLY',matchDate:'2026-10-18',
  teamA:{player1:'AAAAAA',player2:'BBBBBB',game1:11},
  teamB:{player1:'CCCCCC',player2:'DDDDDD',game1:7}};
@@ -41,6 +41,7 @@ Deno.test('DUPR match errors and allowed sources',()=>{
  assert(validateMatch({...match,matchSource:'PARTNER',clubId:undefined},false).ok);
  assert.equal(validateMatch({...match,matchSource:'PARTNER'},true).reason,'partner_has_club_id');
  assert.equal(validateMatch({...match,identifier:''},true).reason,'identifier_missing');
+ assert.equal(validateMatch({...match,event:''},true).reason,'event_missing');
  assert.equal(validateMatch({...match,matchDate:'2026-02-30'},true).reason,'date_invalid');
 });
 Deno.test('DUPR user tokens are encrypted, round-trip and tampering rejected',async()=>{
