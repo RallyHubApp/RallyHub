@@ -114,6 +114,20 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
     body:{duprIds:[person.duprId],topic:'RATING'}});
    return reply({success:true,slot,subscribed:action==='uat_subscribe_rating',acknowledgement:data?.status||'SUCCESS'});
   }
+  if(action==='uat_register_webhook'){
+   const webhookUrl=Deno.env.get('DUPR_UAT_WEBHOOK_URL')||'';
+   const secret=Deno.env.get('DUPR_UAT_WEBHOOK_KEY')||'';
+   let parsed:URL;
+   try{parsed=new URL(webhookUrl);}catch{return fail('UAT webhook URL not configured',503);}
+   if(parsed.protocol!=='https:'||!secret||parsed.searchParams.get('key')!==secret)
+    return fail('Secure UAT webhook endpoint not configured',503);
+   if(!parsed.pathname.endsWith('/duprUatWebhook'))return fail('Incorrect DUPR UAT webhook path',400);
+   const bearer=await partnerToken();
+   const registered=await duprRequest(UAT_PARTNER+'/v1.0/webhook',{
+    method:'POST',token:bearer,body:{webhookUrl:parsed.toString(),topics:['RATING']}
+   });
+   return reply({success:true,registered:registered.status==='SUCCESS',topics:['RATING']});
+  }
   if(action==='uat_match_preflight'){
    const rows=[];
    for(const slot of slots){
