@@ -19,7 +19,9 @@ export async function duprUatSyntheticMatch(call,accounts,clubId){
   format:'DOUBLES',matchType:'SIDEOUT',
   teamA:{player1:ids[0],player2:ids[1],game1:11},
   teamB:{player1:ids[2],player2:ids[3],game1:7}};
- const flags={confirmUatTest:true};
+ const submitterSlot=accounts.find(a=>a.clubAdmin===true)?.slot;
+ if(!submitterSlot)throw Error('UAT club director or organiser must authorise submissions');
+ const flags={confirmUatTest:true,submitterSlot};
  const created=await call('uat_submit_match',{match,...flags});
  if(!created.acknowledged)throw Error('DUPR match acknowledgement missing');
  let duplicateBlocked=false;
@@ -39,7 +41,9 @@ export async function duprUatBulkAcceptance(call,accounts,clubId){
   event:'RallyHub DUPR UAT',bracket:'Synthetic batch',matchDate:new Date().toISOString().slice(0,10),
   format:'DOUBLES',matchType:'RALLY',teamA:{player1:ids[0],player2:ids[1],game1:11},
   teamB:{player1:ids[2],player2:ids[3],game1:points}});
- const matches=[mk('A',7),mk('B',8)],confirmation={confirmUatTest:true};
+ const submitterSlot=accounts.find(a=>a.clubAdmin===true)?.slot;
+ if(!submitterSlot)throw Error('UAT club director or organiser must authorise batch');
+ const matches=[mk('A',7),mk('B',8)],confirmation={confirmUatTest:true,submitterSlot};
  const result=await call('uat_submit_batch',{matches,...confirmation});
  if(!result.acknowledged)throw Error('DUPR bulk acknowledgement incomplete');
  const deleted=[];
