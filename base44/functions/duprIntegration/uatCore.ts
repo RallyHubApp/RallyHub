@@ -24,6 +24,7 @@ export async function duprRequest(url:string,opts:{method?:string;token?:string;
  if(!classifyDuprResponse(response.status,data)){
    const error=new Error('DUPR UAT rejected request');
    (error as any).status=response.status;
+   (error as any).providerMessage=String(data?.message||data?.error||'').slice(0,600);
    (error as any).requestId=response.headers.get('x-request-id');
    throw error;
  }
