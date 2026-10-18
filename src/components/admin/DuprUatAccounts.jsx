@@ -72,7 +72,7 @@ export default function DuprUatAccounts(){
   </div>
   {iframe&&<div className="space-y-2 rounded-lg border border-border p-3">
    <p className="font-semibold">DUPR UAT sign-in for {slot}. Complete the provider consent screen.</p>
-   <iframe title={'DUPR UAT SSO '+slot} src={iframe} allow="payment" className="h-[560px] w-full rounded-md bg-white" />
+   <iframe ref={loginFrame} title={'DUPR UAT SSO '+slot} src={iframe} allow="payment" className="h-[560px] w-full rounded-md bg-white" />
    <Button variant="outline" onClick={()=>{setIframe('');setSlot('');waiting.current=false;}}>Close sign-in</Button>
   </div>}
   <div className="flex flex-wrap gap-2">
