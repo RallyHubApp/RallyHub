@@ -21,3 +21,13 @@ test('synthetic UAT match creates, rejects duplicate, updates and deletes',async
  const out=await duprUatSyntheticMatch(call,accounts,'6459394157');
  assert(out.duplicateBlocked);assert.equal(creates,2);assert.equal(updates,1);assert.equal(deletes,1);
 });
+test('bulk UAT submits two and deletes both',async()=>{
+ let submitted=0,removed=0;
+ const call=async(action,body)=>{
+  if(action==='uat_submit_batch'){submitted=body.matches.length;return {acknowledged:true,submitted:[{},{}]};}
+  if(action==='uat_delete_match'){removed++;return {deleted:true};}
+  throw Error(action);
+ };
+ const out=await duprUatBulkAcceptance(call,accounts,'6459394157');
+ assert.equal(submitted,2);assert.equal(removed,2);assert.equal(out.deleted.length,2);
+});
