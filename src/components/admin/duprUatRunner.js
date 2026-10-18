@@ -22,6 +22,9 @@ export async function duprUatSyntheticMatch(call,accounts,clubId){
  const flags={confirmUatTest:true};
  const created=await call('uat_submit_match',{match,...flags});
  if(!created.acknowledged)throw Error('DUPR match acknowledgement missing');
+ let duplicateBlocked=false;
+ try{await call('uat_submit_match',{match,...flags});}catch{duplicateBlocked=true;}
+ if(!duplicateBlocked)throw Error('Duplicate DUPR identifier was accepted');
  const modified={...match,teamB:{...match.teamB,game1:9}};
  const updated=await call('uat_update_match',{match:modified,...flags});
  if(!updated.updated)throw Error('DUPR correction acknowledgement missing');
