@@ -31,7 +31,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
     // shell every 3s can remount the roster/setup path on mobile during a live start.
     refetchInterval: (query) => query.state.data?.session ? false : 3000,
   });
-  const hasSession = !!kotcState?.session;
+  const hasSession = !!kotcState?.session && !['cancelled','abandoned'].includes(String(kotcState.session.status||'').toLowerCase());
 
   const isStarted = hasSession || tournament.status === 'Completed';
   const guestPlayers = (tournament.kotc_guest_roster || []).map(g => ({ id: g.guest_id, full_name: g.display_name, is_guest: true, relationship_type: 'guest' }));
