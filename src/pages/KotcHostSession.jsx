@@ -43,7 +43,7 @@ export default function KotcHostSession(){
         <Button type="button" className="flex-1 min-h-11" variant={activeTab==='run'?'default':'outline'} aria-pressed={activeTab==='run'} onClick={()=>setActiveTab('run')}><Play className="w-4 h-4 mr-2"/>Run Event</Button>
         <Button type="button" className="flex-1 min-h-11" variant={activeTab==='guide'?'default':'outline'} aria-pressed={activeTab==='guide'} onClick={()=>setActiveTab('guide')}><BookOpen className="w-4 h-4 mr-2"/>Host Guide</Button>
       </nav>
-      {activeTab==='guide'?<KotcHostGuide/>:<KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} sessionId={session.id}/>}
+      {activeTab==='guide'?<KotcHostGuide tenantId={session.tenant_id}/>:<KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} sessionId={session.id}/>}
     </main>
   </div>;
 }
