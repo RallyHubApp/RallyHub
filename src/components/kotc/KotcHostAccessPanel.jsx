@@ -7,7 +7,6 @@ import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from '@/com
 import { toast } from 'sonner';
 import { Check,ChevronDown,ChevronUp,Copy,ExternalLink,Link2,Loader2,Save,ShieldCheck,UserPlus,X } from 'lucide-react';
 import KotcBroadcastPanel from './KotcBroadcastPanel';
-import KotcPlayerVerificationPanel from './KotcPlayerVerificationPanel';
 
 function errorMessage(error){return error?.response?.data?.error||error?.data?.error||error?.message||'KOTC access action failed.';}
 const TAB_OPTIONS=[
