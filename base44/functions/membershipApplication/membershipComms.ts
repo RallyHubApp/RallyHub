@@ -21,6 +21,9 @@ export async function membershipComms(base44:any,config:any,club:any,purpose:str
  const buttonLabel=fields.PRIVATE_MEMBERSHIP_LINK?'Click here to complete your membership and payment':'Click the blue button to pay securely';
  const action=ctaLink?`<p style="margin:20px 0 9px;font-size:17px;font-weight:800;color:#10294c">ACTION REQUIRED: Please click the blue button below to ${fields.PRIVATE_MEMBERSHIP_LINK?'complete your membership and make your payment':'make your membership payment'}.</p><table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 20px"><tr><td bgcolor="#2667F2" style="border-radius:9px"><a href="${esc(ctaLink)}" style="display:inline-block;padding:16px 22px;border-radius:9px;background:#2667F2;color:#ffffff;font-size:17px;font-weight:800;text-decoration:none">${buttonLabel}</a></td></tr></table><p style="font-size:14px">If the button does not work, copy this link into your browser: <a href="${esc(ctaLink)}">${esc(ctaLink)}</a></p>`:'';
  const plainWithoutLinks=textBody.split('\n').filter(l=>!l.includes('https://')&&!l.includes('PRIVATE_MEMBERSHIP_LINK')).join('\n');
- const htmlBody=renderBasicBrandedEmail(`<div style="white-space:pre-line;font-size:16px;line-height:1.7">${esc(plainWithoutLinks)}</div>${action}`,kit,club,club.name||'Clare Pickleball',template.channel_templates?.email?.header_title||'Membership',template.channel_templates?.email?.header_subtitle||'');
+ const blocks=plainWithoutLinks.split(/\n\s*\n/);
+ const introduction=blocks.slice(0,2).join('\n\n');
+ const rest=blocks.slice(2).join('\n\n');
+ const htmlBody=renderBasicBrandedEmail(`<div style="white-space:pre-line;font-size:16px;line-height:1.7">${esc(introduction)}</div>${action}<div style="white-space:pre-line;font-size:16px;line-height:1.7">${esc(rest)}</div>`,kit,club,club.name||'Clare Pickleball',template.channel_templates?.email?.header_title||'Membership',template.channel_templates?.email?.header_subtitle||'');
  return {subject,textBody,htmlBody};
 }

@@ -435,6 +435,16 @@ Deno.serve(async(req)=>{
       if(!config)return Response.json({error:'Membership applications are not configured for this club.'},{status:404});
       const club=await clubBrand(base44,clubId,tenantId);
 
+      if(action==='admin_communications_preview_invitation'){
+        const fee=money(config.membership_fee,config.currency||'EUR');
+        const rendered=await membershipComms(base44,config,club,'membership_invitation',{
+          FIRST_NAME:'Sample',INVITATION_INTRO:`Your ${club.name} membership request has been approved.`,
+          PAYMENT_OR_CONFIRMATION:config.payment_required===false?'confirmation':'payment',
+          PRIVATE_MEMBERSHIP_LINK:`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=mi_PREVIEW_ONLY_NO_ACCESS`,
+          MEMBERSHIP_SEASON:config.season_label,MEMBERSHIP_FEE:fee,AUTHORISED_CONTACT:'sample@example.invalid'
+        });
+        return Response.json({success:true,...rendered,previewSource:'approved_membership_invitation_template',noEmailSent:true});
+      }
       if(action==='admin_communications_preview_membership'){
         const app=body.applicationId?await first(base44,'MembershipApplication',{id:clean(body.applicationId,100),tenant_id:tenantId,club_id:clubId}):null;
         if(body.applicationId&&(!app||app.payment_status!=='paid'))return Response.json({error:'Paid membership record not found'},{status:404});
