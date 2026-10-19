@@ -749,8 +749,8 @@ Deno.serve(async (req) => {
   }
 
   // ── Action: get_groups ──
-  if (action === 'get_groups') {
-    const groups = await spondRequest('/groups', spondToken);
+  if (effectiveAction === 'get_groups') {
+    const groups = await spondRequest('/groups', effectiveSpondToken);
     const simplified = groups.map(g => ({
       id: g.id,
       name: g.name,
