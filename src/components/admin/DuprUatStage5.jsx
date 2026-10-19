@@ -25,7 +25,17 @@ export default function DuprUatStage5(){
  },[]);
  const refresh=useCallback(async()=>{
   const matches=await call('uat_match_records');
-  setRecords(matches.records||[]);
+  const all=matches.records||[];
+  setRecords(all);
+  // Restore the most recent active pair after browser reload; never resubmit reserved identifiers.
+  const groups=new Map();
+  for(const record of all.filter(r=>r.identifier.startsWith('RH-UAT-BULK5-')&&r.status!=='deleted')){
+   const prefix=record.identifier.slice(0,-1);
+   if(!groups.has(prefix))groups.set(prefix,[]);
+   groups.get(prefix).push(record.identifier);
+  }
+  const pair=[...groups.values()].find(ids=>ids.length===2);
+  if(pair)setBulkSubmitted(pair);
  },[call]);
  const preflight=useCallback(async()=>{
   setPreflightStatus('checking');setError('');
