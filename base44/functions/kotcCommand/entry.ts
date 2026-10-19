@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
-const STRUCTURAL = new Set(['confirm_round','start_round','start_proposed_round','undo_start_round','generate_next_round','adjust_proposed_round','set_pair_lock','set_participant_status','bulk_roster_change','replace_proposed_player','restore_participant_status','update_timer_settings','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
+const STRUCTURAL = new Set(['confirm_round','start_round','start_proposed_round','undo_start_round','generate_next_round','adjust_proposed_round','set_pair_lock','set_participant_status','bulk_roster_change','add_late_participant','replace_proposed_player','restore_participant_status','update_timer_settings','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
 const RESOLVED = new Set(['completed','retired','abandoned','not_played']);
 
 function nowIso() { return new Date().toISOString(); }
@@ -142,6 +142,19 @@ Deno.serve(async (req) => {
     if (!allowed) return Response.json({ error:'KOTC session host permission required' }, { status:403 });
     if (accessRole === 'assistant_host' && !['autosave_score','complete_match','correct_match'].includes(commandType)) return Response.json({ error:'Assistant hosts can enter and correct scores only.' }, { status:403 });
     if (session.status === 'finalised' && !(commandType === 'correct_match' && user.role === 'admin')) return Response.json({ error:'Finalised KOTC sessions are read-only except for audited Super Admin score corrections.' }, { status:409 });
+
+    // Read-only, session-authorised late-arrival lookup. Never expose a global directory.
+    if(commandType==='search_late_players'){
+      const term=String(body.search||'').trim().toLocaleLowerCase();
+      if(term.length<2)return Response.json({success:true,players:[]});
+      const [candidates,existing]=await Promise.all([
+        withRateLimitRetry('late-join directory read',()=>base44.asServiceRole.entities.Player.filter({tenant_id:session.tenant_id,club_id:session.club_id},'-created_date',500)),
+        withRateLimitRetry('late-join roster read',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}))
+      ]);
+      const registered=new Set((existing||[]).map((p:any)=>String(p.player_id||'')));
+      const matches=(candidates||[]).filter((p:any)=>p.status!=='Suspended'&&p.relationship_status!=='suspended'&&p.relationship_status!=='archived'&&!registered.has(String(p.id))&&String(p.full_name||'').toLocaleLowerCase().includes(term)).slice(0,15).map((p:any)=>({id:p.id,name:p.full_name,relationship_type:p.relationship_type||'guest'}));
+      return Response.json({success:true,players:matches});
+    }
 
     // Collaborative score entry is first-claim-wins. A primary host may claim a free
     // court, but never displaces an active player scorer. Claim/release is deliberately
@@ -293,7 +306,24 @@ Deno.serve(async (req) => {
     let result:any = null;
     const now = nowIso();
 
-    if (commandType === 'autosave_score') {
+    if(commandType==='add_late_participant'){
+      if(!['ready','in_progress','paused'].includes(session.status))return Response.json({error:'Late arrivals cannot join a finished session.'},{status:409});
+      const playerId=String(body.playerId||'').trim();const guestName=String(body.guestName||'').trim().replace(/\s+/g,' ');
+      if((!!playerId)===(!!guestName))return Response.json({error:'Choose an existing club player OR enter a one-off guest name.'},{status:400});
+      if(guestName&&(guestName.length<2||guestName.length>90))return Response.json({error:'Guest name must contain 2 to 90 characters.'},{status:400});
+      const existing=await withRateLimitRetry('late join existing roster',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}));
+      if(existing.length>=100)return Response.json({error:'Session participant limit reached.'},{status:409});
+      let player:any=null;
+      if(playerId){player=(await withRateLimitRetry('late join player resolve',()=>base44.asServiceRole.entities.Player.filter({id:playerId,tenant_id:session.tenant_id,club_id:session.club_id})))?.[0];if(!player||player.status==='Suspended'||['suspended','archived'].includes(player.relationship_status))return Response.json({error:'This player is unavailable in the club directory.'},{status:404});}
+      const name=String(player?.full_name||guestName);const normalise=(x:any)=>String(x||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');
+      if(existing.some((p:any)=>(player&&String(p.player_id)===playerId)||normalise(p.display_name)===normalise(name)))return Response.json({error:'This player is already registered for this session. Use Back Available to restore a removed player.'},{status:409});
+      const currentRound=(await withRateLimitRetry('late join current round',()=>base44.asServiceRole.entities.KotcRound.filter({id:session.current_round_id,session_id:session.id})))?.[0];
+      const joinedAtRound=Number(session.current_round_number||1)+(currentRound?.status==='started'?1:0);
+      const newParticipant=await withRateLimitRetry('late join participant create',()=>base44.asServiceRole.entities.KotcSessionParticipant.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,...(player?{player_id:player.id}:{}),display_name:name,participant_type:player?.relationship_type==='member'?'member':'guest',source_type:player?'member':'guest',registration_source:player?'host_late_join':'host_one_off_guest',registered_at:now,registration_order:existing.length+1,status:'present',rating_snapshot:player?.skill_rating!=null?Number(player.skill_rating):undefined,dupr_rating_snapshot:player?.dupr_rating!=null?Number(player.dupr_rating):undefined,seed_rank:existing.length+1,rounds_played:0,fairness_benches:0,voluntary_rest_rounds:0,consecutive_rounds_played:0,consecutive_court1_rounds:0,court1_rounds:0,recent_fairness_burden:0,joined_at_round:joinedAtRound}));
+      session=await withRateLimitRetry('late join session revision',()=>base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId,max_registrations:Math.max(Number(session.max_registrations||0),existing.length+1)}));
+      try{await base44.asServiceRole.entities.KotcParticipationEvent.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:newParticipant.id,round_id:currentRound?.id,round_number:joinedAtRound,event_type:'late_arrival',effective_from_round:joinedAtRound,fairness_credit:false,reason:'Host added a late arrival without redrawing assigned courts',command_id:commandId,recorded_by_user_id:user.id,occurred_at:now});}catch(error){console.warn('Late-join audit event unavailable',String(error));}
+      result={success:true,session,participant:newParticipant,joinedAtRound,existingCourtsPreserved:true};
+    } else if (commandType === 'autosave_score') {
       const matches = await base44.asServiceRole.entities.KotcMatch.filter({ id:body.matchId, session_id:session.id });
       const match = matches?.[0];
       if (!match) throw new Error('Match not found');
