@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { BookOpen, ChevronDown, ChevronUp, HelpCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
+// Tenant-specific approved artwork. Other clubs use their own guide rather than Clare branding.
+const TENANT_HOST_INFOGRAPHICS = Object.freeze({
+  '6a9b7790bc4a8d299938bda9': 'https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/521f37ca9_rallyhub-c868d83e9bcd2c638fb9.png',
+});
+
 const chapters = [
   { title: '1. Before players arrive', steps: [
     'Open your personal host link and sign in with the authorised host account. This link controls only this KOTC session.',
@@ -55,9 +60,17 @@ const problems = [
   ['The timer or sound is not working', 'Keep scoring and court movements under host control; check timer settings and use the available sound-check control. Do not assume an audible horn has played.'],
 ];
 
-export default function KotcHostGuide({compact=false}) {
+export default function KotcHostGuide({compact=false,tenantId=''}) {
   const [opened,setOpened]=useState(0);
+  const infographicUrl=TENANT_HOST_INFOGRAPHICS[String(tenantId)]||null;
   return <section className="space-y-4" data-testid="kotc-detailed-host-guide" aria-label="King of the Court host instructions">
+    {infographicUrl&&<div className="rounded-2xl overflow-hidden border border-blue-900/20 bg-background" data-testid="kotc-host-infographic">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-[#073a75] text-white border-b-4 border-[#ffcc16]">
+        <div><h2 className="text-base font-bold">Host quick-start infographic</h2><p className="text-xs text-blue-100">Visual overview — use the detailed instructions below for every step.</p></div>
+        <a href={infographicUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold underline underline-offset-2 focus-visible:outline focus-visible:outline-2" download>Open full-size image</a>
+      </div>
+      <a href={infographicUrl} target="_blank" rel="noopener noreferrer" aria-label="Open host guide infographic full size"><img src={infographicUrl} alt="Clare Pickleball King of the Court host quick-start guide: seven steps from opening the host link through setup, rounds, scoring, player management and results" className="block w-full h-auto max-h-[850px] object-contain bg-white" loading="lazy" /></a>
+    </div>}
     <div className="rounded-2xl overflow-hidden border border-blue-900/20">
       <div className="bg-[#073a75] text-white px-5 py-5 border-b-4 border-[#ffcc16]">
         <div className="text-xs uppercase tracking-[0.2em] text-[#ffdf59] font-semibold">Host instructions · King of the Court</div>
