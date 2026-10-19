@@ -22,8 +22,11 @@ const chapters = [
   ]},
   { title: '3. Check courts and start play', steps: [
     'In the Host Round Editor, review every court and the Bench This Round list before starting.',
-    'To exchange two players, tap the first player and then the second. To bring on a bench player, tap a court player and the bench player. You can also move a whole court group using its drag handle.',
-    'If you have changed positions, use Save Round Setup where offered. Call out courts, partners and opponents.',
+    'Quick two-tap change: tap one court player, then the other court player to swap positions without redrawing. To bring someone off the bench, tap the outgoing court player first, then the incoming bench player.',
+    'Use Move court to drag an entire four-player court group to another court rank.',
+    'Each team has Lock pair and Locked / Unlock controls. Locking a pair keeps those two players partnered in future round proposals. Unlock before making a change that would split them. This does not lock the entire court.'
+    'After swapping players, making a bench substitution or moving a court, choose Save Round Setup and check the confirmation. For a completely new opening draw, use Return to Setup / Redo Round 1 Draw before play begins.',
+    'Call out courts, partners and opponents after the saved layout is confirmed.'
     'For timed rounds, check the round minutes and test the Bluetooth speaker using Sound Check. Confirm the horn is audible across the hall; if not, use the on-screen timer and call time manually.',
     'Press START ROUND only when everyone is on court. The round timer is associated with the round start.'
   ]},
