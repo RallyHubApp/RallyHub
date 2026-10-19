@@ -1,1 +1,4 @@
-{"name":"duprIntegration","entry":"entry.ts"}
+{
+  "name": "duprIntegration",
+  "entry": "base44/functions/duprIntegration/entry.ts"
+}
