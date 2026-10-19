@@ -1,6 +1,12 @@
 import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
 const esc=(v:any)=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const allowedUrl=(v:any)=>{const s=String(v||'');return /^https:\/\//i.test(s)?s:'';};
+export async function membershipBasicHtml(base44:any,config:any,club:any,heading:string,bodyHtml:string){
+ const kits=await base44.asServiceRole.entities.CommunicationBrandKit.filter({tenant_id:config.tenant_id},'-updated_date',40);
+ const kit=(kits||[]).find((k:any)=>k.status==='active'&&k.tenant_id===config.tenant_id&&(!k.club_id||k.club_id===config.club_id));
+ if(!kit)throw Error('Active Communications Centre brand kit unavailable');
+ return renderBasicBrandedEmail(bodyHtml,kit,club,club.name||'Clare Pickleball',heading);
+}
 export async function membershipComms(base44:any,config:any,club:any,purpose:string,fields:Record<string,any>){
  const tenantId=config.tenant_id,clubId=config.club_id;
  const templates=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose},'-updated_date',30);

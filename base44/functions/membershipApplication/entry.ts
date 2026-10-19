@@ -5,7 +5,7 @@ function clubRestrictionResponse(v:string){return Response.json({error:v==='deny
 import { createCheckout, retrievePayment, providerConfigured, type ProviderAccount } from './payments.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { membershipPaidTemplate } from './membershipPaidTemplate.ts';
-import { membershipComms } from './membershipComms.ts';
+import { membershipComms, membershipBasicHtml } from './membershipComms.ts';
 
 function clean(v:any,max=500){return String(v??'').trim().replace(/\s+/g,' ').slice(0,max)}
 function raw(v:any,max=20000){return String(v??'').trim().slice(0,max)}
@@ -212,7 +212,7 @@ ${signoffText(config,club)}`;
 <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">A ${app.application_type==='renewal'?'renewal':'new member'} application has been submitted.</p>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-bottom:18px;">${detailRow('Applicant',app.full_name)}${detailRow('Email',app.email)}${detailRow('Mobile',app.mobile)}${detailRow('Season',app.membership_season)}${detailRow('Fee',fee)}${detailRow('Payment',app.payment_status)}${detailRow('Reference',app.confirmation_code)}</table>
 <p style="margin:0;font-size:13px;color:#6b7280;">The application and recorded consent versions are available in the RallyHub Membership Console.</p>${signoffHtml(config,club)}`});
-      await sendWithConfiguredEmailTransport(base44,scope,{to:config.notification_email,subject:config.admin_notification_subject||`New ${club.name} membership application`,textBody,htmlBody});
+      await sendWithConfiguredEmailTransport(base44,scope,{to:config.notification_email,subject:config.admin_notification_subject||`New ${club.name} membership application`,textBody,htmlBody:await membershipBasicHtml(base44,config,club,'New membership application',`<div style="white-space:pre-line;line-height:1.7">${escapeHtml(textBody)}</div>`)});
       app=await base44.asServiceRole.entities.MembershipApplication.update(app.id,{admin_notification_sent_at:now});
     }catch(e){console.error('membership admin notification failed',e?.message||e)}
   }
