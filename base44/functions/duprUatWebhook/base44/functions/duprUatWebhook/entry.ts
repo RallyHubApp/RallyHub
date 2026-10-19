@@ -1,0 +1,58 @@
+import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
+import {validRatingEnvelope} from './ratingEnvelope.ts';
+/** Only the independent DUPR UAT webhook. Not installed in production. */
+Deno.serve(async req=>{
+ const secret=Deno.env.get('DUPR_UAT_WEBHOOK_KEY')||'';
+ const clientId=Deno.env.get('DUPR_CLIENT_ID')||'';
+ if(!secret||!clientId)return Response.json({error:'UAT webhook not configured'},{status:503});
+ const provided=new URL(req.url).searchParams.get('key')||'';
+ const enc=new TextEncoder();
+ const a=enc.encode(provided),b=enc.encode(secret);
+ let mismatch=a.length^b.length;
+ for(let i=0;i<Math.max(a.length,b.length);i++)mismatch|=(a[i]||0)^(b[i]||0);
+ if(mismatch!==0)return Response.json({error:'Unauthorized'},{status:401});
+ // DUPR registration requires a prompt HTTPS 200 to its handshake.
+ if(req.method==='GET')return Response.json({success:true,environment:'uat'});
+ if(req.method!=='POST')return Response.json({error:'Method not allowed'},{status:405});
+ let payload:any;
+ try{payload=await req.json();}catch{return Response.json({success:true,handshake:true});}
+ // DUPR registration sends a POST handshake that is not a rating notification.
+ // The URL secret was validated above; acknowledge test messages without recording them.
+ if(!['RATING','RATING_SEED'].includes(payload?.event))return Response.json({success:true,handshake:true});
+ if(!validRatingEnvelope(payload,clientId)){
+  console.warn('DUPR UAT webhook skipped malformed rating envelope',JSON.stringify({clientIdMatches:payload?.clientId===clientId, eventRecognised:['RATING','RATING_SEED'].includes(payload?.event), messageObject:!!payload?.message&&typeof payload.message==='object', duprIdString:typeof payload?.message?.duprId==='string',topLevelKeys:Object.keys(payload||{}).filter((k:string)=>['clientId','event','message'].includes(k)),messageKeys:payload?.message&&typeof payload.message==='object'?Object.keys(payload.message).filter((k:string)=>['duprId','rating','metrics','timestamp','name'].includes(k)):[]}));
+  const b=createClientFromRequest(req);
+  const diagnostic={clientIdMatches:payload?.clientId===clientId,eventRecognised:['RATING','RATING_SEED'].includes(payload?.event),messageObject:!!payload?.message&&typeof payload.message==='object',duprIdString:typeof payload?.message?.duprId==='string'};
+  await b.asServiceRole.entities.DuprRatingUatAudit.create({event_id:'diagnostic-'+crypto.randomUUID(),provider_id:'WEBHOOK_DIAGNOSTIC',topic:'REJECTED_ENVELOPE',observed_at:new Date().toISOString(),connection_slot:'diagnostic',raw_json:JSON.stringify(diagnostic)}).catch(()=>{});
+  return Response.json({success:true,ignored:true});
+ }
+ const msg=payload.message||{};
+ if(!/^[A-Za-z0-9]{6,12}$/.test(String(msg.duprId))){
+  console.warn('DUPR UAT webhook skipped invalid test identity');
+  return Response.json({success:true,ignored:true});
+ }
+ const base44=createClientFromRequest(req);
+ const matched=await base44.asServiceRole.entities.DuprUatConnection.filter({dupr_id:msg.duprId,status:'connected'},'-verified_at',10);
+ if(!matched?.length)return Response.json({success:true,ignored:true});
+ const raw=JSON.stringify({clientId:payload.clientId,event:payload.event,message:msg});
+ const bytes=new Uint8Array(await crypto.subtle.digest('SHA-256',enc.encode(raw)));
+ const digest=Array.from(bytes).map(x=>x.toString(16).padStart(2,'0')).join('');
+ const existing=await base44.asServiceRole.entities.DuprRatingUatAudit.filter({event_id:digest},'-created_date',1);
+ if(existing?.length)return Response.json({success:true,duplicate:true});
+ const rating=msg.rating||{};
+ const number=(value:any)=>{
+  const n=Number(value);
+  return value==null||value===''||!Number.isFinite(n)?undefined:n;
+ };
+ const snapshot:any={
+  event_id:digest,provider_id:String(msg.duprId),topic:String(payload.event),
+  observed_at:new Date(typeof msg.timestamp==='number'?msg.timestamp*1000:Date.now()).toISOString(),
+  connection_slot:String(matched[0].test_slot||''),
+  raw_json:JSON.stringify({rating:msg.rating??null,metrics:msg.metrics??null}).slice(0,16000)
+ };
+ const singles=number(rating.singles),doubles=number(rating.doubles);
+ if(singles!==undefined)snapshot.singles=singles;
+ if(doubles!==undefined)snapshot.doubles=doubles;
+ await base44.asServiceRole.entities.DuprRatingUatAudit.create(snapshot);
+ return Response.json({success:true,environment:'uat'});
+});
