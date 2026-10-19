@@ -629,10 +629,37 @@ Deno.serve(async (req) => {
     return Response.json({ token });
   }
 
-  // All other actions require a token
-  if (!spondToken) {
-    return Response.json({ error: 'spondToken required' }, { status: 400 });
+  // Scoped club connection: never return Spond bearer tokens to delegated users.
+  let effectiveSpondToken=spondToken;
+  let effectiveAction=action;
+  if (String(action||'').startsWith('club_')) {
+    if (!['club_connection_status','club_get_groups','club_get_events','club_get_attendees','club_import_attendees'].includes(action)) return Response.json({error:'Unsupported Spond operation'},{status:400});
+    const tournamentId=String(body.tournamentId||'');
+    const tournament=tournamentId?(await base44.asServiceRole.entities.Tournament.filter({id:tournamentId}))?.[0]:null;
+    if (!tournament||tournament.format!=='King of the Court') return Response.json({error:'KOTC tournament not found'},{status:404});
+    const sameClub=!!activeTenantId&&!!activeClubId&&tournament.tenant_id===activeTenantId&&tournament.host_club_id===activeClubId;
+    const grants=user.role==='admin'?[]:await base44.asServiceRole.entities.TournamentUserAccess.filter({tenant_id:tournament.tenant_id,tournament_id:tournamentId,user_id:user.id,status:'active'});
+    const now=Date.now();
+    const allowed=user.role==='admin'||sameClub&&(grants||[]).some(g=>['event_manager','event_host'].includes(g.role)&&(!g.starts_at||Date.parse(g.starts_at)<=now)&&(!g.ends_at||Date.parse(g.ends_at)>=now));
+    if (!allowed) return Response.json({error:'Event organiser permission required'},{status:403});
+    const connections=await base44.asServiceRole.entities.ExternalGroupConnection.filter({tenant_id:tournament.tenant_id,club_id:tournament.host_club_id,provider:'spond',status:'active'});
+    const connection=(connections||[]).find(c=>c.connection_mode==='credentials_login'&&c.credential_reference&&c.external_group_id);
+    if (action==='club_connection_status') return Response.json({connected:!!connection,groupName:connection?.external_group_name||'',requiresConfiguration:!connection});
+    if (!connection) return Response.json({error:'A club administrator must bind the approved Spond group before delegated refresh.'},{status:409});
+    if (groupId&&String(groupId)!==String(connection.external_group_id)) return Response.json({error:'Group outside approved club connection'},{status:403});
+    if (action==='club_import_attendees') {
+      const sessions=await base44.asServiceRole.entities.KotcSession.filter({tournament_id:tournamentId,tenant_id:tournament.tenant_id,club_id:tournament.host_club_id});
+      if ((sessions||[]).some(s=>!['abandoned','cancelled'].includes(s.status))) return Response.json({error:'Session already exists. Manage changes using the KOTC live roster controls.'},{status:409});
+    }
+    const prefix=String(connection.credential_reference||'');
+    if (!/^[A-Z][A-Z0-9_]{0,70}$/.test(prefix)) return Response.json({error:'Invalid credential reference'},{status:409});
+    const account=Deno.env.get(prefix+'_EMAIL'),password=Deno.env.get(prefix+'_PASSWORD');
+    if (!account||!password) return Response.json({error:'Club Spond secrets unavailable'},{status:503});
+    if (action==='club_get_groups') return Response.json({groups:[{id:connection.external_group_id,name:connection.external_group_name||'Club group'}],connectionMode:'tenant_backend'});
+    effectiveSpondToken=await spondLogin(account,password);
+    effectiveAction=action.slice(5);
   }
+  if (!effectiveSpondToken) return Response.json({error:'spondToken required'},{status:400});
 
   // ── Action: import_interclub_attendees ──
   if (action === 'import_interclub_attendees') {
@@ -733,7 +760,7 @@ Deno.serve(async (req) => {
   }
 
   // ── Action: get_events ──
-  if (action === 'get_events') {
+  if (effectiveAction === 'get_events') {
     if (!groupId) return Response.json({ error: 'groupId required' }, { status: 400 });
 
     // Host workflow: show a bounded list of upcoming occurrences and let the host
@@ -780,7 +807,7 @@ Deno.serve(async (req) => {
   }
 
   // ── Action: get_attendees ──
-  if (action === 'get_attendees') {
+  if (effectiveAction === 'get_attendees') {
     if (!groupId || !eventId) return Response.json({ error: 'groupId and eventId required' }, { status: 400 });
     const tournamentId=String(body.tournamentId||'');
     const [event, group] = await Promise.all([fetchEventOccurrence(groupId,eventId,spondToken,selectedStartTimestamp,selectedHeading),fetchGroupForAttendees(groupId,spondToken)]);
@@ -800,7 +827,7 @@ Deno.serve(async (req) => {
   }
 
   // ── Action: import_attendees ──
-  if (action === 'import_attendees') {
+  if (effectiveAction === 'import_attendees') {
     const tournamentId=String(body.tournamentId||''); const replaceRoster=body.replaceRoster===true;
     if(!tournamentId||!groupId||!eventId)return Response.json({error:'tournamentId, groupId and eventId required'},{status:400});
     const tournament=(await base44.asServiceRole.entities.Tournament.filter({id:tournamentId}))?.[0];
