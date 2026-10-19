@@ -182,8 +182,8 @@ function ProposedRoundEditor({round,slots,participants,names,fixedPairs,onStart,
       <Button data-testid="kotc-start-round" className="w-full min-h-14 text-base font-bold" onClick={()=>onStart(draft,roundMinutes)} disabled={saving||issues.length>0}><Play className="w-5 h-5 mr-2"/>{saving?'Starting…':`START ROUND ${round.round_number}`}</Button>
     </div>
     {startError&&<div data-testid="kotc-start-error" className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"><p className="font-semibold">Round did not start</p><p className="text-xs mt-1">{startError}</p><p className="text-xs mt-1">Your draw is still safe. Correct the issue shown above and press Start Round again.</p></div>}
-    {Number(round.round_number)===1&&<Button className="w-full" variant="outline" onClick={onBackToSetup} disabled={saving}><ArrowLeft className="w-4 h-4 mr-2"/>Back to Setup</Button>}
-    <Button className="w-full" variant="ghost" onClick={()=>{setDraft(original);setSelected(null);}} disabled={saving}><Undo2 className="w-4 h-4 mr-2"/>Restore Original Draw</Button>
+    {Number(round.round_number)===1&&<div className="rounded-xl border p-3 space-y-2" data-testid="kotc-round1-redraw-tools"><p className="text-sm font-semibold">Change or redo the opening draw</p><p className="text-xs text-muted-foreground">For one or two changes, swap players in the editor above and save: other courts stay intact. To change the complete Round 1 draw or roster, return to setup; the unplayed draw is discarded but the roster is kept. Create Round 1 again after your changes.</p><Button className="w-full min-h-11" variant="outline" onClick={onBackToSetup} disabled={saving}><ArrowLeft className="w-4 h-4 mr-2"/>Return to Setup / Redo Round 1 Draw</Button></div>}
+    <Button className="w-full" variant="ghost" onClick={()=>{setDraft(original);setSelected(null);}} disabled={saving}><Undo2 className="w-4 h-4 mr-2"/>Restore Original Draw (undo unsaved edits)</Button>
   </div>;
 }
 
