@@ -3,7 +3,7 @@ import { BookOpen, ChevronDown, ChevronUp, HelpCircle, AlertTriangle, CheckCircl
 
 // Tenant-specific approved artwork. Other clubs use their own guide rather than Clare branding.
 const TENANT_HOST_INFOGRAPHICS = Object.freeze({
-  '6a9b7790bc4a8d299938bda9': 'https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/521f37ca9_rallyhub-c868d83e9bcd2c638fb9.png',
+  '6a9b7790bc4a8d299938bda9': 'https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/5d3ebd495_rallyhub-71eb892f306fbb28d3d0.png',
 });
 
 const chapters = [
