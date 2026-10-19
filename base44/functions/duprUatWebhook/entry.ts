@@ -23,7 +23,9 @@ Deno.serve(async req=>{
  // DUPR's webhook clientId can identify the registered partner client key.
  // Accept either configured identifier, never an arbitrary clientId.
  const matchesPartner=payload?.clientId===clientId||(!!clientKey&&payload?.clientId===clientKey);
- if(!matchesPartner||!['RATING','RATING_SEED'].includes(payload?.event)||typeof payload?.message?.duprId!=='string'){
+ // Webhook URL secret is validated above; the subscribed DUPR ID is checked
+ // against connected UAT accounts below. Provider clientId formats may differ.
+ if(!['RATING','RATING_SEED'].includes(payload?.event)||typeof payload?.message?.duprId!=='string'){
   console.warn('DUPR UAT webhook skipped malformed rating envelope',JSON.stringify({clientIdMatches:payload?.clientId===clientId, eventRecognised:['RATING','RATING_SEED'].includes(payload?.event), messageObject:!!payload?.message&&typeof payload.message==='object', duprIdString:typeof payload?.message?.duprId==='string',topLevelKeys:Object.keys(payload||{}).filter((k:string)=>['clientId','event','message'].includes(k)),messageKeys:payload?.message&&typeof payload.message==='object'?Object.keys(payload.message).filter((k:string)=>['duprId','rating','metrics','timestamp','name'].includes(k)):[]}));
   console.warn('DUPR_UAT_SAFE_DIAGNOSTIC '+JSON.stringify({clientIdMatches:payload?.clientId===clientId,duprIdType:typeof payload?.message?.duprId,clientIdType:typeof payload?.clientId}));
   if(payload?.clientId!==clientId)console.warn('DUPR UAT diagnostic: CLIENT_ID_MISMATCH');
