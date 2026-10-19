@@ -10,7 +10,8 @@ const chapters = [
   { title: '1. Before players arrive', steps: [
     'Open your personal host link and sign in with the authorised host account. This link controls only this KOTC session.',
     'Check the player list and how many usable courts are available. Four players are required for each active doubles court.',
-    'Have a phone or tablet charged and connected. Ask players to use their own scoring links; the host can also record scores.'
+    'Have a charged phone or tablet and a reliable connection. If using hall sound, pair the Bluetooth speaker with the host device, select it as the sound output, set the volume and test the audible signal before play.',
+    'The host may record all court scores directly. Player scoring links are optional; tonight can be run entirely with host-entered results.'
   ]},
   { title: '2. Create the first-round draw', steps: [
     'Under Session settings enter Venue courts and Hall / session duration.',
@@ -23,12 +24,13 @@ const chapters = [
     'In the Host Round Editor, review every court and the Bench This Round list before starting.',
     'To exchange two players, tap the first player and then the second. To bring on a bench player, tap a court player and the bench player. You can also move a whole court group using its drag handle.',
     'If you have changed positions, use Save Round Setup where offered. Call out courts, partners and opponents.',
+    'For timed rounds, check the round minutes and test the Bluetooth speaker using Sound Check. Confirm the horn is audible across the hall; if not, use the on-screen timer and call time manually.',
     'Press START ROUND only when everyone is on court. The round timer is associated with the round start.'
   ]},
   { title: '4. Collect and verify scores', steps: [
-    'Players can enter their court result through the player scoring link. Only one scorer should claim a court at a time.',
-    'The host sees the saved results on the corresponding court score cards. Refresh Player Scores if results entered on another device are not yet showing.',
-    'If the host needs to score an unclaimed court, start typing in its score boxes to take control. Confirm the scores and save.',
+    'For host-led scoring, collect each court’s final score when the horn sounds. Enter Team A and Team B scores on the host court score card, confirm the result and save each court. No player scoring link is required.',
+    'If player scoring links are enabled for a future session, only one scorer should claim each court. The host can refresh player scores entered on another device.',
+    'Check that every court has a saved score before preparing the next round. Use the host correction control for a result that has already been submitted.',
     'For a completed score that needs correction, choose Edit result, make the correction and save. Review the changed result before progressing.',
     'For timed rounds ending in a tie, select Team A or Team B as serving at the horn; RallyHub uses that to determine the winner. No drawn match result.'
   ]},
@@ -57,7 +59,7 @@ const problems = [
   ['A player leaves during play', 'Use Live Roster Controls and Leave After This Round or Injured, as appropriate. Check when the change takes effect.'],
   ['Somebody arrives late', 'Mark Arrived / Back Available in roster controls, then review the next proposed round and bench.'],
   ['The round will not advance', 'Check for outstanding results and any visible error. If the screen is still processing, wait and refresh the session state rather than repeatedly triggering the command.'],
-  ['The timer or sound is not working', 'Keep scoring and court movements under host control; check timer settings and use the available sound-check control. Do not assume an audible horn has played.'],
+  ['The timer or sound is not working', 'Check Bluetooth pairing, selected audio output and both volume controls, then try Sound Check. If the horn is still inaudible, use the on-screen timer and manually announce time. Do not assume an audible signal played.'],
 ];
 
 export default function KotcHostGuide({compact=false,tenantId=''}) {
