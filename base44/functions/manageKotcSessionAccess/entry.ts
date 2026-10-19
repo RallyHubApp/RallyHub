@@ -21,15 +21,36 @@ Deno.serve(async(req)=>{try{
   if(!session)return Response.json({error:'KOTC session not found'},{status:404});
 
   if(action==='search_hosts'){
-    const q=String(body.query||'').trim().toLowerCase().replace(/\s+/g,' ');
+    // Compare names without punctuation or spacing: "Mary Frances Darcy" matches "MaryFrances D'Arcy".
+    const norm=(v:any)=>String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+    const q=norm(body.query);
     if(q.length<2)return Response.json({people:[]});
-    const clubPlayers=await base44.asServiceRole.entities.Player.filter({tenant_id:session.tenant_id,club_id:session.club_id});
-    const people=(clubPlayers||[])
-      .filter((p:any)=>String(p.status||'Active').toLowerCase()==='active' && String(p.relationship_status||'active').toLowerCase()==='active')
-      .filter((p:any)=>String(p.full_name||'').toLowerCase().replace(/\s+/g,' ').includes(q))
-      .sort((a:any,b:any)=>String(a.full_name||'').localeCompare(String(b.full_name||'')))
-      .slice(0,20)
-      .map((p:any)=>({id:p.id,name:p.full_name,email:String(p.linked_user_email||p.email||'').trim()}));
+    const [tournaments,clubPlayers,members,persons]=await Promise.all([
+      base44.asServiceRole.entities.Tournament.filter({id:session.tournament_id,tenant_id:session.tenant_id,host_club_id:session.club_id}),
+      base44.asServiceRole.entities.Player.filter({tenant_id:session.tenant_id,club_id:session.club_id}),
+      base44.asServiceRole.entities.ClubMembership.filter({tenant_id:session.tenant_id,club_id:session.club_id}),
+      base44.asServiceRole.entities.Person.filter({tenant_id:session.tenant_id})
+    ]);
+    const rosterIds=new Set((tournaments?.[0]?.player_ids||[]).map(String));
+    const memberIds=new Set((members||[]).filter((m:any)=>!['inactive','former_member'].includes(String(m.membership_status||''))).map((m:any)=>String(m.person_id)));
+    const personById=new Map((persons||[]).map((p:any)=>[String(p.id),p]));
+    const candidates=new Map<string,any>();
+    for(const p of clubPlayers||[]){
+      if(String(p.status||'Active').toLowerCase()!=='active'||['archived','suspended'].includes(String(p.relationship_status||'active').toLowerCase()))continue;
+      const person=personById.get(String(p.person_id||'')) as any;
+      const member=memberIds.has(String(p.person_id||''));
+      if(!member&&!rosterIds.has(String(p.id)))continue;
+      const name=String(person?.full_name||p.full_name||'');
+      if(![name,p.full_name,person?.preferred_name].some(v=>norm(v).includes(q)))continue;
+      const email=String(person?.primary_email||p.linked_user_email||p.email||'').trim();
+      candidates.set(String(p.person_id||p.id),{id:p.id,name,email,inTonightRoster:rosterIds.has(String(p.id)),isMember:member});
+    }
+    for(const person of persons||[]){
+      if(!memberIds.has(String(person.id))||candidates.has(String(person.id)))continue;
+      if(![person.full_name,person.preferred_name].some(v=>norm(v).includes(q)))continue;
+      candidates.set(String(person.id),{id:person.id,name:person.full_name,email:String(person.primary_email||'').trim(),inTonightRoster:false,isMember:true});
+    }
+    const people=[...candidates.values()].sort((a:any,b:any)=>Number(b.inTonightRoster)-Number(a.inTonightRoster)||a.name.localeCompare(b.name)).slice(0,20);
     return Response.json({people});
   }
 
