@@ -90,7 +90,7 @@ export default function DuprUatAccounts(){
    <Button variant="outline" onClick={()=>{setIframe('');setSlot('');waiting.current=false;}}>Close sign-in</Button>
   </div>}
   <div className="flex flex-wrap gap-2">
-   <Button disabled={!!busy||accounts.filter(a=>a.linked).length!==4} onClick={runCompleteUat}>Run complete independent DUPR UAT</Button>
+   <Button disabled={true} title="Temporarily disabled: this legacy runner deletes matches before downstream rating checks can finish">Legacy instant UAT run (paused pending rating verification)</Button>
    <Button variant="outline" disabled={!!busy} onClick={()=>execute('uat_match_preflight')}>Run 4-account club & rating preflight</Button>
    <Button variant="outline" disabled={!!busy} onClick={()=>execute('uat_register_webhook')}>Register rating webhook</Button>
    <Button variant="outline" disabled={!!busy} onClick={()=>execute('uat_rating_events')}>Review DUPR rating events</Button>
