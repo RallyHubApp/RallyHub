@@ -1,4 +1,4 @@
 {
   "name": "duprUatWebhook",
-  "entry": "base44/functions/duprUatWebhook/entry.ts"
+  "entry": "entry.ts"
 }
