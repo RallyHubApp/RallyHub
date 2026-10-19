@@ -24,6 +24,9 @@ export async function membershipComms(base44:any,config:any,club:any,purpose:str
  const blocks=plainWithoutLinks.split(/\n\s*\n/);
  const introduction=blocks.slice(0,2).join('\n\n');
  const rest=blocks.slice(2).join('\n\n');
- const htmlBody=renderBasicBrandedEmail(`<div style="white-space:pre-line;font-size:16px;line-height:1.7">${esc(introduction)}</div>${action}<div style="white-space:pre-line;font-size:16px;line-height:1.7">${esc(rest)}</div>`,kit,club,club.name||'Clare Pickleball',template.channel_templates?.email?.header_title||'Membership',template.channel_templates?.email?.header_subtitle||'');
+ const mergeHtml=(input:string)=>String(input||'').replace(/{{\s*([A-Za-z_]+)\s*}}/g,(_m,k)=>esc(fields[k]??''));
+ const customBody=template.html_template?.trim()?mergeHtml(template.html_template):'';
+ const formatted=customBody?`${customBody}${action}`:`<div style="white-space:pre-line;font-size:16px;line-height:1.7">${esc(introduction)}</div>${action}<div style="white-space:pre-line;font-size:16px;line-height:1.7">${esc(rest)}</div>`;
+ const htmlBody=renderBasicBrandedEmail(formatted,kit,club,club.name||'Clare Pickleball',template.channel_templates?.email?.header_title||'Membership',template.channel_templates?.email?.header_subtitle||'');
  return {subject,textBody,htmlBody};
 }
