@@ -4,6 +4,7 @@ import {validRatingEnvelope} from './ratingEnvelope.ts';
 Deno.serve(async req=>{
  const secret=Deno.env.get('DUPR_UAT_WEBHOOK_KEY')||'';
  const clientId=Deno.env.get('DUPR_CLIENT_ID')||'';
+ const clientKey=Deno.env.get('DUPR_CLIENT_KEY')||'';
  if(!secret||!clientId)return Response.json({error:'UAT webhook not configured'},{status:503});
  const provided=new URL(req.url).searchParams.get('key')||'';
  const enc=new TextEncoder();
@@ -19,7 +20,10 @@ Deno.serve(async req=>{
  // DUPR registration sends a POST handshake that is not a rating notification.
  // The URL secret was validated above; acknowledge test messages without recording them.
  if(!['RATING','RATING_SEED'].includes(payload?.event))return Response.json({success:true,handshake:true});
- if(!validRatingEnvelope(payload,clientId)){
+ // DUPR's webhook clientId can identify the registered partner client key.
+ // Accept either configured identifier, never an arbitrary clientId.
+ const matchesPartner=payload?.clientId===clientId||(!!clientKey&&payload?.clientId===clientKey);
+ if(!matchesPartner||!['RATING','RATING_SEED'].includes(payload?.event)||typeof payload?.message?.duprId!=='string'){
   console.warn('DUPR UAT webhook skipped malformed rating envelope',JSON.stringify({clientIdMatches:payload?.clientId===clientId, eventRecognised:['RATING','RATING_SEED'].includes(payload?.event), messageObject:!!payload?.message&&typeof payload.message==='object', duprIdString:typeof payload?.message?.duprId==='string',topLevelKeys:Object.keys(payload||{}).filter((k:string)=>['clientId','event','message'].includes(k)),messageKeys:payload?.message&&typeof payload.message==='object'?Object.keys(payload.message).filter((k:string)=>['duprId','rating','metrics','timestamp','name'].includes(k)):[]}));
   console.warn('DUPR_UAT_SAFE_DIAGNOSTIC '+JSON.stringify({clientIdMatches:payload?.clientId===clientId,duprIdType:typeof payload?.message?.duprId,clientIdType:typeof payload?.clientId}));
   if(payload?.clientId!==clientId)console.warn('DUPR UAT diagnostic: CLIENT_ID_MISMATCH');
