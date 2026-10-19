@@ -141,8 +141,9 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
   if(action==='uat_synthetic_webhook_test'){
    const slot=safeSlot(body.slot||'brian');
    if(!slot)return fail('Invalid UAT slot');
-   const record=await recordFor(b,slot,user.id);
-   if(!record||record.status!=='connected')return fail('Connected UAT account required',409);
+   const records=await entities(b).DuprUatConnection.filter({test_slot:slot,status:'connected'},'-verified_at',10);
+   if(records.length!==1)return fail('Exactly one connected UAT account required',409);
+   const record=records[0];
    const endpoint=Deno.env.get('DUPR_UAT_WEBHOOK_URL')||'';
    const clientId=Deno.env.get('DUPR_CLIENT_ID')||'';
    const secret=Deno.env.get('DUPR_UAT_WEBHOOK_KEY')||'';
@@ -150,11 +151,12 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
    try{parsed=new URL(endpoint)}catch{return fail('UAT webhook URL missing',503)}
    if(parsed.protocol!=='https:'||!secret||parsed.searchParams.get('key')!==secret||!clientId||!parsed.pathname.endsWith('/duprUatWebhook'))return fail('Secure UAT webhook configuration invalid',503);
    const stamp=Math.floor(Date.now()/1000);
-   const payload={clientId,event:'RATING_SEED',message:{duprId:record.dupr_id,timestamp:stamp,rating:{singles:'3.125',doubles:'3.250',matchId:null},metrics:null}};
+   const payload={clientId,event:'RATING_SEED',message:{duprId:record.dupr_id,timestamp:stamp,rating:null,metrics:null}};
    const send=async()=>{const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(10000)});return {status:res.status,body:await res.json().catch(()=>({}))}};
    const first=await send();const second=await send();
-   const audits=await entities(b).DuprRatingUatAudit.filter({provider_id:record.dupr_id},'-observed_at',30);
-   const matching=(audits||[]).filter((x:any)=>x.topic==='RATING_SEED'&&x.observed_at===new Date(stamp*1000).toISOString()&&x.singles===3.125&&x.doubles===3.25);
+   const raw=JSON.stringify({clientId:payload.clientId,event:payload.event,message:payload.message});
+   const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw)))).map(x=>x.toString(16).padStart(2,'0')).join('');
+   const matching=await entities(b).DuprRatingUatAudit.filter({event_id:digest},'-created_date',5);
    return reply({success:first.status===200&&second.status===200&&first.body?.success===true&&second.body?.duplicate===true&&matching.length===1,environment:'uat',synthetic:true,slot,first,second,auditMatches:matching.length});
   }
   if(action==='uat_register_webhook'){
