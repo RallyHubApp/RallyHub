@@ -4,46 +4,48 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import KotcV2SessionView from '@/components/kotc/KotcV2SessionView';
 import KotcHostGuide from '@/components/kotc/KotcHostGuide';
+import BrandedHostFrame from '@/components/sporting/BrandedHostFrame';
 import { Button } from '@/components/ui/button';
-import { LogOut, ShieldCheck, BookOpen, Play } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 
+const tabSelectors={
+  players:['#kotc-live-roster-controls','[data-testid="kotc-live-roster"]','[data-testid="kotc-round-editor"]'],
+  courts:['[data-testid="kotc-round-editor"]','[data-testid="kotc-scores-courts"]','[data-testid="kotc-round-not-started"]'],
+  scores:['[data-testid="kotc-scores-courts"]','[data-testid="kotc-round-editor"]'],
+  more:['[data-testid="kotc-session-menu-panel"]','[data-testid="kotc-session-menu"]']
+};
 export default function KotcHostSession(){
-  const { sessionId }=useParams();
+  const {sessionId}=useParams();
   const [activeTab,setActiveTab]=useState('run');
   const queryClient=useQueryClient();
-  const { user, logout }=useAuth();
+  const {user,logout}=useAuth();
   const {data:state,isLoading,error}=useQuery({
     queryKey:['kotc-host-state',sessionId],
-    queryFn:async()=> { const result=await Promise.race([base44.functions.invoke('getKotcV2State',{sessionId}),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Session service did not respond within 15 seconds')),15000))]); if(result.data?.error)throw new Error(result.data.error); return result.data; },
-    enabled:!!sessionId,
-    retry:false,
-    staleTime:Infinity,
-    refetchOnWindowFocus:false,
+    queryFn:async()=>{const result=await Promise.race([base44.functions.invoke('getKotcV2State',{sessionId}),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Session service did not respond within 15 seconds')),15000))]);if(result.data?.error)throw new Error(result.data.error);return result.data;},
+    enabled:!!sessionId,retry:false,staleTime:Infinity,refetchOnWindowFocus:false
   });
-
-  if(isLoading)return <div className="min-h-screen bg-background flex items-center justify-center"><div className="text-sm text-muted-foreground">Opening session host mode…</div></div>;
-  if(error||!state?.session)return <div className="min-h-screen bg-background p-4 flex items-center justify-center"><div className="max-w-md w-full glass rounded-xl p-5 space-y-3"><h1 className="font-bold">Session access unavailable</h1><p className="text-sm text-muted-foreground">{error ? (error.message || 'The session service is unavailable. Try again.') : 'This host link is invalid, expired, revoked, or your account has not been granted access to this session.'}</p><div className="flex flex-wrap gap-2"><Button onClick={()=>queryClient.refetchQueries({queryKey:['kotc-host-state',sessionId]})}>Retry session</Button><Button variant="outline" onClick={()=>logout()}>Sign out</Button></div></div></div>;
-
+  const {data:eventMeta}=useQuery({queryKey:['kotc-host-event-meta',state?.session?.tournament_id],queryFn:async()=>{
+    const events=await base44.entities.Tournament.filter({id:state.session.tournament_id});return events?.[0]||null;
+  },enabled:!!state?.session?.tournament_id,retry:false});
+  if(isLoading)return <div className="min-h-screen flex items-center justify-center bg-[#f4f7fb] text-sm">Opening session host mode…</div>;
+  if(error||!state?.session)return <div className="min-h-screen bg-[#f4f7fb] p-4 flex items-center justify-center"><div className="max-w-md w-full rounded-xl bg-white border p-5 space-y-3"><h1 className="font-bold">Session access unavailable</h1><p className="text-sm">{error?.message||'This host link is invalid, expired, revoked, or your account has not been granted access.'}</p><div className="flex gap-2"><Button onClick={()=>queryClient.refetchQueries({queryKey:['kotc-host-state',sessionId]})}>Retry session</Button><Button variant="outline" onClick={()=>logout()}>Sign out</Button></div></div></div>;
   const session=state.session;
   const players=(state.participants||[]).map(p=>({id:p.player_id||p.id,full_name:p.display_name||'Player',skill_rating:p.rating_snapshot??null,dupr_rating:p.dupr_rating_snapshot??null}));
-  const tournament={id:session.tournament_id,name:session.name,format:'King of the Court',status:session.status==='ready'?'In Progress':'In Progress',player_ids:players.map(p=>p.id)};
-
-  return <div className="min-h-screen bg-background">
-  <header className="sticky top-0 z-40 glass-strong border-b border-border px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div className="min-w-0 w-full sm:w-auto">
-      <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary shrink-0"/><p className="text-xs uppercase tracking-wider text-primary font-semibold">Session Host Mode</p></div>
-      <h1 className="font-bold text-sm sm:text-base truncate">{session.name}</h1>
-      <p className="text-[10px] text-muted-foreground truncate">Restricted to this KOTC session only · {user?.full_name||user?.email||'Host'}</p>
-    </div>
-    <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:justify-end">{user?.role==="admin"&&<a className="min-w-0" href={`/app/communications?scope=tenant&source=kotc&sourceId=${encodeURIComponent(session.id)}&template=kotc_results&returnTo=${encodeURIComponent(`/kotc-host/${session.id}`)}&label=${encodeURIComponent(session.name||"KOTC")}`}><Button className="w-full min-h-11 sm:min-h-9" variant="outline" size="sm">Communications</Button></a>}<Button className="min-h-11 sm:min-h-9" variant="outline" size="sm" onClick={()=>logout()}><LogOut className="w-4 h-4 mr-1"/>Sign out</Button></div>
-  </header>
-  <main className="p-3 sm:p-4 max-w-5xl mx-auto space-y-4">
-      <nav className="rounded-xl border bg-background p-1.5 flex gap-2" aria-label="King of the Court host tabs">
-        <Button type="button" className="flex-1 min-h-11" variant={activeTab==='run'?'default':'outline'} aria-pressed={activeTab==='run'} onClick={()=>setActiveTab('run')}><Play className="w-4 h-4 mr-2"/>Run Event</Button>
-        <Button type="button" className="flex-1 min-h-11" variant={activeTab==='guide'?'default':'outline'} aria-pressed={activeTab==='guide'} onClick={()=>setActiveTab('guide')}><BookOpen className="w-4 h-4 mr-2"/>Host Guide</Button>
-      </nav>
-      {activeTab==='guide'?<KotcHostGuide tenantId={session.tenant_id}/>:<KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} sessionId={session.id}/>}
-    </main>
-  </div>;
+  const tournament={id:session.tournament_id,name:session.name,format:'King of the Court',status:'In Progress',player_ids:players.map(p=>p.id)};
+  const scheduled=session.scheduled_start||eventMeta?.start_date;
+  const dateLabel=scheduled?new Date(scheduled.includes('T')?scheduled:`${scheduled}T12:00:00`).toLocaleDateString('en-IE',{weekday:'short',day:'numeric',month:'short',year:'numeric'}):'';
+  const subtitle=[session.custom_location||eventMeta?.location||'',dateLabel,eventMeta?.event_start_time||''].filter(Boolean).join(' · ');
+  const onTab=key=>{
+    setActiveTab(key);
+    if(key==='guide'){window.scrollTo({top:0,behavior:'smooth'});return;}
+    if(key==='run'){window.scrollTo({top:0,behavior:'smooth'});return;}
+    if(key==='players')document.querySelector('[data-testid="kotc-live-roster"]')?.click();
+    if(key==='more'&&!document.querySelector('[data-testid="kotc-session-menu-panel"]'))document.querySelector('[data-testid="kotc-session-menu"]')?.click();
+    setTimeout(()=>{const target=(tabSelectors[key]||[]).map(s=>document.querySelector(s)).find(Boolean);if(target)target.scrollIntoView({behavior:'smooth',block:'start'});},100);
+  };
+  const communicationsUrl=user?.role==='admin'?`/app/communications?scope=tenant&source=kotc&sourceId=${encodeURIComponent(session.id)}&template=kotc_results&returnTo=${encodeURIComponent(`/kotc-host/${session.id}`)}&label=${encodeURIComponent(session.name||'KOTC')}`:null;
+  return <BrandedHostFrame tenantId={session.tenant_id} title="King of the Court" subtitle={subtitle} roundNote={`${session.play_minutes||8}-minute rounds`} hostName={user?.full_name||user?.email} activeTab={activeTab} onTab={onTab} onSignOut={()=>logout()} communicationsUrl={communicationsUrl}>
+    <div style={{display:activeTab==='guide'?'none':'block'}} aria-hidden={activeTab==='guide'}><KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} sessionId={session.id}/></div>
+    {activeTab==='guide'&&<KotcHostGuide tenantId={session.tenant_id}/>}
+  </BrandedHostFrame>;
 }
