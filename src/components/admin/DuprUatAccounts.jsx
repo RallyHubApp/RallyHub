@@ -2,6 +2,7 @@ import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {base44} from '@/api/base44Client';
 import {duprUatPreflight,duprUatSyntheticMatch,duprUatBulkAcceptance} from './duprUatRunner';
 import {Button} from '@/components/ui/button';
+import DuprUatStage5 from './DuprUatStage5';
 const TEST_SLOTS=[{id:'brian',label:'Brian'},{id:'marie',label:'Marie'},{id:'roisin',label:'Róisín'},{id:'rallyhub',label:'RallyHub App'}];
 const ORIGIN='https://uat.dupr.gg';
 export default function DuprUatAccounts(){
@@ -95,6 +96,7 @@ export default function DuprUatAccounts(){
    <Button variant="outline" disabled={!!busy} onClick={()=>execute('uat_rating_events')}>Review DUPR rating events</Button>
    <Button variant="outline" disabled={!!busy} onClick={reload}>Refresh status</Button>
   </div>
+  <DuprUatStage5 />
   {busy&&<p className="text-sm">Checking {busy}…</p>}
   {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
   {result&&<pre className="overflow-auto rounded-md border p-3 text-xs">{JSON.stringify(result,null,2)}</pre>}
