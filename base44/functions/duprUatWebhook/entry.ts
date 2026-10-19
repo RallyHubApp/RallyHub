@@ -21,6 +21,9 @@ Deno.serve(async req=>{
  if(!['RATING','RATING_SEED'].includes(payload?.event))return Response.json({success:true,handshake:true});
  if(!validRatingEnvelope(payload,clientId)){
   console.warn('DUPR UAT webhook skipped malformed rating envelope',JSON.stringify({clientIdMatches:payload?.clientId===clientId, eventRecognised:['RATING','RATING_SEED'].includes(payload?.event), messageObject:!!payload?.message&&typeof payload.message==='object', duprIdString:typeof payload?.message?.duprId==='string',topLevelKeys:Object.keys(payload||{}).filter((k:string)=>['clientId','event','message'].includes(k)),messageKeys:payload?.message&&typeof payload.message==='object'?Object.keys(payload.message).filter((k:string)=>['duprId','rating','metrics','timestamp','name'].includes(k)):[]}));
+  const b=createClientFromRequest(req);
+  const diagnostic={clientIdMatches:payload?.clientId===clientId,eventRecognised:['RATING','RATING_SEED'].includes(payload?.event),messageObject:!!payload?.message&&typeof payload.message==='object',duprIdString:typeof payload?.message?.duprId==='string'};
+  await b.asServiceRole.entities.DuprRatingUatAudit.create({event_id:'diagnostic-'+crypto.randomUUID(),provider_id:'WEBHOOK_DIAGNOSTIC',topic:'REJECTED_ENVELOPE',observed_at:new Date().toISOString(),connection_slot:'diagnostic',raw_json:JSON.stringify(diagnostic)}).catch(()=>{});
   return Response.json({success:true,ignored:true});
  }
  const msg=payload.message||{};
