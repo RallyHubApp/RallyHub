@@ -20,6 +20,19 @@ Deno.serve(async(req)=>{try{
   const session=(await base44.asServiceRole.entities.KotcSession.filter({id:sessionId}))?.[0];
   if(!session)return Response.json({error:'KOTC session not found'},{status:404});
 
+  if(action==='search_hosts'){
+    const q=String(body.query||'').trim().toLowerCase().replace(/\s+/g,' ');
+    if(q.length<2)return Response.json({people:[]});
+    const clubPlayers=await base44.asServiceRole.entities.Player.filter({tenant_id:session.tenant_id,club_id:session.club_id});
+    const people=(clubPlayers||[])
+      .filter((p:any)=>String(p.status||'Active').toLowerCase()==='active' && String(p.relationship_status||'active').toLowerCase()==='active')
+      .filter((p:any)=>String(p.full_name||'').toLowerCase().replace(/\s+/g,' ').includes(q))
+      .sort((a:any,b:any)=>String(a.full_name||'').localeCompare(String(b.full_name||'')))
+      .slice(0,20)
+      .map((p:any)=>({id:p.id,name:p.full_name,email:String(p.linked_user_email||p.email||'').trim()}));
+    return Response.json({people});
+  }
+
   if(action==='list'){
     const grants=await base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id});
     const users=await base44.asServiceRole.entities.User.list('-created_date',500);
