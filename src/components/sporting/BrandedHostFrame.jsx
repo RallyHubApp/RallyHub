@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, ClipboardList, Grid2X2, Menu, Play, Users, ChartNoAxesColumn, LogOut, ShieldCheck } from 'lucide-react';
+import { BookOpen, Grid2X2, Menu, Play, Users, ChartNoAxesColumn, LogOut, ShieldCheck } from 'lucide-react';
 
 // Presentation only: shared by sporting host flows. The caller retains its own sporting commands.
 const CLARE_TENANT='6a9b7790bc4a8d299938bda9';
