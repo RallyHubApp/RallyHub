@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import KotcV2SessionView from '@/components/kotc/KotcV2SessionView';
+import KotcHostGuide from '@/components/kotc/KotcHostGuide';
 import { Button } from '@/components/ui/button';
-import { LogOut, ShieldCheck } from 'lucide-react';
+import { LogOut, ShieldCheck, BookOpen, Play } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 
 export default function KotcHostSession(){
   const { sessionId }=useParams();
+  const [activeTab,setActiveTab]=useState('run');
   const queryClient=useQueryClient();
   const { user, logout }=useAuth();
   const {data:state,isLoading,error}=useQuery({
@@ -36,8 +38,12 @@ export default function KotcHostSession(){
     </div>
     <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:justify-end">{user?.role==="admin"&&<a className="min-w-0" href={`/app/communications?scope=tenant&source=kotc&sourceId=${encodeURIComponent(session.id)}&template=kotc_results&returnTo=${encodeURIComponent(`/kotc-host/${session.id}`)}&label=${encodeURIComponent(session.name||"KOTC")}`}><Button className="w-full min-h-11 sm:min-h-9" variant="outline" size="sm">Communications</Button></a>}<Button className="min-h-11 sm:min-h-9" variant="outline" size="sm" onClick={()=>logout()}><LogOut className="w-4 h-4 mr-1"/>Sign out</Button></div>
   </header>
-  <main className="p-3 sm:p-4 max-w-5xl mx-auto">
-      <KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} sessionId={session.id}/>
+  <main className="p-3 sm:p-4 max-w-5xl mx-auto space-y-4">
+      <nav className="rounded-xl border bg-background p-1.5 flex gap-2" aria-label="King of the Court host tabs">
+        <Button type="button" className="flex-1 min-h-11" variant={activeTab==='run'?'default':'outline'} aria-pressed={activeTab==='run'} onClick={()=>setActiveTab('run')}><Play className="w-4 h-4 mr-2"/>Run Event</Button>
+        <Button type="button" className="flex-1 min-h-11" variant={activeTab==='guide'?'default':'outline'} aria-pressed={activeTab==='guide'} onClick={()=>setActiveTab('guide')}><BookOpen className="w-4 h-4 mr-2"/>Host Guide</Button>
+      </nav>
+      {activeTab==='guide'?<KotcHostGuide/>:<KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} sessionId={session.id}/>}
     </main>
   </div>;
 }
