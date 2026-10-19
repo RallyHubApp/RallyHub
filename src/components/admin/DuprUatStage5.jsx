@@ -16,6 +16,8 @@ export default function DuprUatStage5(){
  const [score,setScore]=useState('9'),[correction,setCorrection]=useState('10'),[identifier,setIdentifier]=useState('');
  const [busy,setBusy]=useState(''),[error,setError]=useState(''),[out,setOut]=useState(null),[confirmed,setConfirmed]=useState(false);
  const [preflightStatus,setPreflightStatus]=useState('checking');
+ const [bulkSubmitted,setBulkSubmitted]=useState([]);
+ const [bulkDuplicateChecked,setBulkDuplicateChecked]=useState(false);
  const call=useCallback(async(action,data={})=>{
   const response=await base44.functions.invoke('duprIntegration',{action,...data});
   if(!response.data?.success)throw Error(response.data?.error||'DUPR operation unsuccessful');
@@ -45,6 +47,19 @@ export default function DuprUatStage5(){
   catch(e){setError(errorText(e));}finally{setBusy('');setConfirmed(false);}
  };
  const active=records.filter(x=>x.status!=='deleted');
+ const bulkMatches=records.filter(r=>r.identifier.startsWith('RH-UAT-BULK5-'));
+ const bulkUnresolved=bulkMatches.filter(r=>r.status!=='deleted');
+ const batchFromIds=ids=>ids.map((id,i)=>build(id,i===0?7:9));
+ const testBulkDuplicate=async()=>{
+  const ids=bulkSubmitted;
+  if(ids.length!==2)throw Error('A recorded two-match bulk submission is required');
+  let blocked=false,reason='';
+  try{await call('uat_submit_batch',{matches:batchFromIds(ids),...flags()});}
+  catch(e){reason=errorText(e);blocked=/previously submitted|duplicate|reconcil/i.test(reason);}
+  if(!blocked)throw Error('Bulk duplicate protection NOT confirmed: '+reason);
+  setBulkDuplicateChecked(true);
+  return {success:true,duplicateBlocked:true,identifiers:ids};
+ };
  return <section className="rounded-lg border border-border p-4 space-y-3" aria-label="DUPR Stage 5 match testing">
   <h3 className="font-semibold">Stage 5 — controlled DUPR match testing (UAT only)</h3>
   <p className="text-xs text-muted-foreground">Brian + Marie versus Róisín + RallyHub App. Real DUPR UAT submission, not live DUPR. Keep a test match active until you have checked the downstream rating webhook.</p>
@@ -75,6 +90,32 @@ export default function DuprUatStage5(){
    <Button variant="outline" disabled={!!busy} onClick={()=>run('Refresh',async()=>({success:true}))}>Refresh test records</Button>
   </div>
   <p className="text-xs text-muted-foreground">Submission, score correction and deletion are independent actions. Leave one match active until the downstream rating check is completed.</p>
+  <div className="border-t border-border pt-3 space-y-2">
+   <h4 className="font-semibold">Stage 5 bulk acceptance — two UAT matches</h4>
+   <p className="text-xs text-muted-foreground">Submits two doubles results, 11–7 and 11–9, in ONE DUPR batch. No automatic deletion: check rating notifications first, then clean up. Each unique identifier is reserved to prevent accidental retries.</p>
+   <div className="flex flex-wrap gap-2">
+    <Button disabled={!!busy||!permitted||!confirmed||bulkUnresolved.length!==0} onClick={()=>run('Submit two-match UAT batch',async()=>{
+     const prefix='RH-UAT-BULK5-'+Date.now()+'-'+Math.floor(Math.random()*1000000)+'-';
+     const ids=[prefix+'A',prefix+'B'];
+     setBulkSubmitted(ids);setBulkDuplicateChecked(false);
+     const response=await call('uat_submit_batch',{matches:batchFromIds(ids),...flags()});
+     return {...response,identifiers:ids};
+    })}>Submit two-match UAT batch (11–7, 11–9)</Button>
+    <Button variant="outline" disabled={!!busy||!permitted||!confirmed||bulkSubmitted.length!==2||!bulkSubmitted.every(id=>records.some(r=>r.identifier===id&&r.matchCode))} onClick={()=>run('Bulk duplicate rejection',testBulkDuplicate)}>Verify bulk duplicates blocked</Button>
+    <Button variant="outline" disabled={!!busy||!permitted||!confirmed||!bulkDuplicateChecked||bulkUnresolved.length===0||bulkUnresolved.some(r=>!r.matchCode)} onClick={()=>run('Bulk UAT cleanup',async()=>{
+     const deleted=[];
+     for(const record of bulkUnresolved){
+      const response=await call('uat_delete_match',{identifier:record.identifier,...flags()});
+      if(!response.deleted)throw Error('DUPR did not acknowledge cleanup of '+record.identifier);
+      deleted.push(record.identifier);
+     }
+     return {success:true,deleted};
+    })}>Delete acknowledged UAT bulk matches</Button>
+   </div>
+   <p className="text-xs">Bulk test records: {bulkMatches.length} · Active: {bulkUnresolved.length} · Duplicate check: {bulkDuplicateChecked?'passed in this session':'not confirmed this session'}</p>
+   {bulkUnresolved.length>0&&<div className="text-xs space-y-1">{bulkUnresolved.map(r=><p key={r.identifier}>{r.identifier} · {r.status} · DUPR match code {r.matchCode||'pending reconciliation'}</p>)}</div>}
+   {bulkUnresolved.some(r=>!r.matchCode)&&<p role="alert" className="text-sm text-destructive">Unacknowledged batch records require provider reconciliation before any retry or cleanup.</p>}
+  </div>
   <label className="block text-sm">Saved UAT test submissions
    <select aria-label="Select existing DUPR match" className="mt-1 block w-full rounded border border-border bg-background p-2" value={identifier} onChange={e=>{setIdentifier(e.target.value);setConfirmed(false);}}>
     <option value="">Select test match</option>{records.map(r=><option key={r.identifier} value={r.identifier}>{r.identifier} · {r.status} {r.matchCode?'· DUPR '+r.matchCode:''}</option>)}
