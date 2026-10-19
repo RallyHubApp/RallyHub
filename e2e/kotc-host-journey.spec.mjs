@@ -502,6 +502,10 @@ test('18-player mobile host journey: setup → controls → rounds → podium', 
   await dismissTimerFullscreen(page);
   await page.getByTestId('kotc-session-menu').click();
   await page.getByTestId('kotc-players-menu').click();
+  await expect(page.getByTestId('kotc-add-player-visible')).toBeVisible();
+  await page.getByTestId('kotc-add-player-visible').click();
+  await expect(page.getByTestId('kotc-add-player-panel')).toBeVisible();
+  await page.getByTestId('kotc-add-player-visible').click();
   await page.getByTestId('kotc-player-participant-03').click();
   await page.getByTestId('kotc-player-sit-out').click();
   await expect(page.getByTestId('kotc-player-participant-03')).toContainText('voluntary rest', { timeout: 1500 });
