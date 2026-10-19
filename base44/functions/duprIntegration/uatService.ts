@@ -195,7 +195,9 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
    }
   }
   if(action==='uat_match_records'){
-   const rows=await entities(b).DuprUatSubmission.filter({submitted_by_user_id:user.id},'-submitted_at',100);
+   // Platform-admin UAT recovery view: show all UAT submissions so a new admin session can find an acknowledged test match.
+   // Only RH-UAT records are returned; match mutations still require four-account preflight and club organiser role.
+   const rows=await entities(b).DuprUatSubmission.filter({},'-submitted_at',100);
    return reply({success:true,environment:'uat',records:(rows||[]).filter((r:any)=>String(r.identifier||'').startsWith('RH-UAT-')).map((r:any)=>({
     identifier:r.identifier,status:r.status,matchCode:r.match_code||null,submittedAt:r.submitted_at||null,lastActionAt:r.last_action_at||null
    }))});
