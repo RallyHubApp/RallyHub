@@ -17,6 +17,7 @@ const tabSelectors={
 export default function KotcHostSession(){
   const {sessionId}=useParams();
   const [activeTab,setActiveTab]=useState('run');
+  const [rosterOpenRequest,setRosterOpenRequest]=useState(0);
   const queryClient=useQueryClient();
   const {user,logout}=useAuth();
   const {data:state,isLoading,error}=useQuery({
@@ -39,13 +40,13 @@ export default function KotcHostSession(){
     setActiveTab(key);
     if(key==='guide'){window.scrollTo({top:0,behavior:'smooth'});return;}
     if(key==='run'){window.scrollTo({top:0,behavior:'smooth'});return;}
-    if(key==='players')document.querySelector('[data-testid="kotc-live-roster"]')?.click();
+    if(key==='players'){setRosterOpenRequest(n=>n+1);return;}
     if(key==='more'&&!document.querySelector('[data-testid="kotc-session-menu-panel"]'))document.querySelector('[data-testid="kotc-session-menu"]')?.click();
     setTimeout(()=>{const target=(tabSelectors[key]||[]).map(s=>document.querySelector(s)).find(Boolean);if(target)target.scrollIntoView({behavior:'smooth',block:'start'});},100);
   };
   const communicationsUrl=user?.role==='admin'?`/app/communications?scope=tenant&source=kotc&sourceId=${encodeURIComponent(session.id)}&template=kotc_results&returnTo=${encodeURIComponent(`/kotc-host/${session.id}`)}&label=${encodeURIComponent(session.name||'KOTC')}`:null;
   return <BrandedHostFrame tenantId={session.tenant_id} title="King of the Court" subtitle={subtitle} roundNote={`${session.play_minutes||8}-minute rounds`} hostName={user?.full_name||user?.email} activeTab={activeTab} onTab={onTab} onSignOut={()=>logout()} communicationsUrl={communicationsUrl}>
-    <div style={{display:activeTab==='guide'?'none':'block'}} aria-hidden={activeTab==='guide'}><KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} sessionId={session.id}/></div>
+    <div style={{display:activeTab==='guide'?'none':'block'}} aria-hidden={activeTab==='guide'}><KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} sessionId={session.id} rosterOpenRequest={rosterOpenRequest}/></div>
     {activeTab==='guide'&&<KotcHostGuide tenantId={session.tenant_id}/>}
   </BrandedHostFrame>;
 }

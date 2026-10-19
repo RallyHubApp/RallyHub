@@ -214,7 +214,7 @@ function ProposedRoundEditor({round,slots,participants,names,fixedPairs,onStart,
 
 function standingsFrom(matches,participants){const s=Object.fromEntries(participants.map(p=>[p.id,{id:p.id,name:p.display_name,w:0,l:0,pf:0,pa:0,played:0,c1:0}]));for(const m of matches.filter(m=>m.status==='completed')){for(const id of [...(m.team_a_participant_ids||[]),...(m.team_b_participant_ids||[])])if(s[id]){s[id].played++;if(Number(m.ladder_court_rank)===1)s[id].c1++;}for(const id of m.team_a_participant_ids||[])if(s[id]){s[id].pf+=Number(m.team_a_score||0);s[id].pa+=Number(m.team_b_score||0);m.winner_side==='A'?s[id].w++:s[id].l++;}for(const id of m.team_b_participant_ids||[])if(s[id]){s[id].pf+=Number(m.team_b_score||0);s[id].pa+=Number(m.team_a_score||0);m.winner_side==='B'?s[id].w++:s[id].l++;}}return Object.values(s).sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)||b.c1-a.c1||a.name.localeCompare(b.name));}
 
-export default function KotcV2SessionView({ tournament, players, queryClient, sessionId=null }){
+export default function KotcV2SessionView({ tournament, players, queryClient, sessionId=null, rosterOpenRequest=0 }){
   const { isTrialHost }=useKotcRole();
   const sandboxTournament=String(tournament?.description||'').includes('RALLYHUB_KOTC_SANDBOX_V1');
   const [creating,setCreating]=useState(false);const [commanding,setCommanding]=useState(false);const [startingRound,setStartingRound]=useState(false);const [startError,setStartError]=useState('');const [preparingRound,setPreparingRound]=useState(false);const [prepareStatus,setPrepareStatus]=useState('');const [undoingStart,setUndoingStart]=useState(false);const [timerStartRoundId,setTimerStartRoundId]=useState(null);const [menuOpen,setMenuOpen]=useState(false);const [historyOpen,setHistoryOpen]=useState(false);const [historyRoundId,setHistoryRoundId]=useState(null);const [timerSettingsOpen,setTimerSettingsOpen]=useState(false);const [playerControlsOpen,setPlayerControlsOpen]=useState(true);const [contactsOpen,setContactsOpen]=useState(false);const [contactSearch,setContactSearch]=useState('');const [contactDirectory,setContactDirectory]=useState({});const [contactsLoading,setContactsLoading]=useState(false);const [sharing,setSharing]=useState(false);const [emailPreviewLoading,setEmailPreviewLoading]=useState(false);const [emailStatus,setEmailStatus]=useState(null);const [emailPreview,setEmailPreview]=useState(null);const [emailSubject,setEmailSubject]=useState('');const [emailBody,setEmailBody]=useState('');const [emailTestSent,setEmailTestSent]=useState(false);const [liveLeaderboardOpen,setLiveLeaderboardOpen]=useState(false);const [rankingOpen,setRankingOpen]=useState(false);const [hostAction,setHostAction]=useState('');const [testFillKey,setTestFillKey]=useState(0);
@@ -234,6 +234,17 @@ export default function KotcV2SessionView({ tournament, players, queryClient, se
     window.addEventListener('pageshow',onPageShow);
     return()=>window.removeEventListener('pageshow',onPageShow);
   },[stateKey,refetch]);
+  // A host's Players tab is an explicit OPEN + REFETCH, not a toggle. This
+  // works even when the roster panel was previously collapsed and query data is stale.
+  useEffect(()=>{
+    if(!rosterOpenRequest)return;
+    setPlayerControlsOpen(true);
+    refetch().catch(()=>toast.error('Could not refresh the session roster. Try again.'));
+    const move=()=>document.getElementById('kotc-live-roster-controls')?.scrollIntoView({behavior:'smooth',block:'start'});
+    const immediate=setTimeout(move,50);
+    const settled=setTimeout(move,450);
+    return()=>{clearTimeout(immediate);clearTimeout(settled);};
+  },[rosterOpenRequest,refetch]);
   const session=state?.session||null;const participants=state?.participants||[];const rounds=state?.rounds||[];const slots=state?.slots||[];const matches=state?.matches||[];const fixedPairs=state?.fixedPairs||[];const assistant=state?.currentAccessRole==='assistant_host';
   useEffect(()=>{
     if(session||sessionId||!tournament?.id||!playerOrder.length)return;
