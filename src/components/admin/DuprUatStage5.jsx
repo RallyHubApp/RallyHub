@@ -15,16 +15,25 @@ export default function DuprUatStage5(){
  const [gate,setGate]=useState(null),[records,setRecords]=useState([]),[ratings,setRatings]=useState(null);
  const [score,setScore]=useState('9'),[correction,setCorrection]=useState('10'),[identifier,setIdentifier]=useState('');
  const [busy,setBusy]=useState(''),[error,setError]=useState(''),[out,setOut]=useState(null),[confirmed,setConfirmed]=useState(false);
+ const [preflightStatus,setPreflightStatus]=useState('checking');
  const call=useCallback(async(action,data={})=>{
   const response=await base44.functions.invoke('duprIntegration',{action,...data});
   if(!response.data?.success)throw Error(response.data?.error||'DUPR operation unsuccessful');
   return response.data;
  },[]);
  const refresh=useCallback(async()=>{
-  const [preflight,matches]=await Promise.all([call('uat_match_preflight'),call('uat_match_records')]);
-  setGate(preflight);setRecords(matches.records||[]);
+  const matches=await call('uat_match_records');
+  setRecords(matches.records||[]);
  },[call]);
- useEffect(()=>{refresh().catch(e=>setError(errorText(e)));},[refresh]);
+ const preflight=useCallback(async()=>{
+  setPreflightStatus('checking');setError('');
+  try{
+   const result=await call('uat_match_preflight');
+   setGate(result);
+   setPreflightStatus(result.ready?'passed':'blocked');
+  }catch(e){setGate(null);setPreflightStatus('failed');setError('Stage 5 preflight: '+errorText(e));}
+ },[call]);
+ useEffect(()=>{refresh().catch(e=>setError('Submission records: '+errorText(e)));preflight();},[refresh,preflight]);
  const selected=records.find(x=>x.identifier===identifier);
  const submitter=gate?.accounts?.find(x=>x.clubAdmin)?.slot;
  const permitted=gate?.ready===true&&submitter==='brian';
@@ -39,13 +48,14 @@ export default function DuprUatStage5(){
  return <section className="rounded-lg border border-border p-4 space-y-3" aria-label="DUPR Stage 5 match testing">
   <h3 className="font-semibold">Stage 5 — controlled DUPR match testing (UAT only)</h3>
   <p className="text-xs text-muted-foreground">Brian + Marie versus Róisín + RallyHub App. Real DUPR UAT submission, not live DUPR. Keep a test match active until you have checked the downstream rating webhook.</p>
-  <p className="text-sm">{permitted?'Four eligible UAT players and Brian club authorisation confirmed':'UAT preflight not ready — submission disabled'} · Club {gate?.clubId||'checking'}</p>
+  <p className="text-sm" role="status">{permitted?'Four eligible UAT players and Brian club authorisation confirmed':preflightStatus==='checking'?'Checking all four DUPR identities and club rights — this can take up to a minute':preflightStatus==='failed'?'Preflight request failed — see the error below':preflightStatus==='blocked'?'Preflight blocked by DUPR eligibility or club authorisation':'Preflight required — submission disabled'} · Club {gate?.clubId||'not yet verified'}</p>
   <div className="flex flex-wrap gap-3">
    <label className="text-sm">Initial score 11–<select aria-label="Initial losing score" className="ml-1 rounded border border-border bg-background p-2" value={score} onChange={e=>setScore(e.target.value)}><option value="9">9 (win by two)</option><option value="10">10 (win by one)</option></select></label>
    <label className="text-sm">Correction 11–<select aria-label="Corrected losing score" className="ml-1 rounded border border-border bg-background p-2" value={correction} onChange={e=>setCorrection(e.target.value)}><option value="10">10 (win by one)</option><option value="9">9 (win by two)</option></select></label>
   </div>
   <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/> Confirm authorised DUPR UAT test only</label>
   <div className="flex flex-wrap gap-2">
+   <Button variant="outline" disabled={!!busy||preflightStatus==='checking'} onClick={preflight}>Run Stage 5 preflight</Button>
    <Button disabled={!!busy||!permitted||!confirmed} onClick={()=>run('Submit match',async()=>{
     const id='RH-UAT-STAGE5-'+Date.now()+'-'+Math.floor(Math.random()*1000000);
     const response=await call('uat_submit_match',{match:build(id,score),...flags()});
