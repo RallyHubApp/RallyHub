@@ -159,6 +159,19 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
    const matching=await entities(b).DuprRatingUatAudit.filter({event_id:digest},'-created_date',5);
    return reply({success:first.status===200&&second.status===200&&first.body?.success===true&&second.body?.duplicate===true&&matching.length===1,environment:'uat',synthetic:true,slot,first,second,auditMatches:matching.length});
   }
+  if(action==='uat_refresh_seed_admin_test'){
+   const slot='roisin';
+   const rows=await entities(b).DuprUatConnection.filter({test_slot:slot,status:'connected'},'-verified_at',10);
+   if(rows.length!==1||rows[0].dupr_id!=='EVQM6O')return fail('Roisin UAT identity mismatch or duplicate connection',409);
+   const endpoint=UAT_PARTNER+'/user/v1.0/subscribe/webhook-event';
+   const token=await partnerToken();
+   const payload={duprIds:['EVQM6O'],topic:'RATING'};
+   const unsub=await duprRequest(endpoint,{method:'DELETE',token,body:payload});
+   let sub:any;
+   try{sub=await duprRequest(endpoint,{method:'POST',token,body:payload});}
+   catch(error){return reply({success:false,environment:'uat',slot,unsubscribed:true,resubscribed:false,error:'UAT resubscription failed; restore subscription before proceeding'},502)}
+   return reply({success:true,environment:'uat',slot,unsubscribed:true,resubscribed:true,unsubscribeAcknowledgement:unsub?.status||'SUCCESS',subscribeAcknowledgement:sub?.status||'SUCCESS'});
+  }
   if(action==='uat_register_webhook'){
    const webhookUrl=Deno.env.get('DUPR_UAT_WEBHOOK_URL')||'';
    const secret=Deno.env.get('DUPR_UAT_WEBHOOK_KEY')||'';
