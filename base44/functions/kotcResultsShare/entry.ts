@@ -1,4 +1,4 @@
-import { renderBasicBrandedEmail } from '../communicationsBasicRenderer.ts';
+import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { requireConfiguredEmailTransport, sendWithConfiguredEmailTransport } from './emailRouter.ts';
 
