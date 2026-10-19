@@ -5,6 +5,7 @@ function clubRestrictionResponse(v:string){return Response.json({error:v==='deny
 import { createCheckout, retrievePayment, providerConfigured, type ProviderAccount } from './payments.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { membershipPaidTemplate } from './membershipPaidTemplate.ts';
+import { membershipComms } from './membershipComms.ts';
 
 function clean(v:any,max=500){return String(v??'').trim().replace(/\s+/g,' ').slice(0,max)}
 function raw(v:any,max=20000){return String(v??'').trim().slice(0,max)}
@@ -235,7 +236,8 @@ ${signoffText(config,club)}`;
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-bottom:12px;">${detailRow('Season',app.membership_season)}${detailRow('Membership fee',fee)}${detailRow('Application reference',app.confirmation_code)}${detailRow('Payment status',app.payment_status)}</table>
 ${button}
 <p style="margin:0;font-size:13px;line-height:1.6;color:#6b7280;">Your contact details, membership declarations and consent choices have been recorded. Your membership is confirmed once the required payment has been received.</p>${signoffHtml(config,club)}`});
-      await sendWithConfiguredEmailTransport(base44,scope,{to:app.email,subject:config.confirmation_email_subject||`Your ${club.name} membership application`,textBody,htmlBody});
+      const content=await membershipComms(base44,config,club,'membership_received',{FIRST_NAME:hello,APPLICATION_TYPE:app.application_type==='renewal'?'renewal':'application',MEMBERSHIP_SEASON:app.membership_season,MEMBERSHIP_FEE:fee,APPLICATION_REFERENCE:app.confirmation_code,PAYMENT_STATUS:app.payment_status,PAYMENT_LINK:paymentUrl,PAYMENT_INSTRUCTIONS:paymentUrl?'ACTION REQUIRED: Please click the blue payment button below to pay securely. Your membership is not active until payment is received.':'We will contact you if any further action is required.'});
+      await sendWithConfiguredEmailTransport(base44,scope,{to:app.email,...content});
       app=await base44.asServiceRole.entities.MembershipApplication.update(app.id,{confirmation_email_sent_at:now});
     }catch(e){console.error('membership applicant acknowledgement failed',e?.message||e)}
   }
@@ -415,7 +417,8 @@ async function sendMembershipInviteEmail(base44:any,config:any,club:any,recipien
 </div>
 <div style="text-align:center;margin:6px 0 24px;"><a href="${escapeHtml(inviteUrl)}" style="display:inline-block;padding:14px 24px;border-radius:10px;background:${escapeHtml(club.primary_colour||'#2563eb')};color:#fff;text-decoration:none;font-size:16px;font-weight:800;">Complete membership</a></div>
 <p style="margin:0 0 18px;font-size:12px;line-height:1.55;color:#6b7280;">This is a private pre-authorised link for ${escapeHtml(authorisedContact)}. If neither contact detail matches, the application will require club approval before payment.</p>${signoffHtml(config,club)}`});
-  await sendWithConfiguredEmailTransport(base44,scope,{to:recipientEmail,subject,textBody,htmlBody});
+  const content=await membershipComms(base44,config,club,'membership_invitation',{FIRST_NAME:hello,INVITATION_INTRO:intro,PAYMENT_OR_CONFIRMATION:config.payment_required===false?'confirmation':'payment',PRIVATE_MEMBERSHIP_LINK:inviteUrl,MEMBERSHIP_SEASON:config.season_label,MEMBERSHIP_FEE:fee,AUTHORISED_CONTACT:authorisedContact});
+  await sendWithConfiguredEmailTransport(base44,scope,{to:recipientEmail,...content});
 }
 
 Deno.serve(async(req)=>{
@@ -576,7 +579,8 @@ Deno.serve(async(req)=>{
         const now=new Date().toISOString();
         if(channel==='email'){
           const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId,clubId};
-          await sendWithConfiguredEmailTransport(base44,scope,{to:app.email,subject:content.subject,textBody:content.text,htmlBody:content.html});
+          const branded=await membershipComms(base44,config,club,'membership_payment_reminder',{FIRST_NAME:firstName(app.full_name),APPLICATION_TYPE:app.application_type==='renewal'?'renewal':'application',MEMBERSHIP_SEASON:app.membership_season,MEMBERSHIP_FEE:money(app.membership_fee,app.currency||config.currency||'EUR'),PAYMENT_LINK:paymentUrl});
+          await sendWithConfiguredEmailTransport(base44,scope,{to:app.email,...branded});
         }
         const count=Number(app.reminder_count||0)+1;
         app=await base44.asServiceRole.entities.MembershipApplication.update(app.id,{reminder_count:count,last_reminder_at:now,last_reminder_channel:channel,follow_up_status:count>1?'second_reminder':'reminded'});
