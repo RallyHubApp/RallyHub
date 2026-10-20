@@ -384,9 +384,10 @@ async function convertApprovedRequestToPayment(base44:any,config:any,club:any,re
     });
   }
   const consentRows=await base44.asServiceRole.entities.ConsentRecord.filter({tenant_id:config.tenant_id,club_id:config.club_id,membership_application_id:app.id},'-recorded_at',30);
-  if(!consentRows?.length){
+  {
     const consents:any=[...consentTypes,...(docs.photo?[['photo_video',docs.photo]]:[])];
     for(const [key,doc] of consents){
+      if((consentRows||[]).some((saved:any)=>saved.consent_type===key))continue;
       const accepted=key==='photo_video'?payload.consents.photoVideo==='yes':payload.consents[key]===true;
       await base44.asServiceRole.entities.ConsentRecord.create({
         tenant_id:config.tenant_id,club_id:config.club_id,person_id:person.id,membership_application_id:app.id,
