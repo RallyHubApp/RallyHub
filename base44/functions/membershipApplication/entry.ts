@@ -215,7 +215,7 @@ ${signoffText(config,club)}`;
       const content=await membershipComms(base44,config,club,'membership_admin_received',{FIRST_NAME:firstName(app.full_name),FULL_NAME:app.full_name,APPLICATION_TYPE:app.application_type==='renewal'?'renewal':'new application',MEMBERSHIP_SEASON:app.membership_season,MEMBERSHIP_FEE:fee,APPLICATION_REFERENCE:app.confirmation_code,PAYMENT_STATUS:app.payment_status,APPLICANT_EMAIL:app.email,APPLICANT_MOBILE:app.mobile});
       await sendWithConfiguredEmailTransport(base44,scope,{to:config.notification_email,...content});
       app=await base44.asServiceRole.entities.MembershipApplication.update(app.id,{admin_notification_sent_at:now});
-    }catch(e){console.error('membership admin notification failed',e?.message||e)}
+    }catch(e:any){console.error('membership admin notification failed',e?.message||e)}
   }
   if(app.email && (force||!app.confirmation_email_sent_at)){
     try{
@@ -240,7 +240,7 @@ ${button}
       const content=await membershipComms(base44,config,club,'membership_received',{FIRST_NAME:hello,APPLICATION_TYPE:app.application_type==='renewal'?'renewal':'application',MEMBERSHIP_SEASON:app.membership_season,MEMBERSHIP_FEE:fee,APPLICATION_REFERENCE:app.confirmation_code,PAYMENT_STATUS:app.payment_status,PAYMENT_LINK:paymentUrl,PAYMENT_INSTRUCTIONS:paymentUrl?'ACTION REQUIRED: Please click the blue payment button below to pay securely. Your membership is not active until payment is received.':'We will contact you if any further action is required.'});
       await sendWithConfiguredEmailTransport(base44,scope,{to:app.email,...content});
       app=await base44.asServiceRole.entities.MembershipApplication.update(app.id,{confirmation_email_sent_at:now});
-    }catch(e){console.error('membership applicant acknowledgement failed',e?.message||e)}
+    }catch(e:any){console.error('membership applicant acknowledgement failed',e?.message||e)}
   }
   return app;
 }
@@ -268,7 +268,7 @@ ${signoffText(config,club)}`;
     await sendWithConfiguredEmailTransport(base44,scope,{to:app.email,...content});
     const note=`${clean(app.admin_notes,1200)} paid-confirmation-sent`.trim();
     return await base44.asServiceRole.entities.MembershipApplication.update(app.id,{admin_notes:note,follow_up_status:'complete'});
-  }catch(e){console.error('membership paid confirmation failed',e?.message||e);return app}
+  }catch(e:any){console.error('membership paid confirmation failed',e?.message||e);return app}
 }
 
 async function recordConsents(base44:any,config:any,docs:any,person:any,app:any,consents:any){
@@ -369,7 +369,7 @@ async function reconcile(base44:any,config:any,app:any){
           return {app,payment,paymentUrl:''};
         }
       }
-    }catch(e){console.error('membership payment reconciliation failed',e?.message||e)}
+    }catch(e:any){console.error('membership payment reconciliation failed',e?.message||e)}
   }
   return {app,payment,paymentUrl:payment.provider_checkout_url||''};
 }
@@ -438,7 +438,7 @@ Deno.serve(async(req)=>{
 
     if(action.startsWith('admin_')){
       let ctx;
-      try{ctx=await requireClubManager(base44)}catch(e){return Response.json({error:e?.message||'Unauthorized'},{status:String(e?.message||'').includes('Unauthorized')?401:403})}
+      try{ctx=await requireClubManager(base44)}catch(e:any){return Response.json({error:e?.message||'Unauthorized'},{status:String(e?.message||'').includes('Unauthorized')?401:403})}
       const {user,tenantId,clubId}=ctx;
       const config=await configForClub(base44,tenantId,clubId);
       if(!config)return Response.json({error:'Membership applications are not configured for this club.'},{status:404});
@@ -447,7 +447,7 @@ Deno.serve(async(req)=>{
       if(action==='admin_communications_preview_invitation'){
         const fee=money(config.membership_fee,config.currency||'EUR');
         const rendered=await membershipComms(base44,config,club,'membership_invitation',{
-          FIRST_NAME:'Sample',INVITATION_INTRO:`Your ${club.name} membership request has been approved.`,
+          FIRST_NAME:'Sample',INVITATION_INTRO:`Your ${club?.name||'club'} membership request has been approved.`,
           PAYMENT_OR_CONFIRMATION:config.payment_required===false?'confirmation':'payment',
           PRIVATE_MEMBERSHIP_LINK:`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=mi_PREVIEW_ONLY_NO_ACCESS`,
           MEMBERSHIP_SEASON:config.season_label,MEMBERSHIP_FEE:fee,AUTHORISED_CONTACT:'sample@example.invalid'
@@ -473,7 +473,7 @@ Deno.serve(async(req)=>{
       if(action==='admin_list'){
         const apps=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',300);
         const liveApps=(apps||[]).filter((app:any)=>app.status!=='withdrawn'&&!String(app.source_system||'').includes('membership_qa'));
-        const rows=[];
+        const rows:any[]=[];
         // Limit concurrent payment lookups instead of serially awaiting every application.
         const paymentUrls=new Map<string,string>();
         const paidLookupApps=liveApps.filter((app:any)=>app.payment_record_id);
@@ -523,7 +523,7 @@ Deno.serve(async(req)=>{
         const invite=await createMembershipInvite(base44,config,user,recipientEmail,recipientName,'',recipientMobile);
         const magicInviteUrl=`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`;
         let emailSent=false;
-        if(recipientEmail){try{await sendMembershipInviteEmail(base44,config,club,recipientEmail,recipientName,magicInviteUrl,false,recipientMobile);emailSent=true}catch(e){console.error('membership invitation email failed',e?.message||e)}}
+        if(recipientEmail){try{await sendMembershipInviteEmail(base44,config,club,recipientEmail,recipientName,magicInviteUrl,false,recipientMobile);emailSent=true}catch(e:any){console.error('membership invitation email failed',e?.message||e)}}
         return Response.json({success:true,magicInviteUrl,expiresAt:invite.expires_at,emailSent,boundTo:{email:invite.intended_email||'',mobile:invite.intended_mobile||''}});
       }
 
@@ -538,7 +538,7 @@ Deno.serve(async(req)=>{
         await base44.asServiceRole.entities.ClubAccessRequest.update(request.id,{status:'approved',approved_at:new Date().toISOString(),approved_by_user_id:user.id,invite_token_id:invite.id});
         const magicInviteUrl=`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`;
         let emailSent=false;
-        try{await sendMembershipInviteEmail(base44,config,club,request.email,request.full_name,magicInviteUrl,true,request.mobile||'');emailSent=true}catch(e){console.error('approved membership invitation email failed',e?.message||e)}
+        try{await sendMembershipInviteEmail(base44,config,club,request.email,request.full_name,magicInviteUrl,true,request.mobile||'');emailSent=true}catch(e:any){console.error('approved membership invitation email failed',e?.message||e)}
         return Response.json({success:true,magicInviteUrl,expiresAt:invite.expires_at,emailSent});
       }
 
@@ -870,7 +870,7 @@ Deno.serve(async(req)=>{
     if(app)app=await base44.asServiceRole.entities.MembershipApplication.update(app.id,applicationPatch);
     else app=await base44.asServiceRole.entities.MembershipApplication.create(applicationPatch);
 
-    try{await recordConsents(base44,config,docs,person,app,submittedConsents)}catch(e){return Response.json({error:e?.message||'Please accept the membership declarations.'},{status:400})}
+    try{await recordConsents(base44,config,docs,person,app,submittedConsents)}catch(e:any){return Response.json({error:e?.message||'Please accept the membership declarations.'},{status:400})}
 
     let pay={app,payment:null,paymentUrl:''};
     if(config.payment_required!==false)pay=await paymentForApplication(base44,config,club,app,membership,false);
@@ -891,7 +891,7 @@ Deno.serve(async(req)=>{
     }
     try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:config.tenant_id,club_id:config.club_id,user_id:'public:membership',action:'membership_application_submitted',entity_type:'MembershipApplication',entity_id:app.id,scope_type:'Person',scope_id:person.id,after_state:JSON.stringify({applicationType,season:config.season_label,paymentStatus:app.payment_status}),reason:'Public membership application submitted'})}catch{}
     return Response.json({success:true,application:safeApplication(app,pay.paymentUrl)});
-  }catch(error){
+  }catch(error:any){
     console.error('membershipApplication error',error);
     return Response.json({error:error?.message||'Membership application failed.'},{status:500});
   }
