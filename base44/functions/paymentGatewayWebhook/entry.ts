@@ -156,6 +156,25 @@ Powered by RallyHub`;
   }
 }
 
+async function sendMembershipPaymentFailureEmail(base44:any,payment:any,application:any){
+  if(!application?.email||application.payment_status==='paid')return;
+  const marker='payment-failed-notified:'+payment.id;
+  if(String(application.admin_notes||'').includes(marker))return;
+  const config=await membershipConfig(base44,payment.tenant_id,payment.club_id,application.config_id||'');
+  const club=await clubBrand(base44,payment.club_id);
+  if(!config||!club||!application.public_token)return;
+  const retryUrl='https://rallyhub.ie/membership/'+encodeURIComponent(config.public_slug)+'?application='+encodeURIComponent(application.public_token);
+  const hello=firstName(application.full_name);
+  const subject=club.name+' membership — your payment did not complete';
+  const textBody='Hi '+hello+',\n\nYour recent SumUp membership payment did not complete, so your membership is not yet active. You can try again using your private payment recovery page:\n'+retryUrl+'\n\nOn that page, select Create new payment link to retry securely. If you have already paid or need assistance, please contact the club.\n\n'+club.name;
+  const htmlBody=membershipEmailShell({club,headline:'Your membership payment did not complete',preheader:subject,content:'<p>Hi '+escapeHtml(hello)+', your recent SumUp payment did not complete. No successful membership payment has been recorded.</p><p>Please use the link below to return securely to your application and create a fresh payment link.</p><p style="margin:20px 0"><a href="'+escapeHtml(retryUrl)+'" style="display:inline-block;background:'+escapeHtml(club.primary_colour||'#2563eb')+';color:white;padding:14px 22px;border-radius:9px;text-decoration:none;font-weight:bold">Try payment again</a></p><p>If you have already paid, or need help, please contact the club.</p>'});
+  const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:payment.tenant_id,clubId:payment.club_id};
+  try{
+    await sendWithConfiguredEmailTransport(base44,scope,{to:application.email,subject,textBody,htmlBody});
+    await base44.asServiceRole.entities.MembershipApplication.update(application.id,{admin_notes:(clean(application.admin_notes,1200)+' '+marker).trim()});
+  }catch(e){console.error('membership payment failure notification failed',(e as any)?.message||e)}
+}
+
 async function syncMembershipApplication(base44:any,payment:any,membership:any,status:'paid'|'failed',now:string){
   const apps=await base44.asServiceRole.entities.MembershipApplication.filter({
     tenant_id:payment.tenant_id,club_id:payment.club_id,club_membership_id:membership.id
@@ -170,9 +189,10 @@ async function syncMembershipApplication(base44:any,payment:any,membership:any,s
     const club=await clubBrand(base44,payment.club_id);
     if(config&&club)await sendMembershipPaidEmail(base44,config,club,application);
   }else if(application.payment_status!=='paid'){
-    await base44.asServiceRole.entities.MembershipApplication.update(application.id,{
+    application=await base44.asServiceRole.entities.MembershipApplication.update(application.id,{
       status:'payment_failed',payment_status:'failed',follow_up_status:'payment_due'
     });
+    await sendMembershipPaymentFailureEmail(base44,payment,application);
   }
 }
 
