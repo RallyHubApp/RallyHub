@@ -41,7 +41,7 @@ function createModel({failFirstScore=false,isAdmin=false}={}){
     }
     return {success:true,session};
   };
-  return {session,participants,round,match,calls,state,handle};
+  return {session,participants,round,match,slots,calls,state,handle};
 }
 
 async function install(page,model){
