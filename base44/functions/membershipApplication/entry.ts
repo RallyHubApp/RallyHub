@@ -177,7 +177,9 @@ async function nextMemberId(base44:any,config:any){
   return `${prefix}${String(max+1).padStart(digits,'0')}`;
 }
 async function ensureRelationship(base44:any,config:any,person:any,membership:any){
-  let rel=await first(base44,'ClubRelationship',{tenant_id:config.tenant_id,club_id:config.club_id,person_id:person.id});
+  // Preserve the active guest relationship until payment is confirmed.
+  // Membership and guest histories are separate club relationships of one Person.
+  let rel=await first(base44,'ClubRelationship',{tenant_id:config.tenant_id,club_id:config.club_id,person_id:person.id,relationship_type:'member'});
   const patch:any={
     relationship_type:'member',
     status:membership.membership_status==='paid_active'?'active':'pending',
@@ -372,15 +374,17 @@ async function convertApprovedRequestToPayment(base44:any,config:any,club:any,re
   if(app&&app.source_reference!==request.id)throw new Error('An existing membership application needs review before conversion.');
   let membership:any=null;
   if(app?.club_membership_id)membership=await first(base44,'ClubMembership',{id:app.club_membership_id,tenant_id:config.tenant_id,club_id:config.club_id});
-  if(!person){
-    person=await base44.asServiceRole.entities.Person.create({
-      tenant_id:config.tenant_id,full_name:payload.fullName,primary_email:emailKey(payload.email),mobile:payload.mobile,
-      date_of_birth:payload.dateOfBirth,full_postal_address:payload.fullPostalAddress,postal_code:payload.postalCode,
-      emergency_contact_name:payload.emergencyContactName,emergency_contact_relationship:payload.emergencyContactRelationship||'',
-      emergency_mobile:payload.emergencyMobile,emergency_contact_raw:payload.emergencyContactName+' ('+(payload.emergencyContactRelationship||'')+') – '+payload.emergencyMobile,
-      source_system:'rallyhub_membership_application',last_synced_at:new Date().toISOString()
-    });
-  }
+  const personDetails={
+    full_name:payload.fullName,primary_email:emailKey(payload.email),mobile:payload.mobile,
+    date_of_birth:payload.dateOfBirth,full_postal_address:payload.fullPostalAddress,postal_code:payload.postalCode,
+    emergency_contact_name:payload.emergencyContactName,emergency_contact_relationship:payload.emergencyContactRelationship||'',
+    emergency_mobile:payload.emergencyMobile,emergency_contact_raw:payload.emergencyContactName+' ('+(payload.emergencyContactRelationship||'')+') – '+payload.emergencyMobile,
+    last_synced_at:new Date().toISOString()
+  };
+  if(person)person=await base44.asServiceRole.entities.Person.update(person.id,personDetails);
+  else person=await base44.asServiceRole.entities.Person.create({
+    tenant_id:config.tenant_id,...personDetails,source_system:'rallyhub_membership_application'
+  });
   if(!membership)membership=await currentOrLatestMembership(base44,config.tenant_id,config.club_id,person.id,config.season_label);
   if(membership&&membership.membership_season===config.season_label&&membership.payment_status==='paid')throw new Error('Membership is already paid; no duplicate payment request will be created.');
   if(!membership||membership.membership_season!==config.season_label){
