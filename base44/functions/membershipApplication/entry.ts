@@ -583,7 +583,7 @@ Deno.serve(async(req)=>{
       }
 
       if(action==='admin_preview_reminder'){
-        const result=await reconcile(base44,config,app);
+        let result=await reconcile(base44,config,app);
         app=result.app;
         if(app.payment_status==='paid')return Response.json({success:true,alreadyPaid:true,application:safeApplication(app,'')});
         if(!result.paymentUrl){
