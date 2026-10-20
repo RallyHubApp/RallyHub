@@ -1,15 +1,18 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 /** @param {any} props */
-export default function StatCard({ title, value, icon: Icon, trend, trendUp, delay = 0, accentColor = 'primary' }) {
+export default function StatCard({ title, value, icon: Icon, trend, trendUp, delay = 0, accentColor = 'primary', to }) {
+  const Component = to ? motion.create(Link) : motion.div;
   return (
-    <motion.div
+    <Component
+      {...(to ? { to, 'aria-label': `Open ${title}` } : {})}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
-      className="glass rounded-xl p-5 group hover:scale-[1.02] transition-transform duration-300"
+      className={cn('glass rounded-xl p-5 group transition-transform duration-300', to && 'block hover:scale-[1.02] hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer')}
     >
       <div className="flex items-start justify-between">
         <div>
@@ -34,6 +37,6 @@ export default function StatCard({ title, value, icon: Icon, trend, trendUp, del
           <Icon className="w-5 h-5" />
         </div>
       </div>
-    </motion.div>
+    </Component>
   );
 }
