@@ -1,0 +1,173 @@
+{
+  "date": "2026-10-20",
+  "scope": "Current active public imported static, curated static, dynamic records and public-profile logo overrides; compared with 14/15 Oct ledgers and 15 Oct owner review",
+  "inventory": {
+    "importedStatic": 78,
+    "curatedStatic": 4,
+    "publicDynamic": 21,
+    "uniquePublic": 103,
+    "effectiveLogoUrls": 63,
+    "hiddenExistingByNullProfile": 7,
+    "genuinelyMissing": 33,
+    "requiresAttention": 40,
+    "countiesRepresented": 27,
+    "all32CountiesCovered": false
+  },
+  "batch": {
+    "reviewed": 10,
+    "newVerifiedVisualLogos": 0,
+    "newPermanentHttpsStaged": 0,
+    "newPublished": 0,
+    "productionMutations": 0,
+    "deployed": false
+  },
+  "cases": [
+    {
+      "slug": "ballyfermot-pickleballers",
+      "name": "Ballyfermot Pickleballers",
+      "facebook": "Exact-name search produced no attributable official club page; social access restricted.",
+      "instagram": "No independently attributable club account indexed.",
+      "website": "No official club website identified.",
+      "source": null,
+      "status": "hold_no_verified_artwork",
+      "visualCandidate": null,
+      "quality": "none",
+      "stagedReceipt": null
+    },
+    {
+      "slug": "bayside-pickleball-club",
+      "name": "Bayside Pickleball Club",
+      "facebook": "Indexed https://www.facebook.com/BaysidePickleballClub/ but Irish identity unverified; other similarly named accounts explicitly overseas.",
+      "instagram": "No Dublin-specific official profile verified.",
+      "website": "Search surfaced Brisbane Bayside site, excluded as unrelated.",
+      "source": "https://www.facebook.com/BaysidePickleballClub/",
+      "status": "hold_identity_ambiguous",
+      "visualCandidate": null,
+      "quality": "ambiguous indexed page; not inspected",
+      "stagedReceipt": null
+    },
+    {
+      "slug": "belmayne-pickleball",
+      "name": "Belmayne Pickleball",
+      "facebook": "No exact-name official page indexed.",
+      "instagram": "No verified profile indexed.",
+      "website": "Court listings refer to Belmayne Main Street, not club branding.",
+      "source": null,
+      "status": "hold_no_verified_artwork",
+      "visualCandidate": null,
+      "quality": "venue-only",
+      "stagedReceipt": null
+    },
+    {
+      "slug": "blessington-pickleball-club",
+      "name": "Blessington Pickleball Club",
+      "facebook": "No exact-name official page indexed.",
+      "instagram": "No verified official profile indexed.",
+      "website": "No club-specific official logo identified.",
+      "source": null,
+      "status": "hold_no_verified_artwork",
+      "visualCandidate": null,
+      "quality": "none",
+      "stagedReceipt": null
+    },
+    {
+      "slug": "breffni-pickleball-club",
+      "name": "Breffni Pickleball Club",
+      "facebook": "Third-party posts reference Breffni funding, but no club-administered Facebook page found.",
+      "instagram": "No official club Instagram indexed.",
+      "website": "Irish Dinks mentions Breffni Club Cavan, but no club logo.",
+      "source": "https://www.irishdinks.com/",
+      "status": "hold_third_party_mentions_only",
+      "visualCandidate": null,
+      "quality": "club existence corroborated, logo not",
+      "stagedReceipt": null
+    },
+    {
+      "slug": "clonakilty-pickleball-club",
+      "name": "Clonakilty Pickleball Club",
+      "facebook": "No exact-name official page indexed.",
+      "instagram": "No verified official account indexed.",
+      "website": "No verified club-specific official logo.",
+      "source": null,
+      "status": "hold_no_verified_artwork",
+      "visualCandidate": null,
+      "quality": "none",
+      "stagedReceipt": null
+    },
+    {
+      "slug": "edenderry-pickleball-club",
+      "name": "Edenderry Pickleball Club",
+      "facebook": "No official exact-name page indexed in this pass.",
+      "instagram": "Prior lead https://www.instagram.com/edenderry_pickleball/; direct fetch disabled, profile image not inspected.",
+      "website": "St Mary's Secondary School is a venue, not club artwork.",
+      "source": "https://www.instagram.com/edenderry_pickleball/",
+      "status": "hold_profile_photo_inaccessible",
+      "visualCandidate": null,
+      "quality": "unverified indexed/social lead",
+      "stagedReceipt": null
+    },
+    {
+      "slug": "kinsale-pickleball",
+      "name": "Kinsale Pickleball",
+      "facebook": "New indexed post titled Kinsale Pickleball Club at https://www.facebook.com/61587021395064/posts/122143028535234046/; page identity/photo not independently accessible.",
+      "instagram": "Previously identified https://www.instagram.com/kinsalepickleballclub/; profile image inaccessible.",
+      "website": "Official venue confirms club sessions, but venue branding must not substitute for club logo.",
+      "source": "https://www.facebook.com/61587021395064/posts/122143028535234046/",
+      "status": "new_official_page_candidate_unverified_artwork",
+      "visualCandidate": null,
+      "quality": "club-named indexed Facebook post plus independently confirmed venue; no image verified",
+      "stagedReceipt": null
+    },
+    {
+      "slug": "leeside-pickleball",
+      "name": "Leeside Pickleball",
+      "facebook": "Indexed Facebook page https://www.facebook.com/leesidepickleball/ and album; direct access disabled.",
+      "instagram": "Previously identified https://www.instagram.com/leeside_pickleball/; image not accessible.",
+      "website": "Cork Sports Partnership's 22 Sep 2026 directory independently confirms club; venue/contact data not a logo.",
+      "source": "https://www.facebook.com/leesidepickleball/",
+      "status": "social_profile_found_artwork_unverified",
+      "visualCandidate": null,
+      "quality": "indexed club social page; no visual verification",
+      "stagedReceipt": null
+    },
+    {
+      "slug": "coolmine-pickleheads-club",
+      "name": "Coolmine Pickleheads Club",
+      "facebook": "Current Directory group https://facebook.com/groups/3940907569458640/ inaccessible; separate indexed group post references Coolmine Pickleheads.",
+      "instagram": "No official account independently indexed.",
+      "website": "RallyHub Super Admin-approved Green/Coolmine shared artwork preserved; approved choice takes precedence over unverified relationship concerns.",
+      "source": "https://www.pickleheads.com/groups/coolmine-pickleheads-lucan",
+      "status": "OWNER_APPROVED_REPO_ONLY_PENDING_HTTPS_STAGE",
+      "visualCandidate": "public/directory/logo-candidates/2026-10-15/46-coolmine-owner-approved-preview.png",
+      "quality": "owner-approved image; exported PNG with valid PNG signature",
+      "localReceipt": {
+        "bytes": 64402,
+        "sha256": "068d8267233f41b062bfb1a2cafb5cdfdf67e9ee6473c529f74aa13e6be616cf"
+      },
+      "stagedReceipt": null
+    }
+  ],
+  "protected": {
+    "kingdomAndAnnascaul": "Shared owner-approved JPG retained; both static base URLs already set",
+    "eastCork": "Existing owner/public-profile logo retained; archived Midleton identity not reinstated",
+    "eyva": "Single dynamic event/organiser listing has logo; no duplicate",
+    "bluestack": "Approved 6332-byte AVIF retained in permanent storage; null profile override hides it; source 403 not grounds to revoke approval",
+    "coolmine": "Owner-approved PNG retained; 64402 bytes and SHA-256 locally verified; uploader unavailable; no publication"
+  },
+  "hiddenExistingSlugs": [
+    "bluestack-pickleball-club",
+    "cobh-pickleball",
+    "connemara-pickleball-club",
+    "multyfarnham-pickleball-club",
+    "southside-pickleball-club",
+    "terenure-pickleball-club",
+    "dalkey-pickkeball-club"
+  ],
+  "limitations": [
+    "Direct Facebook and Instagram page/image fetch blocked or unsupported; search snippets are not visual proof.",
+    "No authorised permanent HTTPS upload transport established for Coolmine in this pass; no new staged checksum receipt.",
+    "Stored logo URL inventory is not an end-to-end live browser rendering check."
+  ],
+  "backlogComplete": false,
+  "monthlySwitch": false
+}
