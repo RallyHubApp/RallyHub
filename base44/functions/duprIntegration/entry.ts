@@ -73,8 +73,17 @@ Deno.serve(async (req) => {
           return Response.json({error:'Invalid stored-match selection'},{status:400});
         return submitTournivalUatBatch(base44,user,result.matches,selected);
       }
-      // Preview does not contain external DUPR identities or match payloads.
+      // Preview and Super Admin recovery share the same server-generated eligible IDs.
+      // Provider status is never inferred from a front-end result or tournament flag.
+      const ledger=await base44.asServiceRole.entities.DuprUatSubmission.filter({},'-submitted_at',500);
+      const recordById=new Map((ledger||[]).filter((r:any)=>String(r.identifier||'').startsWith('RH-TRN-')).map((r:any)=>[r.identifier,r]));
+      const matchRecords=result.matches.map(m=>{
+        const previous:any=recordById.get(m.identifier);
+        return {identifier:m.identifier,status:previous?.status||'not_submitted',
+          matchCode:previous?.match_code||null};
+      });
       return Response.json({success:true,environment:'uat',mode:'dry_run_only',
+        matchRecords,
         tournamentId:id,eligibleCount:result.matches.length,excludedCount:result.excluded.length,
         reasons:byReason,identifiers:result.matches.map(x=>x.identifier),
         authorisedSubmission:false,submissionPerformed:false});
