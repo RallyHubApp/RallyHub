@@ -122,13 +122,36 @@ async function gatewayAccount(base44:any,config:any){
   const account:ProviderAccount={provider:row.provider,merchantAccountId:row.merchant_account_id||undefined,credentialSecretName:row.credential_reference||undefined,connectionMode:row.connection_mode||undefined};
   return {row,account};
 }
-async function findPersonByIdentity(base44:any,tenantId:string,email:string,dob:string){
-  const rows=await base44.asServiceRole.entities.Person.filter({tenant_id:tenantId},'-updated_date',500);
+// Match a guest with no DOB only when both the verified contact identity and
+// the submitted full name agree. Never silently merge ambiguous people.
+async function findPersonByIdentity(base44:any,tenantId:string,email:string,dob:string,fullName='',mobile=''){
   const targetEmail=emailKey(email);
-  return (rows||[]).find((p:any)=>{
-    const emails=[p.primary_email,...(p.alternate_emails||[])].map(emailKey).filter(Boolean);
-    return emails.includes(targetEmail)&&String(p.date_of_birth||'')===String(dob||'');
-  })||null;
+  if(!targetEmail||!dob)return null;
+  const candidates=await base44.asServiceRole.entities.Person.filter({tenant_id:tenantId,primary_email:targetEmail},'-updated_date',100);
+  const normalizedName=(value:any)=>clean(value,160).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  const matches=(candidates||[]).filter((p:any)=>{
+    const emails=[p.primary_email,...(p.alternate_emails||[])].map(emailKey);
+    if(!emails.includes(targetEmail))return false;
+    if(p.date_of_birth)return String(p.date_of_birth)===String(dob);
+    if(!fullName||normalizedName(p.full_name)!==normalizedName(fullName))return false;
+    if(mobile&&p.mobile&&!samePhone(mobile,p.mobile))return false;
+    return true;
+  });
+  // An established DOB-bearing profile takes precedence over an older guest
+  // stub, but ambiguous identities are explicitly left for manual review.
+  const established=matches.filter((p:any)=>!!p.date_of_birth);
+  return established.length===1?established[0]:established.length>1?null:matches.length===1?matches[0]:null;
+}
+async function closeConvertedGuestRelationship(base44:any,tenantId:string,clubId:string,personId:string){
+  const guests=await base44.asServiceRole.entities.ClubRelationship.filter({tenant_id:tenantId,club_id:clubId,person_id:personId,relationship_type:'guest'},'-updated_date',20);
+  for(const guest of guests||[]){
+    if(guest.status!=='active')continue;
+    await base44.asServiceRole.entities.ClubRelationship.update(guest.id,{
+      status:'inactive',end_date:new Date().toISOString().slice(0,10),
+      notes:(clean(guest.notes,700)+' Converted to paid Clare Pickleball membership; guest attendance retained.').trim(),
+      last_synced_at:new Date().toISOString()
+    });
+  }
 }
 async function currentOrLatestMembership(base44:any,tenantId:string,clubId:string,personId:string,season=''){
   const rows=await base44.asServiceRole.entities.ClubMembership.filter({tenant_id:tenantId,club_id:clubId,person_id:personId},'-updated_date',100);
@@ -341,7 +364,7 @@ async function convertApprovedRequestToPayment(base44:any,config:any,club:any,re
   for(const [,doc] of [...consentTypes,...(docs.photo?[['photo_video',docs.photo]]:[])]){
     if(doc.updated_date&&Date.parse(doc.updated_date)>originalTime)throw new Error('Consent document changed after submission. Manual review required.');
   }
-  let person=await findPersonByIdentity(base44,config.tenant_id,emailKey(request.email),payload.dateOfBirth);
+  let person=await findPersonByIdentity(base44,config.tenant_id,emailKey(request.email),payload.dateOfBirth,payload.fullName,payload.mobile);
   const existingApps=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:config.tenant_id,club_id:config.club_id,config_id:config.id},'-created_date',300);
   let app=(existingApps||[]).find((a:any)=>a.source_reference===request.id||emailKey(a.email)===emailKey(request.email)&&a.status!=='withdrawn')||null;
   if(app&&app.payment_status==='paid')throw new Error('This membership application is already paid.');
@@ -422,7 +445,10 @@ async function syncPaid(base44:any,config:any,app:any,membership:any,payment:any
   if(!membership.member_id)memberPatch.member_id=await nextMemberId(base44,config);
   const updatedMembership=await base44.asServiceRole.entities.ClubMembership.update(membership.id,memberPatch);
   const person=await first(base44,'Person',{id:membership.person_id,tenant_id:config.tenant_id});
-  if(person)await ensureRelationship(base44,config,person,updatedMembership);
+  if(person){
+    await ensureRelationship(base44,config,person,updatedMembership);
+    await closeConvertedGuestRelationship(base44,config.tenant_id,config.club_id,person.id);
+  }
   return await base44.asServiceRole.entities.MembershipApplication.update(app.id,{status:'approved',payment_status:'paid',paid_at:app.paid_at||now,approved_at:app.approved_at||now,follow_up_status:'complete'});
 }
 async function reconcile(base44:any,config:any,app:any){
@@ -890,7 +916,7 @@ Deno.serve(async(req)=>{
       person=await first(base44,'Person',{id:app.person_id,tenant_id:config.tenant_id});
       existingMembership=await currentOrLatestMembership(base44,config.tenant_id,config.club_id,person.id,config.season_label);
     }else{
-      person=await findPersonByIdentity(base44,config.tenant_id,email,dob);
+      person=await findPersonByIdentity(base44,config.tenant_id,email,dob,fullName,mobile);
       if(person){
         const priorApplications=await base44.asServiceRole.entities.MembershipApplication.filter({
           config_id:config.id,person_id:person.id,application_type:'new'
