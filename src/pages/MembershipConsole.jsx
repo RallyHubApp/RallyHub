@@ -1218,9 +1218,9 @@ export default function MembershipConsole() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2.5 sm:gap-3">
-              <StatCard title="Current members" value={dashboardData.counts?.currentMembers ?? listData.counts?.currentMembers ?? listData.counts?.active ?? 0} icon={Users} note={dashboardData.currentSeason || listData.renewal?.currentSeason || 'Current season'} onClick={() => applyQuickFilter('all')} />
+              <StatCard title="Current members" value={dashboardData.counts?.currentMembers ?? listData.counts?.currentMembers ?? listData.counts?.active ?? 0} icon={Users} note={dashboardData.currentSeason || listData.renewal?.currentSeason || 'Current season'} onClick={() => applyQuickFilter('active')} active={filters.membershipStatus === 'paid_active'} />
               <StatCard title="Paid" value={dashboardData.counts?.currentPaid ?? listData.counts?.currentPaid ?? 0} icon={CheckCircle2} note="Current season" onClick={() => setFilters({ ...EMPTY_FILTERS, paymentStatus: 'paid' })} active={filters.paymentStatus === 'paid'} />
-              <StatCard title="Complimentary" value={dashboardData.counts?.complimentary ?? listData.counts?.complimentary ?? 0} icon={ShieldCheck} note="No payment required" disabled />
+              <StatCard title="Complimentary" value={dashboardData.counts?.complimentary ?? listData.counts?.complimentary ?? 0} icon={ShieldCheck} note="No payment required" onClick={() => setFilters({ ...EMPTY_FILTERS, paymentStatus: 'not_required' })} active={filters.paymentStatus === 'not_required'} />
               <StatCard title="Payment due" value={dashboardData.counts?.unpaid ?? listData.counts?.unpaid ?? 0} icon={WalletCards} note="Current season" onClick={() => applyQuickFilter('unpaid')} active={filters.membershipStatus === 'pending_payment'} />
               <StatCard
                 title={listData.renewal?.windowStatus === 'upcoming' ? 'Renewal opens' : 'Renewed'}
