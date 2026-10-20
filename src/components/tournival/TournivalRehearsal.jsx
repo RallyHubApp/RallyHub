@@ -128,6 +128,49 @@ export default function TournivalRehearsal() {
    <label className="text-xs">Courts <Input aria-label="Rehearsal courts" type="number" min="1" max="8" value={courts} onChange={e=>setCourts(Math.max(1,Math.min(8,Number(e.target.value))))} /></label>
    <label className="text-xs">Rounds <Input aria-label="Rehearsal rounds" type="number" min="2" max="6" value={rounds} onChange={e=>setRounds(Math.max(2,Math.min(6,Number(e.target.value))))} /></label>
   </div>
+  <div className="rounded-xl border-2 border-blue-700/30 bg-blue-50/50 p-3 space-y-3" data-testid="tournival-quick-test-centre">
+   <div><h3 className="font-bold text-[#073b74]">Tournival UAT · Quick Test Centre</h3>
+    <p className="text-xs text-muted-foreground">Sandbox dummy players only. No Base44 writes, payments, messages, or DUPR submissions.</p></div>
+   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+    <Button size="sm" variant="outline" onClick={()=>quickAction('start')}>1 · Create Test Event</Button>
+    <Button size="sm" variant="outline" disabled={!quick||quick.phase!=='qualification'} onClick={()=>quickAction('qualification')}>2 · Run Qualification</Button>
+    <Button size="sm" variant="outline" disabled={!quick||quick.phase!=='knockout'} onClick={()=>quickAction('knockout')}>3 · Finish Knockout</Button>
+    <Button size="sm" onClick={()=>quickAction('full')}>Run Full Acceptance</Button>
+   </div>
+   {report&&<div className="space-y-3" data-testid="tournival-quick-report">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+     <div className="rounded-lg border bg-white p-2"><strong className="block text-base">{report.registered}</strong> Registered dummy players</div>
+     <div className="rounded-lg border bg-white p-2"><strong className="block text-base">{report.qualificationScored}/{report.qualificationExpected}</strong> Qualification scored</div>
+     <div className="rounded-lg border bg-white p-2"><strong className="block text-base">{report.knockoutScored}</strong> Knockout scored</div>
+     <div className="rounded-lg border bg-white p-2"><strong className="block text-base">{report.phase}</strong> Current stage</div>
+    </div>
+    <div className="rounded-lg border bg-white p-3 text-xs">
+     <h4 className="font-bold mb-2">Acceptance checks</h4>
+     {report.checks.map((check,i)=><p className="py-0.5" key={i}>✓ {check}</p>)}
+     <p className="font-semibold mt-2">{report.allScored&&report.isolated?'PASS · Simulated sporting journey complete':'IN PROGRESS · Continue stages'}</p>
+     <p className="text-muted-foreground mt-1">Payments, personal tokens and DUPR submissions require separate controlled integration tests. This rehearsal never sends data externally.</p>
+    </div>
+    <section className="rounded-lg border bg-white p-3 space-y-3" data-testid="tournival-quick-player-preview">
+     <h4 className="font-bold">Personal player-link stages · dummy preview</h4>
+     <label className="text-xs block">Choose test player
+      <select className="block w-full border rounded p-2 mt-1" value={previewPlayer} onChange={e=>setPreviewPlayer(e.target.value)}>
+       {syntheticIds(players).map((id,i)=><option value={id} key={id}>Rehearsal Player {i+1}</option>)}
+      </select>
+     </label>
+     <div className="flex gap-1 overflow-x-auto bg-[#073b74] p-1 rounded-md" aria-label="Rehearsal player stages">
+      {['registration','fixtures','live','knockout','results'].map(stage=><button type="button" key={stage} onClick={()=>setPreviewStage(stage)}
+       className={'text-xs rounded px-2 py-2 shrink-0 font-bold '+(previewStage===stage?'bg-[#f9cb17] text-[#081342]':'text-white')} aria-current={previewStage===stage?'page':undefined}>{stage}</button>)}
+     </div>
+     <p className="font-bold text-sm">Rehearsal Player {Number(previewPlayer.split('-').at(-1))} · {previewStage}</p>
+     {previewStage==='registration'&&<p className="text-xs">Registered · Simulated payment · Checked in. Actual link shows event venue, directions and organiser contact.</p>}
+     {previewStage==='fixtures'&&<p className="text-xs">{previewMatches.length} qualification match assignments · {previewMatches.map(m=>'Round '+m.round).join(', ')||'No fixtures yet'}</p>}
+     {previewStage==='live'&&<p className="text-xs">{previewMatches.filter(m=>m.result).length} qualification scores recorded · {previewMatches.filter(m=>m.status==='playing').length} active</p>}
+     {previewStage==='knockout'&&<p className="text-xs">{previewKnockout.length} knockout assignments · {previewKnockout.filter(m=>m.result).length} scored</p>}
+     {previewStage==='results'&&<p className="text-xs">{previewMatches.filter(m=>m.result).length} qualification results · {previewKnockout.filter(m=>m.result).length} knockout results · {report.phase==='complete'?'Final completed':'Awaiting final'}</p>}
+     <p className="text-[11px] text-muted-foreground">Isolated preview only; not a real personal link or registered account.</p>
+    </section>
+   </div>}
+  </div>
   <Button onClick={initialise} variant="outline">Start / Reset Rehearsal</Button>
   {event&&<div className="space-y-2">
     <p className="text-xs">Phase: <strong>{phase}</strong> · Revision {event.revision} · {snapshot?.registered} checked-in synthetic participants</p>
