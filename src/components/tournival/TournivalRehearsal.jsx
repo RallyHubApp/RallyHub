@@ -4,6 +4,7 @@ import {Input} from '@/components/ui/input';
 import {generateGroupFixtures,createKnockoutPairs,createKnockoutBracket,computeLeaderboard,validateTournivalScore} from '@/lib/tournivalEngine';
 import {indexTournivalMatches,scheduleTournivalCourts,recordTournivalResult} from '@/lib/tournivalScheduler';
 import {createTournivalEvent,registerTournivalPlayer,checkInTournivalPlayer,startTournival,applyTournivalMatchChange,tournivalPublicSnapshot,assertRehearsalIsolation} from '@/lib/tournivalOperations';
+import {createQuickScenario,finishQuickQualification,finishQuickKnockout,runQuickAcceptance,quickTestReport} from '@/lib/tournivalQuickTest';
 
 const syntheticIds=n=>Array.from({length:n},(_,i)=>`rehearsal-player-${i+1}`);
 const play=(match,scoreA,scoreB)=>recordTournivalResult([match],{
@@ -28,9 +29,13 @@ export default function TournivalRehearsal() {
  const [phase,setPhase]=useState('not_started');
  const [manualA,setManualA]=useState(8);
  const [manualB,setManualB]=useState(5);
+ const [quick,setQuick]=useState(null);
+ const [previewStage,setPreviewStage]=useState('registration');
+ const [previewPlayer,setPreviewPlayer]=useState('rehearsal-player-1');
  const playerNames=useMemo(()=>Object.fromEntries(syntheticIds(players).map((id,i)=>[id,`Rehearsal Player ${i+1}`])),[players]);
  const action=fn=>{try{setError('');fn();}catch(e){setError(e.message||'Action failed');}};
  const initialise=()=>action(()=>{
+   setQuick(null);
    let next=createTournivalEvent({id:'REHEARSAL-LOCAL',tenantId:'simulation',clubId:'simulation',capacity:players,fee:5,rehearsal:true});
    for(const id of syntheticIds(players)){
      next=registerTournivalPlayer(next,{playerId:id,name:playerNames[id],operationId:`register:${id}`}).event;
@@ -101,6 +106,18 @@ export default function TournivalRehearsal() {
      setKnockout(old=>old.map(m=>m.id===id?play(match,scoreA,scoreB):m));
    }
  });
+ const quickAction=kind=>action(()=>{
+  const config={players,courts,rounds};
+  const next=kind==='full'?runQuickAcceptance(config)
+   :kind==='start'?createQuickScenario(config)
+   :kind==='qualification'?finishQuickQualification(quick)
+   :finishQuickKnockout(quick);
+  setQuick(next);setPreviewStage(kind==='full'?'results':kind==='start'?'registration':kind==='qualification'?'fixtures':'results');
+  setHistory(h=>['Quick test: '+next.phase+' · synthetic records only',...h].slice(0,20));
+ });
+ const report=quickTestReport(quick);
+ const previewMatches=quick?.event.matches.filter(m=>[...(m.teamA||[]),...(m.teamB||[])].includes(previewPlayer))||[];
+ const previewKnockout=quick?.knockout.filter(m=>[...(m.teamA||[]),...(m.teamB||[])].includes(previewPlayer))||[];
  const active=phase==='qualification'?event?.matches||[]:knockout;
  const snapshot=event?tournivalPublicSnapshot(event):null;
  return <section className="glass p-4 rounded-xl space-y-3">
