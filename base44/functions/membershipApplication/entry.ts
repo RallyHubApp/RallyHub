@@ -388,6 +388,12 @@ async function requireClubManager(base44:any){
 function safeApplication(app:any,paymentUrl=''){
   return {id:app.id,publicToken:app.public_token||'',applicationType:app.application_type,status:app.status,paymentStatus:app.payment_status,confirmationCode:app.confirmation_code,fullName:app.full_name,seasonLabel:app.membership_season,membershipFee:Number(app.membership_fee||0),currency:app.currency||'EUR',paymentUrl};
 }
+async function hadFailedMembershipPayment(base44:any,config:any,app:any){
+  if(app.payment_status==='failed')return true;
+  if(!app.club_membership_id)return false;
+  const rows=await base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:config.tenant_id,club_id:config.club_id,club_membership_id:app.club_membership_id,purpose_type:'membership'},'-created_date',20);
+  return (rows||[]).some((p:any)=>p.payment_status==='failed');
+}
 function whatsappReminder(config:any,club:any,app:any,paymentUrl:string){
   const fee=money(app.membership_fee,app.currency||config.currency||'EUR');
   const failed=app.payment_status==='failed';
@@ -586,7 +592,7 @@ Deno.serve(async(req)=>{
         let result=await reconcile(base44,config,app);
         app=result.app;
         if(app.payment_status==='paid')return Response.json({success:true,alreadyPaid:true,application:safeApplication(app,'')});
-        const paymentFailed=app.payment_status==='failed';
+        const paymentFailed=await hadFailedMembershipPayment(base44,config,app);
         if(!result.paymentUrl){
           const membership=await first(base44,'ClubMembership',{id:app.club_membership_id,tenant_id:tenantId,club_id:clubId});
           if(!membership)return Response.json({error:'Membership payment record is missing. Cannot prepare a payment reminder.'},{status:409});
@@ -613,7 +619,7 @@ Deno.serve(async(req)=>{
           app=await sendPaidConfirmation(base44,config,club,app);
           return Response.json({success:true,alreadyPaid:true,application:safeApplication(app,'')});
         }
-        const paymentFailed=app.payment_status==='failed';
+        const paymentFailed=await hadFailedMembershipPayment(base44,config,app);
         let paymentUrl=result.paymentUrl;
         if(!paymentUrl){
           const membership=await first(base44,'ClubMembership',{id:app.club_membership_id,tenant_id:tenantId,club_id:clubId});
