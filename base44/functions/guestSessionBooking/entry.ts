@@ -1997,7 +1997,9 @@ ${detailRow('Reason',reason)}
     }
     if(!person&&mobileK){
       const byMobile=await base44.asServiceRole.entities.Person.filter({tenant_id:session.tenant_id,mobile},'-updated_date',10);
-      person=byMobile?.[0]||null;
+      const matchingMobilePeople=(byMobile||[]).filter((p:any)=>!String(p.source_system||'').includes('guest_session_merged')&&nameKey(p.full_name)===nameKey(fullName));
+      if(matchingMobilePeople.length===1)person=matchingMobilePeople[0];
+      else if(matchingMobilePeople.length>1)return Response.json({error:'This guest identity needs club review before booking.'},{status:409});
     }
     const personData:any={
       full_name:fullName,primary_email:email,mobile,
