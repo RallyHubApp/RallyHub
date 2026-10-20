@@ -95,7 +95,7 @@ async function legalDocs(base44:any,config:any){
     const doc=await first(base44,'ClubLegalDocument',{id,tenant_id:config.tenant_id,club_id:config.club_id});
     if(doc)out[key]={
       id:doc.id,type:doc.document_type,title:doc.title,version:doc.version,bodyText:doc.body_text,
-      consentLabel:doc.consent_label||'I agree',required:doc.required_consent!==false
+      consentLabel:doc.consent_label||'I agree',required:doc.required_consent!==false,updated_date:doc.updated_date||doc.created_date||''
     };
   }
   return out;
@@ -624,30 +624,32 @@ Deno.serve(async(req)=>{
         return Response.json({success:true,magicInviteUrl,expiresAt:invite.expires_at,emailSent});
       }
 
-      if(action==='admin_prepare_approved_followup'||action==='admin_email_approved_followup'){
+      if(action==='admin_prepare_approved_followup'||action==='admin_email_approved_followup'||action==='admin_convert_approved_request'){
         const requestId=clean(body.requestId,120);
         const request=await first(base44,'ClubAccessRequest',{id:requestId,tenant_id:tenantId,club_id:clubId,request_type:'membership_application'});
-        if(!request)return Response.json({error:'Membership request not found.'},{status:404});
-        if(request.status!=='approved')return Response.json({error:'This request is not awaiting approved membership completion.'},{status:409});
-        const existingApps=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',300);
-        if((existingApps||[]).some((a:any)=>a.status!=='withdrawn'&&emailKey(a.email)===emailKey(request.email))){
-          return Response.json({error:'This applicant already has a membership application. Refresh and use its payment controls instead.'},{status:409});
-        }
+        if(!request)return Response.json({error:'Membership approval request not found.'},{status:404});
+        if(!['approved','converted'].includes(request.status))return Response.json({error:'Request is not approved.'},{status:409});
         const restriction=await clubRestrictionCheck(base44,tenantId,clubId,{fullName:request.full_name,email:request.email,mobile:request.mobile});
         if(restriction!=='clear')return clubRestrictionResponse(restriction);
-        let invite=request.invite_token_id?await first(base44,'AccessInviteToken',{id:request.invite_token_id,tenant_id:tenantId,club_id:clubId}):null;
-        if(!invite||invite.status!=='active'||(invite.expires_at&&Date.parse(invite.expires_at)<=Date.now())||invite.membership_config_id!==config.id){
-          invite=await createMembershipInvite(base44,config,user,request.email,request.full_name,request.id,request.mobile||'');
-          await base44.asServiceRole.entities.ClubAccessRequest.update(request.id,{invite_token_id:invite.id});
-        }
-        const magicInviteUrl=`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`;
-        const message=`Hi ${firstName(request.full_name)},\n\nYour ${club?.name||'club'} membership request has been approved, but your membership application has not yet been completed.\n\nPlease complete your details, declarations and payment using your private membership link:\n${magicInviteUrl}\n\nIf you have already completed this, please let us know.\n\n${signoffText(config,club)}`;
+        const prepared=await convertApprovedRequestToPayment(base44,config,club,request);
+        const content=reminderContent(config,club,prepared.app,prepared.paymentUrl);
         if(action==='admin_email_approved_followup'){
-          if(!request.email)return Response.json({error:'No email address is available for this applicant.'},{status:400});
-          await sendMembershipInviteEmail(base44,config,club,request.email,request.full_name,magicInviteUrl,true,request.mobile||'');
-          return Response.json({success:true,emailSent:true,expiresAt:invite.expires_at});
+          if(!prepared.app.email)return Response.json({error:'Applicant email missing.'},{status:400});
+          const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId,clubId};
+          const branded=await membershipComms(base44,config,club,'membership_payment_reminder',{
+            FIRST_NAME:firstName(prepared.app.full_name),APPLICATION_TYPE:'application',
+            MEMBERSHIP_SEASON:prepared.app.membership_season,MEMBERSHIP_FEE:money(prepared.app.membership_fee,prepared.app.currency||'EUR'),
+            PAYMENT_LINK:prepared.paymentUrl
+          });
+          await sendWithConfiguredEmailTransport(base44,scope,{to:prepared.app.email,...branded});
+          const count=Number(prepared.app.reminder_count||0)+1;
+          await base44.asServiceRole.entities.MembershipApplication.update(prepared.app.id,{
+            reminder_count:count,last_reminder_at:new Date().toISOString(),last_reminder_channel:'email',follow_up_status:count>1?'second_reminder':'reminded'
+          });
+          return Response.json({success:true,emailSent:true,application:safeApplication(prepared.app,prepared.paymentUrl)});
         }
-        return Response.json({success:true,message,magicInviteUrl,expiresAt:invite.expires_at,mobile:request.mobile||'',email:request.email||''});
+        return Response.json({success:true,application:safeApplication(prepared.app,prepared.paymentUrl),
+          message:content.text,paymentUrl:prepared.paymentUrl,mobile:prepared.app.mobile||'',email:prepared.app.email||'',converted:true});
       }
 
       if(action==='admin_reject_request'){
