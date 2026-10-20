@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, CreditCard, Loader2, RefreshCw, Repeat2, ShieldCheck, UserPlus } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -90,6 +90,7 @@ export default function PublicMembershipApplication() {
   const [inviteApproved, setInviteApproved] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteMobile, setInviteMobile] = useState('');
+  const recoveryStarted = useRef(false);
 
   const club = config?.club || {};
   const legal = config?.legal || {};
@@ -140,7 +141,18 @@ export default function PublicMembershipApplication() {
       try {
         const res = await base44.functions.invoke('membershipApplication',{action:'public_status',clubSlug,applicationToken:statusToken});
         if (!active || res.data?.error) return;
-        const next = res.data?.application;
+        let next = res.data?.application;
+        if (next && searchParams.get('retry') === '1' && next.paymentStatus !== 'paid' && !recoveryStarted.current) {
+          recoveryStarted.current = true;
+          try {
+            const retry = await base44.functions.invoke('membershipApplication',{action:'public_retry_payment',clubSlug,applicationToken:statusToken});
+            if(retry.data?.error) throw new Error(retry.data.error);
+            next = retry.data?.application || next;
+            const params = new URLSearchParams(searchParams);
+            params.delete('retry');
+            setSearchParams(params,{replace:true});
+          } catch(err) { if(active) setError(err?.message || 'Could not prepare a new payment link. Please use Create new payment link.'); }
+        }
         if (next) {
           setApplication(next);
           setStep(next.paymentStatus === 'paid' || next.status === 'approved' ? 'complete' : 'payment');
@@ -150,7 +162,7 @@ export default function PublicMembershipApplication() {
     check();
     timer = window.setInterval(check, 5000);
     return () => { active = false; if (timer) window.clearInterval(timer); };
-  }, [config, clubSlug, statusToken]);
+  }, [config, clubSlug, statusToken, searchParams, setSearchParams]);
 
   const chooseType = type => {
     setError('');
