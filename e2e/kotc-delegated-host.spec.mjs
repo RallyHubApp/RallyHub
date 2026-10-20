@@ -196,3 +196,17 @@ test('live host editor updates unscored court without rewinding and protects sav
   expect(model.match.team_a_participant_ids).toContain('participant-3');
 });
 
+
+test('mobile timed tie: named-team serving buttons preview the correct winner',async({page})=>{
+  const model=createModel();await install(page,model);
+  await page.goto('/e2e/kotcDelegatedHostHarness.html');
+  await page.getByTestId('kotc-start-round').click();
+  await page.getByTestId('kotc-score-1-a').fill('4');
+  await page.getByTestId('kotc-score-1-b').fill('4');
+  const choice=page.getByTestId('kotc-serving-choice-1');
+  await expect(choice.getByRole('button',{name:/Host Player 3.*Host Player 4.*Team B/})).toBeVisible();
+  await expect(page.getByTestId('kotc-complete-1')).toBeDisabled();
+  await page.getByTestId('kotc-serving-1-b').click();
+  await expect(page.getByTestId('kotc-winner-1')).toContainText('Host Player 3 & Host Player 4 win 4–4');
+  await expect(page.getByTestId('kotc-complete-1')).toBeEnabled();
+});
