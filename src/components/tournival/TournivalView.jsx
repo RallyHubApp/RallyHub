@@ -213,6 +213,18 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
     });
     if (response?.data?.error) throw new Error(response.data.error);
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
+    // The sporting-state save has finished. DUPR UAT is optional, asynchronous and
+    // must never hold up results, the final standings or player links.
+    if(isAdmin && newState.status==='Completed' && state?.status!=='Completed'
+       && newState.duprEnabled===true && newState.rehearsal!==true){
+      void base44.functions.invoke('duprIntegration',{
+        action:'submit_tournival_uat',tournamentId:tournament.id,
+        confirmUatTest:true,scoringType:'SIDEOUT'
+      }).then(response=>{
+        if(response?.data?.acknowledged)toast.success('Tournival results acknowledged by DUPR UAT');
+        else toast.info('Tournival saved; DUPR UAT submission requires review in the DUPR tab');
+      }).catch(()=>toast.info('Tournival saved; DUPR UAT reporting can be reviewed separately'));
+    }
   };
 
   // ── Handlers ──────────────────────────────────────────────────────────────
