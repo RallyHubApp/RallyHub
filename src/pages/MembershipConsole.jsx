@@ -116,6 +116,7 @@ export default function MembershipConsole() {
   const [saving, setSaving] = useState(false);
   const [applicationBusyId, setApplicationBusyId] = useState('');
   const [communicationPreview, setCommunicationPreview] = useState(null);
+  const [approvedFollowUp, setApprovedFollowUp] = useState(null);
   const [previewChannel, setPreviewChannel] = useState('email');
   const [editPerson, setEditPerson] = useState({});
   const [editMembership, setEditMembership] = useState({});
@@ -905,6 +906,30 @@ export default function MembershipConsole() {
     }
   };
 
+  const prepareApprovedFollowUp = async request => {
+    setApplicationBusyId('followup-' + request.id);
+    try {
+      const response = await base44.functions.invoke('membershipApplication', {action:'admin_prepare_approved_followup',requestId:request.id});
+      if(response.data?.error) throw new Error(response.data.error);
+      setApprovedFollowUp({request,...response.data});
+    } catch(error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not prepare approved membership follow-up');
+    } finally { setApplicationBusyId(''); }
+  };
+
+  const emailApprovedFollowUp = async () => {
+    if(!approvedFollowUp?.request?.id) return;
+    setApplicationBusyId('followup-' + approvedFollowUp.request.id);
+    try {
+      const response=await base44.functions.invoke('membershipApplication',{action:'admin_email_approved_followup',requestId:approvedFollowUp.request.id});
+      if(response.data?.error) throw new Error(response.data.error);
+      toast.success('Approved membership invitation emailed');
+      setApprovedFollowUp(null);
+    } catch(error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not email membership invitation');
+    } finally { setApplicationBusyId(''); }
+  };
+
   const rejectMembershipRequest = async request => {
     if (!request?.id) return;
     const reason = window.prompt(`Reason for declining ${request.fullName || 'this request'} (optional)`, '');
@@ -1127,7 +1152,12 @@ export default function MembershipConsole() {
                 {(applicationData.approvedInvitations||[]).map(request=><div key={request.id} className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 sm:p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2"><strong>{request.fullName}</strong><Badge variant="outline">Approved · membership not completed</Badge></div>
                   <p className="mt-1 text-xs text-muted-foreground">{request.email}{request.mobile?' · '+request.mobile:''}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Approved {request.approvedAt?new Date(request.approvedAt).toLocaleString('en-IE'):'—'} · Membership payment not recorded</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Approved {request.approvedAt?new Date(request.approvedAt).toLocaleString('en-IE'):'—'} · Membership application not completed; payment not recorded</p>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <Button size="sm" variant="outline" disabled={!!applicationBusyId} onClick={()=>prepareApprovedFollowUp(request)}>
+                      <MessageCircle className="w-3.5 h-3.5 mr-1.5"/> {applicationBusyId==='followup-'+request.id?'Preparing…':'WhatsApp / Email reminder'}
+                    </Button>
+                  </div>
                 </div>)}
               </div>}
               {applicationsLoading ? <p className="py-6 text-center text-sm text-muted-foreground">Loading applications…</p> :
