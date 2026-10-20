@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
-const STRUCTURAL = new Set(['confirm_round','start_round','start_proposed_round','undo_start_round','generate_next_round','adjust_proposed_round','set_pair_lock','set_participant_status','bulk_roster_change','add_late_participant','replace_proposed_player','restore_participant_status','update_timer_settings','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
+const STRUCTURAL = new Set(['confirm_round','start_round','start_proposed_round','undo_start_round','generate_next_round','adjust_proposed_round','adjust_started_round','set_pair_lock','set_participant_status','bulk_roster_change','add_late_participant','replace_proposed_player','restore_participant_status','update_timer_settings','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
 const RESOLVED = new Set(['completed','retired','abandoned','not_played']);
 
 function nowIso() { return new Date().toISOString(); }
@@ -629,6 +629,73 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_round_host_adjustment',entity_type:'KotcRound',entity_id:round.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify(before),after_state:JSON.stringify(changed),reason:String(body.reason||'Host adjusted proposed round').trim()});
       result={success:true,session,round:updatedRound,changes:changed};
       await createSnapshot(base44,session,commandId,'command',user.id);
+    } else if (commandType === 'adjust_started_round') {
+      // Emergency host override: the live timer and all untouched courts keep running.
+      // No scored, autosaved or actively claimed court may be changed.
+      const round=(await base44.asServiceRole.entities.KotcRound.filter({id:body.roundId,session_id:session.id}))?.[0];
+      if(!round||round.status!=='started'||String(session.current_round_id)!==String(round.id)||session.status!=='in_progress')
+        return Response.json({error:'Only the current live round can be changed.'},{status:409});
+      const currentProposalRevision=Number(round.proposal_revision||1);
+      if(Number(body.expectedProposalRevision)!==currentProposalRevision)
+        return Response.json({conflict:true,error:'Court allocations changed. Refresh before making another change.',currentProposalRevision},{status:409});
+      const [slotRows,matchRows,participantRows,lockRows]=await Promise.all([
+        base44.asServiceRole.entities.KotcRoundSlot.filter({round_id:round.id,session_id:session.id}),
+        base44.asServiceRole.entities.KotcMatch.filter({round_id:round.id,session_id:session.id}),
+        base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}),
+        base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id,status:'active'})
+      ]);
+      const slots=(slotRows||[]).sort((a:any,b:any)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank)||String(a.team_side).localeCompare(String(b.team_side))||Number(a.slot_number)-Number(b.slot_number));
+      const requested=body.slotParticipantIds||{};
+      const nextIds=slots.map((slot:any)=>String(requested[slot.id]||slot.participant_id));
+      const currentIds=slots.map((slot:any)=>String(slot.participant_id));
+      if(!slots.length||nextIds.length!==Number(round.active_court_count||0)*4||new Set(nextIds).size!==nextIds.length)
+        return Response.json({error:'Each active court needs four unique players.'},{status:400});
+      const eligibleList=(participantRows||[]).filter((p:any)=>['registered','confirmed','present','leaving_early'].includes(p.status)&&!(p.scheduled_departure_at&&Date.parse(p.scheduled_departure_at)<=Date.now()));
+      const eligibleIds=new Set(eligibleList.map((p:any)=>String(p.id)));
+      if(nextIds.some((id:string)=>!eligibleIds.has(id)))return Response.json({error:'An unavailable player cannot be placed on court.'},{status:400});
+      const affected=new Set<number>();const changes:any[]=[];
+      for(let i=0;i<slots.length;i++)if(nextIds[i]!==currentIds[i]){
+        affected.add(Number(slots[i].ladder_court_rank));
+        changes.push({slotId:slots[i].id,court:Number(slots[i].ladder_court_rank),fromParticipantId:currentIds[i],toParticipantId:nextIds[i]});
+      }
+      if(!changes.length){result={success:true,noChange:true,session,round};}
+      else {
+        const nowMs=Date.now();
+        for(const match of matchRows||[]){
+          if(!affected.has(Number(match.ladder_court_rank)))continue;
+          const locked=match.scoring_lock_owner&&match.scoring_lock_expires_at&&Date.parse(match.scoring_lock_expires_at)>nowMs;
+          if(match.status!=='scheduled'||match.team_a_score!=null||match.team_b_score!=null||match.autosaved_at||locked)
+            return Response.json({error:`Court ${match.ladder_court_rank} is being scored or already has a score. Its players cannot be changed; use score correction/recovery.`},{status:409});
+        }
+        const teams:any={};
+        for(let i=0;i<slots.length;i++){
+          const slot=slots[i],key=`${slot.ladder_court_rank}-${slot.team_side}`;
+          (teams[key]||(teams[key]=[])).push(nextIds[i]);
+        }
+        if(Object.values(teams).some((ids:any)=>ids.length!==2))return Response.json({error:'Every team must have exactly two players.'},{status:400});
+        for(const lock of (lockRows||[]).filter((x:any)=>x.pair_source==='host_selected')){
+          const first=String(lock.participant1_id),second=String(lock.participant2_id);
+          if(nextIds.includes(first)&&nextIds.includes(second)&&!Object.values(teams).some((ids:any)=>ids.includes(first)&&ids.includes(second)))
+            return Response.json({error:`Locked partnership ${lock.pair_name||''} cannot be separated.`},{status:409});
+        }
+        for(let i=0;i<slots.length;i++)if(nextIds[i]!==currentIds[i])
+          await withRateLimitRetry('live slot override',()=>base44.asServiceRole.entities.KotcRoundSlot.update(slots[i].id,{participant_id:nextIds[i],assignment_type:'manual_override',assignment_revision:Number(slots[i].assignment_revision||1)+1}));
+        for(const match of matchRows||[]){
+          if(!affected.has(Number(match.ladder_court_rank)))continue;
+          const rank=Number(match.ladder_court_rank);
+          const courtSlots=slots.map((slot:any,i:number)=>({...slot,participant_id:nextIds[i]})).filter((slot:any)=>Number(slot.ladder_court_rank)===rank);
+          const teamA=courtSlots.filter((slot:any)=>slot.team_side==='A').sort((a:any,b:any)=>Number(a.slot_number)-Number(b.slot_number)).map((slot:any)=>String(slot.participant_id));
+          const teamB=courtSlots.filter((slot:any)=>slot.team_side==='B').sort((a:any,b:any)=>Number(a.slot_number)-Number(b.slot_number)).map((slot:any)=>String(slot.participant_id));
+          await withRateLimitRetry('live match override',()=>base44.asServiceRole.entities.KotcMatch.update(match.id,{team_a_participant_ids:teamA,team_b_participant_ids:teamB,revision:Number(match.revision||0)+1,command_id:commandId}));
+        }
+        const newBench=eligibleList.map((p:any)=>String(p.id)).filter((id:string)=>!nextIds.includes(id));
+        const updatedRound=await base44.asServiceRole.entities.KotcRound.update(round.id,{proposal_revision:currentProposalRevision+1,bench_count:newBench.length,engine_output_hash:String(stableHash(nextIds.join('|')))});
+        session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId});
+        // Bench fairness for future draws uses the actual revised slots; preserve
+        // evidence of this late override independently of prior proposed bench events.
+        try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_live_round_host_adjustment',entity_type:'KotcRound',entity_id:round.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({slotIds:currentIds}),after_state:JSON.stringify({slotIds:nextIds,newBench}),reason:String(body.reason||'Host changed players during live round').trim()});}catch(error){console.warn('KOTC live override audit deferred',String(error?.message||error));}
+        result={success:true,session,round:updatedRound,changes,affectedCourts:[...affected],bench:newBench};
+      }
     } else if (commandType === 'set_pair_lock') {
       const p1=String(body.participant1Id||''),p2=String(body.participant2Id||'');
       if(!p1||!p2||p1===p2)return Response.json({error:'Choose two different players for a pair lock.'},{status:400});
