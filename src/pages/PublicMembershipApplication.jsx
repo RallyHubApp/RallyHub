@@ -364,8 +364,8 @@ export default function PublicMembershipApplication() {
           {step === 'payment' && application && (
             <section className="rounded-2xl border border-border bg-card p-5 sm:p-7 text-center">
               <CreditCard className="mx-auto w-9 h-9 text-primary" />
-              <h2 className="mt-3 text-xl font-black">Application received</h2>
-              <p className="mt-2 text-sm text-muted-foreground">Reference <strong className="text-foreground">{application.confirmationCode}</strong>. Complete your membership payment to confirm your membership.</p>
+              <h2 className="mt-3 text-xl font-black">{application.paymentStatus === 'failed' ? 'Payment not completed — please try again' : 'Application received'}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">Reference <strong className="text-foreground">{application.confirmationCode}</strong>. {application.paymentStatus === 'failed' ? 'Your SumUp payment did not complete. No successful payment is recorded. Use the button below to try securely again, or contact the club if you need help.' : 'Complete your membership payment to confirm your membership.'}</p>
               <div className="mt-5 rounded-xl bg-secondary/30 p-4"><div className="text-sm text-muted-foreground">Amount due</div><div className="mt-1 text-3xl font-black">{money(application.membershipFee,application.currency)}</div></div>
               {application.paymentUrl ? <a href={application.paymentUrl} className="mt-5 inline-flex min-h-12 w-full sm:w-auto items-center justify-center rounded-xl bg-primary px-6 py-3 text-base font-black text-primary-foreground hover:bg-primary/90">Pay {money(application.membershipFee,application.currency)} securely</a> : <Button onClick={retryPayment} disabled={busy} className="mt-5"><RefreshCw className={'w-4 h-4 mr-2 ' + (busy?'animate-spin':'')} />Create new payment link</Button>}
               <p className="mt-4 text-xs text-muted-foreground">This page checks the payment status automatically. You can safely return here after payment.</p>
