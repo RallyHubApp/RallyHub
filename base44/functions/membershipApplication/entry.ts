@@ -325,6 +325,88 @@ async function paymentForApplication(base44:any,config:any,club:any,app:any,memb
   const updated=await base44.asServiceRole.entities.MembershipApplication.update(app.id,{payment_record_id:payment.id,payment_status:'pending',status:'pending_payment',follow_up_status:'payment_due'});
   return {app:updated,payment,paymentUrl:payment.provider_checkout_url||''};
 }
+
+async function convertApprovedRequestToPayment(base44:any,config:any,club:any,request:any){
+  if(request.status!=='approved'&&request.status!=='converted')throw new Error('Membership request is not approved.');
+  let payload:any;
+  try{payload=JSON.parse(request.payload_json||'')}catch{throw new Error('Original membership submission is unavailable. Do not recreate the applicant form.')}
+  if(payload.applicationType!=='new'||emailKey(payload.email)!==emailKey(request.email)||clean(payload.fullName)!==clean(request.full_name))throw new Error('Original submitted details do not match the approved request.');
+  if(!payload.fullPostalAddress||!payload.postalCode||!payload.dateOfBirth||!payload.emergencyContactName||phoneDigits(payload.emergencyMobile).length<8)throw new Error('Original membership form is incomplete. Review required.');
+  const docs=await legalDocs(base44,config);
+  const consentTypes:any=[['privacy',docs.privacy],['liability_waiver',docs.waiver],['code_of_conduct',docs.code],['health_declaration',docs.health],['membership_terms',docs.terms]];
+  if(consentTypes.some(([key,doc]:any)=>!doc||payload.consents?.[key]!==true))throw new Error('Original consent declarations cannot be verified. No checkout created.');
+  if(docs.photo&&!['yes','no'].includes(payload.consents?.photoVideo))throw new Error('Original photography preference cannot be verified.');
+  const originalTime=Date.parse(request.submitted_at||'');
+  if(!Number.isFinite(originalTime))throw new Error('Original submission timestamp missing.');
+  for(const [,doc] of [...consentTypes,...(docs.photo?[['photo_video',docs.photo]]:[])]){
+    if(doc.updated_date&&Date.parse(doc.updated_date)>originalTime)throw new Error('Consent document changed after submission. Manual review required.');
+  }
+  let person=await findPersonByIdentity(base44,config.tenant_id,emailKey(request.email),payload.dateOfBirth);
+  const existingApps=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:config.tenant_id,club_id:config.club_id,config_id:config.id},'-created_date',300);
+  let app=(existingApps||[]).find((a:any)=>a.source_reference===request.id||emailKey(a.email)===emailKey(request.email)&&a.status!=='withdrawn')||null;
+  if(app&&app.payment_status==='paid')throw new Error('This membership application is already paid.');
+  if(app&&app.source_reference!==request.id)throw new Error('An existing membership application needs review before conversion.');
+  let membership:any=null;
+  if(app?.club_membership_id)membership=await first(base44,'ClubMembership',{id:app.club_membership_id,tenant_id:config.tenant_id,club_id:config.club_id});
+  if(!person){
+    person=await base44.asServiceRole.entities.Person.create({
+      tenant_id:config.tenant_id,full_name:payload.fullName,primary_email:emailKey(payload.email),mobile:payload.mobile,
+      date_of_birth:payload.dateOfBirth,full_postal_address:payload.fullPostalAddress,postal_code:payload.postalCode,
+      emergency_contact_name:payload.emergencyContactName,emergency_contact_relationship:payload.emergencyContactRelationship||'',
+      emergency_mobile:payload.emergencyMobile,emergency_contact_raw:payload.emergencyContactName+' ('+(payload.emergencyContactRelationship||'')+') – '+payload.emergencyMobile,
+      source_system:'rallyhub_membership_application',last_synced_at:new Date().toISOString()
+    });
+  }
+  if(!membership)membership=await currentOrLatestMembership(base44,config.tenant_id,config.club_id,person.id,config.season_label);
+  if(membership&&membership.membership_season===config.season_label&&membership.payment_status==='paid')throw new Error('Membership is already paid; no duplicate payment request will be created.');
+  if(!membership||membership.membership_season!==config.season_label){
+    membership=await base44.asServiceRole.entities.ClubMembership.create({
+      tenant_id:config.tenant_id,club_id:config.club_id,person_id:person.id,
+      membership_season:config.season_label,membership_type:'new',membership_status:'pending_payment',
+      relationship_type:'member',join_date:request.submitted_at.slice(0,10),expiry_date:config.active_until||undefined,
+      membership_fee:Number(config.membership_fee),payment_status:'pending',source_system:'rallyhub_membership_application',
+      last_synced_at:new Date().toISOString()
+    });
+  }
+  if(!app){
+    app=await base44.asServiceRole.entities.MembershipApplication.create({
+      tenant_id:config.tenant_id,club_id:config.club_id,config_id:config.id,application_type:'new',status:'submitted',
+      public_token:publicToken(),confirmation_code:confirmation(),source_reference:request.id,
+      person_id:person.id,club_membership_id:membership.id,membership_season:config.season_label,membership_type:'new',
+      membership_fee:Number(config.membership_fee),currency:config.currency||'EUR',full_name:payload.fullName,
+      full_postal_address:payload.fullPostalAddress,postal_code:payload.postalCode,email:emailKey(payload.email),
+      mobile:payload.mobile,date_of_birth:payload.dateOfBirth,emergency_contact_name:payload.emergencyContactName,
+      emergency_contact_relationship:payload.emergencyContactRelationship||'',emergency_mobile:payload.emergencyMobile,
+      emergency_contact_raw:payload.emergencyContactName+' ('+(payload.emergencyContactRelationship||'')+') – '+payload.emergencyMobile,
+      changed_fields:payload.changedFields||[],data_review_confirmed:payload.dataReviewConfirmed===true,
+      payment_status:'not_started',submitted_at:request.submitted_at,approved_at:request.approved_at,
+      follow_up_status:'payment_due',source_system:'rallyhub_membership_application'
+    });
+  }
+  const consentRows=await base44.asServiceRole.entities.ConsentRecord.filter({tenant_id:config.tenant_id,club_id:config.club_id,membership_application_id:app.id},'-recorded_at',30);
+  if(!consentRows?.length){
+    const consents:any=[...consentTypes,...(docs.photo?[['photo_video',docs.photo]]:[])];
+    for(const [key,doc] of consents){
+      const accepted=key==='photo_video'?payload.consents.photoVideo==='yes':payload.consents[key]===true;
+      await base44.asServiceRole.entities.ConsentRecord.create({
+        tenant_id:config.tenant_id,club_id:config.club_id,person_id:person.id,membership_application_id:app.id,
+        legal_document_id:doc.id,consent_type:key,status:accepted?'accepted':'declined',
+        response_text:accepted?(doc.consentLabel||'Accepted'):'Declined',consent_version:doc.version,
+        wording_hash:await hashText(doc.bodyText||''),recorded_at:request.submitted_at,
+        source_system:'rallyhub_membership_approved_request',notes:'Consent copied from original approved ClubAccessRequest '+request.id
+      });
+    }
+  }
+  await ensureRelationship(base44,config,person,membership);
+  const pay=await paymentForApplication(base44,config,club,app,membership,false);
+  if(!pay.paymentUrl)throw new Error('SumUp has not returned a payment link. The application is saved, but payment is not ready.');
+  if(request.status!=='converted'){
+    await base44.asServiceRole.entities.ClubAccessRequest.update(request.id,{status:'converted',conversion_reference:pay.app.id});
+    if(request.invite_token_id)await base44.asServiceRole.entities.AccessInviteToken.update(request.invite_token_id,{status:'used',used_at:new Date().toISOString()});
+  }
+  return {app:pay.app,paymentUrl:pay.paymentUrl};
+}
+
 async function syncPaid(base44:any,config:any,app:any,membership:any,payment:any,result:any){
   const now=new Date().toISOString();
   if(payment&&payment.payment_status!=='paid'){
