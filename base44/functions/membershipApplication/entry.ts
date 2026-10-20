@@ -551,7 +551,7 @@ Deno.serve(async(req)=>{
           await base44.asServiceRole.entities.ClubAccessRequest.update(request.id,{invite_token_id:invite.id});
         }
         const magicInviteUrl=`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`;
-        const message=`Hi ${firstName(request.full_name)},\n\nYour ${club.name} membership request has been approved, but your membership application has not yet been completed.\n\nPlease complete your details, declarations and payment using your private membership link:\n${magicInviteUrl}\n\nIf you have already completed this, please let us know.\n\n${signoffText(config,club)}`;
+        const message=`Hi ${firstName(request.full_name)},\n\nYour ${club?.name||'club'} membership request has been approved, but your membership application has not yet been completed.\n\nPlease complete your details, declarations and payment using your private membership link:\n${magicInviteUrl}\n\nIf you have already completed this, please let us know.\n\n${signoffText(config,club)}`;
         if(action==='admin_email_approved_followup'){
           if(!request.email)return Response.json({error:'No email address is available for this applicant.'},{status:400});
           await sendMembershipInviteEmail(base44,config,club,request.email,request.full_name,magicInviteUrl,true,request.mobile||'');
