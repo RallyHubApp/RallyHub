@@ -163,7 +163,7 @@ async function sendMembershipPaymentFailureEmail(base44:any,payment:any,applicat
   const config=await membershipConfig(base44,payment.tenant_id,payment.club_id,application.config_id||'');
   const club=await clubBrand(base44,payment.club_id);
   if(!config||!club||!application.public_token)return;
-  const retryUrl='https://rallyhub.ie/membership/'+encodeURIComponent(config.public_slug)+'?application='+encodeURIComponent(application.public_token);
+  const retryUrl='https://rallyhub.ie/membership/'+encodeURIComponent(config.public_slug)+'?application='+encodeURIComponent(application.public_token)+'&retry=1';
   const hello=firstName(application.full_name);
   const subject=club.name+' membership — your payment did not complete';
   const textBody='Hi '+hello+',\n\nYour recent SumUp membership payment did not complete, so your membership is not yet active. You can try again using your private payment recovery page:\n'+retryUrl+'\n\nOn that page, select Create new payment link to retry securely. If you have already paid or need assistance, please contact the club.\n\n'+club.name;
