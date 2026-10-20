@@ -20,6 +20,7 @@ for(const viewport of [{width:390,height:844},{width:1280,height:800}]) {
   await expect(page.getByText('Test Player 1')).toBeVisible();
   await expect(page.getByText('Payment: paid')).toBeVisible();
   await expect(page.getByText('Check-in: Checked in')).toBeVisible();
+  await page.getByRole('button',{name:'Fixtures'}).click();
   await expect(page.getByText('8–5')).toBeVisible();
   await expect(page.getByText(/Partner: Test Player 2/).first()).toBeVisible();
   await expect(page.getByText(/Opponents: Test Player 3 & Test Player 4/).first()).toBeVisible();
