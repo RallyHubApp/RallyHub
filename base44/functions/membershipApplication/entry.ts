@@ -787,6 +787,22 @@ Deno.serve(async(req)=>{
           try{prefill=JSON.parse(request.payload_json)}catch{}
         }
       }
+      // Private, contact-bound invitations can reuse the guest's existing
+      // identity fields. Do not expose personal data on the public no-token page.
+      if(invite&&!prefill&&invite.intended_email){
+        const people=await base44.asServiceRole.entities.Person.filter({tenant_id:config.tenant_id,primary_email:emailKey(invite.intended_email)},'-updated_date',20);
+        const matching=(people||[]).filter((p:any)=>
+          (!invite.intended_name||clean(p.full_name,160).toLowerCase()===clean(invite.intended_name,160).toLowerCase())&&
+          (!invite.intended_mobile||samePhone(p.mobile,invite.intended_mobile))
+        );
+        if(matching.length===1){
+          const p=matching[0];
+          prefill={fullName:p.full_name||'',email:p.primary_email||'',mobile:p.mobile||'',
+            fullPostalAddress:p.full_postal_address||'',postalCode:p.postal_code||'',
+            dateOfBirth:p.date_of_birth||'',emergencyContactName:p.emergency_contact_name||'',
+            emergencyContactRelationship:p.emergency_contact_relationship||'',emergencyMobile:p.emergency_mobile||''};
+        }
+      }
       return Response.json({success:true,config:safeConfig(config,club,docs,adultPolicy),inviteApproved:!!invite,inviteEmail:invite?.intended_email||'',inviteMobile:invite?.intended_mobile||'',prefill});
     }
 
