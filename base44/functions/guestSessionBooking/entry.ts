@@ -1987,7 +1987,7 @@ ${detailRow('Reason',reason)}
     const byEmail=await base44.asServiceRole.entities.Person.filter({tenant_id:session.tenant_id,primary_email:email},'-updated_date',10);
     // If a person has both historical guest and newer member identities,
     // keep new bookings on the verified member profile, never the guest stub.
-    const matchingEmailPeople=(byEmail||[]).filter((p:any)=>nameKey(p.full_name)===nameKey(fullName)&&(!p.mobile||!mobileK||mobileKey(p.mobile)===mobileK));
+    const matchingEmailPeople=(byEmail||[]).filter((p:any)=>!String(p.source_system||'').includes('guest_session_merged')&&nameKey(p.full_name)===nameKey(fullName)&&(!p.mobile||!mobileK||mobileKey(p.mobile)===mobileK));
     if(matchingEmailPeople.length===1)person=matchingEmailPeople[0];
     else if(matchingEmailPeople.length>1){
       const memberLinks=await base44.asServiceRole.entities.ClubMembership.filter({tenant_id:session.tenant_id,club_id:session.club_id},'-created_date',500);
