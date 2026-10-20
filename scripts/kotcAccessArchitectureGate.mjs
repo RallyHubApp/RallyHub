@@ -153,7 +153,7 @@ includes(mobileHostTest,'PageTransitionEvent','mobile host robot must exercise b
 includes(command,'command-log finalisation skipped after successful sporting write','secondary command-log failure must not report sporting failure');
 
 // Busy-hall UX safeguards: sound check, local player search and explicit test-only scoring helpers.
-includes(timerUi,'Sound check. RallyHub timer ready.','KOTC must provide a real spoken sound check before play');
+includes(timerUi,"speak('5, 4, 3, 2, 1. Hand in your scores.')",'KOTC sound check must speak an actual round-end cue before play');
 assert(!timerUi.includes('kotc-voice-mode')&&!timerUi.includes('KOTC announcement voice')&&!timerUi.includes('Timer announcement voice'),'KOTC must not expose unreliable male/female/device voice selectors');
 includes(timerUi,"speakRallyHub(text, { volume: 1, voiceMode: 'rallyhub_default' });",'KOTC spoken announcements must request full shared RallyHub speech volume');
 includes(hallAudio,'utterance.volume = Math.max(0, Math.min(1, Number(volume) || 0));','shared RallyHub audio service must apply the requested speech volume');
