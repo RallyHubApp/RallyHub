@@ -8,6 +8,23 @@ import { speakRallyHub } from '@/lib/rallyHubHallAudio.js';
 const DEFAULT_PLAY_MINUTES = 8;
 const DEFAULT_REST_MINUTES = 2;
 
+// Resolved KOTC announcement settings do not change from round to round.
+// Cache per session for ten minutes so remounting the live timer never creates
+// two provider reads on every round. A failed request is never cached.
+const announcementCache = new Map();
+function resolvedKotcAnnouncements(sessionId) {
+  const key = String(sessionId || 'unassigned');
+  const cached = announcementCache.get(key);
+  if (cached && Date.now() - cached.at < 10 * 60 * 1000) return cached.promise;
+  if (announcementCache.size > 12) announcementCache.clear();
+  const promise = base44.functions.invoke('announcementSettings', { action:'resolved', module:'kotc' })
+    .then(res => res.data?.byKey || {})
+    .catch(error => { if (announcementCache.get(key)?.promise === promise) announcementCache.delete(key); throw error; });
+  announcementCache.set(key, {at:Date.now(), promise});
+  return promise;
+}
+
+
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
   const secs = seconds % 60;
@@ -117,12 +134,12 @@ export default function RoundTimer({
     let cancelled = false;
     (async () => {
       try {
-        const res = await base44.functions.invoke('announcementSettings', { action:'resolved', module:'kotc' });
-        if (!cancelled && res.data?.byKey) setAnnouncementByKey(res.data.byKey);
+        const byKey = await resolvedKotcAnnouncements(sessionId);
+        if (!cancelled) setAnnouncementByKey(byKey);
       } catch { /* defaults below remain authoritative if settings cannot be loaded */ }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [sessionId]);
 
   const announcementText = (key, fallback) => {
     const item = announcementByKey?.[key];
