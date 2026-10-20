@@ -13,8 +13,11 @@ ok(v2.includes('clickBench'),'bench-to-court swap path is wired');
 ok(!v2.includes('Save Host Adjustments'),'redundant separate save step removed');
 ok(v2.includes('onClick={()=>onStart(draft,roundMinutes)}'),'edited draft and confirmed round duration are submitted by the explicit START ROUND tap');
 ok(v2.includes("functions.invoke('startKotcRound'"),'UI starts the proposed round through the dedicated start function');
-ok(v2.includes("currentRound?.status==='proposed'&&!assistant&&<ProposedRoundEditor"),'editor only appears for proposed round');
-ok(!v2.includes("currentRound?.status==='started'&&<ProposedRoundEditor"),'started rounds cannot be host-edited');
+ok(v2.includes("currentRound?.status==='proposed'&&!assistant&&<"),'editor is available for proposed rounds');
+ok(v2.includes('liveEditing')&&v2.includes('kotc-live-player-editor-toggle'),'host can open a controlled live-round editor');
+ok(command.includes("commandType === 'adjust_started_round'"),'live-round changes are validated server-side');
+ok(command.includes("match.status!=='scheduled'||match.team_a_score!=null"),'saved or scored courts are protected from live player changes');
+ok(command.includes('scoring_lock_expires_at'),'live edits respect active court scoring locks');
 
 ok(startCommand.includes("round.status!=='proposed'"),'server rejects start from a non-proposed round');
 ok(startCommand.includes("new Set(nextIds).size!==nextIds.length"),'duplicate-player invariant guarded at start');

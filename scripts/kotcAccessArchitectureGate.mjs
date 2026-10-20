@@ -125,7 +125,7 @@ includes(command,"recoveryModel:'authoritative_entities'",'recovery checkpoints 
 assert(!command.includes('participationEvents:events')&&!command.includes('sessionCourts:courts'),'recovery checkpoints must not duplicate large live collections');
 includes(hostUi,"functions.invoke('prepareKotcNextRound'",'host Prepare Next Round must use its dedicated live-session endpoint');
 assert(!hostUi.includes("commandType:'generate_next_round'"),'host UI must not route Prepare Next Round through the heavy general command pipeline');
-includes(prepareNext,"RUNTIME_VERSION='kotc-prepare-2026-09-10-r8'",'dedicated next-round endpoint must expose its current runtime contract version');
+assert(/const RUNTIME_VERSION='kotc-prepare-\d{4}-\d{2}-\d{2}-r\d+'/.test(prepareNext)&&prepareNext.includes("runtimeVersion:RUNTIME_VERSION"),'dedicated next-round endpoint must expose its explicit runtime contract version');
 includes(prepareNext,"retry('create slots'",'next-round slot creation must retry Base44 provider limits internally');
 includes(prepareNext,"retry('advance session'",'final next-round session advance must be rate-limit resilient');
 assert(!prepareNext.includes('Promise.all(['),'next-round provider writes must not be fired concurrently against Base44 burst limits');
