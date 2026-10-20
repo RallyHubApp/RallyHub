@@ -336,3 +336,73 @@ export async function handleIndependentDuprUat(action:string,body:any,b:any,user
   return fail('DUPR UAT request failed: '+(/DUPR UAT|verification|configured|SSO|required|expired|refresh|token protection/i.test(message)?message:'See server logs'),502);
  }
 }
+
+
+/**
+ * UAT-only Tournival submission. Candidates MUST be reconstructed from the
+ * persistent TournivalSession by the server, never provided by a browser.
+ * Uses the same DUPR transport and ledger as independent Stage 5 testing.
+ */
+export async function submitTournivalUatBatch(b:any,user:any,matches:any[],selection:string[]|null){
+ const abort=(error:string,status=409)=>reply({success:false,error,environment:'uat'},status);
+ if(user?.role!=='admin')return abort('Platform Super Admin required',403);
+ const preflight=await handleIndependentDuprUat('uat_match_preflight',{},b,user);
+ if(!preflight)return abort('DUPR UAT preflight unavailable',503);
+ const gate=await preflight.json();
+ if(!gate.ready||!gate.accounts?.some((a:any)=>a.slot==='brian'&&a.clubAdmin))
+  return abort('DUPR UAT director and verified test accounts required',403);
+ const allowed=new Set(gate.accounts.map((a:any)=>a.duprId));
+ const requested=selection===null?matches:matches.filter(m=>selection.includes(m.identifier));
+ if(selection!==null&&(selection.length===0||new Set(selection).size!==selection.length||requested.length!==selection.length))
+  return abort('Recovery selection does not match stored eligible results');
+ if(!requested.length)return abort('No eligible Tournival matches selected');
+ if(requested.length>100)return abort('Select at most 100 matches');
+ for(const m of requested){
+  if(!m.identifier.startsWith('RH-TRN-')||m.matchSource!=='PARTNER')
+   return abort('Only server-generated Tournival partner results are supported',403);
+  const checked=validateMatch(m,true);
+  if(!checked.ok)return abort('Invalid Tournival DUPR result: '+checked.reason);
+  if([m.teamA.player1,m.teamA.player2,m.teamB.player1,m.teamB.player2]
+     .some((id:string)=>!allowed.has(id)))
+   return abort('Tournival UAT may contain only the four verified DUPR test identities; no live players submitted',403);
+ }
+ const ledger=entities(b).DuprUatSubmission;
+ const reserved:any[]=[],acknowledged:any[]=[];
+ for(const m of requested){
+  const existing=await ledger.filter({identifier:m.identifier},'-submitted_at',3);
+  if(existing?.length>1)return abort('Duplicate ledger records require manual reconciliation');
+  if(existing?.length){
+   if(existing[0].status==='needs_reconciliation')return abort('Uncertain DUPR result requires provider reconciliation, never auto-retry: '+m.identifier);
+   if(existing[0].status==='deleted')return abort('Previously deleted DUPR result cannot be resubmitted with the same ID');
+   acknowledged.push({identifier:m.identifier,matchCode:existing[0].match_code,previouslySubmitted:true});
+  }else reserved.push(m);
+ }
+ if(!reserved.length)return reply({success:true,environment:'uat',acknowledged:true,alreadySubmitted:true,submitted:acknowledged});
+ const records=[];
+ for(const m of reserved){
+  records.push(await ledger.create({identifier:m.identifier,status:'needs_reconciliation',
+   submitted_by_user_id:user.id,submitted_at:now(),last_action_at:now(),
+   notes:'Tournival UAT; awaiting DUPR batch reconciliation'}));
+ }
+ // On timeout the reserved entries remain uncertain and block automatic resends.
+ try{
+  const token=await partnerToken();
+  const result=await duprRequest(UAT_PARTNER+'/match/v1.0/batch',{method:'POST',token,body:reserved});
+  const successes=result.result?.matchCodes||result.result?.successes||result.matchCodes||result.successes||[];
+  const errors=result.result?.errors||result.errors||[];
+  for(const item of successes){
+   const i=reserved.findIndex((m:any)=>m.identifier===String(item.identifier||''));
+   if(i<0||!item.matchCode)continue;
+   await ledger.update(records[i].id,{match_code:String(item.matchCode),
+    hashed_match_code:String(item.hashedMatchCode||''),status:'submitted',last_action_at:now()});
+   acknowledged.push({identifier:reserved[i].identifier,matchCode:String(item.matchCode)});
+  }
+  return reply({success:true,environment:'uat',
+   acknowledged:acknowledged.length===requested.length&&errors.length===0,
+   submitted:acknowledged,providerErrors:errors,
+   needsReconciliation:reserved.map(m=>m.identifier).filter(id=>!acknowledged.some(a=>a.identifier===id))});
+ }catch(err){
+  console.warn('Tournival DUPR UAT uncertain batch; reconciliation required',(err as Error)?.message);
+  return abort('Provider outcome uncertain; saved submission IDs require reconciliation. Do not retry automatically.',502);
+ }
+}

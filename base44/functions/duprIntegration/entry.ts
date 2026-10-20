@@ -1,5 +1,5 @@
 import { prepareTournivalDuprBatch } from './tournivalMatchAdapter.ts';
-import { handleIndependentDuprUat } from './uatService.ts';
+import { handleIndependentDuprUat, submitTournivalUatBatch } from './uatService.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
 const UAT_BASE = 'https://uat.mydupr.com/api';
@@ -30,9 +30,11 @@ Deno.serve(async (req) => {
     if (action === 'status') {
       return Response.json({ success: true, environment: 'uat', apiVersion: API_VERSION, configured, ready: configured.clientId && configured.clientKey && configured.clientSecret });
     }
-    if (action === 'preview_tournival_uat') {
+    if (action === 'preview_tournival_uat' || action === 'submit_tournival_uat') {
       const id=String(body.tournamentId||'').trim();
       if(!id)return Response.json({error:'Tournival ID required'},{status:400});
+      const submitting=action==='submit_tournival_uat';
+      if(submitting&&body.confirmUatTest!==true)return Response.json({error:'Explicit DUPR UAT confirmation required'},{status:400});
       const rows=await base44.asServiceRole.entities.Tournament.filter({id});
       const tournament=rows?.[0];
       if(!tournament||String(tournament.format).toLowerCase()!=='tournival')
@@ -43,6 +45,7 @@ Deno.serve(async (req) => {
       if(sessions?.length!==1)return Response.json({error:'Exactly one persistent Tournival session required'},{status:409});
       const session=sessions[0];
       if(session.rehearsal===true)return Response.json({error:'Rehearsal cannot be reported to DUPR'},{status:409});
+      if(submitting&&tournament.status!=='Completed')return Response.json({error:'Tournament must be completed before DUPR submission'},{status:409});
       let state:any;
       try{state=JSON.parse(session.state_json||'{}')}catch{
         return Response.json({error:'Stored sporting state invalid'},{status:409});
@@ -63,6 +66,13 @@ Deno.serve(async (req) => {
       });
       const byReason:Record<string,number>={};
       for(const row of result.excluded)byReason[row.reason]=(byReason[row.reason]||0)+1;
+      if(submitting){
+        if(!result.matches.length)return Response.json({success:false,error:'No completed consented point-scored matches eligible for DUPR UAT'},{status:409});
+        const selected=body.identifiers==null?null:body.identifiers;
+        if(selected!==null&&(!Array.isArray(selected)||selected.some((x:any)=>typeof x!=='string')))
+          return Response.json({error:'Invalid stored-match selection'},{status:400});
+        return submitTournivalUatBatch(base44,user,result.matches,selected);
+      }
       // Preview does not contain external DUPR identities or match payloads.
       return Response.json({success:true,environment:'uat',mode:'dry_run_only',
         tournamentId:id,eligibleCount:result.matches.length,excludedCount:result.excluded.length,
