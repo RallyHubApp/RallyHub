@@ -14,6 +14,17 @@ Deno.serve(async req=>{try{
  // results route for that session. Do not revoke it merely because its live-scoring window expired.
  if(!finished){for(const row of existing.filter((x:any)=>x.expires_at&&Date.parse(x.expires_at)<Date.now()))await base44.asServiceRole.entities.KotcScorerToken.update(row.id,{status:'revoked'});existing=existing.filter((x:any)=>!x.expires_at||Date.parse(x.expires_at)>=Date.now());}
  if(action==='revoke'){for(const row of existing)await base44.asServiceRole.entities.KotcScorerToken.update(row.id,{status:'revoked'});return Response.json({success:true,revoked:existing.length});}
+ if(action==='create_temporary'){
+   if(finished||session.status==='abandoned'||session.status==='cancelled')return Response.json({error:'A guest scorer link cannot be created for a finished session.'},{status:409});
+   const hours=Number(body.hours||6);
+   if(!Number.isFinite(hours)||hours<1||hours>18)return Response.json({error:'Guest scorer access must be between 1 and 18 hours.'},{status:400});
+   const normalExpiry=Date.now()+hours*60*60*1000;
+   const hostExpiry=hostAccess?.ends_at?Date.parse(hostAccess.ends_at):NaN;
+   const tokenExpiry=Number.isFinite(hostExpiry)?Math.min(normalExpiry,hostExpiry):normalExpiry;
+   if(tokenExpiry<=Date.now())return Response.json({error:'Your host access has expired.'},{status:403});
+   const scorer=await base44.asServiceRole.entities.KotcScorerToken.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,token:randomToken(),status:'active',created_by_user_id:user.id,created_at:new Date().toISOString(),expires_at:new Date(tokenExpiry).toISOString(),use_count:0});
+   return Response.json({success:true,temporary:true,token:scorer.token,scorerId:scorer.id,expires_at:scorer.expires_at,scorerPath:`/kotc-score/${scorer.token}`});
+ }
  let scorer=existing[0]||null;if(!scorer){const now=new Date().toISOString();const normalExpiry=Date.now()+18*60*60*1000;const hostExpiry=hostAccess?.ends_at?Date.parse(hostAccess.ends_at):NaN;const tokenExpiry=Number.isFinite(hostExpiry)?Math.min(normalExpiry,hostExpiry):normalExpiry;scorer=await base44.asServiceRole.entities.KotcScorerToken.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,token:randomToken(),status:'active',created_by_user_id:user.id,created_at:now,expires_at:new Date(tokenExpiry).toISOString(),use_count:0});}
  return Response.json({success:true,token:scorer.token,scorerId:scorer.id,expires_at:scorer.expires_at,scorerPath:`/kotc-score/${scorer.token}`});
 }catch(error){return Response.json({error:error?.message||'Unexpected scorer-link error'},{status:500});}});
