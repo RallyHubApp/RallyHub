@@ -56,6 +56,7 @@ const whatsappNumber = value => {
   let digits = String(value || '').replace(/\D/g, '');
   if (digits.startsWith('00')) digits = digits.slice(2);
   if (digits.startsWith('0')) digits = `353${digits.slice(1)}`;
+  if (digits.startsWith('3530')) digits = `353${digits.slice(4)}`;
   return digits;
 };
 
@@ -912,8 +913,9 @@ export default function MembershipConsole() {
       const response = await base44.functions.invoke('membershipApplication', {action:'admin_prepare_approved_followup',requestId:request.id});
       if(response.data?.error) throw new Error(response.data.error);
       setApprovedFollowUp({request,...response.data});
+      await refetchApplications();
     } catch(error) {
-      toast.error(error?.response?.data?.error || error?.message || 'Could not prepare approved membership follow-up');
+      toast.error(error?.response?.data?.error || error?.message || 'Could not prepare approved membership payment');
     } finally { setApplicationBusyId(''); }
   };
 
@@ -923,10 +925,10 @@ export default function MembershipConsole() {
     try {
       const response=await base44.functions.invoke('membershipApplication',{action:'admin_email_approved_followup',requestId:approvedFollowUp.request.id});
       if(response.data?.error) throw new Error(response.data.error);
-      toast.success('Approved membership invitation emailed');
+      toast.success('Membership payment request emailed');
       setApprovedFollowUp(null);
     } catch(error) {
-      toast.error(error?.response?.data?.error || error?.message || 'Could not email membership invitation');
+      toast.error(error?.response?.data?.error || error?.message || 'Could not email membership payment request');
     } finally { setApplicationBusyId(''); }
   };
 
@@ -1155,7 +1157,7 @@ export default function MembershipConsole() {
                   <p className="mt-1 text-xs text-muted-foreground">Approved {request.approvedAt?new Date(request.approvedAt).toLocaleString('en-IE'):'—'} · Membership application not completed; payment not recorded</p>
                   <div className="flex flex-wrap gap-2 mt-3">
                     <Button size="sm" variant="outline" disabled={!!applicationBusyId} onClick={()=>prepareApprovedFollowUp(request)}>
-                      <MessageCircle className="w-3.5 h-3.5 mr-1.5"/> {applicationBusyId==='followup-'+request.id?'Preparing…':'WhatsApp / Email reminder'}
+                      <MessageCircle className="w-3.5 h-3.5 mr-1.5"/> {applicationBusyId==='followup-'+request.id?'Preparing…':'Create payment link / WhatsApp'}
                     </Button>
                   </div>
                 </div>)}
@@ -1743,11 +1745,11 @@ export default function MembershipConsole() {
       <Dialog open={!!approvedFollowUp} onOpenChange={open => {if(!open)setApprovedFollowUp(null);}}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>Approved membership follow-up · {approvedFollowUp?.request?.fullName}</DialogTitle>
-            <DialogDescription>This applicant is approved but has not completed membership. Review the private invitation before contacting them. A valid link is reused or refreshed when expired.</DialogDescription>
+            <DialogTitle>Membership payment request · {approvedFollowUp?.request?.fullName}</DialogTitle>
+            <DialogDescription>This applicant has already completed the membership form and received club approval. A secure SumUp payment link is ready to send; no second form is needed.</DialogDescription>
           </DialogHeader>
           <div className="rounded-xl border bg-secondary/20 p-4 text-sm whitespace-pre-wrap break-words max-h-80 overflow-auto">{approvedFollowUp?.message}</div>
-          <p className="text-xs text-muted-foreground">Link expires {approvedFollowUp?.expiresAt?new Date(approvedFollowUp.expiresAt).toLocaleString('en-IE'):'—'}. Opening WhatsApp does not send the message; press Send within WhatsApp.</p>
+          <p className="text-xs text-muted-foreground">Opening WhatsApp does not send the message; press Send within WhatsApp. The applicant will go straight to the secure SumUp checkout.</p>
           <DialogFooter className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={()=>setApprovedFollowUp(null)}>Close</Button>
             <Button variant="outline" onClick={async()=>{try{await navigator.clipboard.writeText(approvedFollowUp?.message||'');toast.success('Follow-up message copied')}catch{toast.error('Clipboard unavailable')}}}><ClipboardCopy className="w-4 h-4 mr-1.5"/>Copy</Button>
