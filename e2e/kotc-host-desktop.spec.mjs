@@ -698,6 +698,7 @@ test('KOTC hall-pressure simulator: 18 players, 12 rounds, slow provider, rapid 
   expect(callsByName.saveKotcScore).toBe(48);
   expect(callsByName.prepareKotcNextRound).toBe(11);
   expect(callsByName.endKotcSession).toBe(1);
+  console.log('KOTC PRESSURE CALL BREAKDOWN',JSON.stringify(report.calls_by_name));
   expect(report.total_function_calls,'12-round host journey should remain inside a compact API-call budget').toBeLessThanOrEqual(95);
 
   console.log(`KOTC HALL-PRESSURE SIMULATOR REPORT\n${JSON.stringify(report,null,2)}`);

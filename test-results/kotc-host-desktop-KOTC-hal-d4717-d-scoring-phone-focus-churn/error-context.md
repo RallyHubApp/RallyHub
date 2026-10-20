@@ -139,7 +139,6 @@ Received:    111
 # Test source
 
 ```ts
-  601 |   await page.goto('/e2e/kotcHarness.html');
   602 |   await page.getByRole('button',{name:'Player 17',exact:true}).click();
   603 |   await page.getByRole('button',{name:'Player 18',exact:true}).click();
   604 |   await page.getByTestId('kotc-create-session').click();
@@ -239,11 +238,12 @@ Received:    111
   698 |   expect(callsByName.saveKotcScore).toBe(48);
   699 |   expect(callsByName.prepareKotcNextRound).toBe(11);
   700 |   expect(callsByName.endKotcSession).toBe(1);
-> 701 |   expect(report.total_function_calls,'12-round host journey should remain inside a compact API-call budget').toBeLessThanOrEqual(95);
+  701 |   console.log('KOTC PRESSURE CALL BREAKDOWN',JSON.stringify(report.calls_by_name));
+> 702 |   expect(report.total_function_calls,'12-round host journey should remain inside a compact API-call budget').toBeLessThanOrEqual(95);
       |                                                                                                              ^ Error: 12-round host journey should remain inside a compact API-call budget
-  702 | 
-  703 |   console.log(`KOTC HALL-PRESSURE SIMULATOR REPORT\n${JSON.stringify(report,null,2)}`);
-  704 |   await testInfo.attach('kotc-hall-pressure-report.json',{body:JSON.stringify(report,null,2),contentType:'application/json'});
-  705 | });
-  706 | 
+  703 | 
+  704 |   console.log(`KOTC HALL-PRESSURE SIMULATOR REPORT\n${JSON.stringify(report,null,2)}`);
+  705 |   await testInfo.attach('kotc-hall-pressure-report.json',{body:JSON.stringify(report,null,2),contentType:'application/json'});
+  706 | });
+  707 | 
 ```
