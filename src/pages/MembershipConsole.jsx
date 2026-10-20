@@ -762,7 +762,7 @@ export default function MembershipConsole() {
     }
   };
 
-  const previewApplicationReminder = async application => {
+  const previewApplicationReminder = async (application, channel = 'email') => {
     if (!application?.id) return;
     setApplicationBusyId(application.id);
     try {
@@ -776,7 +776,7 @@ export default function MembershipConsole() {
         await refetchApplications();
         return;
       }
-      setPreviewChannel('email');
+      setPreviewChannel(channel);
       setCommunicationPreview({ application, ...(response.data?.preview || {}) });
     } catch (error) {
       toast.error(error?.response?.data?.error || error?.message || 'Could not prepare the reminder preview');
@@ -832,27 +832,12 @@ export default function MembershipConsole() {
       return;
     }
     const message = communicationPreview?.whatsapp?.message || '';
-    if (message) window.open('https://wa.me/?text=' + encodeURIComponent(message), '_blank', 'noopener,noreferrer');
-    setApplicationBusyId(application.id);
-    try {
-      const response = await base44.functions.invoke('membershipApplication', {
-        action: 'admin_send_reminder',
-        applicationId: application.id,
-        channel: 'whatsapp'
-      });
-      if (response.data?.error) throw new Error(response.data.error);
-      toast.success('WhatsApp reminder opened');
-      await Promise.all([
-        refetchApplications(),
-        queryClient.invalidateQueries({ queryKey: ['membership-console-list'] }),
-        queryClient.invalidateQueries({ queryKey: ['membership-application-attention-count'] })
-      ]);
-      setCommunicationPreview(null);
-    } catch (error) {
-      toast.error(error?.response?.data?.error || error?.message || 'Could not record the WhatsApp reminder');
-    } finally {
-      setApplicationBusyId('');
-    }
+    const mobile = whatsappNumber(application.mobile);
+    if (!message.trim()) return toast.error('No WhatsApp reminder is available for this application');
+    if (mobile.length < 10 || mobile.length > 15) return toast.error('A valid applicant mobile number is required to open WhatsApp');
+    window.open('https://wa.me/' + mobile + '?text=' + encodeURIComponent(message), '_blank', 'noopener,noreferrer');
+    toast.info('WhatsApp message prepared. Press Send in WhatsApp to deliver it; RallyHub has not marked it as sent.');
+    setCommunicationPreview(null);
   };
 
   const copyApplicationPaymentLink = async application => {
@@ -1171,7 +1156,7 @@ export default function MembershipConsole() {
                           {waiting && application.paymentUrl ? <Button size="sm" variant="outline" onClick={() => copyApplicationPaymentLink(application)} disabled={busy}><ClipboardCopy className="w-3.5 h-3.5 mr-1.5" />Payment link</Button> : null}
                           {waiting ? <Button size="sm" variant="outline" onClick={() => previewApplicationReminder(application)} disabled={busy}><FileText className="w-3.5 h-3.5 mr-1.5" />Preview</Button> : null}
                           {waiting && !noResponse ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_send_reminder','email')} disabled={busy}><Mail className="w-3.5 h-3.5 mr-1.5" />Send email</Button> : null}
-                          {waiting && !noResponse ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_send_reminder','whatsapp')} disabled={busy}><MessageCircle className="w-3.5 h-3.5 mr-1.5" />WhatsApp</Button> : null}
+                          {waiting && !noResponse ? <Button size="sm" variant="outline" onClick={() => previewApplicationReminder(application,'whatsapp')} disabled={busy}><MessageCircle className="w-3.5 h-3.5 mr-1.5" />WhatsApp</Button> : null}
                           {waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_verify_payment')} disabled={busy}><RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${busy ? 'animate-spin' : ''}`} />Verify</Button> : null}
                           {paid ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_resend_confirmation')} disabled={busy}><Mail className="w-3.5 h-3.5 mr-1.5" />Resend confirmation</Button> : null}
                           {waiting && application.followUpStatus !== 'no_response' ? <Button size="sm" variant="ghost" onClick={() => runApplicationAction(application,'admin_mark_no_response')} disabled={busy}>No response</Button> : null}
