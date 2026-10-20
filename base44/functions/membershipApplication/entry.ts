@@ -586,6 +586,7 @@ Deno.serve(async(req)=>{
         let result=await reconcile(base44,config,app);
         app=result.app;
         if(app.payment_status==='paid')return Response.json({success:true,alreadyPaid:true,application:safeApplication(app,'')});
+        const paymentFailed=app.payment_status==='failed';
         if(!result.paymentUrl){
           const membership=await first(base44,'ClubMembership',{id:app.club_membership_id,tenant_id:tenantId,club_id:clubId});
           if(!membership)return Response.json({error:'Membership payment record is missing. Cannot prepare a payment reminder.'},{status:409});
@@ -593,7 +594,7 @@ Deno.serve(async(req)=>{
           app=result.app;
         }
         if(!result.paymentUrl)return Response.json({error:'Could not create a secure payment link. Reminder has not been prepared.'},{status:503});
-        const content=reminderContent(config,club,app,result.paymentUrl);
+        const content=reminderContent(config,club,paymentFailed?{...app,payment_status:'failed'}:app,result.paymentUrl);
         return Response.json({
           success:true,
           application:safeApplication(app,result.paymentUrl||''),
@@ -612,6 +613,7 @@ Deno.serve(async(req)=>{
           app=await sendPaidConfirmation(base44,config,club,app);
           return Response.json({success:true,alreadyPaid:true,application:safeApplication(app,'')});
         }
+        const paymentFailed=app.payment_status==='failed';
         let paymentUrl=result.paymentUrl;
         if(!paymentUrl){
           const membership=await first(base44,'ClubMembership',{id:app.club_membership_id,tenant_id:tenantId,club_id:clubId});
@@ -622,7 +624,7 @@ Deno.serve(async(req)=>{
         }
         const channel=clean(body.channel,20).toLowerCase()==='whatsapp'?'whatsapp':'email';
         if(!paymentUrl)return Response.json({error:'Could not create a secure payment link. No reminder sent.'},{status:503});
-        const content=reminderContent(config,club,app,paymentUrl);
+        const content=reminderContent(config,club,paymentFailed?{...app,payment_status:'failed'}:app,paymentUrl);
         const now=new Date().toISOString();
         if(channel==='email'){
           const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId,clubId};
