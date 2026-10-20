@@ -59,7 +59,7 @@ test('Tournament Control Centre → completed KOTC opens host review/editor, not
   await expect(page.getByTestId('kotc-email-body')).toContainText('Clare Pickleball');
   await expect(page.getByTestId('kotc-email-body')).toContainText('Powered by RallyHub');
   await expect(page.getByTestId('kotc-email-preview')).toContainText('16 players · 1 guest/unlinked excluded');
-  await expect(page.getByTestId('kotc-email-test')).toContainText('Send test email to Brian Moore');
+  await expect(page.getByTestId('kotc-email-test')).toContainText('Optional: send test email to Brian Moore');
   await expect(page.getByTestId('kotc-email-test')).toBeEnabled();
   await expect(page.getByTestId('kotc-email-send-all')).toHaveCount(0);
   await page.getByTestId('kotc-email-subject').fill('Thursday KOTC — results');
@@ -71,7 +71,7 @@ test('Tournament Control Centre → completed KOTC opens host review/editor, not
   expect(emailPayloads[0].messageBody).toContain('Hi [First name]');
   await page.getByTestId('kotc-email-body').fill('Hi [First name],\n\nUpdated wording.\n\nRegards,\nBrian Moore\nSession Host\nClare Pickleball');
   await expect(page.getByTestId('kotc-email-send-all')).toHaveCount(0);
-  await expect(page.getByTestId('kotc-email-test')).toContainText('Send test email to Brian Moore');
+  await expect(page.getByTestId('kotc-email-test')).toContainText('Optional: send test email to Brian Moore');
   await expect(page.getByTestId('kotc-email-status')).toContainText('Email changed');
   expect(functionCalls.filter(x=>x==='kotcResultsShare')).toHaveLength(3);
   expect(errors).toEqual([]);

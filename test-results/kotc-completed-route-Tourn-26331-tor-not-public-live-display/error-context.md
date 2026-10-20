@@ -12,23 +12,174 @@
 # Error details
 
 ```
-Error: expect(locator).toContainText(expected) failed
+Error: expect(locator).toHaveCount(expected) failed
 
-Locator: getByTestId('kotc-email-test')
-Expected substring: "Send test email to Brian Moore"
-Received string:    "Optional: send test email to Brian Moore"
-Timeout: 3000ms
+Locator:  getByTestId('kotc-email-send-all')
+Expected: 0
+Received: 1
+Timeout:  3000ms
 
 Call log:
-  - Expect "toContainText" getByTestId('kotc-email-test') with timeout 3000ms
-  - waiting for getByTestId('kotc-email-test')
-    10 × locator resolved to <button data-dynamic-content="true" data-testid="kotc-email-test" data-source-location="src/components/kotc/KotcEmailDeliveryActions.jsx:28:6" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-transparent shadow-sm hover:bg-accent h…>Optional: send test email to Brian Moore</button>
-       - unexpected value "Optional: send test email to Brian Moore"
+  - Expect "toHaveCount" getByTestId('kotc-email-send-all') with timeout 3000ms
+  - waiting for getByTestId('kotc-email-send-all')
+    10 × locator resolved to 1 element
+       - unexpected value "1"
 
 ```
 
+# Page snapshot
+
 ```yaml
-- 'button "Optional: send test email to Brian Moore"'
+- generic [ref=e3]:
+  - link "Back to Tournaments" [ref=e4] [cursor=pointer]:
+    - /url: /app/tournaments
+  - generic [ref=e7]:
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - paragraph [ref=e11]: King of the Court V2
+        - heading "830 Session" [level=1] [ref=e12]
+        - paragraph [ref=e13]: Session
+      - generic [ref=e14]: CURRENT SESSION
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - heading "Session complete" [level=3] [ref=e24]
+        - paragraph [ref=e25]: Final podium after 7 completed rounds. Detailed round scores remain available for review below.
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - generic [ref=e28]: 🥇
+          - paragraph [ref=e29]: Gold
+          - paragraph [ref=e30]: Player 1
+          - paragraph [ref=e31]: 7W · 0L · +14
+        - generic [ref=e32]:
+          - generic [ref=e33]: 🥈
+          - paragraph [ref=e34]: Silver
+          - paragraph [ref=e35]: Player 2
+          - paragraph [ref=e36]: 7W · 0L · +14
+        - generic [ref=e37]:
+          - generic [ref=e38]: 🥉
+          - paragraph [ref=e39]: Bronze
+          - paragraph [ref=e40]: Player 10
+          - paragraph [ref=e41]: 7W · 0L · +14
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - paragraph [ref=e44]: Review & Correct Results
+          - paragraph [ref=e45]: Choose any completed round and correct a court score. RallyHub recalculates the session standings/podium and member leaderboard. Historical court assignments are not rewritten.
+        - generic [ref=e46]:
+          - button "Round 1" [ref=e47] [cursor=pointer]
+          - button "Round 2" [ref=e48] [cursor=pointer]
+          - button "Round 3" [ref=e49] [cursor=pointer]
+          - button "Round 4" [ref=e50] [cursor=pointer]
+          - button "Round 5" [ref=e51] [cursor=pointer]
+          - button "Round 6" [ref=e52] [cursor=pointer]
+          - button "Round 7" [ref=e53] [cursor=pointer]
+          - button "Round 8" [ref=e54] [cursor=pointer]
+        - generic [ref=e55]:
+          - generic [ref=e56]:
+            - generic [ref=e57]:
+              - generic [ref=e58]: Court 1
+              - generic [ref=e62]: SAVED
+            - generic [ref=e63]:
+              - generic [ref=e64]:
+                - paragraph [ref=e65]: Team A
+                - paragraph [ref=e66]: Player 1 & Player 2
+                - paragraph [ref=e73]: WINNERS
+              - textbox [disabled] [ref=e74]: "6"
+            - generic [ref=e75]:
+              - generic [ref=e76]:
+                - paragraph [ref=e77]: Team B
+                - paragraph [ref=e78]: Player 3 & Player 4
+              - textbox [disabled] [ref=e79]: "4"
+            - generic [ref=e80]: ✓ Saved 6–4 · Player 1 & Player 2 win 6–4
+            - button "Edit result" [ref=e81] [cursor=pointer]
+          - generic [ref=e82]:
+            - generic [ref=e83]:
+              - generic [ref=e84]: Court 2
+              - generic [ref=e86]: SAVED
+            - generic [ref=e87]:
+              - generic [ref=e88]:
+                - paragraph [ref=e89]: Team A
+                - paragraph [ref=e90]: Player 5 & Player 6
+                - paragraph [ref=e97]: WINNERS
+              - textbox [disabled] [ref=e98]: "7"
+            - generic [ref=e99]:
+              - generic [ref=e100]:
+                - paragraph [ref=e101]: Team B
+                - paragraph [ref=e102]: Player 7 & Player 8
+              - textbox [disabled] [ref=e103]: "5"
+            - generic [ref=e104]: ✓ Saved 7–5 · Player 5 & Player 6 win 7–5
+            - button "Edit result" [ref=e105] [cursor=pointer]
+          - generic [ref=e106]:
+            - generic [ref=e107]:
+              - generic [ref=e108]: Court 3
+              - generic [ref=e110]: SAVED
+            - generic [ref=e111]:
+              - generic [ref=e112]:
+                - paragraph [ref=e113]: Team A
+                - paragraph [ref=e114]: Player 9 & Player 10
+                - paragraph [ref=e121]: WINNERS
+              - textbox [disabled] [ref=e122]: "8"
+            - generic [ref=e123]:
+              - generic [ref=e124]:
+                - paragraph [ref=e125]: Team B
+                - paragraph [ref=e126]: Player 11 & Player 12
+              - textbox [disabled] [ref=e127]: "6"
+            - generic [ref=e128]: ✓ Saved 8–6 · Player 9 & Player 10 win 8–6
+            - button "Edit result" [ref=e129] [cursor=pointer]
+          - generic [ref=e130]:
+            - generic [ref=e131]:
+              - generic [ref=e132]: Court 4
+              - generic [ref=e134]: SAVED
+            - generic [ref=e135]:
+              - generic [ref=e136]:
+                - paragraph [ref=e137]: Team A
+                - paragraph [ref=e138]: Player 13 & Player 14
+                - paragraph [ref=e145]: WINNERS
+              - textbox [disabled] [ref=e146]: "9"
+            - generic [ref=e147]:
+              - generic [ref=e148]:
+                - paragraph [ref=e149]: Team B
+                - paragraph [ref=e150]: Player 15 & Player 16
+              - textbox [disabled] [ref=e151]: "7"
+            - generic [ref=e152]: ✓ Saved 9–7 · Player 13 & Player 14 win 9–7
+            - button "Edit result" [ref=e153] [cursor=pointer]
+      - generic [ref=e154]:
+        - generic [ref=e155]:
+          - button "Share Results" [ref=e156] [cursor=pointer]
+          - button "Copy Results Link" [ref=e157] [cursor=pointer]
+          - button "Preview ready" [ref=e158] [cursor=pointer]
+        - generic [ref=e159]:
+          - generic [ref=e160]:
+            - generic [ref=e161]:
+              - paragraph [ref=e162]: Results email preview
+              - paragraph [ref=e163]: Nothing is sent until you confirm below.
+            - button "Close" [ref=e164] [cursor=pointer]
+          - generic [ref=e165]:
+            - generic [ref=e166]:
+              - text: From
+              - paragraph [ref=e167]: Clare Pickleball <clarepb2025@gmail.com>
+            - generic [ref=e168]:
+              - text: To
+              - paragraph [ref=e169]: 16 players · 1 guest/unlinked excluded
+          - generic [ref=e170]:
+            - text: Subject
+            - textbox [ref=e171]: 830 Session — results & player link
+          - generic [ref=e172]:
+            - generic [ref=e173]:
+              - generic [ref=e174]: Message
+              - generic [ref=e175]: Use [First name] to personalise each email
+            - textbox [ref=e176]: "Hi [First name], Thanks for playing in 830 Session. We’ve made a small update to RallyHub. The same player link you used during the session now becomes your results link once King of the Court is finished. Open your RallyHub player link Open it and tap Refresh / View Results (or simply refresh the page) to see the final podium and completed round results. Full individual rankings are not published on the shared results page. We’ve also put together a simple infographic showing how to use the player link: Clare Pickleball Player Link Infographic You can keep using this same link for this session — there is no separate results link to find. Thanks for playing. Looking forward to seeing you on court again soon. Regards, Brian Moore Session Host Clare Pickleball — Powered by RallyHub"
+            - paragraph [ref=e177]: You can edit the wording above. RallyHub inserts the clickable player-link and infographic links automatically when the email is sent.
+            - generic [ref=e178]:
+              - link "Open your RallyHub player link" [ref=e179] [cursor=pointer]:
+                - /url: https://rallyhub.ie/kotc-score/player-token
+              - link "Clare Pickleball Player Link Infographic" [ref=e180] [cursor=pointer]:
+                - /url: https://rallyhub.ie/guides/clare-pickleball/player-link
+          - generic [ref=e181]: Ready to send from clarepb2025@gmail.com.
+          - generic [ref=e182]:
+            - button "Send to 16 Players" [ref=e183] [cursor=pointer]
+            - 'button "Optional: send test email to Brian Moore" [ref=e184] [cursor=pointer]'
+            - paragraph [ref=e185]: Review the preview before sending. Sending a test email is optional.
+        - generic [ref=e186]: Preview ready · 16 recipients · nothing sent yet
 ```
 
 # Test source
@@ -95,10 +246,10 @@ Call log:
   59 |   await expect(page.getByTestId('kotc-email-body')).toContainText('Clare Pickleball');
   60 |   await expect(page.getByTestId('kotc-email-body')).toContainText('Powered by RallyHub');
   61 |   await expect(page.getByTestId('kotc-email-preview')).toContainText('16 players · 1 guest/unlinked excluded');
-> 62 |   await expect(page.getByTestId('kotc-email-test')).toContainText('Send test email to Brian Moore');
-     |                                                     ^ Error: expect(locator).toContainText(expected) failed
+  62 |   await expect(page.getByTestId('kotc-email-test')).toContainText('Optional: send test email to Brian Moore');
   63 |   await expect(page.getByTestId('kotc-email-test')).toBeEnabled();
-  64 |   await expect(page.getByTestId('kotc-email-send-all')).toHaveCount(0);
+> 64 |   await expect(page.getByTestId('kotc-email-send-all')).toHaveCount(0);
+     |                                                         ^ Error: expect(locator).toHaveCount(expected) failed
   65 |   await page.getByTestId('kotc-email-subject').fill('Thursday KOTC — results');
   66 |   await page.getByTestId('kotc-email-body').fill('Hi [First name],\n\nThanks for a great night. Your results are here.\n\nRegards,\nBrian Moore\nSession Host\nClare Pickleball');
   67 |   await page.getByTestId('kotc-email-test').click();
@@ -108,7 +259,7 @@ Call log:
   71 |   expect(emailPayloads[0].messageBody).toContain('Hi [First name]');
   72 |   await page.getByTestId('kotc-email-body').fill('Hi [First name],\n\nUpdated wording.\n\nRegards,\nBrian Moore\nSession Host\nClare Pickleball');
   73 |   await expect(page.getByTestId('kotc-email-send-all')).toHaveCount(0);
-  74 |   await expect(page.getByTestId('kotc-email-test')).toContainText('Send test email to Brian Moore');
+  74 |   await expect(page.getByTestId('kotc-email-test')).toContainText('Optional: send test email to Brian Moore');
   75 |   await expect(page.getByTestId('kotc-email-status')).toContainText('Email changed');
   76 |   expect(functionCalls.filter(x=>x==='kotcResultsShare')).toHaveLength(3);
   77 |   expect(errors).toEqual([]);
