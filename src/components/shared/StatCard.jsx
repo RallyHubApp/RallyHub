@@ -3,9 +3,11 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
+const MotionLink = motion.create(Link);
+
 /** @param {any} props */
 export default function StatCard({ title, value, icon: Icon, trend, trendUp, delay = 0, accentColor = 'primary', to }) {
-  const Component = to ? motion.create(Link) : motion.div;
+  const Component = to ? MotionLink : motion.div;
   return (
     <Component
       {...(to ? { to, 'aria-label': `Open ${title}` } : {})}
