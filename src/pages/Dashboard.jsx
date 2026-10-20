@@ -233,10 +233,10 @@ export default function Dashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Players" value={players.length} icon={Users} trend={`${players.filter(p => p.status === 'Active').length} active`} trendUp delay={0} accentColor="primary" />
-        <StatCard title="Active Tournaments" value={activeTournaments.length} icon={Trophy} delay={0.1} accentColor="accent" />
-        <StatCard title="Leaderboard Players" value={(clubLeaderboard.rows || []).length} icon={Crown} delay={0.2} accentColor="chart-3" />
-        <StatCard title="DUPR Rated" value={players.filter(p => p.dupr_rating != null).length} icon={Crown} delay={0.3} accentColor="chart-4" />
+        <StatCard title="Total Players" value={players.length} icon={Users} trend={`${players.filter(p => p.status === 'Active').length} active`} trendUp delay={0} accentColor="primary" to="/app/players" />
+        <StatCard title="Active Tournaments" value={activeTournaments.length} icon={Trophy} delay={0.1} accentColor="accent" to="/app/tournaments" />
+        <StatCard title="Leaderboard Players" value={(clubLeaderboard.rows || []).length} icon={Crown} delay={0.2} accentColor="chart-3" to="/app/leaderboard" />
+        <StatCard title="DUPR Rated" value={players.filter(p => p.dupr_rating != null).length} icon={Crown} delay={0.3} accentColor="chart-4" to="/app/players" />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
