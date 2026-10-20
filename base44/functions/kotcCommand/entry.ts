@@ -359,11 +359,18 @@ Deno.serve(async (req) => {
       const update:any = { team_a_score:score.a, team_b_score:score.b, winner_side:score.winner, result_method:score.method, serving_side_at_horn:score.method === 'timed_serving_tiebreak' ? body.servingSideAtHorn : undefined, status:'completed', completed_at:match.completed_at || now, revision:current + 1, command_id:commandId, scored_by_user_id:match.scored_by_user_id || user.id, scoring_lock_owner:null, scoring_lock_acquired_at:null, scoring_lock_expires_at:null, scorer_correction_owner_client_id:null };
       if (isCorrection) Object.assign(update, { correction_count:Number(match.correction_count || 0) + 1, last_corrected_at:now, last_corrected_by_user_id:user.id, last_correction_reason:String(body.reason).trim(), original_result_json:original });
       const updated = await base44.asServiceRole.entities.KotcMatch.update(match.id, update);
+      // The match update above is authoritative. Rate limiting in supporting audit,
+      // leaderboard or recovery work must never tell a host their saved score failed.
       if (isCorrection) {
-        await base44.asServiceRole.entities.AuditLog.create({ tenant_id:session.tenant_id, club_id:session.club_id, user_id:user.id, action:'kotc_score_corrected', entity_type:'KotcMatch', entity_id:match.id, scope_type:'KotcSession', scope_id:session.id, before_state:JSON.stringify({ team_a_score:match.team_a_score, team_b_score:match.team_b_score, winner_side:match.winner_side, revision:current }), after_state:JSON.stringify({ team_a_score:score.a, team_b_score:score.b, winner_side:score.winner, revision:current + 1 }), reason:String(body.reason).trim() });
+        try {
+          await withRateLimitRetry('score correction audit',()=>base44.asServiceRole.entities.AuditLog.create({ tenant_id:session.tenant_id, club_id:session.club_id, user_id:user.id, action:'kotc_score_corrected', entity_type:'KotcMatch', entity_id:match.id, scope_type:'KotcSession', scope_id:session.id, before_state:JSON.stringify({ team_a_score:match.team_a_score, team_b_score:match.team_b_score, winner_side:match.winner_side, revision:current }), after_state:JSON.stringify({ team_a_score:score.a, team_b_score:score.b, winner_side:score.winner, revision:current + 1 }), reason:String(body.reason).trim() }));
+        } catch (error) { console.warn('KOTC score corrected, audit deferred',{matchId:match.id,error:String(error?.message||error)}); }
       }
       result = { success:true, match:updated, correction:isCorrection };
-      if(isCorrection&&['completed','finalised'].includes(session.status))await refreshKotcAggregates(base44,session);
+      if(isCorrection&&['completed','finalised'].includes(session.status)){
+        try { await refreshKotcAggregates(base44,session); }
+        catch(error){ console.warn('KOTC score corrected, aggregates need reconciliation',{matchId:match.id,error:String(error?.message||error)}); result.aggregateSyncWarning=true; }
+      }
       await createSnapshot(base44, session, commandId, 'score_saved', user.id);
     } else if (commandType === 'generate_next_round') {
       // The host normally presses Prepare immediately after the fourth score save.
