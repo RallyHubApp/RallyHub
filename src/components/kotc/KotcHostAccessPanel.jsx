@@ -14,7 +14,7 @@ const TAB_OPTIONS=[
 ];
 const DEFAULT_TABS=['live','players','rounds','leaderboard','event_info'];
 
-export default function KotcHostAccessPanel({session,isAdmin,onScorerLinkReady}){
+export default function KotcHostAccessPanel({session,isAdmin,onScorerLinkReady,preferredPlayerId=null,playerLinkOpenRequest=0}){
   const [open,setOpen]=useState(false);const [email,setEmail]=useState('');const [loading,setLoading]=useState(false);const [grants,setGrants]=useState([]);const [copied,setCopied]=useState('');const [playerUrl,setPlayerUrl]=useState('');const [share,setShare]=useState(null);const [visibleTabs,setVisibleTabs]=useState(DEFAULT_TABS);const [scoringAccess,setScoringAccess]=useState('read_only');const [settingsDirty,setSettingsDirty]=useState(false);
   const [guestScorer,setGuestScorer]=useState(null);const [guestScorerBusy,setGuestScorerBusy]=useState(false);const [hostSearch,setHostSearch]=useState('');const [hostMatches,setHostMatches]=useState([]);const [hostSearchBusy,setHostSearchBusy]=useState(false);const [selectedHost,setSelectedHost]=useState(null);const [selectedHosts,setSelectedHosts]=useState([]);
   useEffect(()=>{
@@ -48,6 +48,7 @@ export default function KotcHostAccessPanel({session,isAdmin,onScorerLinkReady})
   const hostUrl=useMemo(()=>`${window.location.origin}/kotc-host/${session?.id||''}`,[session?.id]);
   const applyShare=(data)=>{const token=data?.token||data?.playerLink?.token;if(token)setPlayerUrl(`${window.location.origin}/kotc-live/${token}`);const tabs=data?.tabs||data?.playerLink?.tabs;if(Array.isArray(tabs)&&tabs.length)setVisibleTabs(tabs);const access=data?.scoring_access||data?.playerLink?.scoring_access;if(access)setScoringAccess(access);setShare(data?.playerLink||data||null);setSettingsDirty(false);};
   const load=async()=>{if(!session?.id)return;try{setLoading(true);const [linkRes,grantRes]=await Promise.all([base44.functions.invoke('kotcResultsShare',{action:'get_or_create',sessionId:session.id}),isAdmin?base44.functions.invoke('manageKotcSessionAccess',{action:'list',sessionId:session.id}):Promise.resolve({data:{grants:[]}})]);applyShare(linkRes.data||{});setGrants((grantRes.data?.grants||[]).filter(g=>g.status==='active'&&['session_host','assistant_host'].includes(g.role)));}catch(e){toast.error(errorMessage(e));}finally{setLoading(false);}};
+  useEffect(()=>{if(playerLinkOpenRequest>0)setOpen(true);},[playerLinkOpenRequest]);
   useEffect(()=>{if(open)load();},[open,session?.id,isAdmin]);
   if(!session?.id)return null;
   const copyText=async(url,label,key)=>{try{await navigator.clipboard.writeText(url);setCopied(key);setTimeout(()=>setCopied(''),1800);toast.success(`${label} copied`);}catch{window.prompt(`Copy ${label}:`,url);}};
@@ -73,7 +74,7 @@ export default function KotcHostAccessPanel({session,isAdmin,onScorerLinkReady})
       </section>
 
       
-      <KotcBroadcastPanel session={session}/>
+      <KotcBroadcastPanel session={session} preferredPlayerId={preferredPlayerId} openRequest={playerLinkOpenRequest}/>
       <section className="rounded-xl border border-amber-400/40 bg-amber-500/5 p-3 space-y-2" data-testid="kotc-guest-scorer-access">
         <p className="text-xs font-bold uppercase tracking-wider">Temporary Guest Scorer Link</p>
         <p className="text-xs text-muted-foreground">Separate from the Player Link and authenticated Host Link. Works without login for this session only. Guests may enter and correct court scores, but cannot change players, benches, round progression or other administration.</p>
