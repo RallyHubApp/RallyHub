@@ -57,6 +57,8 @@ test('public KOTC link: assignments → live scores → permanent final results 
   await expect(page.getByTestId('public-kotc-podium').getByText('Final Podium',{exact:true})).toBeVisible();
   await expect(page.getByText('Full individual rankings are not published here.')).toBeVisible();
   await expect(page.getByText('Live Standings')).toHaveCount(0);
+  await expect(page.getByText('Final Standings',{exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Leaderboard',exact:true})).toHaveCount(0);
   await expect(page.getByTestId('public-kotc-current-round')).toHaveCount(0);
   await page.getByRole('button',{name:'Rounds',exact:true}).click();
   await expect(page.getByTestId('public-kotc-round-history')).toBeVisible();
@@ -76,7 +78,7 @@ test('public KOTC link: assignments → live scores → permanent final results 
 test('finished KOTC host management: secure menu, local share, explicit email and post-event correction',async({page})=>{
   const finished=makeState('finished');
   let correctionCalls=0,emailCalls=0,managementCalls=0,publicCalls=0;
-  const management={canManage:true,role:'admin',sessionId:'session-finished',tournamentId:'tournament-finished',sessionName:'E2E Live KOTC',matches:[{id:'match-r1-c1',round_id:'round-1',round_number:1,court:1,team_a_participant_ids:['p1','p2'],team_b_participant_ids:['p3','p4'],team_a:['Player 01','Player 02'],team_b:['Player 03','Player 04'],team_a_score:11,team_b_score:9,winner_side:'A',result_method:'normal',revision:1}]};
+  const management={canManage:true,role:'admin',sessionId:'session-finished',tournamentId:'tournament-finished',sessionName:'E2E Live KOTC',standings:finished.standings,matches:[{id:'match-r1-c1',round_id:'round-1',round_number:1,court:1,team_a_participant_ids:['p1','p2'],team_b_participant_ids:['p3','p4'],team_a:['Player 01','Player 02'],team_b:['Player 03','Player 04'],team_a_score:11,team_b_score:9,winner_side:'A',result_method:'normal',revision:1}]};
   await page.addInitScript(()=>{navigator.share=async payload=>{window.__kotcShared=payload;};});
   await page.route('**/api/apps/**',async route=>{
     const request=route.request();const path=new URL(request.url()).pathname;const marker=`/api/apps/${APP_ID}/functions/`;const idx=path.indexOf(marker);
@@ -97,6 +99,9 @@ test('finished KOTC host management: secure menu, local share, explicit email an
 
   await page.goto('/e2e/kotcLiveHarness.html?manage=1');
   await expect(page.getByTestId('kotc-results-host-menu')).toBeVisible({timeout:1800});
+  await expect(page.getByTestId('kotc-host-final-standings')).toContainText('Full Final Standings · Host Only');
+  await expect(page.getByTestId('kotc-host-final-standings')).toContainText('Guest One');
+  await expect(page.getByText('Final Standings',{exact:true})).toHaveCount(0);
   expect(managementCalls).toBeGreaterThan(0);
   await page.getByRole('button',{name:'Host Menu'}).click();
   const callsBeforeShare=publicCalls+managementCalls+correctionCalls+emailCalls;
