@@ -61,7 +61,7 @@ test('sandbox safety guards are hard-coded server-side',async()=>{
   expect(share).toContain("personaliseEditableBody");
   expect(share).toContain("body.subject??sample.subject");
   expect(share).toContain("body.messageBody??sample.body");
-  expect(share).toContain("emailBodies(editableBody,p.display_name");
+  expect(share).toContain("presentationBodies(presentation,editableBody,p.display_name");
   expect(aggregate).toContain("s.exclude_from_aggregates!==true");
 });
 
@@ -88,10 +88,10 @@ test('18-player isolated sandbox creates, starts, fills and advances without rea
   await expect(page.getByText('Round 2 ready')).toBeVisible();
   expect(model.session.current_round_number).toBe(2);
   await page.getByTestId('kotc-quick-links').click();
-  await page.getByText('Session Links & Access').click();
-  await expect(page.getByRole('button',{name:'Copy Live Link'})).toBeVisible();
-  await expect(page.getByRole('button',{name:'Copy Player Scoring Link'})).toBeVisible();
+  await page.getByText('Player Link, Broadcasts & Access').click();
+  await expect(page.getByRole('button',{name:'Copy Player Link'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Create 6-hour Guest Scorer Link'})).toBeVisible();
   await expect(page.getByRole('button',{name:'Copy Host Link'})).toBeVisible();
-  await expect(page.getByRole('button',{name:'Grant Host Access'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Grant Host Access',exact:true})).toBeVisible();
   expect(errors).toEqual([]);
 });
