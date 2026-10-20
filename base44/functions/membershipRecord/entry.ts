@@ -723,7 +723,9 @@ Deno.serve(async(req)=>{
       const activePaid=live.filter((r:any)=>r.status==='active'&&r.membership_category==='paid').length;
       const complimentary=live.filter((r:any)=>r.status==='active'&&r.membership_category==='complimentary').length;
       const pending=live.filter((r:any)=>r.status==='pending').length;
-      const currentMembers=activePaid+complimentary+pending;
+      // Current membership is active members only. Pending approvals/payments are
+      // actionable follow-ups, not additional active members.
+      const currentMembers=activePaid+complimentary;
       const membershipConfig=(membershipConfigs||[]).find((c:any)=>c.status==='active')||(membershipConfigs||[])[0]||null;
       return Response.json({success:true,counts:{currentMembers,currentPaid:activePaid,complimentary,pending,unpaid:pending},currentSeason:membershipConfig?.season_label||null});
     }
