@@ -130,6 +130,7 @@ async function findPersonByIdentity(base44:any,tenantId:string,email:string,dob:
   const candidates=await base44.asServiceRole.entities.Person.filter({tenant_id:tenantId,primary_email:targetEmail},'-updated_date',100);
   const normalizedName=(value:any)=>clean(value,160).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
   const matches=(candidates||[]).filter((p:any)=>{
+    if(String(p.source_system||'').includes('guest_session_merged'))return false;
     const emails=[p.primary_email,...(p.alternate_emails||[])].map(emailKey);
     if(!emails.includes(targetEmail))return false;
     if(p.date_of_birth)return String(p.date_of_birth)===String(dob);
