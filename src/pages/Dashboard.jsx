@@ -19,6 +19,18 @@ export default function Dashboard() {
 
   const isMemberView = !!currentUser && currentUser?.role !== 'admin' && currentUser?.active_club_role !== 'club_admin';
 
+  const { data: memberCounts = null } = useQuery({
+    queryKey: ['membership-dashboard-counts', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('membershipRecord', { action: 'admin_dashboard_counts' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.counts || {};
+    },
+    enabled: !!currentUser && !isMemberView,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true
+  });
+
   const { data: players = [] } = useQuery({
     queryKey: ['players', currentUser?.active_tenant_id, currentUser?.active_club_id],
     queryFn: () => {
@@ -233,7 +245,7 @@ export default function Dashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Players" value={players.length} icon={Users} trend={`${players.filter(p => p.status === 'Active').length} active`} trendUp delay={0} accentColor="primary" to="/app/players" />
+        <StatCard title="Current Members" value={memberCounts?.currentMembers ?? "—"} icon={Users} delay={0} accentColor="primary" to="/app/membership" />
         <StatCard title="Active Tournaments" value={activeTournaments.length} icon={Trophy} delay={0.1} accentColor="accent" to="/app/tournaments" />
         <StatCard title="Leaderboard Players" value={(clubLeaderboard.rows || []).length} icon={Crown} delay={0.2} accentColor="chart-3" to="/app/leaderboard" />
         <StatCard title="DUPR Rated" value={players.filter(p => p.dupr_rating != null).length} icon={Crown} delay={0.3} accentColor="chart-4" to="/app/players" />
