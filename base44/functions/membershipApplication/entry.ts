@@ -534,6 +534,32 @@ Deno.serve(async(req)=>{
         return Response.json({success:true,magicInviteUrl,expiresAt:invite.expires_at,emailSent});
       }
 
+      if(action==='admin_prepare_approved_followup'||action==='admin_email_approved_followup'){
+        const requestId=clean(body.requestId,120);
+        const request=await first(base44,'ClubAccessRequest',{id:requestId,tenant_id:tenantId,club_id:clubId,request_type:'membership_application'});
+        if(!request)return Response.json({error:'Membership request not found.'},{status:404});
+        if(request.status!=='approved')return Response.json({error:'This request is not awaiting approved membership completion.'},{status:409});
+        const existingApps=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',300);
+        if((existingApps||[]).some((a:any)=>a.status!=='withdrawn'&&emailKey(a.email)===emailKey(request.email))){
+          return Response.json({error:'This applicant already has a membership application. Refresh and use its payment controls instead.'},{status:409});
+        }
+        const restriction=await clubRestrictionCheck(base44,tenantId,clubId,{fullName:request.full_name,email:request.email,mobile:request.mobile});
+        if(restriction!=='clear')return clubRestrictionResponse(restriction);
+        let invite=request.invite_token_id?await first(base44,'AccessInviteToken',{id:request.invite_token_id,tenant_id:tenantId,club_id:clubId}):null;
+        if(!invite||invite.status!=='active'||(invite.expires_at&&Date.parse(invite.expires_at)<=Date.now())||invite.membership_config_id!==config.id){
+          invite=await createMembershipInvite(base44,config,user,request.email,request.full_name,request.id,request.mobile||'');
+          await base44.asServiceRole.entities.ClubAccessRequest.update(request.id,{invite_token_id:invite.id});
+        }
+        const magicInviteUrl=`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`;
+        const message=`Hi ${firstName(request.full_name)},\n\nYour ${club.name} membership request has been approved, but your membership application has not yet been completed.\n\nPlease complete your details, declarations and payment using your private membership link:\n${magicInviteUrl}\n\nIf you have already completed this, please let us know.\n\n${signoffText(config,club)}`;
+        if(action==='admin_email_approved_followup'){
+          if(!request.email)return Response.json({error:'No email address is available for this applicant.'},{status:400});
+          await sendMembershipInviteEmail(base44,config,club,request.email,request.full_name,magicInviteUrl,true,request.mobile||'');
+          return Response.json({success:true,emailSent:true,expiresAt:invite.expires_at});
+        }
+        return Response.json({success:true,message,magicInviteUrl,expiresAt:invite.expires_at,mobile:request.mobile||'',email:request.email||''});
+      }
+
       if(action==='admin_reject_request'){
         const requestId=clean(body.requestId,120);
         const request=await first(base44,'ClubAccessRequest',{id:requestId,tenant_id:tenantId,club_id:clubId,request_type:'membership_application'});
