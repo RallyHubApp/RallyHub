@@ -1740,6 +1740,27 @@ export default function MembershipConsole() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!approvedFollowUp} onOpenChange={open => {if(!open)setApprovedFollowUp(null);}}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Approved membership follow-up · {approvedFollowUp?.request?.fullName}</DialogTitle>
+            <DialogDescription>This applicant is approved but has not completed membership. Review the private invitation before contacting them. A valid link is reused or refreshed when expired.</DialogDescription>
+          </DialogHeader>
+          <div className="rounded-xl border bg-secondary/20 p-4 text-sm whitespace-pre-wrap break-words max-h-80 overflow-auto">{approvedFollowUp?.message}</div>
+          <p className="text-xs text-muted-foreground">Link expires {approvedFollowUp?.expiresAt?new Date(approvedFollowUp.expiresAt).toLocaleString('en-IE'):'—'}. Opening WhatsApp does not send the message; press Send within WhatsApp.</p>
+          <DialogFooter className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={()=>setApprovedFollowUp(null)}>Close</Button>
+            <Button variant="outline" onClick={async()=>{try{await navigator.clipboard.writeText(approvedFollowUp?.message||'');toast.success('Follow-up message copied')}catch{toast.error('Clipboard unavailable')}}}><ClipboardCopy className="w-4 h-4 mr-1.5"/>Copy</Button>
+            <Button variant="outline" disabled={!!applicationBusyId||!approvedFollowUp?.email} onClick={emailApprovedFollowUp}><Mail className="w-4 h-4 mr-1.5"/>Send email</Button>
+            <Button disabled={!approvedFollowUp?.message||whatsappNumber(approvedFollowUp?.mobile).length<10} onClick={()=>{
+              const url='https://wa.me/'+whatsappNumber(approvedFollowUp.mobile)+'?text='+encodeURIComponent(approvedFollowUp.message);
+              window.open(url,'_blank','noopener,noreferrer');
+              toast.info('WhatsApp opened. Press Send there to deliver your message.');
+            }}><MessageCircle className="w-4 h-4 mr-1.5"/>Open WhatsApp</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!communicationPreview} onOpenChange={open => { if (!open) setCommunicationPreview(null); }}>
         <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
