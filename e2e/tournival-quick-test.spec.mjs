@@ -8,7 +8,7 @@ for(const width of [390,1280]){
   await centre.getByRole('button',{name:/1 · Create Test Event/}).click();
   await expect(centre.getByText('IN PROGRESS', {exact:false})).toBeVisible();
   await centre.getByRole('button',{name:/2 · Run Qualification/}).click();
-  await expect(centre.getByText('12/12')).toBeVisible();
+  await expect(centre.getByText('16/16')).toBeVisible();
   await centre.getByRole('button',{name:/3 · Finish Knockout/}).click();
   await expect(centre.getByText('PASS · Simulated sporting journey complete')).toBeVisible();
   await centre.getByRole('button',{name:'Run Full Acceptance'}).click();
