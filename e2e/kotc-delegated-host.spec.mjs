@@ -154,3 +154,45 @@ test('busy-hall recovery: failed score save preserves keystrokes and retries saf
   await expect(page.getByTestId('kotc-score-card-1')).toContainText('Saved 11–7',{timeout:1800});
   expect(model.match.revision).toBe(1);
 });
+
+test('live host editor updates unscored court without rewinding and protects saved matches',async({page})=>{
+  const model=createModel();
+  const originalHandle=model.handle;
+  model.handle=async(name,body)=>{
+    if(name==='kotcCommand'&&body.commandType==='adjust_started_round'){
+      model.calls.push({name,body});
+      if(model.match.status!=='scheduled')return {__status:409,error:'Court 1 already has a score'};
+      for(const slot of model.slots)if(body.slotParticipantIds?.[slot.id])slot.participant_id=body.slotParticipantIds[slot.id];
+      model.match.team_a_participant_ids=model.slots.filter(s=>s.team_side==='A').map(s=>s.participant_id);
+      model.match.team_b_participant_ids=model.slots.filter(s=>s.team_side==='B').map(s=>s.participant_id);
+      model.match.revision++;model.round.proposal_revision++;model.session.revision++;
+      return {success:true,session:model.session,round:model.round,affectedCourts:[1]};
+    }
+    return originalHandle(name,body);
+  };
+  await install(page,model);
+  await page.goto('/e2e/kotcDelegatedHostHarness.html');
+  await page.getByTestId('kotc-start-round').click();
+  await expect(page.getByTestId('kotc-live-player-editor-toggle')).toBeVisible();
+  await page.getByTestId('kotc-live-player-editor-toggle').click();
+  await expect(page.getByTestId('kotc-round-editor')).toBeVisible();
+  await page.getByTestId('kotc-slot-slot-a1').click();
+  await page.getByTestId('kotc-slot-slot-b1').click();
+  await page.getByTestId('kotc-save-round-setup').click();
+  await expect.poll(()=>model.calls.filter(c=>c.body?.commandType==='adjust_started_round').length).toBe(1);
+  expect(model.round.status).toBe('started');
+  expect(model.match.team_a_participant_ids).toContain('participant-3');
+  await expect(page.getByTestId('kotc-score-card-1')).toContainText('Host Player 3 & Host Player 2');
+  await page.getByTestId('kotc-live-player-editor-toggle').click();
+  const a=page.getByTestId('kotc-score-1-a'),b=page.getByTestId('kotc-score-1-b');
+  await a.fill('8');await b.fill('5');await page.getByTestId('kotc-complete-1').click();
+  await expect(page.getByTestId('kotc-score-card-1')).toContainText('Saved 8–5');
+  await page.getByTestId('kotc-live-player-editor-toggle').click();
+  await page.getByTestId('kotc-slot-slot-a1').click();
+  await page.getByTestId('kotc-slot-slot-b1').click();
+  await page.getByTestId('kotc-save-round-setup').click();
+  await expect(page.getByTestId('kotc-save-round-status')).toContainText('Court 1 already has a score');
+  expect(model.round.status).toBe('started');
+  expect(model.match.team_a_participant_ids).toContain('participant-3');
+});
+
