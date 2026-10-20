@@ -1985,7 +1985,16 @@ ${detailRow('Reason',reason)}
 
     let person:any=null;
     const byEmail=await base44.asServiceRole.entities.Person.filter({tenant_id:session.tenant_id,primary_email:email},'-updated_date',10);
-    person=byEmail?.[0]||null;
+    // If a person has both historical guest and newer member identities,
+    // keep new bookings on the verified member profile, never the guest stub.
+    const matchingEmailPeople=(byEmail||[]).filter((p:any)=>nameKey(p.full_name)===nameKey(fullName)&&(!p.mobile||!mobileK||phoneKey(p.mobile)===mobileK));
+    if(matchingEmailPeople.length===1)person=matchingEmailPeople[0];
+    else if(matchingEmailPeople.length>1){
+      const memberLinks=await base44.asServiceRole.entities.ClubMembership.filter({tenant_id:session.tenant_id,club_id:session.club_id},'-created_date',500);
+      const memberProfiles=matchingEmailPeople.filter((p:any)=>(memberLinks||[]).some((m:any)=>m.person_id===p.id&&m.membership_status==='paid_active'));
+      if(memberProfiles.length===1)person=memberProfiles[0];
+      else return Response.json({error:'This guest identity needs club review before booking. Please contact the club.'},{status:409});
+    }
     if(!person&&mobileK){
       const byMobile=await base44.asServiceRole.entities.Person.filter({tenant_id:session.tenant_id,mobile},'-updated_date',10);
       person=byMobile?.[0]||null;
@@ -1993,7 +2002,7 @@ ${detailRow('Reason',reason)}
     const personData:any={
       full_name:fullName,primary_email:email,mobile,
       emergency_contact_name:emergencyName,emergency_mobile:emergencyMobile,
-      source_system:'rallyhub_guest_session',last_synced_at:new Date().toISOString(),profile_visibility:'private',
+      source_system:person?.source_system||'rallyhub_guest_session',last_synced_at:new Date().toISOString(),profile_visibility:'private',
     };
     if(person) person=await base44.asServiceRole.entities.Person.update(person.id,personData);
     else person=await base44.asServiceRole.entities.Person.create({tenant_id:session.tenant_id,...personData});
