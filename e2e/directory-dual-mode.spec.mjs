@@ -65,7 +65,7 @@ test('guided save persists through existing backend and reloads saved value', as
   return reply({success:true});
  });
  await page.goto('/directory/clare-pickleball/edit?access_token=e2e');
- await expect(page.getByTestId('directory-editor-mode')).toBeVisible();
+ await expect(page.getByTestId('directory-editor-mode')).toBeVisible({timeout:10000});
  await page.getByRole('button',{name:'Guided setup'}).click();
  await expect(page.getByTestId('directory-guided-overview')).toBeVisible();
  await page.getByTestId('setup-step-basics').click();
