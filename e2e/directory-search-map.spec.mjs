@@ -19,7 +19,7 @@ test('directory defaults to all pickleball and exposes provider categories', asy
 test('directory category deep-link opens holiday providers directly', async ({ page }) => {
   await page.goto('/directory?category=holidays');
   await expect(page.getByLabel('What are you looking for?')).toHaveValue('holidays');
-  await expect(page.getByRole('heading',{name:/Pickleball holidays/i})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Pickleball holidays & experiences',exact:true})).toBeVisible();
 });
 
 test('directory has an interactive all-Ireland map view linked to club profiles', async ({ page }) => {
