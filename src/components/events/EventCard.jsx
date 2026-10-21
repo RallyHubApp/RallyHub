@@ -37,7 +37,6 @@ export default function EventCard({ event, onRegister }) {
         </div>
 
         {event.host && <div className="mt-3 border-t border-[#edf1f2] pt-3 text-[11px] text-[#52627d]"><div className="flex items-center gap-2"><span>Hosted by</span>{event.host.logo_url && <img src={event.host.logo_url} alt="" className="h-6 w-6 rounded-full object-contain"/>}<span className="font-bold text-[#07184c]">{event.host.name}</span>{event.event_verified_organiser && <span className="rounded-full bg-[#e9f7ef] px-1.5 py-0.5 text-[9px] font-black text-[#078e48]">VERIFIED</span>}</div>{Array.isArray(event.event_collaborators)&&event.event_collaborators.some(item=>item?.name)&&<p className="mt-1.5 line-clamp-1">With <span className="font-bold text-[#17325f]">{event.event_collaborators.filter(item=>item?.name).map(item=>item.name).join(' · ')}</span></p>}</div>}
-        {Array.isArray(event.event_collaborators)&&event.event_collaborators.length>0&&<p className="mt-1 text-[11px] text-[#52627d]">In collaboration with <span className="font-bold text-[#17325f]">{event.event_collaborators.map(item=>item?.name).filter(Boolean).join(' · ')}</span></p>}
 
         {!!tags.length && <div className="mt-3 flex flex-wrap gap-1.5">{tags.map(tag=><span key={tag} className="rounded-full bg-[#f1f6f7] px-2 py-1 text-[10px] font-semibold text-[#38506f]">{tag}</span>)}</div>}
 
