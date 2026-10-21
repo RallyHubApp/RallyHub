@@ -66,7 +66,7 @@ test('guided save persists through existing backend and reloads saved value', as
  await page.getByRole('button',{name:'Guided setup'}).click();
  const nameField=page.locator('#basics input').first();
  await nameField.fill('Clare Pickleball Sandbox Persistence Test');
- await page.getByRole('button',{name:'Save this step'}).click();
+ await page.getByRole('button',{name:'Save & continue'}).click();
  await expect(page.getByText('Saved successfully.')).toBeVisible();
  expect(saveCalls).toBe(1);
  expect(savedProfile.name).toBe('Clare Pickleball Sandbox Persistence Test');
