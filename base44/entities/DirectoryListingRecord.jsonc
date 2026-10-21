@@ -44,6 +44,10 @@
     "base_json": {
       "type": "string"
     },
+    "setup_json": {
+      "type": "string",
+      "description": "Private guided-setup hints such as ambiguous public brand candidates. Never exposed by public Directory endpoints."
+    },
     "trusted_contacts_json": {
       "type": "string"
     },
