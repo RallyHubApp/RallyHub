@@ -206,6 +206,7 @@ export default function DirectoryListingEdit() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const guidedRequested = searchParams.get('guided') === '1';
+  const continueRequested = searchParams.get('continue') === '1';
   const seed = getClub(slug);
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
   const [baseClub, setBaseClub] = useState(seed || null);
@@ -236,6 +237,7 @@ export default function DirectoryListingEdit() {
   const [loadingSetupEvents, setLoadingSetupEvents] = useState(false);
   const [autoSaveState, setAutoSaveState] = useState('');
   const autoSaveInFlight = useRef(false);
+  const continueAutoOpened = useRef(false);
   const returnTo = useMemo(() => `/directory/${slug}/edit`, [slug]);
   const dirty = !!form && !!baseline && JSON.stringify(form) !== baseline;
   const publicListingUrl = useMemo(() => `/directory/${slug}`, [slug]);
@@ -332,6 +334,21 @@ export default function DirectoryListingEdit() {
       .finally(() => { if (active) setLoadingSetupEvents(false); });
     return () => { active = false; };
   }, [isAuthenticated, access?.hasAccess, isClubListing, editorMode, slug]);
+
+  useEffect(() => {
+    if (!continueRequested || continueAutoOpened.current || !form || loadingAccess || (!isClubListing && loadingSetupEvents)) return;
+    const step = setupProgress.firstIncomplete;
+    if (!step) return;
+    continueAutoOpened.current = true;
+    if (step.id === 'events') {
+      const eventId = step.event?.id || setupProgress.firstEvent?.id || '';
+      navigate(`/directory/${slug}/events?guided=1${eventId ? `&edit=${encodeURIComponent(eventId)}` : ''}`);
+      return;
+    }
+    const index = guidedSections.findIndex(section => section.id === step.id);
+    setGuidedStep(index >= 0 ? index : 0);
+    setGuidedOverview(false);
+  }, [continueRequested, form, loadingAccess, isClubListing, loadingSetupEvents, setupProgress, navigate, slug, guidedSections]);
 
   useEffect(() => {
     if (!dirty) return undefined;
