@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { paidSpondMissing, createSpondMemberWorkbook } from '@/lib/spondMemberExport';
 import {
   AlertTriangle, CheckCircle2, ClipboardCopy, Columns3, Download, ExternalLink, FileText, Filter, Link2,
   Mail, MessageCircle, Pencil, Plus, Printer, RefreshCw, Save, Search, ShieldCheck, Users, WalletCards, X,
@@ -131,6 +132,8 @@ export default function MembershipConsole() {
   const [membershipSourceClubs, setMembershipSourceClubs] = useState([]);
   const [membershipSourceClubId, setMembershipSourceClubId] = useState('');
   const [membershipSourcePreview, setMembershipSourcePreview] = useState(null);
+  const [spondExportSelection, setSpondExportSelection] = useState([]);
+  const [spondExportBusy, setSpondExportBusy] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [broadcastBusy, setBroadcastBusy] = useState(false);
   const [broadcastResult, setBroadcastResult] = useState(null);
@@ -382,6 +385,7 @@ export default function MembershipConsole() {
     try {
       const data = await invokeMembershipSource('preview_members');
       setMembershipSourcePreview(data);
+      setSpondExportSelection(paidSpondMissing(data.rallyhubMissing).map(member => member.person_id));
       await refetchMembershipSource();
       toast.success(`Preview loaded · ${data.counts?.total || 0} Spond source members · no records changed`);
     } catch (error) {
@@ -389,6 +393,26 @@ export default function MembershipConsole() {
     } finally {
       setMembershipSourceBusy('');
     }
+  };
+
+  const downloadSpondMemberBatch = async () => {
+    const eligible = paidSpondMissing(membershipSourcePreview?.rallyhubMissing);
+    const selected = eligible.filter(row => spondExportSelection.includes(row.person_id));
+    if (!selected.length) return toast.error('No paid, missing Spond members selected. Run Preview Spond members first.');
+    if (!window.confirm(`Generate a fresh Spond Club import workbook for ${selected.length} selected members?\n\nThe file uses Clare Pickleball Members as the primary group. Additional groups/subgroups must be assigned manually in Spond.\n\nOnly download the file; RallyHub will not create or modify Spond records.`)) return;
+    setSpondExportBusy(true);
+    try {
+      const blob = await createSpondMemberWorkbook(selected);
+      const date = new Date().toISOString().slice(0,10);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href=url; link.download=`Clare_Pickleball_Spond_Import_${date}_${selected.length}_members.xlsx`;
+      document.body.appendChild(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+      toast.success(`${selected.length}-member Spond import workbook downloaded. Import in Spond Club, then run a fresh reconciliation to verify.`,{duration:9000});
+    } catch (error) {
+      toast.error(error?.message || 'Spond import workbook generation failed.',{duration:9000});
+    } finally {setSpondExportBusy(false);}
   };
 
   const disconnectSpondMembershipSource = async () => {
@@ -1046,7 +1070,7 @@ export default function MembershipConsole() {
           {gateway ? <Badge variant="outline" className="gap-1.5"><WalletCards className="w-3 h-3" />{label(gateway.provider)} · {label(gateway.status)}</Badge> : null}
           {applicationData.publicUrl ? <a href={applicationData.publicUrl} target="_blank" rel="noreferrer"><Button variant="outline" size="sm"><ExternalLink className="w-3.5 h-3.5 mr-1.5" />Public membership form</Button></a> : null}
           {applicationData.publicUrl ? <Button variant="outline" size="sm" onClick={createMembershipInvite} disabled={applicationBusyId === 'membership-invite'}><Link2 className="w-3.5 h-3.5 mr-1.5" />{applicationBusyId === 'membership-invite' ? 'Creating…' : 'Invite applicant'}</Button> : null}
-          <Button variant="outline" size="sm" onClick={() => setMembershipSourceOpen(true)}><Link2 className="w-3.5 h-3.5 mr-1.5" />Spond Club</Button>
+          <Button variant="outline" size="sm" onClick={() => setMembershipSourceOpen(true)}><Download className="w-3.5 h-3.5 mr-1.5" />Spond Import</Button>
           <a href="/app/communications?scope=tenant&source=membership&template=membership_invitation&returnTo=%2Fapp%2Fmembership&label=Membership"><Button variant="outline" size="sm"><Megaphone className="w-3.5 h-3.5 mr-1.5" />Open in Communications</Button></a>
           <Button variant="outline" size="sm" onClick={openBroadcast}><Megaphone className="w-3.5 h-3.5 mr-1.5" />Legacy broadcast</Button>
           <Button size="sm" onClick={() => setAddMemberOpen(true)}><Plus className="w-3.5 h-3.5 mr-1.5" />Add member</Button>
@@ -1615,7 +1639,7 @@ export default function MembershipConsole() {
       <Dialog open={membershipSourceOpen} onOpenChange={setMembershipSourceOpen}>
         <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Spond Club membership source</DialogTitle>
+            <DialogTitle>Spond Club · Reconciliation & Import</DialogTitle>
             <DialogDescription>
               Secure, tenant-scoped access to the club’s Spond membership roster. This connection is separate from RallyHub’s Spond event/attendance tools.
             </DialogDescription>
@@ -1697,6 +1721,15 @@ export default function MembershipConsole() {
                   ['RallyHub members','rallyhub_members'],
                   ['Missing from Spond','rallyhub_missing_from_spond']
                 ].map(([title,key]) => <div key={key} className="rounded-lg bg-secondary/40 p-2.5 min-h-[78px] h-full flex flex-col justify-between"><p className="text-[10px] uppercase text-muted-foreground leading-4 min-h-8">{title}</p><p className="text-lg font-black mt-1 leading-none">{membershipSourcePreview.counts?.[key] || 0}</p></div>)}
+              </div>
+              <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+                <div><p className="font-semibold">Prepare new-member Spond import</p><p className="text-xs text-muted-foreground mt-1">Export only paid RallyHub applicants not matched in the current Spond Club roster. The file starts fresh each time — no accumulated spreadsheet. Verify identities in Spond before importing. Additional subgroups are assigned manually after import.</p></div>
+                <p className="text-xs font-medium">Eligible for export: {paidSpondMissing(membershipSourcePreview.rallyhubMissing).length} · Selected: {spondExportSelection.length}</p>
+                <div className="grid sm:grid-cols-2 gap-2 max-h-48 overflow-auto">
+                  {paidSpondMissing(membershipSourcePreview.rallyhubMissing).map(member => <label key={member.person_id} className="flex items-center gap-2 text-sm rounded-md border p-2 cursor-pointer"><Checkbox checked={spondExportSelection.includes(member.person_id)} onCheckedChange={checked => setSpondExportSelection(old => checked ? [...old,member.person_id] : old.filter(id=>id!==member.person_id))}/><span>{member.full_name}</span></label>)}
+                </div>
+                <div className="flex flex-wrap gap-2"><Button size="sm" disabled={spondExportBusy || !spondExportSelection.length} onClick={downloadSpondMemberBatch}><Download className="w-4 h-4 mr-1.5" />{spondExportBusy ? 'Preparing workbook…' : `Download Spond import (${spondExportSelection.length})`}</Button><Button size="sm" variant="outline" onClick={previewSpondMembershipMembers} disabled={!!membershipSourceBusy}><RefreshCw className="w-4 h-4 mr-1.5" />Recheck after import</Button></div>
+                <p className="text-[11px] text-muted-foreground">Imported? Run Recheck after import. Matched members disappear automatically from the next export. WhatsApp onboarding remains manual.</p>
               </div>
               {(membershipSourcePreview.rallyhubMissing || []).length ? <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50/60 dark:bg-amber-950/20 p-3">
                 <p className="text-xs font-semibold text-amber-900 dark:text-amber-100">RallyHub members with no current Spond Club record</p>
