@@ -676,22 +676,21 @@ Deno.serve(async(req)=>{
       const player=await first(base44,'Player',{tenant_id:tenantId,club_id:clubId,person_id:personId});
       if(!person||!membership||!player) return Response.json({error:'Complete member/person/player record not found in this club.'},{status:404});
       const accountEmail=lower(target.email), recordEmail=lower(person.primary_email||player.email);
-      if(!accountEmail||accountEmail!==recordEmail) return Response.json({error:'Account email does not match the membership record email. Verify identity before linking.',code:'EMAIL_MISMATCH'},{status:409});
       const accountName=nameKey(target.full_name||target.display_name||''), recordName=nameKey(person.full_name||player.full_name||'');
+      const emailMismatch=!!(accountEmail&&recordEmail&&accountEmail!==recordEmail);
       const nameMismatch=!!(accountName&&recordName&&accountName!==recordName);
       const suppliedDob=clean(body.verifyDateOfBirth,20);
-      const suppliedMobile=clean(body.verifyMobile,80).replace(/\s+/g,'');
-      const recordMobile=clean(person.mobile||player.phone,80).replace(/\s+/g,'');
+      const suppliedMobile=clean(body.verifyMobile,80).replace(/\D+/g,'');
+      const recordMobile=clean(person.mobile||player.phone,80).replace(/\D+/g,'');
+      const loginMobile=clean(target.phone||target.mobile||target.phone_number||'',80).replace(/\D+/g,'');
       const dobMatch=!!(suppliedDob&&person.date_of_birth&&suppliedDob===String(person.date_of_birth));
       const mobileMatch=!!(suppliedMobile&&recordMobile&&suppliedMobile===recordMobile);
-      if(nameMismatch&&!dobMatch&&!mobileMatch){
-        return Response.json({
-          error:'Email matches but the account and membership names differ. Verify either date of birth or mobile before connecting.',
-          code:'NAME_MISMATCH_REQUIRES_SECOND_FACTOR',
-          account_name:target.full_name||target.display_name||null,
-          record_name:person.full_name||player.full_name||null
-        },{status:409});
-      }
+      const adminAttested=body.identityConfirmedByAdmin===true&&user.role==='admin';
+      if(!accountEmail)return Response.json({error:'Registered account must have a verified email.'},{status:409});
+      if(emailMismatch&&nameMismatch&&!dobMatch&&!mobileMatch)return Response.json({error:'Both email and name differ. Verify the recorded mobile or date of birth before linking these accounts.',code:'MULTIPLE_IDENTITY_MISMATCHES'},{status:409});
+      if((emailMismatch||nameMismatch)&&!adminAttested&&!dobMatch&&!mobileMatch)return Response.json({
+        error:'The registration details differ from the membership record. An authorised administrator must review both records and explicitly confirm identity.',code:'IDENTITY_CONFIRMATION_REQUIRED',account_name:target.full_name||'',record_name:person.full_name||player.full_name||'',account_email:accountEmail,record_email:recordEmail,account_mobile:loginMobile||null,record_mobile:recordMobile||null
+      },{status:409});
       const otherPerson=await first(base44,'Person',{linked_user_id:userId});
       if(otherPerson&&String(otherPerson.id)!==String(personId)) return Response.json({error:'This user account is already linked to a different person record.'},{status:409});
       const otherPlayer=await first(base44,'Player',{user_id:userId});
@@ -710,8 +709,8 @@ Deno.serve(async(req)=>{
       if(existingAccess) await base44.asServiceRole.entities.ClubUserAccess.update(existingAccess.id,accessData);
       else await base44.asServiceRole.entities.ClubUserAccess.create(accessData);
       await base44.asServiceRole.entities.User.update(userId,{account_scope:'club',approval_status:'approved',active_tenant_id:tenantId,active_club_id:clubId,active_club_role:'member',security_context_updated_at:now});
-      try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:tenantId,club_id:clubId,user_id:user.id,action:'member_account_connected',entity_type:'Person',entity_id:person.id,scope_type:'Club',scope_id:clubId,after_state:JSON.stringify({target_user_id:userId,player_id:player.id,email_match:true,name_mismatch:nameMismatch,verification:nameMismatch?(dobMatch?'dob':'mobile'):'email_and_name'}),reason:nameMismatch?'Administrator verified changed-name identity with a second factor':'Administrator connected matching member account'});}catch{}
-      return Response.json({success:true,user_id:userId,person_id:person.id,player_id:player.id,name_mismatch:nameMismatch,verification:nameMismatch?(dobMatch?'dob':'mobile'):'email_and_name'});
+      try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:tenantId,club_id:clubId,user_id:user.id,action:'member_account_connected',entity_type:'Person',entity_id:person.id,scope_type:'Club',scope_id:clubId,after_state:JSON.stringify({target_user_id:userId,player_id:player.id,email_match:!emailMismatch,name_mismatch:nameMismatch,verification:adminAttested?'admin_identity_confirmation':dobMatch?'dob':mobileMatch?'mobile':'matching_account',login_email:accountEmail,membership_email:recordEmail,login_mobile:loginMobile||null,membership_mobile:recordMobile||null}),reason:adminAttested?'Administrator explicitly reviewed account versus membership details and confirmed recognised member identity':'Administrator connected matching member account'});}catch{}
+      return Response.json({success:true,user_id:userId,person_id:person.id,player_id:player.id,name_mismatch:nameMismatch,email_mismatch:emailMismatch,verification:adminAttested?'admin_identity_confirmation':dobMatch?'dob':mobileMatch?'mobile':'matching_account'});
     }
 
     if(action==='admin_dashboard_counts'){
