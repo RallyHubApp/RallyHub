@@ -46,6 +46,7 @@ export const DIRECTORY_SETUP_BLUEPRINTS = {
 };
 
 const STEP_LABELS = {
+  identity: { club:'Confirm club name', default:'Confirm public name' },
   basics: { club:'Club details', default:'About you' },
   contact: { club:'Contact information', default:'Contact & social' },
   location: { default:'Where you operate' },
@@ -59,13 +60,21 @@ export function setupStepLabel(listingType, id) {
   return STEP_LABELS[id]?.[listingType] || STEP_LABELS[id]?.default || id;
 }
 
-export function buildDirectorySetupProgress({ listingType='club', profile={}, events=[], visibility='public' }={}) {
+export function buildDirectorySetupProgress({ listingType='club', profile={}, events=[], visibility='public', setup={} }={}) {
   const blueprint = DIRECTORY_SETUP_BLUEPRINTS[listingType] || DIRECTORY_SETUP_BLUEPRINTS.other;
+  const identity = setup?.identity || {};
+  const identityRelevant = identity?.requiresConfirmation === true || identity?.confirmed === true || (Array.isArray(identity?.candidates) && identity.candidates.length > 0);
   const startedEvents = (events || []).filter(eventStarted);
   const publishedEvents = startedEvents.filter(eventPublished);
   const firstEvent = startedEvents[0] || null;
   const eventRequired = !blueprint.eventOptional && blueprint.steps.includes('events');
   const states = {
+    identity: {
+      complete: identity?.confirmed === true || identity?.requiresConfirmation !== true,
+      detail: identity?.confirmed === true
+        ? `Players will see ${identity?.selectedPublicName || profile?.name || 'your chosen public name'}`
+        : 'We found more than one name connected with you — choose which one players should see',
+    },
     basics: {
       complete: hasText(profile?.name) && hasUsableDescription(profile?.description),
       detail: hasText(profile?.name) && hasUsableDescription(profile?.description) ? 'Already filled' : 'Check your name and short description',
@@ -100,11 +109,12 @@ export function buildDirectorySetupProgress({ listingType='club', profile={}, ev
       detail: visibility === 'public' ? 'Public listing ready' : 'Preview everything, then publish',
     },
   };
-  const requiredBeforeReview = blueprint.steps.filter(id => id !== 'review' && !states[id]?.optional);
+  const stepIds = identityRelevant ? ['identity', ...blueprint.steps] : blueprint.steps;
+  const requiredBeforeReview = stepIds.filter(id => id !== 'review' && !states[id]?.optional);
   states.review.complete = visibility === 'public' && requiredBeforeReview.every(id => states[id]?.complete);
   states.review.detail = states.review.complete ? 'Public listing ready' : (visibility === 'public' ? 'Review the items still needing attention' : 'Preview everything, then publish');
 
-  const steps = blueprint.steps.map((id, index) => ({
+  const steps = stepIds.map((id, index) => ({
     id,
     index,
     label: setupStepLabel(listingType, id),
