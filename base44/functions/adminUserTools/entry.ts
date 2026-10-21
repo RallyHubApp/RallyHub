@@ -39,15 +39,9 @@ Deno.serve(async (req) => {
       if (status === 'approved' && target.role !== 'admin') {
         const clubAccesses = await base44.asServiceRole.entities.ClubUserAccess.filter({ user_id: userId, status: 'active' });
         if (!clubAccesses?.length) {
-          // Session-host identity approval is not a Club grant. Hosts may only
-          // enter sessions explicitly authorised via KotcSessionAccess.
-          const hostGrants = await base44.asServiceRole.entities.KotcSessionAccess.filter({ user_id: userId, status: 'active' });
-          const authorisedHost = (hostGrants || []).some(g => ['session_host','assistant_host'].includes(g.role));
-          if (!authorisedHost) return Response.json({
-            error: 'Cannot approve RallyHub Club access: no club grant or KOTC session-host assignment exists. Grant the appropriate access first.'
+          return Response.json({
+            error: 'This account has no linked Clare Pickleball membership. For existing members, use Approve & link to verify identity and connect the existing record; tournament host permissions are separate.'
           }, { status: 409 });
-          await base44.asServiceRole.entities.User.update(userId, { approval_status: status, account_scope: 'kotc_host' });
-          return Response.json({ success: true, userId, status, accessScope: 'kotc_host', note: 'Account approved for existing session-specific KOTC host grants only. No ClubUserAccess was created.' });
         }
       }
       await base44.asServiceRole.entities.User.update(userId, {
