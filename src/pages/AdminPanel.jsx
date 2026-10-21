@@ -27,9 +27,9 @@ export default function AdminPanel() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const canAccessAdmin = user?.role === 'admin';
-  const allowedAdminTabs = ['approvals', 'preview', 'announcements', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'feedback', 'control-library', 'dupr', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
+  const allowedAdminTabs = ['linking', 'preview', 'announcements', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'feedback', 'control-library', 'dupr', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
-  const activeAdminTab = allowedAdminTabs.includes(requestedTab) ? requestedTab : 'approvals';
+  const activeAdminTab = requestedTab === 'approvals' ? 'linking' : allowedAdminTabs.includes(requestedTab) ? requestedTab : 'linking';
   const directoryFocus = searchParams.get('focus');
   const queryClient = useQueryClient();
 
@@ -207,7 +207,7 @@ export default function AdminPanel() {
       if (res.data?.error) throw new Error(res.data.error);
       return res.data?.rows || [];
     },
-    enabled: canAccessAdmin && activeAdminTab === 'approvals' && !!user?.active_tenant_id && !!user?.active_club_id
+    enabled: canAccessAdmin && activeAdminTab === 'linking' && !!user?.active_tenant_id && !!user?.active_club_id
   });
 
   const { data: selectedMembershipRecord = null, isLoading: selectedMembershipLoading, error: selectedMembershipError } = useQuery({
@@ -1704,19 +1704,10 @@ Brian`;
       )}
 
       <Tabs value={activeAdminTab} onValueChange={value => {
-        if (value === 'approvals') return setSearchParams({});
         if (value === 'directory' && pendingDirectoryActionCount > 0) return setSearchParams({ tab: 'directory', focus: 'pending-actions' });
         setSearchParams({ tab: value });
       }}>
         <TabsList className="bg-secondary flex-wrap h-auto gap-1">
-          <TabsTrigger value="approvals" className="text-xs gap-1.5">
-            <Clock className="w-3.5 h-3.5" /> Club Access Approvals
-            {pendingPlatformApprovalCount > 0 && (
-              <span className="ml-1 bg-yellow-500 text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">
-                {pendingPlatformApprovalCount}
-              </span>
-            )}
-          </TabsTrigger>
           <TabsTrigger value="preview" className="text-xs gap-1.5">
             <Eye className="w-3.5 h-3.5" /> Member Preview
           </TabsTrigger>
@@ -1755,122 +1746,9 @@ Brian`;
           <TabsTrigger value="users" className="text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Users & Roles</TabsTrigger>
           <TabsTrigger value="players" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Players</TabsTrigger>
           <TabsTrigger value="matches" className="text-xs gap-1.5"><Swords className="w-3.5 h-3.5" /> Matches</TabsTrigger>
-          <TabsTrigger value="linking" className="text-xs gap-1.5"><Link2 className="w-3.5 h-3.5" /> Account Links</TabsTrigger>
+          <TabsTrigger value="linking" className="text-xs gap-1.5"><Link2 className="w-3.5 h-3.5" /> Accounts & Approvals {pendingPlatformApprovalCount > 0 && <span className="rounded-full bg-yellow-500 px-1.5 text-[10px] font-bold text-black">{pendingPlatformApprovalCount}</span>}</TabsTrigger>
           <TabsTrigger value="invitations" className="text-xs gap-1.5"><Mail className="w-3.5 h-3.5" /> Invite Users</TabsTrigger>
         </TabsList>
-
-        {/* ── APPROVALS TAB ── */}
-        <TabsContent value="approvals" className="mt-4">
-          <div className="space-y-3">
-            <div className="glass rounded-lg p-3 flex items-start gap-2">
-              <Clock className="w-4 h-4 text-yellow-400 mt-0.5 shrink-0" />
-              <p className="text-xs text-muted-foreground">
-                <strong className="text-foreground">RallyHub Club access only.</strong> This tab does not approve Directory users. A user can enter the RallyHub Club application only when they have a separate active ClubUserAccess grant. Directory owners/editors are handled only under Directory Claims and cannot access tournaments, players, matches, leaderboards or other Club tools.
-              </p>
-            </div>
-            {['pending', 'approved', 'rejected'].map(section => {
-              const sectionUsers = platformApprovalUsers.filter(u => {
-                const s = u.approval_status || 'pending';
-                return s === section;
-              });
-              if (sectionUsers.length === 0) return null;
-              return (
-                <div key={section} className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
-                    {section === 'pending' ? '⏳ Pending' : section === 'approved' ? '✅ Approved' : '❌ Rejected'}
-                  </p>
-                  {sectionUsers.map((u, i) => {
-                    const candidate = membershipCandidateForUser(u);
-                    const nameMismatch = !!candidate &&
-                      normaliseIdentityName(u.full_name || u.display_name) &&
-                      normaliseIdentityName(candidate.full_name) &&
-                      normaliseIdentityName(u.full_name || u.display_name) !== normaliseIdentityName(candidate.full_name);
-                    return (
-                      <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
-                        className="glass rounded-lg p-3 space-y-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
-                              {(u.full_name || u.email || 'U')[0].toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate">{u.full_name || '(no name)'}</p>
-                              <p className="text-xs text-muted-foreground truncate">{u.email}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            {section !== 'approved' && (
-                              <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90 gap-1"
-                                disabled={updatingApproval === u.id || connectingMemberAccount === u.id}
-                                onClick={() => setApprovalStatus(u.id, 'approved')}>
-                                <CheckCircle className="w-3 h-3" />
-                                {updatingApproval === u.id || connectingMemberAccount === u.id ? 'Approving…' : candidate ? 'Approve & link' : 'Approve'}
-                              </Button>
-                            )}
-                            {section !== 'rejected' && u.id !== user?.id && (
-                              <Button size="sm" variant="outline" className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10 gap-1"
-                                disabled={updatingApproval === u.id || connectingMemberAccount === u.id}
-                                onClick={() => setApprovalStatus(u.id, 'rejected')}>
-                                <XCircle className="w-3 h-3" />
-                                {updatingApproval === u.id ? '…' : 'Reject'}
-                              </Button>
-                            )}
-                            {section === 'approved' && u.id !== user?.id && (
-                              <Button size="sm" variant="outline" className="h-7 text-xs text-muted-foreground gap-1"
-                                disabled={updatingApproval === u.id || connectingMemberAccount === u.id}
-                                onClick={() => setApprovalStatus(u.id, 'pending')}>
-                                <Clock className="w-3 h-3" />
-                                {updatingApproval === u.id ? '…' : 'Revoke'}
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-
-                        {approvalFeedback?.userId === u.id && (
-                          <p role="status" aria-live="polite" className={`rounded-lg border px-3 py-2 text-xs font-medium ${approvalFeedback.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : approvalFeedback.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>{approvalFeedback.text}</p>
-                        )}
-                        {candidate && (
-                          <div className={`rounded-lg border p-3 ${nameMismatch ? 'border-amber-400/40 bg-amber-500/10' : 'border-primary/25 bg-primary/5'}`}>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="text-xs font-semibold">
-                                  Membership email match: {candidate.full_name}
-                                </p>
-                                <p className="text-[11px] text-muted-foreground mt-1">
-                                  {nameMismatch
-                                    ? `Account name “${u.full_name || u.display_name}” differs from membership name “${candidate.full_name}”. Confirm only if you have verified they are the same person.`
-                                    : 'Name and verified email match the existing Clare member/player record.'}
-                                </p>
-                              </div>
-                              <Button
-                                size="sm"
-                                className="min-h-9 shrink-0"
-                                disabled={connectingMemberAccount === u.id}
-                                onClick={() => connectMemberAccount(u, candidate, nameMismatch)}
-                              >
-                                <Link2 className="w-3.5 h-3.5 mr-1" />
-                                {connectingMemberAccount === u.id
-                                  ? 'Connecting…'
-                                  : nameMismatch
-                                    ? 'Confirm identity & connect'
-                                    : section === 'approved'
-                                      ? 'Connect membership'
-                                      : 'Approve & connect'}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              );
-            })}
-            {platformApprovalUsers.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-6">No RallyHub Club users to review. Directory-only accounts are managed under Directory Claims.</p>
-            )}
-          </div>
-        </TabsContent>
 
         {/* ── MEMBER PREVIEW TAB ── */}
         <TabsContent value="preview" className="mt-4">
@@ -2899,8 +2777,120 @@ Brian`;
           </div>
         </TabsContent>
 
-        {/* ── ACCOUNT LINKS TAB ── */}
+        {/* ── ACCOUNTS & APPROVALS: single member-access workbench ── */}
         <TabsContent value="linking" className="mt-4">
+          <h2 className="mb-3 text-lg font-bold">RallyHub Accounts & Approvals</h2>
+          <div className="space-y-3">
+            <div className="glass rounded-lg p-3 flex items-start gap-2">
+              <Clock className="w-4 h-4 text-yellow-400 mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                <strong className="text-foreground">RallyHub Club access only.</strong> This tab does not approve Directory users. A user can enter the RallyHub Club application only when they have a separate active ClubUserAccess grant. Directory owners/editors are handled only under Directory Claims and cannot access tournaments, players, matches, leaderboards or other Club tools.
+              </p>
+            </div>
+            {['pending', 'approved', 'rejected'].map(section => {
+              const sectionUsers = platformApprovalUsers.filter(u => {
+                const s = u.approval_status || 'pending';
+                return s === section;
+              });
+              if (sectionUsers.length === 0) return null;
+              return (
+                <div key={section} className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+                    {section === 'pending' ? '⏳ Pending' : section === 'approved' ? '✅ Approved' : '❌ Rejected'}
+                  </p>
+                  {sectionUsers.map((u, i) => {
+                    const candidate = membershipCandidateForUser(u);
+                    const nameMismatch = !!candidate &&
+                      normaliseIdentityName(u.full_name || u.display_name) &&
+                      normaliseIdentityName(candidate.full_name) &&
+                      normaliseIdentityName(u.full_name || u.display_name) !== normaliseIdentityName(candidate.full_name);
+                    return (
+                      <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
+                        className="glass rounded-lg p-3 space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                              {(u.full_name || u.email || 'U')[0].toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{u.full_name || '(no name)'}</p>
+                              <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {section !== 'approved' && (
+                              <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90 gap-1"
+                                disabled={updatingApproval === u.id || connectingMemberAccount === u.id}
+                                onClick={() => setApprovalStatus(u.id, 'approved')}>
+                                <CheckCircle className="w-3 h-3" />
+                                {updatingApproval === u.id || connectingMemberAccount === u.id ? 'Approving…' : candidate ? 'Approve & link' : 'Approve'}
+                              </Button>
+                            )}
+                            {section !== 'rejected' && u.id !== user?.id && (
+                              <Button size="sm" variant="outline" className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10 gap-1"
+                                disabled={updatingApproval === u.id || connectingMemberAccount === u.id}
+                                onClick={() => setApprovalStatus(u.id, 'rejected')}>
+                                <XCircle className="w-3 h-3" />
+                                {updatingApproval === u.id ? '…' : 'Reject'}
+                              </Button>
+                            )}
+                            {section === 'approved' && u.id !== user?.id && (
+                              <Button size="sm" variant="outline" className="h-7 text-xs text-muted-foreground gap-1"
+                                disabled={updatingApproval === u.id || connectingMemberAccount === u.id}
+                                onClick={() => setApprovalStatus(u.id, 'pending')}>
+                                <Clock className="w-3 h-3" />
+                                {updatingApproval === u.id ? '…' : 'Revoke'}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        {approvalFeedback?.userId === u.id && (
+                          <p role="status" aria-live="polite" className={`rounded-lg border px-3 py-2 text-xs font-medium ${approvalFeedback.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : approvalFeedback.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>{approvalFeedback.text}</p>
+                        )}
+                        {candidate && (
+                          <div className={`rounded-lg border p-3 ${nameMismatch ? 'border-amber-400/40 bg-amber-500/10' : 'border-primary/25 bg-primary/5'}`}>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold">
+                                  Membership email match: {candidate.full_name}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground mt-1">
+                                  {nameMismatch
+                                    ? `Account name “${u.full_name || u.display_name}” differs from membership name “${candidate.full_name}”. Confirm only if you have verified they are the same person.`
+                                    : 'Name and verified email match the existing Clare member/player record.'}
+                                </p>
+                              </div>
+                              <Button
+                                size="sm"
+                                className="min-h-9 shrink-0"
+                                disabled={connectingMemberAccount === u.id}
+                                onClick={() => connectMemberAccount(u, candidate, nameMismatch)}
+                              >
+                                <Link2 className="w-3.5 h-3.5 mr-1" />
+                                {connectingMemberAccount === u.id
+                                  ? 'Connecting…'
+                                  : nameMismatch
+                                    ? 'Confirm identity & connect'
+                                    : section === 'approved'
+                                      ? 'Connect membership'
+                                      : 'Approve & connect'}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+            {platformApprovalUsers.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-6">No RallyHub Club users to review. Directory-only accounts are managed under Directory Claims.</p>
+            )}
+          </div>
+        
+          <h3 className="mt-6 mb-3 text-sm font-bold">Existing linked accounts</h3>
           <div className="space-y-3">
             <div className="glass rounded-lg p-3 flex items-start gap-2">
               <Link2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
