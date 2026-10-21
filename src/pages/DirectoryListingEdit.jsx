@@ -847,7 +847,7 @@ export default function DirectoryListingEdit() {
                     <div><p className="font-semibold">{isClubListing ? 'Optional club details' : 'Optional listing details'}</p><p className="text-xs text-muted-foreground mt-1">{isClubListing ? 'Website, social links, joining information and attendance policy can all be added later. If your club uses Spond, you can also connect your Spond account here to bring your regular venues and session times into RallyHub instead of entering them manually.' : 'Add your website and social links so players can learn more or continue to your own site.'}</p></div>
                     <Button type="button" variant="outline" onClick={() => setShowEnhancements(value => !value)} className="gap-2 shrink-0"><Sparkles className="w-4 h-4" /> {showEnhancements ? 'Hide optional details' : 'Enhance listing'}</Button>
                   </div>}
-                  {showEnhancements && <>
+                  {showEnhancements && (isClubListing || editorMode !== 'guided') && <>
                   {isClubListing && <><div className="space-y-2"><Label>Membership / joining status</Label><Input value={form.membershipStatus || ''} onChange={e => setField('membershipStatus', e.target.value)} placeholder="e.g. New members welcome" /></div>
                   <div className="space-y-2"><Label>Information heading</Label><Input value={form.policyLabel || ''} onChange={e => setField('policyLabel', e.target.value)} placeholder="e.g. Joining information" /></div>
                   <div className="space-y-2 sm:col-span-2"><Label>Guest / attendance information</Label><Textarea value={form.guestPolicy || ''} onChange={e => setField('guestPolicy', e.target.value)} rows={3} placeholder="What should someone know before attending?" /></div>
