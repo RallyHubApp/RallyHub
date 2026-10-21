@@ -1281,17 +1281,7 @@ Brian`;
 
   const connectMemberAccount = async (targetUser, player, confirmNameMismatch = false) => {
     if (!targetUser?.id || !player?.person_id) return;
-    let verifyMobile = '';
-    let verifyDateOfBirth = '';
-    if (confirmNameMismatch) {
-      const supplied = window.prompt(`The RallyHub account name differs from ${player.full_name}. Enter the mobile number on their existing membership record to verify identity, or Cancel to verify with date of birth.`, '');
-      if (supplied === null) {
-        const dob = window.prompt('Enter the member date of birth (YYYY-MM-DD), or Cancel to stop.', '');
-        if (dob === null) return;
-        verifyDateOfBirth = dob.trim();
-      } else verifyMobile = supplied.trim();
-      if (!verifyMobile && !verifyDateOfBirth) { toast.error('Identity verification is required.'); return; }
-    }
+    if (confirmNameMismatch && !window.confirm(`Confirm existing member identity\n\nRallyHub account: ${targetUser.full_name || targetUser.email}\nExisting membership: ${player.full_name}\nEmail: ${targetUser.email}\n\nI personally recognise and confirm this is the same Clare Pickleball member. This decision will be recorded in the audit log.\n\nApprove and connect this account?`)) return;
     setConnectingMemberAccount(targetUser.id);
     setApprovalFeedback({ userId: targetUser.id, type: 'progress', text: 'Verifying membership and connecting RallyHub account…' });
     try {
@@ -1299,7 +1289,7 @@ Brian`;
         action: 'admin_connect_account',
         userId: targetUser.id,
         personId: player.person_id,
-        verifyMobile, verifyDateOfBirth
+        identityConfirmedByAdmin: !!confirmNameMismatch
       });
       if (res.data?.error) throw new Error(res.data.error);
       await Promise.all([
