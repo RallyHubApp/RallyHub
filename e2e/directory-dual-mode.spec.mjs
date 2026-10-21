@@ -70,7 +70,6 @@ test('guided save persists through existing backend and reloads saved value', as
  await expect(page.getByText('Saved successfully.')).toBeVisible();
  expect(saveCalls).toBe(1);
  expect(savedProfile.name).toBe('Clare Pickleball Sandbox Persistence Test');
- await page.getByRole('button',{name:'Continue',exact:true}).click();
  await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 2 of 5');
  await page.reload();
  await expect(page.locator('#basics input').first()).toHaveValue('Clare Pickleball Sandbox Persistence Test');
