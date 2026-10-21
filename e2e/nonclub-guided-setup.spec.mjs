@@ -128,7 +128,7 @@ test('Sandra email deep-link skips completed work, preserves the prefilled event
   await expect(page.getByLabel('Registration method')).toHaveValue('contact');
   await expect(page.getByLabel('Collaborator 1 name')).toHaveValue('Pickleball Escapes');
   await expect(page.getByLabel('Collaborator 1 role')).toHaveValue('In collaboration with');
-  await expect(page.getByLabel('Fee / price text')).toHaveValue('£815 / €950 per person, based on two sharing a one-bedroom apartment.');
+  await expect(page.getByLabel('Entry fee / fee text')).toHaveValue('£815 / €950 per person, based on two sharing a one-bedroom apartment.');
   await page.getByLabel('Collaborator 1 link').fill('https://rallyhub.ie/directory/pickleball-escapes');
   await page.getByRole('button',{name:'Publish to RallyHub Events'}).click();
   await expect(page.getByText('Event published + organiser listing live ✓')).toBeVisible();
