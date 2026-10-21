@@ -231,8 +231,9 @@ export default function PublicDirectory() {
 
   const clubListings = useMemo(() => effectiveClubs.filter(item => (item.listingType || 'club') === 'club'), [effectiveClubs]);
   const publicCategories = useMemo(() => categories.filter(item => item.active !== false && item.showPublicFilter !== false).sort((a,b)=>(a.sortOrder||100)-(b.sortOrder||100)), [categories]);
-  const selectedCategory = publicCategories.find(item => item.key === categoryKey) || categories.find(item => item.key === categoryKey) || DIRECTORY_CATEGORY_FALLBACK[0];
-  const clubCategoryActive = categoryKey === 'club' || selectedCategory?.clubFirst === true || selectedCategory?.locationMode === 'county';
+  const categoryOptions = useMemo(() => [{key:'all',label:'All pickleball',pluralLabel:'Everything',sortOrder:0}, ...publicCategories], [publicCategories]);
+  const selectedCategory = categoryOptions.find(item => item.key === categoryKey) || categoryOptions[0];
+  const clubCategoryActive = categoryKey === 'club';
   const allSessions = useMemo(() => clubListings.flatMap(club => (club.sessions || []).map(session => ({...session, club}))), [clubListings]);
   const listedCountyCount = useMemo(() => new Set(clubListings.map(club => club.county).filter(Boolean)).size, [clubListings]);
   const counties = ['All counties', ...irelandCounties];
@@ -240,7 +241,7 @@ export default function PublicDirectory() {
   const filteredClubs = useMemo(() => effectiveClubs
     .map(club => ({ club, searchScore: directorySearchScore(club, query) }))
     .filter(({ club, searchScore }) => {
-      const categoryMatch = String(club.listingType || 'club') === categoryKey;
+      const categoryMatch = categoryKey === 'all' || String(club.listingType || 'club') === categoryKey;
       const queryMatch = !query.trim() || searchScore > 0;
       const countyMatch = !clubCategoryActive || county === 'All counties' || club.county === county;
       const dayMatch = !clubCategoryActive || day === 'Any day' || (club.sessions || []).some(session => session.day === day);
