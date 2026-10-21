@@ -99,7 +99,7 @@ const EVENT_FIELDS = [
   'name','format','status','start_date','end_date','location','venue_id','description','event_category','event_slug','event_start_time','event_end_time',
   'event_image_url','event_image_position_x','event_image_position_y','event_image_zoom','event_card_image_url','event_card_position_x','event_card_position_y','event_card_zoom','event_image_original_url','event_image_source_type',
   'event_internal_info','event_contact','event_contact_phone','event_contact_phone_hidden_until','event_contact_phone_keep_private','event_status_override','event_registration_url','event_registration_mode','event_registration_open_at','event_registration_close_at','event_fee_text','event_fee_amount','event_currency','event_capacity','event_waitlist_enabled',
-  'event_public_summary','event_county','event_country','event_indoor_outdoor','event_levels','event_age_groups','event_disciplines','event_tags','event_schedule','event_eligibility','event_player_info','event_fees_cancellation','event_source_url','event_map_url','event_latitude','event_longitude'
+  'event_public_summary','event_county','event_country','event_indoor_outdoor','event_levels','event_age_groups','event_disciplines','event_tags','event_collaborators','event_schedule','event_eligibility','event_player_info','event_fees_cancellation','event_source_url','event_map_url','event_latitude','event_longitude'
 ];
 
 function eventPayload(body:any) {
@@ -124,6 +124,12 @@ function eventPayload(body:any) {
   out.event_longitude = numOrNull(out.event_longitude);
   out.event_capacity = numOrNull(out.event_capacity);
   out.event_fee_amount = numOrNull(out.event_fee_amount);
+  out.event_collaborators = Array.isArray(out.event_collaborators) ? out.event_collaborators.slice(0,12).map((item:any)=>({
+    name:clean(item?.name,180),
+    listing_slug:clean(item?.listing_slug,180),
+    url:clean(item?.url,1000),
+    role:clean(item?.role,120),
+  })).filter((item:any)=>item.name) : [];
   return out;
 }
 
@@ -140,11 +146,15 @@ Deno.serve(async (req) => {
     const {club, tenant} = await ensureHostIdentity(base44, listing);
 
     if (action === 'list') {
-      const [events, venues] = await Promise.all([
+      const [events, venues, profileRows] = await Promise.all([
         base44.asServiceRole.entities.Tournament.filter({ tenant_id:tenant.id, host_club_id:club.id, status:{$ne:'Archived'} }, 'start_date', 200),
-        getDirectoryVenues(base44, listing)
+        getDirectoryVenues(base44, listing),
+        base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug:listing.slug, status:'active' }, '-updated_at', 5),
       ]);
-      return Response.json({ success:true, canManage:true, role:access.role, listing:{slug:listing.slug,name:listing.name,county:listing.county}, host:club, tenant, events:events||[], venues });
+      const baseProfile=parseJson(listing.base_json,{});
+      const savedProfile=parseJson(profileRows?.[0]?.public_json,{});
+      const mergedProfile={...baseProfile,...savedProfile,contact:{...(baseProfile?.contact||{}),...(savedProfile?.contact||{})}};
+      return Response.json({ success:true, canManage:true, role:access.role, listing:{slug:listing.slug,name:listing.name,county:listing.county,listingType:listing.listing_type||mergedProfile.listingType||'club',serviceArea:listing.service_area||mergedProfile.serviceArea||'',profile:{contact:mergedProfile.contact||{},website:mergedProfile.website||'',facebook:mergedProfile.facebook||'',instagram:mergedProfile.instagram||'',logoUrl:mergedProfile.logoUrl||''}}, host:club, tenant, events:events||[], venues });
     }
 
     if (action === 'save') {
@@ -171,7 +181,7 @@ Deno.serve(async (req) => {
           && normal(row.location||row.event_county) === normal(incoming.location||incoming.event_county);
         return sameSource || sameEvent;
       });
-      if (duplicate) return Response.json({error:'This event is already listed in RallyHub. Open the existing event rather than creating a duplicate.',duplicate:true,existingEventId:duplicate.id,existingEventName:duplicate.name}, {status:409});
+      if (duplicate) return Response.json({error:'This event is already listed in RallyHub. Keep one canonical event and add the other organisation as a collaborator rather than creating a duplicate.',duplicate:true,existingEventId:duplicate.id,existingEventName:duplicate.name}, {status:409});
       const now = new Date().toISOString();
       const payload:any = {
         ...incoming,
