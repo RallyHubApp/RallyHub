@@ -1150,6 +1150,114 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Too many new listing submissions. Please try again later.' }, { status: 429 });
       }
 
+      const instantNonClubSetup = listingType !== 'club';
+      const now = new Date().toISOString();
+
+      if (instantNonClubSetup) {
+        const listingSlug = await uniqueListingSlug(base44, clubName);
+        const publicContact = publishContact ? {
+          name: claimantName || null,
+          phone: claimantPhone || null,
+          phoneHref: claimantPhone ? `tel:${String(claimantPhone).replace(/[^+\d]/g, '')}` : null,
+          whatsapp: claimantPhone ? `https://wa.me/${phoneDigits(claimantPhone).replace(/^0/, '353')}` : null,
+          email: user.email || null,
+        } : { name: null, phone: null, phoneHref: null, whatsapp: null, email: null };
+        const baseListing = {
+          id: listingSlug,
+          slug: listingSlug,
+          name: clubName,
+          listingType,
+          listingCategoryLabel: listingCategoryLabel || category.label,
+          serviceArea: serviceArea || null,
+          sport: 'Pickleball',
+          county: county || null,
+          town: town || null,
+          region: null,
+          status: 'active',
+          membershipStatus: null,
+          affiliation: null,
+          logoUrl: null,
+          website: safePublicUrl(website),
+          facebook: safePublicUrl(facebook),
+          instagram: safePublicUrl(instagram),
+          waitingListUrl: null,
+          joiningCtaLabel: 'Contact organiser',
+          policyLabel: 'Listing information',
+          description: `${clubName} is setting up a ${listingCategoryLabel || category.label} listing on RallyHub. More information is being added.`,
+          guestPolicy: null,
+          contact: publicContact,
+          venues: [],
+          sessions: [],
+          source: 'Submitted to RallyHub Directory',
+          sourceCheckedAt: now.slice(0, 10),
+        };
+        const request = await base44.asServiceRole.entities.DirectoryListingRequest.create({
+          club_name: clubName,
+          listing_type: listingType,
+          listing_category_label: listingCategoryLabel || category.label,
+          service_area: serviceArea || null,
+          county: county || null,
+          town: town || null,
+          primary_venue: primaryVenue || null,
+          address: address || null,
+          venue_postcode: venuePostcode || null,
+          website: website || null,
+          facebook: facebook || null,
+          instagram: instagram || null,
+          claimant_user_id: user.id,
+          claimant_name: claimantName,
+          claimant_role: claimantRole,
+          claimant_email: user.email,
+          claimant_phone: claimantPhone || '',
+          publish_contact: publishContact,
+          network_updates_opt_in: networkUpdatesOptIn,
+          network_updates_opted_in_at: networkUpdatesOptIn ? now : null,
+          notes: notes || null,
+          status: 'approved',
+          approved_listing_slug: listingSlug,
+          reviewed_by_user_id: user.id,
+          reviewed_at: now,
+          review_notes: 'Verified-account non-club guided setup created as a private preview until the organiser publishes.',
+        });
+        await base44.asServiceRole.entities.DirectoryListingRecord.create({
+          slug: listingSlug,
+          name: clubName,
+          listing_type: listingType,
+          listing_category_label: listingCategoryLabel || category.label,
+          service_area: serviceArea || null,
+          county: county || null,
+          sport: 'Pickleball',
+          status: 'active',
+          visibility: 'preview_only',
+          base_json: JSON.stringify(baseListing),
+          trusted_contacts_json: JSON.stringify([{ name: claimantName || null, role: claimantRole || null, email: user.email || null, phone: claimantPhone || null }]),
+          source_request_id: request.id,
+          created_by_user_id: user.id,
+          published_at: now,
+          commercial_status: 'free',
+        });
+        await grantAccess(base44, {
+          listing: { slug: listingSlug, name: clubName },
+          userId: user.id,
+          claimId: null,
+          grantedByUserId: user.id,
+          role: 'owner',
+          notes: 'Primary Directory Owner created through verified non-club guided setup.',
+        });
+        await base44.asServiceRole.entities.AuditLog.create({
+          tenant_id: 'platform',
+          user_id: user.id,
+          action: 'directory_nonclub_guided_setup_started',
+          entity_type: 'DirectoryListingRecord',
+          entity_id: listingSlug,
+          scope_type: 'Directory',
+          scope_id: listingSlug,
+          after_state: JSON.stringify({ listingType, visibility:'preview_only', requestId:request.id }),
+          reason: 'Verified organiser started a private non-club Directory listing through guided setup.',
+        }).catch(()=>{});
+        return Response.json({ success:true, status:'approved', listingSlug, setupDraft:true, request:publicListingRequest(request) });
+      }
+
       const request = await base44.asServiceRole.entities.DirectoryListingRequest.create({
         club_name: clubName,
         listing_type: listingType,
@@ -1170,7 +1278,7 @@ Deno.serve(async (req) => {
         claimant_phone: claimantPhone,
         publish_contact: publishContact,
         network_updates_opt_in: networkUpdatesOptIn,
-        network_updates_opted_in_at: networkUpdatesOptIn ? new Date().toISOString() : null,
+        network_updates_opted_in_at: networkUpdatesOptIn ? now : null,
         notes: notes || null,
         status: 'pending',
       });
