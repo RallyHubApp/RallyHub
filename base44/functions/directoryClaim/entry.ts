@@ -2233,13 +2233,19 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'set_visibility') {
-      if (user.role !== 'admin') return Response.json({ error:'Admin access required' }, { status:403 });
       const listingSlug = String(body.listingSlug || '').trim();
       const visibility = String(body.visibility || '').trim();
       if (!listingSlug || !['public','preview_only'].includes(visibility)) return Response.json({ error:'listingSlug and valid visibility required' }, { status:400 });
       const records = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 5);
       const record = records?.[0];
       if (!record) return Response.json({ error:'Active database-backed listing not found' }, { status:404 });
+      if (user.role !== 'admin') {
+        const accessRows = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug:listingSlug, user_id:user.id, status:'active' });
+        const owner = accessRows?.find((row:any)=>row.role === 'owner');
+        if (!owner || String(record.listing_type || 'club') === 'club' || visibility !== 'public') {
+          return Response.json({ error:'Primary owner access is required to publish this non-club listing.' }, { status:403 });
+        }
+      }
       const before = record.visibility || 'public';
       await base44.asServiceRole.entities.DirectoryListingRecord.update(record.id, { visibility });
       const now = new Date().toISOString();
