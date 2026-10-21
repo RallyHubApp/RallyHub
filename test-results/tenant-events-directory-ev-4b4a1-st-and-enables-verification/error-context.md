@@ -7,7 +7,7 @@
 # Test info
 
 - Name: tenant-events.spec.mjs >> directory event finder offers selectable event list and enables verification
-- Location: e2e/tenant-events.spec.mjs:162:1
+- Location: e2e/tenant-events.spec.mjs:168:1
 
 # Error details
 

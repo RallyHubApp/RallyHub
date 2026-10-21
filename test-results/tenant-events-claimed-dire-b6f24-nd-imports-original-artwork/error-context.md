@@ -7,7 +7,7 @@
 # Test info
 
 - Name: tenant-events.spec.mjs >> claimed directory event editor discovers and imports original artwork
-- Location: e2e/tenant-events.spec.mjs:137:1
+- Location: e2e/tenant-events.spec.mjs:143:1
 
 # Error details
 

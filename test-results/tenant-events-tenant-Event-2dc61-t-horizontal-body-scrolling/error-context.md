@@ -7,7 +7,7 @@
 # Test info
 
 - Name: tenant-events.spec.mjs >> tenant Events mobile >> editor remains usable on phone without horizontal body scrolling
-- Location: e2e/tenant-events.spec.mjs:102:3
+- Location: e2e/tenant-events.spec.mjs:108:3
 
 # Error details
 

@@ -7,7 +7,7 @@
 # Test info
 
 - Name: tenant-events.spec.mjs >> super admin event deep link opens existing event directly for artwork correction
-- Location: e2e/tenant-events.spec.mjs:192:1
+- Location: e2e/tenant-events.spec.mjs:198:1
 
 # Error details
 

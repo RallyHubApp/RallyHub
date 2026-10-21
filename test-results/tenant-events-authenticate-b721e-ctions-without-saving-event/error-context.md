@@ -7,7 +7,7 @@
 # Test info
 
 - Name: tenant-events.spec.mjs >> authenticated directory live-verification control checks both functions without saving event
-- Location: e2e/tenant-events.spec.mjs:152:1
+- Location: e2e/tenant-events.spec.mjs:158:1
 
 # Error details
 

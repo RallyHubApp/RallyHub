@@ -7,7 +7,7 @@
 # Test info
 
 - Name: tenant-events.spec.mjs >> super admin discovery approval queue shows pending event and routes approval to backend
-- Location: e2e/tenant-events.spec.mjs:175:1
+- Location: e2e/tenant-events.spec.mjs:181:1
 
 # Error details
 

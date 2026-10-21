@@ -7,7 +7,7 @@
 # Test info
 
 - Name: tenant-events.spec.mjs >> event page URL discovers matching poster before verified import
-- Location: e2e/tenant-events.spec.mjs:126:1
+- Location: e2e/tenant-events.spec.mjs:132:1
 
 # Error details
 

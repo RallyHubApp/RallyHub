@@ -7,7 +7,7 @@
 # Test info
 
 - Name: tenant-events.spec.mjs >> event artwork: automatically import a verified original without manual uploader
-- Location: e2e/tenant-events.spec.mjs:113:1
+- Location: e2e/tenant-events.spec.mjs:119:1
 
 # Error details
 
