@@ -370,6 +370,13 @@
         "type": "string"
       }
     },
+    "event_collaborators": {
+      "type": "array",
+      "description": "Optional co-organisers or commercial/event partners linked to one canonical RallyHub event. Does not grant edit access.",
+      "items": {
+        "type": "object"
+      }
+    },
     "event_schedule": {
       "type": "array",
       "items": {
