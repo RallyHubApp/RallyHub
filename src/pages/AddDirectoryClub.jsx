@@ -16,6 +16,15 @@ import { DIRECTORY_CATEGORY_FALLBACK, isClubCategory, loadDirectoryCategories } 
 
 const normalise = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
+const LISTING_TYPE_HINTS = {
+  club: 'A club, regular playing group or place where people can play.',
+  tournaments_events: 'An organiser running tournaments, competitions or standalone events.',
+  coaching: 'A coach, clinic or coaching provider.',
+  holidays: 'Pickleball holidays, camps, retreats or organised trips.',
+  equipment: 'Equipment, retail or another pickleball supplier.',
+  other: 'Another pickleball service or organisation.',
+};
+
 export default function AddDirectoryClub() {
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
   const navigate = useNavigate();
@@ -58,8 +67,32 @@ export default function AddDirectoryClub() {
 
   useEffect(() => {
     if (!user || user.role === 'admin') return;
-    setClaimantName(user.full_name || user.display_name || '');
+    setClaimantName(current => current || user.full_name || user.display_name || '');
   }, [user]);
+
+  const draftKey = user?.id ? `rallyhub-directory-add-draft-v2:${user.id}` : '';
+  useEffect(() => {
+    if (!draftKey || isSuperAdmin) return;
+    try {
+      const savedDraft = JSON.parse(localStorage.getItem(draftKey) || 'null');
+      if (!savedDraft || typeof savedDraft !== 'object') return;
+      setClubName(savedDraft.clubName || ''); setListingType(savedDraft.listingType || 'club'); setServiceArea(savedDraft.serviceArea || '');
+      setCounty(savedDraft.county || ''); setTown(savedDraft.town || ''); setPrimaryVenue(savedDraft.primaryVenue || ''); setAddress(savedDraft.address || '');
+      setVenuePostcode(savedDraft.venuePostcode || ''); setWebsite(savedDraft.website || ''); setFacebook(savedDraft.facebook || ''); setInstagram(savedDraft.instagram || '');
+      setClaimantName(savedDraft.claimantName || user?.full_name || user?.display_name || ''); setClaimantRole(savedDraft.claimantRole || ''); setClaimantPhone(savedDraft.claimantPhone || '');
+      setPublishContact(savedDraft.publishContact !== false); setNetworkUpdatesOptIn(savedDraft.networkUpdatesOptIn === true); setNotes(savedDraft.notes || '');
+    } catch {}
+  }, [draftKey, isSuperAdmin, user?.full_name, user?.display_name]);
+
+  useEffect(() => {
+    if (!draftKey || isSuperAdmin || !isAuthenticated) return undefined;
+    const timer = window.setTimeout(() => {
+      try {
+        localStorage.setItem(draftKey, JSON.stringify({clubName,listingType,serviceArea,county,town,primaryVenue,address,venuePostcode,website,facebook,instagram,claimantName,claimantRole,claimantPhone,publishContact,networkUpdatesOptIn,notes,savedAt:Date.now()}));
+      } catch {}
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [draftKey,isSuperAdmin,isAuthenticated,clubName,listingType,serviceArea,county,town,primaryVenue,address,venuePostcode,website,facebook,instagram,claimantName,claimantRole,claimantPhone,publishContact,networkUpdatesOptIn,notes]);
 
   useEffect(() => {
     let active = true;
@@ -151,7 +184,8 @@ export default function AddDirectoryClub() {
         });
         if (res.data?.error) throw new Error(res.data.error);
         if (!res.data?.listingSlug) throw new Error('The listing was created but RallyHub did not return the listing address.');
-        navigate(`/directory/${res.data.listingSlug}/edit?created=1`);
+        try { if (draftKey) localStorage.removeItem(draftKey); } catch {}
+        navigate(`/directory/${res.data.listingSlug}/edit?created=1&guided=1`);
         return;
       }
 
@@ -177,6 +211,7 @@ export default function AddDirectoryClub() {
         notes,
       });
       if (res.data?.error) throw new Error(res.data.error);
+      try { if (draftKey) localStorage.removeItem(draftKey); } catch {}
       setRequest(res.data?.request || { status: 'pending', club_name: clubName, county, town });
     } catch (err) {
       setError(err.message || 'Could not submit this listing for the directory.');
@@ -289,12 +324,15 @@ export default function AddDirectoryClub() {
                 {error && <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="listingType">What are you listing?</Label>
-                    <select id="listingType" value={listingType} onChange={e => { setListingType(e.target.value); setCounty(''); setTown(''); setPrimaryVenue(''); setAddress(''); setVenuePostcode(''); setServiceArea(''); }} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                      {formCategories.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
-                    </select>
-                    <p className="text-xs text-muted-foreground">Clubs and places to play remain the primary RallyHub Directory category.</p>
+                  <div className="space-y-3 sm:col-span-2">
+                    <Label>What are you setting up?</Label>
+                    <div role="radiogroup" aria-label="What are you setting up?" className="grid gap-2 sm:grid-cols-2">
+                      {formCategories.map(item => <label key={item.key} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${listingType===item.key?'border-primary bg-primary/10 ring-1 ring-primary/20':'border-border bg-background/40 hover:border-primary/40'}`}>
+                        <input type="radio" name="listingType" value={item.key} checked={listingType===item.key} onChange={() => { setListingType(item.key); setCounty(''); setTown(''); setPrimaryVenue(''); setAddress(''); setVenuePostcode(''); setServiceArea(''); }} className="mt-1 h-4 w-4 accent-primary" />
+                        <span><span className="block text-sm font-bold text-foreground">{item.label}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{LISTING_TYPE_HINTS[item.key] || 'A pickleball listing on RallyHub.'}</span></span>
+                      </label>)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Choose the closest fit. RallyHub only shows the questions that are relevant to that type of listing.</p>
                   </div>
                   <div className="space-y-2 sm:col-span-2">
                     <Label htmlFor="clubName">Club, business or listing name</Label>
@@ -352,9 +390,9 @@ export default function AddDirectoryClub() {
                   <h2 className="font-bold mb-4">{isSuperAdmin ? 'Listing contact' : 'About you'}</h2>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2"><Label htmlFor="claimantName">{isSuperAdmin ? <>Contact name <span className="text-muted-foreground font-normal">(optional)</span></> : 'Your name'}</Label><Input id="claimantName" value={claimantName} onChange={e => setClaimantName(e.target.value)} required={!isSuperAdmin} maxLength={160} /></div>
-                    <div className="space-y-2"><Label htmlFor="claimantRole">{isSuperAdmin ? 'Role / connection' : 'Your role / connection'}</Label><Input id="claimantRole" value={claimantRole} onChange={e => setClaimantRole(e.target.value)} placeholder="e.g. Chairperson, organiser" required={!isSuperAdmin} maxLength={160} /></div>
+                    <div className="space-y-2"><Label htmlFor="claimantRole">{isSuperAdmin ? 'Role / connection' : <>Your role / connection {!clubListing && <span className="text-muted-foreground font-normal">(optional)</span>}</>}</Label><Input id="claimantRole" value={claimantRole} onChange={e => setClaimantRole(e.target.value)} placeholder={clubListing?'e.g. Chairperson, organiser':'e.g. Organiser, travel provider'} required={!isSuperAdmin&&clubListing} maxLength={160} /></div>
                     <div className="space-y-2 sm:col-span-2"><Label htmlFor="claimantEmail">Email address {isSuperAdmin && <span className="text-muted-foreground font-normal">(email or mobile required)</span>}</Label>{isSuperAdmin ? <Input id="claimantEmail" type="email" value={claimantEmail} onChange={e => setClaimantEmail(e.target.value)} placeholder="Club contact email" required={!claimantPhone.trim()} /> : <Input id="claimantEmail" value={user?.email || ''} readOnly className="bg-background/40" />}<p className="text-xs text-muted-foreground">{isSuperAdmin ? 'Use whichever contact detail you actually have. Email alone is enough to create the unclaimed listing and send an email claim invitation.' : 'This is your signed-in RallyHub email. It is used for the review and, if you leave the public-contact option selected below, it will also appear on the approved club listing.'}</p></div>
-                    <div className="space-y-2"><Label htmlFor="claimantPhone">{isSuperAdmin ? <>Mobile / WhatsApp number <span className="text-muted-foreground font-normal">(email or mobile required)</span></> : 'Mobile number'}</Label><Input id="claimantPhone" type="tel" inputMode="tel" autoComplete="tel" value={claimantPhone} onChange={e => setClaimantPhone(e.target.value)} placeholder="e.g. 087 123 4567" required={!isSuperAdmin || !claimantEmail.trim()} maxLength={80} /><p className="text-xs text-muted-foreground">{isSuperAdmin ? 'Optional when you have an email address. Add it when available for WhatsApp outreach and later identity matching.' : 'Enter the number and continue to the next field; it is saved when you submit the form.'}</p></div>
+                    <div className="space-y-2"><Label htmlFor="claimantPhone">{isSuperAdmin ? <>Mobile / WhatsApp number <span className="text-muted-foreground font-normal">(email or mobile required)</span></> : <>Mobile number {!clubListing && <span className="text-muted-foreground font-normal">(optional)</span>}</>}</Label><Input id="claimantPhone" type="tel" inputMode="tel" autoComplete="tel" value={claimantPhone} onChange={e => setClaimantPhone(e.target.value)} placeholder="e.g. 087 123 4567" required={isSuperAdmin?!claimantEmail.trim():clubListing} maxLength={80} /><p className="text-xs text-muted-foreground">{isSuperAdmin ? 'Optional when you have an email address. Add it when available for WhatsApp outreach and later identity matching.' : clubListing ? 'Enter the number and continue to the next field; it is saved when you submit the form.' : 'Optional. Your verified RallyHub email is enough to submit a non-club listing.'}</p></div>
                   </div>
                   <label className="mt-4 flex items-start gap-3 rounded-xl border border-primary/25 bg-primary/5 p-4 cursor-pointer">
                     <input type="checkbox" checked={publishContact} onChange={e => setPublishContact(e.target.checked)} className="mt-1 h-4 w-4 accent-primary" />
@@ -367,6 +405,7 @@ export default function AddDirectoryClub() {
                   </label>}
                 </div>
 
+                {!isSuperAdmin && <p className="text-xs text-muted-foreground">Your progress is automatically saved on this device while you complete the form.</p>}
                 <Button type="submit" disabled={submitting || !!exactExisting} className="w-full sm:w-auto">
                   {submitting ? (isSuperAdmin ? 'Creating…' : 'Submitting…') : (isSuperAdmin ? 'Create unclaimed listing & continue' : 'Submit listing for review')}
                 </Button>
