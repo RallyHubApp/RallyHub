@@ -203,6 +203,7 @@ export async function prepareLogoDraft(file) {
 export default function DirectoryListingEdit() {
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
+  const guidedRequested = searchParams.get('guided') === '1';
   const seed = getClub(slug);
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
   const [baseClub, setBaseClub] = useState(seed || null);
@@ -277,7 +278,7 @@ export default function DirectoryListingEdit() {
           } catch {}
           setForm(restored);
           setBaseline(serverBaseline);
-          if (searchParams.get('guided') === '1' || String(merged?.listingType || resolvedBase?.listingType || 'club') !== 'club') setEditorMode('guided');
+          if (guidedRequested || String(merged?.listingType || resolvedBase?.listingType || 'club') !== 'club') setEditorMode('guided');
           const generatedWhatsApp = buildWhatsAppUrl(restored?.contact?.phone, resolvedBase?.county);
           setAutoWhatsApp(Boolean(generatedWhatsApp && restored?.contact?.whatsapp === generatedWhatsApp));
         }
@@ -285,7 +286,7 @@ export default function DirectoryListingEdit() {
       .catch(err => { if (active) setError(err.message || 'Could not load this listing.'); })
       .finally(() => { if (active) setLoadingListing(false); });
     return () => { active = false; };
-  }, [slug, seed, isAuthenticated, searchParams, user?.id]);
+  }, [slug, seed, isAuthenticated, guidedRequested, user?.id]);
 
   useEffect(() => {
     if (!isAuthenticated || !baseClub) return;
@@ -437,6 +438,7 @@ export default function DirectoryListingEdit() {
         const response = await base44.functions.invoke('directoryListingProfile', { action:'save', listingSlug:slug, profile:profileToSave, town:baseClub?.town || '', county:baseClub?.county || '' });
         if (response.data?.error) throw new Error(response.data.error);
         const savedProfile = mergeProfile(baseClub, response.data?.profile || profileToSave);
+        setForm(current => JSON.stringify(current) === JSON.stringify(snapshot) ? savedProfile : current);
         setBaseline(JSON.stringify(savedProfile));
         setSaved(true);
         setAutoSaveState('Saved automatically ✓');
