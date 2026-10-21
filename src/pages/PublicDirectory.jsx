@@ -280,7 +280,7 @@ export default function PublicDirectory() {
 
   const shareClub = async club => {
     const url = `${SITE_URL}/directory/${club.slug}?utm_source=directory_share&utm_medium=referral&utm_campaign=club_profile_share`;
-    const text = `${club.name} on the RallyHub Club Directory`;
+    const text = `${club.name} on the RallyHub Pickleball Directory`;
     trackSiteEvent('share_club', { clubSlug: club.slug, clubName: club.name, county: club.county, metadata: { surface: 'directory_card' } });
     if (navigator.share) {
       try {
@@ -303,9 +303,9 @@ export default function PublicDirectory() {
   const directorySchema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: 'RallyHub All-Ireland Pickleball Club Directory',
+    name: 'RallyHub Pickleball Directory',
     url: `${SITE_URL}/directory`,
-    description: `Browse ${effectiveClubs.length} current pickleball club listings in the RallyHub directory. All 32 counties of Ireland are supported.`,
+    description: `Browse ${effectiveClubs.length} pickleball listings including clubs, coaches, event organisers, holidays and suppliers.`, 
     inLanguage: 'en-IE',
     mainEntity: {
       '@type': 'ItemList',
@@ -473,7 +473,7 @@ export default function PublicDirectory() {
                   <div className="mb-4 flex items-end justify-between gap-3">
                     <div>
                       <p className="text-[12px] text-[#6a778a]">{filteredClubs.length} {clubCategoryActive ? `club${filteredClubs.length === 1 ? '' : 's'}` : `listing${filteredClubs.length === 1 ? '' : 's'}`} found{query.trim() ? ` for “${query.trim()}”` : ''}</p>
-                      <h2 className="mt-1 text-[26px] font-black tracking-[-.03em] text-[#07184c]">{clubCategoryActive && view === 'sessions' ? 'Weekly sessions' : query.trim() ? 'Best matches' : clubCategoryActive ? 'Club directory' : (selectedCategory?.pluralLabel || 'Directory listings')}</h2>
+                      <h2 className="mt-1 text-[26px] font-black tracking-[-.03em] text-[#07184c]">{clubCategoryActive && view === 'sessions' ? 'Weekly sessions' : query.trim() ? 'Best matches' : clubCategoryActive ? 'Club directory' : categoryKey==='all' ? 'RallyHub Directory' : (selectedCategory?.pluralLabel || 'Directory listings')}</h2>
                     </div>
                     <SlidersHorizontal className="h-5 w-5 text-[#8a95a5]" />
                   </div>
