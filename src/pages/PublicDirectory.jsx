@@ -400,10 +400,22 @@ export default function PublicDirectory() {
 
         <section className="bg-white">
           <div className="mx-auto max-w-[1380px] px-4 pb-2 pt-4 sm:px-6 lg:px-10 xl:px-12">
-            <div className={`grid gap-2.5 rounded-2xl border border-[#dbe6e8] bg-white p-2.5 shadow-[0_9px_25px_rgba(8,24,77,.055)] ${clubCategoryActive ? 'lg:grid-cols-[minmax(300px,1.5fr)_220px_190px_auto]' : 'lg:grid-cols-[minmax(300px,1fr)_auto]'}`}>
+            <div className="mb-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-6" data-testid="directory-category-choices">
+              {categoryOptions.map(item => {
+                const Icon = categoryIcon(item.key);
+                return <button key={item.key} type="button" onClick={()=>{setCategoryKey(item.key);setCounty('All counties');setDay('Any day');setView('clubs');}} className={`rounded-2xl border p-3 text-left transition ${categoryKey===item.key?'border-[#078e48] bg-[#eef9f3] ring-1 ring-[#078e48]/20':'border-[#dbe6e8] bg-white hover:border-[#b8dfc7]'}`}>
+                  <div className="flex items-center gap-2"><Icon className="h-4 w-4 text-[#078e48]"/><span className="text-xs font-black text-[#07184c]">{item.pluralLabel||item.label}</span></div>
+                  <p className="mt-1 text-[11px] text-[#6a778a]">{categoryCounts[item.key]||0} listed</p>
+                </button>
+              })}
+            </div>
+            <div className={`grid gap-2.5 rounded-2xl border border-[#dbe6e8] bg-white p-2.5 shadow-[0_9px_25px_rgba(8,24,77,.055)] ${clubCategoryActive ? 'lg:grid-cols-[220px_minmax(300px,1.5fr)_220px_190px_auto]' : 'lg:grid-cols-[220px_minmax(300px,1fr)_auto]'}`}>
+              <select aria-label="What are you looking for?" value={categoryKey} onChange={e=>{setCategoryKey(e.target.value);setCounty('All counties');setDay('Any day');setView('clubs')}} className="h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 text-sm font-bold text-[#1a2c58]">
+                {categoryOptions.map(item=><option key={item.key} value={item.key}>{item.pluralLabel||item.label}</option>)}
+              </select>
               <label className="relative">
                 <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-[#738096]" />
-                <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Club, town, venue or Eircode" aria-label="Search club directory" className="h-11 w-full rounded-xl border border-[#cfdde0] bg-[#fbfdfd] pl-10 pr-3 text-sm text-[#1a2c58] outline-none focus:border-[#078e48] focus:ring-2 focus:ring-[#078e48]/20" />
+                <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search clubs, coaches, holidays, suppliers, towns or venues" aria-label="Search RallyHub directory" className="h-11 w-full rounded-xl border border-[#cfdde0] bg-[#fbfdfd] pl-10 pr-3 text-sm text-[#1a2c58] outline-none focus:border-[#078e48] focus:ring-2 focus:ring-[#078e48]/20" />
               </label>
               {clubCategoryActive && <>
                 <select aria-label="Filter by county" value={county} onChange={e => setCounty(e.target.value)} className="h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 text-sm text-[#1a2c58]">
@@ -419,12 +431,7 @@ export default function PublicDirectory() {
                   ))}
                 </div>
               </>}
-              {!clubCategoryActive && <Link to="/directory/add" className="inline-flex h-11 items-center justify-center rounded-xl bg-[#078e48] px-4 text-sm font-bold text-white">Add a {selectedCategory?.label?.toLowerCase() || 'listing'}</Link>}
-            </div>
-
-            <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-none">
-              <span className="mr-1 shrink-0 text-[12px] font-extrabold text-[#07184c]">Explore</span>
-              {publicCategories.map(item => <button key={item.key} type="button" onClick={()=>{setCategoryKey(item.key);setCounty('All counties');setDay('Any day');setView('clubs');}} className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-bold transition ${categoryKey===item.key?'border-[#078e48] bg-[#078e48] text-white':'border-[#dbe6e8] bg-white text-[#56677c] hover:border-[#b8dfc7] hover:text-[#067b3f]'}`}>{item.pluralLabel||item.label}</button>)}
+              {!clubCategoryActive && <Link to="/directory/add" className="inline-flex h-11 items-center justify-center rounded-xl bg-[#078e48] px-4 text-sm font-bold text-white">Add a listing</Link>}
             </div>
 
             {clubCategoryActive && <div className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-none">
