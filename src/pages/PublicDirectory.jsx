@@ -250,6 +250,9 @@ export default function PublicDirectory() {
     .sort((a, b) => query.trim() ? (b.searchScore - a.searchScore || a.club.name.localeCompare(b.club.name)) : a.club.name.localeCompare(b.club.name))
     .map(({ club }) => club), [effectiveClubs, query, county, day, categoryKey, clubCategoryActive]);
 
+  const categoryCounts = useMemo(() => Object.fromEntries(categoryOptions.map(item => [item.key, item.key === 'all' ? effectiveClubs.length : effectiveClubs.filter(club => String(club.listingType || 'club') === item.key).length])), [categoryOptions, effectiveClubs]);
+  const categoryIcon = key => key === 'club' ? Building2 : key === 'tournaments_events' ? Trophy : key === 'coaching' ? GraduationCap : key === 'holidays' ? Plane : key === 'equipment' ? ShoppingBag : LayoutGrid;
+
   useEffect(() => {
     trackSiteEvent('directory_view', { metadata: { clubCount: clubListings.length, listingCount: effectiveClubs.length } });
   }, []);
