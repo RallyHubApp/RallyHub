@@ -714,19 +714,27 @@ Deno.serve(async(req)=>{
     }
 
     if(action==='admin_dashboard_counts'){
-      const [relationships,membershipConfigs]=await Promise.all([
-        base44.asServiceRole.entities.ClubRelationship.filter({tenant_id:tenantId,club_id:clubId},'person_id',500),
+      // ClubMembership is the only authoritative membership ledger. Neither the
+      // legacy Player roster nor ClubRelationship may determine member totals.
+      const [memberships,people,accesses,membershipConfigs]=await Promise.all([
+        base44.asServiceRole.entities.ClubMembership.filter({tenant_id:tenantId,club_id:clubId},'-created_date',500),
+        base44.asServiceRole.entities.Person.filter({tenant_id:tenantId},'-created_date',500),
+        base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:tenantId,club_id:clubId},'-approved_at',500),
         base44.asServiceRole.entities.MembershipApplicationConfig.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',50)
       ]);
-      const live=(relationships||[]).filter((r:any)=>r.relationship_type==='member'&&!String(r.source_system||'').includes('membership_qa'));
-      const activePaid=live.filter((r:any)=>r.status==='active'&&r.membership_category==='paid').length;
-      const complimentary=live.filter((r:any)=>r.status==='active'&&r.membership_category==='complimentary').length;
-      const pending=live.filter((r:any)=>r.status==='pending').length;
-      // Current membership is active members only. Pending approvals/payments are
-      // actionable follow-ups, not additional active members.
-      const currentMembers=activePaid+complimentary;
       const membershipConfig=(membershipConfigs||[]).find((c:any)=>c.status==='active')||(membershipConfigs||[])[0]||null;
-      return Response.json({success:true,counts:{currentMembers,currentPaid:activePaid,complimentary,pending,unpaid:pending},currentSeason:membershipConfig?.season_label||null});
+      const currentSeason=membershipConfig?.season_label||null;
+      const qaPeople=new Set((people||[]).filter((p:any)=>String(p.source_system||'').includes('membership_qa')||(p.data_quality_flags||[]).includes('qa_test_record')).map((p:any)=>String(p.id)));
+      const scoped=(memberships||[]).filter((m:any)=>m.person_id&&!qaPeople.has(String(m.person_id))&&!String(m.source_system||'').includes('membership_qa')&&!(m.data_quality_flags||[]).includes('qa_test_record')&&(!currentSeason||m.membership_season===currentSeason));
+      const active=scoped.filter((m:any)=>m.relationship_type==='member'&&m.membership_status==='paid_active'&&['paid','not_required'].includes(m.payment_status));
+      const activePeople=new Set(active.map((m:any)=>String(m.person_id)));
+      const approvedLinkedPeople=new Set((accesses||[]).filter((a:any)=>a.status==='active'&&a.person_id&&(!a.starts_at||Date.parse(a.starts_at)<=Date.now())&&(!a.ends_at||Date.parse(a.ends_at)>=Date.now())).map((a:any)=>String(a.person_id)));
+      const paid=active.filter((m:any)=>m.payment_status==='paid').length;
+      const complimentary=active.filter((m:any)=>m.payment_status==='not_required').length;
+      const linked=[...activePeople].filter(id=>approvedLinkedPeople.has(id)).length;
+      const pending=scoped.filter((m:any)=>m.relationship_type==='member'&&m.membership_status==='pending_payment').length;
+      const currentMembers=activePeople.size;
+      return Response.json({success:true,counts:{currentMembers,currentPaid:paid,complimentary,pending,unpaid:pending,linked,unlinked:Math.max(0,currentMembers-linked),source:'ClubMembership',season:currentSeason},currentSeason});
     }
 
     if(action==='admin_list'){
@@ -822,7 +830,7 @@ Deno.serve(async(req)=>{
           include_in_rallyhub:m.include_in_rallyhub!==false
         };
       });
-      const activeRows=rows.filter((r:any)=>r.membership_status!=='former_member'&&r.relationship_type==='member');
+      const activeRows=rows.filter((r:any)=>r.membership_status==='paid_active'&&r.relationship_type==='member'&&['paid','not_required'].includes(r.payment_status));
       const complimentaryRows=activeRows.filter((r:any)=>r.payment_status==='not_required'||String(r.membership_type||'').toLowerCase().includes('complimentary'));
       const counts={
         total:rows.length,

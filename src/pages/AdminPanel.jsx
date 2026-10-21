@@ -190,6 +190,18 @@ export default function AdminPanel() {
     enabled: canAccessAdmin
   });
 
+  const { data: canonicalMembershipSummary = null, isLoading: canonicalMembershipLoading, isError: canonicalMembershipError } = useQuery({
+    queryKey: ['clare-canonical-membership-summary', user?.active_tenant_id, user?.active_club_id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('membershipRecord', { action: 'admin_dashboard_counts' });
+      if (res.data?.error || !res.data?.success) throw new Error(res.data?.error || 'Could not verify membership totals');
+      return res.data.counts;
+    },
+    enabled: canAccessAdmin && !!user?.active_tenant_id && !!user?.active_club_id,
+    refetchInterval: 60000,
+    refetchOnWindowFocus: true
+  });
+
   const { data: clubMembershipRelationships = [] } = useQuery({
     queryKey: ['club-membership-relationships', user?.active_tenant_id, user?.active_club_id],
     queryFn: () => base44.entities.ClubRelationship.filter({
@@ -1367,13 +1379,6 @@ Brian`;
   const activeClubId = user?.active_club_id || '';
   const activeTenantId = user?.active_tenant_id || '';
   const clubPlayers = players.filter(p => (!activeClubId || p.club_id === activeClubId) && (!activeTenantId || p.tenant_id === activeTenantId));
-  const currentClubPlayers = clubPlayers.filter(p => p.relationship_type === 'member' && p.status === 'Active');
-  const linkedCount = currentClubPlayers.filter(p => p.user_id).length;
-  const clubPlayerCount = currentClubPlayers.length;
-  const paidActiveCount = clubMembershipRelationships.filter(r => r.status === 'active' && r.membership_category === 'paid').length;
-  const complimentaryActiveCount = clubMembershipRelationships.filter(r => r.status === 'active' && r.membership_category === 'complimentary').length;
-  const pendingMemberCount = clubMembershipRelationships.filter(r => r.status === 'pending').length;
-  const unlinkedCount = Math.max(0, clubPlayerCount - linkedCount);
   const directoryClaimIdentityLooksComplete = claim => {
     const name = String(claim?.claimant_name || '').trim().toLowerCase().replace(/[^a-z0-9' -]+/g, ' ').replace(/\s+/g, ' ');
     const parts = name.split(' ').filter(Boolean);
@@ -1681,23 +1686,23 @@ Brian`;
           <GlassCard className="min-h-[112px] p-3 sm:p-4"><p className="text-2xl sm:text-3xl font-black text-amber-500">{directoryPlayerNetwork.counts?.counties || 0}</p><p className="mt-1 text-xs sm:text-sm font-semibold">Counties represented</p><p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">National reach</p></GlassCard>
         </div>
       ) : activeAdminTab === 'directory-contacts' || activeAdminTab === 'directory-analytics' ? null : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          <GlassCard role="button" tabIndex={0} onClick={() => { window.location.href='/app/membership'; }} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.location.href='/app/membership'; } }} delay={0} className="text-center cursor-pointer select-none transition hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-            <p className="text-2xl font-bold text-foreground">{clubPlayerCount}</p>
-            <p className="text-xs text-muted-foreground">Current Club Members</p>
-            <p className="text-[10px] text-muted-foreground/70 mt-1">{paidActiveCount} paid · {complimentaryActiveCount} complimentary · {pendingMemberCount} pending</p>
-          </GlassCard>
-          <GlassCard role="button" tabIndex={0} onClick={() => setSearchParams({ tab:'linking' })} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSearchParams({ tab:'linking' }); } }} delay={0.05} className="text-center cursor-pointer select-none transition hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-            <p className="text-2xl font-bold text-primary">{linkedCount}</p>
-            <p className="text-xs text-muted-foreground">Linked RallyHub Accounts</p>
-            <p className="text-[10px] text-muted-foreground/70 mt-1">Tap to manage account links</p>
-          </GlassCard>
-          <GlassCard role="button" tabIndex={0} onClick={() => setSearchParams({ tab:'linking' })} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSearchParams({ tab:'linking' }); } }} delay={0.1} className="text-center cursor-pointer select-none transition hover:border-amber-500/40 hover:bg-amber-500/5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-            <p className="text-2xl font-bold text-yellow-400">{unlinkedCount}</p>
-            <p className="text-xs text-muted-foreground">Members Not Yet Linked</p>
-            <p className="text-[10px] text-muted-foreground/70 mt-1">Tap to review linking</p>
-          </GlassCard>
-        </div>
+        <GlassCard role="button" tabIndex={0} onClick={() => { window.location.href='/app/membership'; }} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.location.href='/app/membership'; } }} className="cursor-pointer hover:border-primary/40 hover:bg-primary/5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Clare Pickleball · Current members</p>
+              <p className="text-3xl font-black text-foreground mt-1">{canonicalMembershipError ? 'Unavailable' : canonicalMembershipLoading || !canonicalMembershipSummary ? '…' : canonicalMembershipSummary.currentMembers}</p>
+              <p className="text-xs text-muted-foreground mt-1">One source: current-season ClubMembership records · open membership register</p>
+            </div>
+            {canonicalMembershipSummary && !canonicalMembershipError && <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+              <span><strong>{canonicalMembershipSummary.currentPaid}</strong> paid</span>
+              <span><strong>{canonicalMembershipSummary.complimentary}</strong> complimentary</span>
+              <span><strong>{canonicalMembershipSummary.pending}</strong> awaiting payment <span className="text-xs text-muted-foreground">(not included)</span></span>
+              <span><strong>{canonicalMembershipSummary.linked}</strong> club app connected</span>
+              <span><strong>{canonicalMembershipSummary.unlinked}</strong> not connected</span>
+            </div>}
+          </div>
+          {canonicalMembershipError && <p className="text-xs text-destructive mt-2">Unable to verify membership register. Counts are deliberately hidden rather than displaying stale Player totals.</p>}
+        </GlassCard>
       )}
 
       <Tabs value={activeAdminTab} onValueChange={value => {
