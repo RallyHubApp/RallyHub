@@ -100,6 +100,10 @@ export function buildDirectorySetupProgress({ listingType='club', profile={}, ev
       detail: visibility === 'public' ? 'Public listing ready' : 'Preview everything, then publish',
     },
   };
+  const requiredBeforeReview = blueprint.steps.filter(id => id !== 'review' && !states[id]?.optional);
+  states.review.complete = visibility === 'public' && requiredBeforeReview.every(id => states[id]?.complete);
+  states.review.detail = states.review.complete ? 'Public listing ready' : (visibility === 'public' ? 'Review the items still needing attention' : 'Preview everything, then publish');
+
   const steps = blueprint.steps.map((id, index) => ({
     id,
     index,
