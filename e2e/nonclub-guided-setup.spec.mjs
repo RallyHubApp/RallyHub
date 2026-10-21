@@ -96,7 +96,7 @@ test('non-club guided editor has five simple steps and can publish its private s
   await expect(page.locator('#basics')).toBeVisible();
   await page.getByRole('button',{name:'Continue',exact:true}).click();
   await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 2 of 5: Contact & social');
-  await expect(page.getByLabel('Website (optional)')).toHaveValue('https://fourpointtravelgroup.com');
+  await expect(page.getByLabel('Website')).toHaveValue('https://fourpointtravelgroup.com');
   await page.getByRole('button',{name:'Continue',exact:true}).click();
   await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 3 of 5: Where you operate');
   await expect(page.getByLabel(/Area, destination or service coverage/)).toHaveValue('Ireland & Portugal');
