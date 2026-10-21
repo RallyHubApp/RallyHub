@@ -1298,6 +1298,7 @@ Brian`;
       if (res.data?.error) throw new Error(res.data.error);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['all-users'] }),
+        queryClient.invalidateQueries({ queryKey: ['all-club-user-accesses'] }),
         queryClient.invalidateQueries({ queryKey: ['players'] }),
         queryClient.invalidateQueries({ queryKey: ['admin-membership-records'] }),
         queryClient.invalidateQueries({ queryKey: ['club-membership-relationships'] }),
@@ -2796,6 +2797,8 @@ Brian`;
                   </p>
                   {sectionUsers.map((u, i) => {
                     const candidate = membershipCandidateForUser(u);
+                    const hasActiveClubAccess = allClubUserAccesses.some(access => access.user_id === u.id && access.status === 'active' && access.club_id === user?.active_club_id);
+                    const fullyConnected = u.approval_status === 'approved' && hasActiveClubAccess && !!u.active_club_id;
                     const nameMismatch = !!candidate &&
                       normaliseIdentityName(u.full_name || u.display_name) &&
                       normaliseIdentityName(candidate.full_name) &&
@@ -2841,6 +2844,11 @@ Brian`;
                           </div>
                         </div>
 
+                        {u.approval_status === 'approved' && (
+                          <div className={`text-xs rounded-md border px-3 py-2 ${fullyConnected ? 'border-green-500/30 bg-green-500/5 text-green-700 dark:text-green-300' : 'border-amber-400/30 bg-amber-500/5 text-amber-800 dark:text-amber-200'}`}>
+                            {fullyConnected ? '✓ Approved and connected to Clare Pickleball. This account has an active Club access grant.' : '⚠ Account marked Approved but Club access is not complete. Use Connect membership below, or review the member’s existing record.'}
+                          </div>
+                        )}
                         {approvalFeedback?.userId === u.id && (
                           <p role="status" aria-live="polite" className={`rounded-lg border px-3 py-2 text-xs font-medium ${approvalFeedback.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : approvalFeedback.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>{approvalFeedback.text}</p>
                         )}
