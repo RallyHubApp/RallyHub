@@ -108,7 +108,7 @@ test('non-club guided editor has five simple steps and can publish its private s
   await expect(page.getByRole('button',{name:'Publish listing'})).toBeVisible();
   await page.getByRole('button',{name:'Publish listing'}).click();
   await expect.poll(()=>calls.some(c=>c.name==='directoryClaim'&&c.body.action==='set_visibility'&&c.body.visibility==='public')).toBeTruthy();
-  await expect(page.getByRole('button',{name:'View public listing'})).toBeVisible();
+  await expect(page.locator('#review').getByRole('button',{name:'View public listing'})).toBeVisible();
 });
 
 test('guided holiday event reuses organiser details, stores collaborator on the one event and publishes listing with it',async({page})=>{
