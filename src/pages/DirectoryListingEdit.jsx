@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { CircleMarker, MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
@@ -21,6 +21,7 @@ import DirectorySpondPanel from '@/components/directory/DirectorySpondPanel';
 import DirectoryAccessPanel from '@/components/directory/DirectoryAccessPanel';
 import RallyHubClubPreviewLock from '@/components/directory/RallyHubClubPreviewLock';
 import ClubFeedbackPanel from '@/components/directory/ClubFeedbackPanel';
+import { buildDirectorySetupProgress, DIRECTORY_SETUP_BLUEPRINTS, setupStepLabel } from '@/lib/directory-guided-setup';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const emptyVenue = index => ({
@@ -202,6 +203,7 @@ export async function prepareLogoDraft(file) {
 
 export default function DirectoryListingEdit() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const guidedRequested = searchParams.get('guided') === '1';
   const seed = getClub(slug);
@@ -229,6 +231,9 @@ export default function DirectoryListingEdit() {
   const [validation, setValidation] = useState([]);
   const [editorMode, setEditorMode] = useState('choose');
   const [guidedStep, setGuidedStep] = useState(0);
+  const [guidedOverview, setGuidedOverview] = useState(true);
+  const [setupEvents, setSetupEvents] = useState([]);
+  const [loadingSetupEvents, setLoadingSetupEvents] = useState(false);
   const [autoSaveState, setAutoSaveState] = useState('');
   const autoSaveInFlight = useRef(false);
   const returnTo = useMemo(() => `/directory/${slug}/edit`, [slug]);
@@ -237,19 +242,23 @@ export default function DirectoryListingEdit() {
   const isClaimed = access?.listing?.verificationStatus === 'verified';
   const listingType = String(form?.listingType || baseClub?.listingType || 'club');
   const isClubListing = listingType === 'club';
-  const guidedSections = isClubListing ? [
-    { id: 'basics', label: 'Club details' },
-    { id: 'contact', label: 'Contact information' },
-    { id: 'venues', label: 'Playing venues' },
-    { id: 'sessions', label: 'Weekly sessions' },
-    { id: 'events', label: 'Events and review' },
-  ] : [
-    { id: 'basics', label: 'About you' },
-    { id: 'contact', label: 'Contact & social' },
-    { id: 'location', label: 'Where you operate' },
-    { id: 'events', label: 'Your event' },
-    { id: 'review', label: 'Review & finish' },
-  ];
+  const blueprint = DIRECTORY_SETUP_BLUEPRINTS[listingType] || DIRECTORY_SETUP_BLUEPRINTS.other;
+  const guidedSections = blueprint.steps.map(id => ({ id, label: setupStepLabel(listingType, id) }));
+  const setupProgress = useMemo(() => buildDirectorySetupProgress({ listingType, profile:form || {}, events:setupEvents, visibility:listingVisibility }), [listingType, form, setupEvents, listingVisibility]);
+  const firstName = String(user?.full_name || user?.display_name || '').trim().split(/\s+/)[0] || '';
+  const guidedSectionVisible = id => editorMode !== 'guided' || (!guidedOverview && guidedSections[guidedStep]?.id === id);
+  const openGuidedStep = step => {
+    if (!step) return;
+    if (step.id === 'events') {
+      const eventId = step.event?.id || setupProgress.firstEvent?.id || '';
+      navigate(`/directory/${slug}/events?guided=1${eventId ? `&edit=${encodeURIComponent(eventId)}` : ''}`);
+      return;
+    }
+    const index = guidedSections.findIndex(section => section.id === step.id);
+    setGuidedStep(index >= 0 ? index : 0);
+    setGuidedOverview(false);
+    window.scrollTo({ top:0, behavior:'smooth' });
+  };
   const advanceGuided = async () => {
     if (saving) return;
     if (dirty) {
@@ -258,7 +267,7 @@ export default function DirectoryListingEdit() {
       if (!ok) return;
     }
     if (guidedStep < guidedSections.length - 1) setGuidedStep(value => value + 1);
-    else viewPublicListing();
+    else setGuidedOverview(true);
   };
 
   useEffect(() => {
