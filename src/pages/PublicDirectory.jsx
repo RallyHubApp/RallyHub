@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { directoryClubs, irelandCounties, weekDays } from '@/data/directorySeed';
-import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, Check, Share2, BellRing } from 'lucide-react';
+import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, Check, Share2, BellRing, Trophy, GraduationCap, Plane, ShoppingBag, LayoutGrid } from 'lucide-react';
 import Seo, { SITE_URL } from '@/components/public/Seo';
 import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
 import PublicDirectoryLogo from '@/components/directory/PublicDirectoryLogo';
@@ -170,7 +170,7 @@ export default function PublicDirectory() {
   const [county, setCounty] = useState('All counties');
   const [day, setDay] = useState('Any day');
   const [view, setView] = useState('clubs');
-  const [categoryKey, setCategoryKey] = useState('club');
+  const [categoryKey, setCategoryKey] = useState(searchParams.get('category') || 'all');
   const [categories, setCategories] = useState(DIRECTORY_CATEGORY_FALLBACK);
   const [directoryState, setDirectoryState] = useState({});
   const [shareCopiedSlug, setShareCopiedSlug] = useState('');
