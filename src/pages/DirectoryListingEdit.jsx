@@ -236,6 +236,9 @@ export default function DirectoryListingEdit() {
   const [setupEvents, setSetupEvents] = useState([]);
   const [loadingSetupEvents, setLoadingSetupEvents] = useState(false);
   const [setupEventsLoadedFor, setSetupEventsLoadedFor] = useState('');
+  const [setupContext, setSetupContext] = useState({});
+  const [identityChoice, setIdentityChoice] = useState('');
+  const [identityCustom, setIdentityCustom] = useState('');
   const [autoSaveState, setAutoSaveState] = useState('');
   const autoSaveInFlight = useRef(false);
   const continueAutoOpened = useRef(false);
@@ -246,8 +249,11 @@ export default function DirectoryListingEdit() {
   const listingType = String(form?.listingType || baseClub?.listingType || 'club');
   const isClubListing = listingType === 'club';
   const blueprint = DIRECTORY_SETUP_BLUEPRINTS[listingType] || DIRECTORY_SETUP_BLUEPRINTS.other;
-  const guidedSections = blueprint.steps.map(id => ({ id, label: setupStepLabel(listingType, id) }));
-  const setupProgress = useMemo(() => buildDirectorySetupProgress({ listingType, profile:form || {}, events:setupEvents, visibility:listingVisibility }), [listingType, form, setupEvents, listingVisibility]);
+  const setupProgress = useMemo(() => buildDirectorySetupProgress({ listingType, profile:form || {}, events:setupEvents, visibility:listingVisibility, setup:setupContext }), [listingType, form, setupEvents, listingVisibility, setupContext]);
+  const guidedSections = setupProgress.steps.map(step => ({ id:step.id, label:step.label }));
+  const identitySetup = setupContext?.identity || {};
+  const identityCandidates = Array.isArray(identitySetup?.candidates) ? identitySetup.candidates.map(item => typeof item === 'string' ? {name:item} : item).filter(item => String(item?.name || '').trim()) : [];
+  const identityPublicName = identityChoice === '__custom' ? identityCustom.trim() : identityChoice === '__own' ? String(identitySetup?.personName || user?.full_name || user?.display_name || '').trim() : identityChoice.trim();
   const firstName = String(user?.full_name || user?.display_name || '').trim().split(/\s+/)[0] || '';
   const guidedSectionVisible = id => editorMode !== 'guided' || (!guidedOverview && guidedSections[guidedStep]?.id === id);
   const openGuidedStep = step => {
@@ -262,8 +268,39 @@ export default function DirectoryListingEdit() {
     setGuidedOverview(false);
     window.scrollTo({ top:0, behavior:'smooth' });
   };
+  const confirmIdentity = async () => {
+    const publicName = identityPublicName;
+    if (!publicName) { setError('Choose the public name you want players to see.'); return false; }
+    setSaving(true); setError('');
+    try {
+      const res = await base44.functions.invoke('directoryListingProfile', { action:'confirm_identity', listingSlug:slug, publicName });
+      if (res.data?.error) throw new Error(res.data.error);
+      const nextForm = { ...(form || {}), name:publicName };
+      setForm(nextForm);
+      setBaseline(JSON.stringify(nextForm));
+      setSetupContext(res.data?.setup || { ...setupContext, identity:{ ...identitySetup, requiresConfirmation:false, confirmed:true, selectedPublicName:publicName } });
+      setSaved(true);
+      invalidatePublicDirectoryCache();
+      return true;
+    } catch (err) {
+      setError(err?.message || 'Could not confirm the public name.');
+      return false;
+    } finally { setSaving(false); }
+  };
+
   const advanceGuided = async () => {
     if (saving) return;
+    if (guidedSections[guidedStep]?.id === 'identity') {
+      const ok = await confirmIdentity();
+      if (!ok) return;
+      const nextProgress = buildDirectorySetupProgress({ listingType, profile:{ ...(form || {}), name:identityPublicName }, events:setupEvents, visibility:listingVisibility, setup:{ ...setupContext, identity:{ ...identitySetup, requiresConfirmation:false, confirmed:true, selectedPublicName:identityPublicName } } });
+      const next = nextProgress.firstIncomplete;
+      if (next?.id === 'events') { openGuidedStep(next); return; }
+      const nextIndex = guidedSections.findIndex(section => section.id === next?.id);
+      if (nextIndex >= 0) setGuidedStep(nextIndex);
+      else setGuidedOverview(true);
+      return;
+    }
     if (dirty) {
       if (!validate()) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
       const ok = await save();
@@ -293,6 +330,9 @@ export default function DirectoryListingEdit() {
           setForm(restored);
           setBaseline(serverBaseline);
           setListingVisibility(res.data?.visibility || 'public');
+          setSetupContext(res.data?.setup || {});
+          const loadedIdentity = res.data?.setup?.identity || {};
+          if (loadedIdentity?.confirmed && loadedIdentity?.selectedPublicName) setIdentityChoice(loadedIdentity.selectedPublicName);
           if (guidedRequested || String(merged?.listingType || resolvedBase?.listingType || 'club') !== 'club') setEditorMode('guided');
           const generatedWhatsApp = buildWhatsAppUrl(restored?.contact?.phone, resolvedBase?.county);
           setAutoWhatsApp(Boolean(generatedWhatsApp && restored?.contact?.whatsapp === generatedWhatsApp));
