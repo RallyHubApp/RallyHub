@@ -2852,7 +2852,7 @@ Brian`;
                         {approvalFeedback?.userId === u.id && (
                           <p role="status" aria-live="polite" className={`rounded-lg border px-3 py-2 text-xs font-medium ${approvalFeedback.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : approvalFeedback.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>{approvalFeedback.text}</p>
                         )}
-                        {candidate && (
+                        {candidate && !fullyConnected && (
                           <div className={`rounded-lg border p-3 ${nameMismatch ? 'border-amber-400/40 bg-amber-500/10' : 'border-primary/25 bg-primary/5'}`}>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                               <div className="min-w-0">
