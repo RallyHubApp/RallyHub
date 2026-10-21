@@ -25,6 +25,8 @@ test('mobile guided and direct modes', async ({page}) => {
  await page.goto('/directory/clare-pickleball/edit?access_token=e2e');
  await expect(page.getByTestId('directory-editor-mode')).toBeVisible();
  await page.getByRole('button',{name:'Guided setup'}).click();
+ await expect(page.getByTestId('directory-guided-overview')).toBeVisible();
+ await page.getByTestId('setup-step-basics').click();
  await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 1 of 5');
  await expect(page.locator('#basics')).toBeVisible();
  await expect(page.locator('#sessions')).toBeHidden();
@@ -36,7 +38,7 @@ test('mobile guided and direct modes', async ({page}) => {
  await page.getByRole('button',{name:'Edit directly'}).click();
  await expect(page.locator('#sessions')).toBeVisible();
  await page.getByRole('button',{name:'Guided setup'}).click();
- await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 1 of 5');
+ await expect(page.getByTestId('directory-guided-overview')).toBeVisible();
  expect(saves).toBe(0);
 });
 
