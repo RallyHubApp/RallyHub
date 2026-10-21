@@ -981,9 +981,9 @@ export default function DirectoryListingEdit() {
                     )}
                   </div>
                   {!isClubListing && editorMode === 'guided' && <>
-                    <div className="space-y-2"><Label>Website <span className="text-muted-foreground font-normal">(optional)</span></Label><Input value={form.website || ''} onChange={e => setField('website', e.target.value)} placeholder="https://…" /></div>
-                    <div className="space-y-2"><Label>Facebook <span className="text-muted-foreground font-normal">(optional)</span></Label><Input type="url" value={form.facebook || ''} onChange={e => setField('facebook', e.target.value)} placeholder="https://facebook.com/…" /></div>
-                    <div className="space-y-2"><Label>Instagram <span className="text-muted-foreground font-normal">(optional)</span></Label><Input type="url" value={form.instagram || ''} onChange={e => setField('instagram', e.target.value)} placeholder="https://instagram.com/…" /></div>
+                    <div className="space-y-2"><Label>Website <span className="text-muted-foreground font-normal">(optional)</span></Label><Input aria-label="Website" value={form.website || ''} onChange={e => setField('website', e.target.value)} placeholder="https://…" /></div>
+                    <div className="space-y-2"><Label>Facebook <span className="text-muted-foreground font-normal">(optional)</span></Label><Input aria-label="Facebook" type="url" value={form.facebook || ''} onChange={e => setField('facebook', e.target.value)} placeholder="https://facebook.com/…" /></div>
+                    <div className="space-y-2"><Label>Instagram <span className="text-muted-foreground font-normal">(optional)</span></Label><Input aria-label="Instagram" type="url" value={form.instagram || ''} onChange={e => setField('instagram', e.target.value)} placeholder="https://instagram.com/…" /></div>
                   </>}
                 </div>
               </section>
@@ -991,7 +991,7 @@ export default function DirectoryListingEdit() {
               {!isClubListing && <section id="location" style={{ display: editorMode !== 'guided' || guidedSections[guidedStep]?.id !== 'location' ? 'none' : undefined }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><MapPin className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Where do you operate?</h2></div>
                 <p className="text-sm text-muted-foreground">Keep this broad if you run trips or events in different places. The individual event will hold its own exact venue and destination.</p>
-                <div className="space-y-2"><Label>Area, destination or service coverage <span className="text-muted-foreground font-normal">(optional)</span></Label><Input value={form.serviceArea || ''} onChange={e => setField('serviceArea', e.target.value)} placeholder="e.g. Ireland & Portugal, European pickleball holidays, Nationwide" /><p className="text-xs text-muted-foreground">This describes your overall service, not the location of one particular event.</p></div>
+                <div className="space-y-2"><Label>Area, destination or service coverage <span className="text-muted-foreground font-normal">(optional)</span></Label><Input aria-label="Area, destination or service coverage" value={form.serviceArea || ''} onChange={e => setField('serviceArea', e.target.value)} placeholder="e.g. Ireland & Portugal, European pickleball holidays, Nationwide" /><p className="text-xs text-muted-foreground">This describes your overall service, not the location of one particular event.</p></div>
               </section>}
 
               {!isClubListing && <section id="events" style={{ display: editorMode !== 'guided' || guidedSections[guidedStep]?.id !== 'events' ? 'none' : undefined }} className="rounded-2xl border border-primary/25 bg-primary/10 p-6 space-y-4 scroll-mt-24">
