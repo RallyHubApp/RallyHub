@@ -2787,7 +2787,10 @@ Brian`;
             {['pending', 'approved', 'rejected'].map(section => {
               const sectionUsers = platformApprovalUsers.filter(u => {
                 const s = u.approval_status || 'pending';
-                return s === section;
+                if (s !== section) return false;
+                // Completed, linked accounts belong in Users & Roles, not the approvals work queue.
+                if (section === 'approved' && u.active_club_id && allClubUserAccesses.some(access => access.user_id === u.id && access.status === 'active' && access.club_id === user?.active_club_id)) return false;
+                return true;
               });
               if (sectionUsers.length === 0) return null;
               return (
