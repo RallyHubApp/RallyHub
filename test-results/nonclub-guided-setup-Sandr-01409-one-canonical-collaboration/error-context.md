@@ -12,18 +12,16 @@
 # Error details
 
 ```
-Error: expect(page).toHaveURL(expected) failed
+Error: expect(locator).toHaveValue(expected) failed
 
-Expected pattern: /\/directory\/sandras-pickleball-passports\/events\?guided=1&edit=event-sandra/
-Received string:  "http://127.0.0.1:5173/directory/sandras-pickleball-passports/events?guided=1"
+Locator: getByLabel('Fee / price text')
+Expected: "£815 / €950 per person, based on two sharing a one-bedroom apartment."
 Timeout: 3000ms
+Error: element(s) not found
 
 Call log:
-  - Expect "toHaveURL" with timeout 3000ms
-    4 × locator resolved to <html lang="en" data-theme="light" data-appearance="auto">…</html>
-      - unexpected value "http://127.0.0.1:5173/directory/sandras-pickleball-passports/edit?guided=1&continue=1"
-    5 × locator resolved to <html lang="en" data-theme="light" data-appearance="auto">…</html>
-      - unexpected value "http://127.0.0.1:5173/directory/sandras-pickleball-passports/events?guided=1"
+  - Expect "toHaveValue" getByLabel('Fee / price text') with timeout 3000ms
+  - waiting for getByLabel('Fee / price text')
 
 ```
 
@@ -63,19 +61,22 @@ Call log:
   - heading "Events · Sandra's Pickleball Passports" [level=1]
   - paragraph: Create and maintain public RallyHub events here. The editor is the same one clubs use inside RallyHub Club, so there is nothing new to relearn later.
   - text: Listing ✓ → Event → Preview → Live
-  - paragraph: We’ve already started your event for you.
-  - paragraph: Open it, check the details and add anything else you want players to know.
-  - button "Continue editing event"
+  - paragraph: Your listing details are ready. Add the event you want players to see.
+  - paragraph: Your public organiser email, phone and website are reused below where available. When you publish the event, RallyHub will also make your organiser listing live.
   - paragraph: The same seven-step event editor everywhere
   - paragraph: Basics → Artwork → Registration → Who is it for? → Event information → Audience → Preview & publish.
   - link "Events Quick Start Guide":
     - /url: /events/quick-start
   - img
-  - heading "Create event" [level=2]
+  - 'heading "Editing: Sandra''s Pickleball Passports · Carvoeiro, Portugal" [level=2]'
+  - button "Close editor":
+    - img
+    - text: Close editor
+  - paragraph: Edit the canonical event once; member and public views use the same record.
   - paragraph: 1 · Basics
   - paragraph: The information players need to identify the event quickly.
   - text: Event name
-  - textbox "Event name"
+  - textbox "Event name": Sandra's Pickleball Passports · Carvoeiro, Portugal
   - text: Event type
   - combobox "Event type":
     - option "Tournament"
@@ -95,9 +96,9 @@ Call log:
     - option "Outdoor"
     - option "Indoor / Outdoor"
   - text: Starts
-  - textbox "Starts"
+  - textbox "Starts": 2027-05-14
   - text: Ends
-  - textbox "Ends"
+  - textbox "Ends": 2027-05-18
   - text: Start time
   - textbox "Start time"
   - text: End time
@@ -108,13 +109,15 @@ Call log:
   - text: Venue / location
   - textbox "Venue / location":
     - /placeholder: e.g. Lagan Valley LeisurePlex, Lisburn
+    - text: Rocha Brava Racquet Club, Carvoeiro
   - text: County / region
-  - textbox "County / region"
+  - textbox "County / region": Algarve
   - text: Country
-  - textbox "Country"
+  - textbox "Country": Portugal
   - text: Short public summary
   - textbox "Short public summary":
     - /placeholder: Two or three sentences for the public listing and event page.
+    - text: Four nights in Carvoeiro with 18 hours of hosted pickleball and coaching, welcome drinks, a three-course group dinner and a fun tournament at Rocha Brava Racquet Club.
   - paragraph: 2 · Artwork
   - paragraph: Reuse the same poster for the full event page and a separately positioned card crop.
   - paragraph: Event poster / artwork
@@ -124,9 +127,9 @@ Call log:
   - textbox "Event webpage URL":
     - /placeholder: https://pickleballireland.ie/events/
     - text: https://pickleballireland.ie/events/
-  - button "Find event poster" [disabled]
+  - button "Find event poster"
   - button "Find events on this website"
-  - button "Run live poster verification" [disabled]
+  - button "Run live poster verification"
   - text: Checks discovery, real upload and SHA-256 read-back without changing the event.
   - textbox "Original poster URL":
     - /placeholder: Paste an original poster image URL
@@ -155,13 +158,10 @@ Call log:
     - option "Cancelled"
   - text: “Event full” removes the normal registration action and clearly marks the public listing. Registration method
   - combobox "Registration method":
-    - option "External booking link" [selected]
+    - option "External booking link"
     - option "RallyHub booking"
-    - option "Contact organiser"
+    - option "Contact organiser" [selected]
     - option "No registration required"
-  - text: Registration URL
-  - textbox "Registration URL":
-    - /placeholder: https://…
   - text: Registration opens
   - textbox "Registration opens"
   - text: Registration closes
@@ -169,6 +169,7 @@ Call log:
   - text: Entry fee / fee text
   - textbox "Entry fee / fee text":
     - /placeholder: e.g. €45 per event
+    - text: £815 / €950 per person, based on two sharing a one-bedroom apartment.
   - text: Capacity
   - spinbutton "Capacity"
   - checkbox "Waitlist available when full"
@@ -208,9 +209,9 @@ Call log:
   - text: General event description
   - textbox "General event description"
   - text: Eligibility & levels
-  - textbox "Eligibility & levels"
+  - textbox "Eligibility & levels": Designed for pickleball-loving women aged 60+.
   - text: Player information
-  - textbox "Player information"
+  - textbox "Player information": Come alone or with a friend. Non-playing partners are welcome. Single supplements and additional nights are available on request. Flights and transfers are extra.
   - text: Fees & cancellation
   - textbox "Fees & cancellation"
   - paragraph: Collaboration / event partners (optional)
@@ -218,6 +219,16 @@ Call log:
   - button "Add collaborator":
     - img
     - text: Add collaborator
+  - textbox "Collaborator 1 name":
+    - /placeholder: e.g. Pickleball Escapes
+    - text: Pickleball Escapes
+  - textbox "Collaborator 1 role":
+    - /placeholder: e.g. In collaboration with
+    - text: In collaboration with
+  - textbox "Collaborator 1 link":
+    - /placeholder: Website or RallyHub listing URL
+  - button "Remove collaborator 1":
+    - img
   - text: Organiser email
   - textbox "Organiser email":
     - /placeholder: organiser@example.com
@@ -239,7 +250,7 @@ Call log:
     - img
     - text: Add day
   - text: Official/source URL
-  - textbox "Official/source URL"
+  - textbox "Official/source URL": https://www.instagram.com/p/Dewzng0O6j2/
   - text: Map/directions URL
   - textbox "Map/directions URL"
   - text: Latitude
@@ -250,7 +261,7 @@ Call log:
   - paragraph: Directory organisers publish the same canonical event to RallyHub public Events. If you later move into RallyHub Club, the member options appear here in the same place.
   - checkbox "Show to club members and in their Play calendar (available with RallyHub Club)" [disabled]
   - text: Show to club members and in their Play calendar (available with RallyHub Club)
-  - checkbox "Publish on RallyHub public Events" [checked]
+  - checkbox "Publish on RallyHub public Events"
   - text: Publish on RallyHub public Events
   - checkbox "Feature on member home (available with RallyHub Club)" [disabled]
   - text: Feature on member home (available with RallyHub Club)
@@ -265,9 +276,9 @@ Call log:
   - button "Save draft":
     - img
     - text: Save draft
-  - button "Publish to RallyHub Events":
+  - button "Save & update public event" [disabled]:
     - img
-    - text: Publish to RallyHub Events
+    - text: Save & update public event
   - complementary:
     - heading "Draft events" [level=2]
     - text: 1 Draft
@@ -304,14 +315,6 @@ Call log:
 # Test source
 
 ```ts
-  23  | };
-  24  | 
-  25  | async function installBackend(page,{forAdd=false}={}){
-  26  |   await page.addInitScript(()=>localStorage.setItem('base44_access_token','nonclub-guided-e2e'));
-  27  |   const calls=[];
-  28  |   await page.route('**/api/apps/**',async route=>{
-  29  |     const req=route.request(),url=new URL(req.url()),path=url.pathname;
-  30  |     const reply=(body,status=200)=>json(route,body,status);
   31  |     if(path.includes('/public-settings/'))return reply({id:APP_ID,public_settings:{}});
   32  |     if(path.includes('/analytics/'))return reply({});
   33  |     if(path.endsWith('/entities/User/me'))return reply(user);
@@ -404,8 +407,7 @@ Call log:
   120 | test('Sandra email deep-link skips completed work, preserves the prefilled event and publishes one canonical collaboration',async({page})=>{
   121 |   const calls=await installBackend(page);
   122 |   await page.goto('/directory/sandras-pickleball-passports/edit?guided=1&continue=1');
-> 123 |   await expect(page).toHaveURL(/\/directory\/sandras-pickleball-passports\/events\?guided=1&edit=event-sandra/);
-      |                      ^ Error: expect(page).toHaveURL(expected) failed
+  123 |   await expect(page).toHaveURL(/\/directory\/sandras-pickleball-passports\/events\?guided=1&edit=event-sandra/);
   124 |   await expect(page.getByLabel('Event type')).toHaveValue('holiday');
   125 |   await expect(page.getByLabel('Event name')).toHaveValue("Sandra's Pickleball Passports · Carvoeiro, Portugal");
   126 |   await expect(page.getByLabel('Organiser email')).toHaveValue('smartertravel77@gmail.com');
@@ -413,7 +415,8 @@ Call log:
   128 |   await expect(page.getByLabel('Registration method')).toHaveValue('contact');
   129 |   await expect(page.getByLabel('Collaborator 1 name')).toHaveValue('Pickleball Escapes');
   130 |   await expect(page.getByLabel('Collaborator 1 role')).toHaveValue('In collaboration with');
-  131 |   await expect(page.getByLabel('Fee / price text')).toHaveValue('£815 / €950 per person, based on two sharing a one-bedroom apartment.');
+> 131 |   await expect(page.getByLabel('Fee / price text')).toHaveValue('£815 / €950 per person, based on two sharing a one-bedroom apartment.');
+      |                                                     ^ Error: expect(locator).toHaveValue(expected) failed
   132 |   await page.getByLabel('Collaborator 1 link').fill('https://rallyhub.ie/directory/pickleball-escapes');
   133 |   await page.getByRole('button',{name:'Publish to RallyHub Events'}).click();
   134 |   await expect(page.getByText('Event published + organiser listing live ✓')).toBeVisible();
