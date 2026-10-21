@@ -935,7 +935,7 @@ export default function DirectoryListingEdit() {
               {isClaimed && <RallyHubClubPreviewLock listingSlug={slug} clubName={form?.name || baseClub?.name || 'this club'} />}
               {isClaimed && <ClubFeedbackPanel listingSlug={slug} clubName={form?.name || baseClub?.name || 'this club'} />}
 
-              <section id="basics" style={{ display: editorMode === 'guided' && guidedSections[guidedStep]?.id !== 'basics' ? 'none' : undefined }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
+              <section id="basics" style={{ display: guidedSectionVisible('basics') ? undefined : 'none' }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><Info className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club information' : 'Public listing information'}</h2></div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2 sm:col-span-2"><Label>{isClubListing ? 'Club name' : 'Business / listing name'}</Label><Input value={form.name || ''} onChange={e => setField('name', e.target.value)} maxLength={220} placeholder={isClubListing ? 'e.g. Dalkey Pickleball Club' : 'Public listing name'} /><p className="text-xs text-muted-foreground">This changes the public heading only. The RallyHub listing link stays the same.</p></div>
@@ -1032,7 +1032,7 @@ export default function DirectoryListingEdit() {
                 </div>
               </section>
 
-              <section id="contact" style={{ display: editorMode === 'guided' && guidedSections[guidedStep]?.id !== 'contact' ? 'none' : undefined }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
+              <section id="contact" style={{ display: guidedSectionVisible('contact') ? undefined : 'none' }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><UserRound className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club contact' : 'Contact & social'}</h2></div>
                 <p className="text-sm text-muted-foreground">These details are separate from the private verified owner/editor identity held by RallyHub. Add only the public contact and social links you want players to use.</p>
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -1059,19 +1059,19 @@ export default function DirectoryListingEdit() {
                 </div>
               </section>
 
-              {!isClubListing && <section id="location" style={{ display: editorMode !== 'guided' || guidedSections[guidedStep]?.id !== 'location' ? 'none' : undefined }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
+              {!isClubListing && <section id="location" style={{ display: guidedSectionVisible('location') ? undefined : 'none' }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><MapPin className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Where do you operate?</h2></div>
                 <p className="text-sm text-muted-foreground">Keep this broad if you run trips or events in different places. The individual event will hold its own exact venue and destination.</p>
                 <div className="space-y-2"><Label>Area, destination or service coverage <span className="text-muted-foreground font-normal">(optional)</span></Label><Input aria-label="Area, destination or service coverage" value={form.serviceArea || ''} onChange={e => setField('serviceArea', e.target.value)} placeholder="e.g. Ireland & Portugal, European pickleball holidays, Nationwide" /><p className="text-xs text-muted-foreground">This describes your overall service, not the location of one particular event.</p></div>
               </section>}
 
-              {!isClubListing && <section id="events" style={{ display: editorMode !== 'guided' || guidedSections[guidedStep]?.id !== 'events' ? 'none' : undefined }} className="rounded-2xl border border-primary/25 bg-primary/10 p-6 space-y-4 scroll-mt-24">
+              {!isClubListing && <section id="events" style={{ display: guidedSectionVisible('events') ? undefined : 'none' }} className="rounded-2xl border border-primary/25 bg-primary/10 p-6 space-y-4 scroll-mt-24">
                 <div className="flex items-start gap-3"><CalendarDays className="mt-0.5 h-5 w-5 text-primary"/><div><h2 className="text-xl font-bold">Your listing is ready. Let’s add your event.</h2><p className="mt-2 text-sm text-muted-foreground">RallyHub reuses your organiser details so you do not have to type them again. If an event has already been started for you, it will be waiting in the Events editor.</p></div></div>
                 <div className="flex flex-wrap gap-2"><Link to={`/directory/${slug}/events?guided=1`}><Button type="button">Continue to your event</Button></Link><Link to="/events/quick-start"><Button type="button" variant="outline">Events Quick Start Guide</Button></Link></div>
                 <p className="text-xs text-muted-foreground">Each event is one canonical RallyHub record. If another organiser is collaborating, link them to the same event rather than creating a duplicate.</p>
               </section>}
 
-              {!isClubListing && <section id="review" style={{ display: editorMode !== 'guided' || guidedSections[guidedStep]?.id !== 'review' ? 'none' : undefined }} className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
+              {!isClubListing && <section id="review" style={{ display: guidedSectionVisible('review') ? undefined : 'none' }} className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
                 <div className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-primary"/><h2 className="text-xl font-bold">Review & finish</h2></div>
                 <p className="text-sm text-muted-foreground">{listingVisibility==='preview_only'?'Your essential details are saved as a private setup draft. Publish when you are happy, or continue to your event first. Publishing your first event can also make this organiser listing live.':'Your listing is live. You can view it, continue to your event, or come back later to add optional information.'}</p>
                 <div className="flex flex-wrap gap-2">{listingVisibility==='preview_only'?<Button type="button" onClick={publishListing} disabled={publishingListing||saving}>{publishingListing?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Globe2 className="mr-2 h-4 w-4"/>}{publishingListing?'Publishing…':'Publish listing'}</Button>:<Button type="button" onClick={viewPublicListing}><Globe2 className="mr-2 h-4 w-4"/>View public listing</Button>}<Link to={`/directory/${slug}/events?guided=1`}><Button type="button" variant="outline"><CalendarDays className="mr-2 h-4 w-4"/>Continue to event</Button></Link></div>
@@ -1081,7 +1081,7 @@ export default function DirectoryListingEdit() {
 
               {isClubListing && <>
 
-              <section id="venues" style={{ display: editorMode === 'guided' && guidedSections[guidedStep]?.id !== 'venues' ? 'none' : undefined }} className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
+              <section id="venues" style={{ display: guidedSectionVisible('venues') ? undefined : 'none' }} className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
                 <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-2"><Building2 className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Venues</h2></div><p className="text-sm text-muted-foreground mt-1">Add every regular place where the club plays.</p></div><Button variant="outline" size="sm" onClick={addVenue} className="gap-1"><Plus className="w-4 h-4" /> Add venue</Button></div>
                 {(form.venues || []).length === 0 && <div className="rounded-xl border border-dashed border-border p-6 text-center"><MapPin className="w-6 h-6 mx-auto text-muted-foreground" /><p className="text-sm text-muted-foreground mt-2">No venues added yet.</p><Button variant="outline" size="sm" onClick={addVenue} className="mt-3">Add first venue</Button></div>}
                 {(form.venues || []).map((venue, index) => (
@@ -1117,7 +1117,7 @@ export default function DirectoryListingEdit() {
                 ))}
               </section>
 
-              <section id="sessions" style={{ display: editorMode === 'guided' && guidedSections[guidedStep]?.id !== 'sessions' ? 'none' : undefined }} className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
+              <section id="sessions" style={{ display: guidedSectionVisible('sessions') ? undefined : 'none' }} className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
                 <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-2"><CalendarDays className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Weekly sessions</h2></div><p className="text-sm text-muted-foreground mt-1">Each session here repeats weekly. Add a blank session for something new, or duplicate only when you deliberately want to copy an existing session.</p></div><Button type="button" variant="outline" size="sm" onClick={addSession} disabled={!form.venues?.length} className="gap-1" data-testid="directory-add-session"><Plus className="w-4 h-4" /> Add blank weekly session</Button></div>
                 {sessionNotice && <div aria-live="polite" data-testid="directory-session-notice" className="rounded-xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm text-primary">{sessionNotice}</div>}
                 {!form.venues?.length && <div className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">Add a venue before adding weekly sessions.</div>}
