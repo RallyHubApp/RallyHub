@@ -26,6 +26,7 @@ test('directory category deep-link opens holiday providers directly', async ({ p
 
 test('directory has an interactive all-Ireland map view linked to club profiles', async ({ page }) => {
   await page.goto('/directory');
+  await page.getByLabel('What are you looking for?').selectOption('club');
   await page.getByRole('button', { name: /map/i }).click();
   await expect(page.getByRole('heading', { name: 'Club map' })).toBeVisible();
   await expect(page.getByText('Explore clubs on the map')).toBeVisible();
