@@ -145,6 +145,7 @@ export default function AdminPanel() {
   const [updatingRole, setUpdatingRole] = useState(null);
   const [updatingApproval, setUpdatingApproval] = useState(null);
   const [connectingMemberAccount, setConnectingMemberAccount] = useState(null);
+  const [approvalFeedback, setApprovalFeedback] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
   const [editUserName, setEditUserName] = useState('');
   const [savingUserName, setSavingUserName] = useState(false);
@@ -1280,13 +1281,25 @@ Brian`;
 
   const connectMemberAccount = async (targetUser, player, confirmNameMismatch = false) => {
     if (!targetUser?.id || !player?.person_id) return;
+    let verifyMobile = '';
+    let verifyDateOfBirth = '';
+    if (confirmNameMismatch) {
+      const supplied = window.prompt(`The RallyHub account name differs from ${player.full_name}. Enter the mobile number on their existing membership record to verify identity, or Cancel to verify with date of birth.`, '');
+      if (supplied === null) {
+        const dob = window.prompt('Enter the member date of birth (YYYY-MM-DD), or Cancel to stop.', '');
+        if (dob === null) return;
+        verifyDateOfBirth = dob.trim();
+      } else verifyMobile = supplied.trim();
+      if (!verifyMobile && !verifyDateOfBirth) { toast.error('Identity verification is required.'); return; }
+    }
     setConnectingMemberAccount(targetUser.id);
+    setApprovalFeedback({ userId: targetUser.id, type: 'progress', text: 'Verifying membership and connecting RallyHub account…' });
     try {
       const res = await base44.functions.invoke('membershipRecord', {
         action: 'admin_connect_account',
         userId: targetUser.id,
         personId: player.person_id,
-        confirmNameMismatch
+        verifyMobile, verifyDateOfBirth
       });
       if (res.data?.error) throw new Error(res.data.error);
       await Promise.all([
@@ -1295,27 +1308,43 @@ Brian`;
         queryClient.invalidateQueries({ queryKey: ['admin-membership-records'] }),
         queryClient.invalidateQueries({ queryKey: ['club-membership-relationships'] }),
       ]);
-      toast.success(`${targetUser.full_name || targetUser.email} approved and connected to ${player.full_name}.`);
+      const message = `${player.full_name} — RallyHub account approved and linked to existing membership. No payment required.`;
+      setApprovalFeedback({ userId: targetUser.id, type: 'success', text: message });
+      toast.success(message, { duration: 6500 });
     } catch (e) {
-      toast.error(e?.message || 'Could not connect this member account.');
+      const message = e?.response?.data?.error || e?.message || 'Could not connect this member account.';
+      setApprovalFeedback({ userId: targetUser.id, type: 'error', text: message });
+      toast.error(message, { duration: 9000 });
     } finally {
       setConnectingMemberAccount(null);
     }
   };
 
   const setApprovalStatus = async (userId, status) => {
+    const targetUser = allUsers.find(u => u.id === userId);
+    const candidate = targetUser && membershipCandidateForUser(targetUser);
+    if (status === 'approved' && candidate) {
+      const accountName = normaliseIdentityName(targetUser.full_name || targetUser.display_name);
+      await connectMemberAccount(targetUser, candidate, !!(accountName && accountName !== normaliseIdentityName(candidate.full_name)));
+      return;
+    }
     setUpdatingApproval(userId);
+    setApprovalFeedback({ userId, type: 'progress', text: 'Checking account permissions…' });
     try {
       const approvalRes = await base44.functions.invoke('adminUserTools', { action: 'set_approval', userId, status });
       if (approvalRes.data?.error) throw new Error(approvalRes.data.error);
       if (!approvalRes.data?.success) throw new Error('Approval was not confirmed. Please retry.');
       await queryClient.invalidateQueries({ queryKey: ['all-users'] });
-      toast.success(approvalRes.data?.accessScope === 'kotc_host' ? 'KOTC host account approved — session-only access.' : `User ${status}`);
+      const message = status === 'approved' ? 'RallyHub account approved.' : `Account ${status}.`;
+      setApprovalFeedback({ userId, type: 'success', text: message });
+      toast.success(message);
       if (status === 'approved' || status === 'rejected') {
         base44.functions.invoke('notifyAdminsOnSignup', { notifyUserApproval: true, userId, status }).catch(() => {});
       }
     } catch (error) {
-      toast.error(error?.response?.data?.error || error?.message || 'Approval failed. Account remains unchanged.', { duration: 9000 });
+      const message = error?.response?.data?.error || error?.message || 'Approval failed. Account remains unchanged.';
+      setApprovalFeedback({ userId, type: 'error', text: message });
+      toast.error(message, { duration: 9000 });
     } finally {
       setUpdatingApproval(null);
     }
@@ -1770,12 +1799,12 @@ Brian`;
                             </div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            {!candidate && section !== 'approved' && (
+                            {section !== 'approved' && (
                               <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90 gap-1"
                                 disabled={updatingApproval === u.id}
                                 onClick={() => setApprovalStatus(u.id, 'approved')}>
                                 <CheckCircle className="w-3 h-3" />
-                                {updatingApproval === u.id ? '…' : 'Approve'}
+                                {updatingApproval === u.id || connectingMemberAccount === u.id ? 'Approving…' : candidate ? 'Approve & link' : 'Approve'}
                               </Button>
                             )}
                             {section !== 'rejected' && u.id !== user?.id && (
@@ -1797,6 +1826,9 @@ Brian`;
                           </div>
                         </div>
 
+                        {approvalFeedback?.userId === u.id && (
+                          <p role="status" aria-live="polite" className={`rounded-lg border px-3 py-2 text-xs font-medium ${approvalFeedback.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : approvalFeedback.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>{approvalFeedback.text}</p>
+                        )}
                         {candidate && (
                           <div className={`rounded-lg border p-3 ${nameMismatch ? 'border-amber-400/40 bg-amber-500/10' : 'border-primary/25 bg-primary/5'}`}>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
