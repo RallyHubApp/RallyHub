@@ -401,7 +401,76 @@ Deno.serve(async (req) => {
       const dynamic = dynamicRows?.[0] || null;
       const profile = parseJson(row?.public_json);
       const base = parseJson(dynamic?.base_json);
-      return Response.json({ success:true, listingSlug, visibility:dynamic?.visibility || 'public', verificationStatus:await verifiedStatus(base44, listingSlug), profile, base });
+      const setup = parseJson(dynamic?.setup_json);
+      return Response.json({ success:true, listingSlug, visibility:dynamic?.visibility || 'public', verificationStatus:await verifiedStatus(base44, listingSlug), profile, base, setup });
+    }
+
+    if (action === 'confirm_identity') {
+      const listingSlug = clean(body.listingSlug, 180);
+      const publicName = clean(body.publicName, 220);
+      if (!listingSlug || !publicName) return Response.json({ error:'listingSlug and publicName required' }, { status:400 });
+      let allowed = user.role === 'admin';
+      if (!allowed) {
+        const access = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug:listingSlug, user_id:user.id, status:'active' });
+        allowed = !!access?.length;
+      }
+      if (!allowed) return Response.json({ error:'Verified directory editor access required' }, { status:403 });
+
+      const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 5);
+      const dynamic = dynamicRows?.[0];
+      if (!dynamic) return Response.json({ error:'Database-backed Directory listing required for identity confirmation' }, { status:404 });
+      const setup = parseJson(dynamic.setup_json, {});
+      const identity = setup?.identity || {};
+      const candidates = Array.isArray(identity?.candidates) ? identity.candidates.map((item:any)=>clean(typeof item === 'string' ? item : item?.name, 220)).filter(Boolean) : [];
+      const allowCustom = identity?.allowCustom !== false;
+      if (identity?.requiresConfirmation === true && !allowCustom && candidates.length && !candidates.includes(publicName)) {
+        return Response.json({ error:'Choose one of the recognised public names.' }, { status:400 });
+      }
+
+      const now = new Date().toISOString();
+      const nextIdentity = { ...identity, requiresConfirmation:false, confirmed:true, selectedPublicName:publicName, confirmedAt:now, confirmedByUserId:user.id };
+      const nextSetup = { ...setup, identity:nextIdentity };
+      const base = parseJson(dynamic.base_json, {}) || {};
+      await base44.asServiceRole.entities.DirectoryListingRecord.update(dynamic.id, {
+        name:publicName,
+        base_json:JSON.stringify({ ...base, name:publicName }),
+        setup_json:JSON.stringify(nextSetup),
+      });
+
+      const profiles = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5);
+      if (profiles?.[0]) {
+        const publicProfile = parseJson(profiles[0].public_json, {}) || {};
+        await base44.asServiceRole.entities.DirectoryListingProfile.update(profiles[0].id, {
+          public_json:JSON.stringify({ ...publicProfile, name:publicName }),
+          updated_by_user_id:user.id,
+          updated_at:now,
+        });
+      }
+
+      const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug:listingSlug, status:'active' }, '-granted_at', 100);
+      for (const access of accesses || []) {
+        if (access.listing_name_snapshot !== publicName) await base44.asServiceRole.entities.DirectoryListingAccess.update(access.id, { listing_name_snapshot:publicName });
+      }
+      const endpoints = await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 20).catch(()=>[]);
+      for (const endpoint of endpoints || []) {
+        if (endpoint.listing_name_snapshot !== publicName) await base44.asServiceRole.entities.DirectoryContactEndpoint.update(endpoint.id, { listing_name_snapshot:publicName, updated_by_user_id:user.id, updated_at:now });
+      }
+
+      if (String(dynamic.listing_type || 'club') !== 'club') {
+        const clubs = await base44.asServiceRole.entities.Club.filter({ slug:listingSlug, status:'active' }, '-updated_date', 10).catch(()=>[]);
+        for (const club of clubs || []) {
+          if (club.name !== publicName) await base44.asServiceRole.entities.Club.update(club.id, { name:publicName });
+        }
+        const tenantSlug = `directory-${listingSlug}`.slice(0, 150);
+        const tenants = await base44.asServiceRole.entities.Tenant.filter({ slug:tenantSlug, status:'active' }, '-updated_date', 10).catch(()=>[]);
+        for (const tenant of tenants || []) {
+          if (tenant.name !== publicName) await base44.asServiceRole.entities.Tenant.update(tenant.id, { name:publicName });
+        }
+      }
+
+      invalidatePublicListCache();
+      invalidatePublicGetCache(listingSlug);
+      return Response.json({ success:true, listingSlug, publicName, setup:nextSetup });
     }
 
     if (action === 'save') {
