@@ -2206,7 +2206,7 @@ Deno.serve(async (req) => {
           county: request.county || null,
           sport: 'Pickleball',
           status: 'active',
-          visibility: 'public',
+          visibility: listingType === 'club' ? 'public' : 'preview_only',
           base_json: JSON.stringify(baseListing),
           trusted_contacts_json: JSON.stringify([{ name: request.claimant_name, email: request.claimant_email, phone: request.claimant_phone }]),
           source_request_id: request.id,
