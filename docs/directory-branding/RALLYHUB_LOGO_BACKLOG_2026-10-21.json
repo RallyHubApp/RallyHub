@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-21",
+  "inventory": {
+    "unique": 103,
+    "withLogo": 63,
+    "hidden": 7,
+    "missing": 33
+  },
+  "batch": [
+    "Dublin 7",
+    "Cumann A Chorrain",
+    "Pickleball Iorrais",
+    "Mullahoran",
+    "Killeshandra",
+    "Kinsale",
+    "Leeside",
+    "Edenderry",
+    "Shankill",
+    "Coolmine"
+  ],
+  "visualCandidate": "Shankill website crest; not approved",
+  "ownerApprovedPending": "Coolmine",
+  "newStorageReceipts": 0,
+  "productionWrites": 0,
+  "backlogComplete": false
+}
