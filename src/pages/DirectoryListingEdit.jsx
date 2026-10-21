@@ -213,6 +213,8 @@ export default function DirectoryListingEdit() {
   const [loadingListing, setLoadingListing] = useState(true);
   const [loadingAccess, setLoadingAccess] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [listingVisibility, setListingVisibility] = useState('public');
+  const [publishingListing, setPublishingListing] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoDraft, setLogoDraft] = useState(null);
   const [inviting, setInviting] = useState(false);
@@ -278,6 +280,7 @@ export default function DirectoryListingEdit() {
           } catch {}
           setForm(restored);
           setBaseline(serverBaseline);
+          setListingVisibility(res.data?.visibility || 'public');
           if (guidedRequested || String(merged?.listingType || resolvedBase?.listingType || 'club') !== 'club') setEditorMode('guided');
           const generatedWhatsApp = buildWhatsAppUrl(restored?.contact?.phone, resolvedBase?.county);
           setAutoWhatsApp(Boolean(generatedWhatsApp && restored?.contact?.whatsapp === generatedWhatsApp));
@@ -455,8 +458,30 @@ export default function DirectoryListingEdit() {
 
   const viewPublicListing = () => {
     if (saving) return;
+    if (listingVisibility === 'preview_only') { setError('Publish this listing first. It is still a private setup draft and is not visible in the public Directory.'); return; }
     if (dirty && !window.confirm('You have unsaved changes. View the public listing without saving them?')) return;
     window.location.assign(`${publicListingUrl}?refresh=${Date.now()}`);
+  };
+
+  const publishListing = async () => {
+    if (publishingListing || saving || isClubListing) return;
+    setError('');
+    if (dirty) {
+      const ok = await save();
+      if (!ok) return;
+    }
+    setPublishingListing(true);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', { action:'set_visibility', listingSlug:slug, visibility:'public' });
+      if (res.data?.error) throw new Error(res.data.error);
+      setListingVisibility('public');
+      setSaved(true);
+      invalidatePublicDirectoryCache();
+    } catch (err) {
+      setError(err?.message || 'Could not publish this listing.');
+    } finally {
+      setPublishingListing(false);
+    }
   };
 
   const openWhatsAppClaimInvite = async () => {
@@ -977,8 +1002,8 @@ export default function DirectoryListingEdit() {
 
               {!isClubListing && <section id="review" style={{ display: editorMode !== 'guided' || guidedSections[guidedStep]?.id !== 'review' ? 'none' : undefined }} className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
                 <div className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-primary"/><h2 className="text-xl font-bold">Review & finish</h2></div>
-                <p className="text-sm text-muted-foreground">Your essential listing details are saved. You can view the public listing now, continue to your event, or come back later to add optional information.</p>
-                <div className="flex flex-wrap gap-2"><Button type="button" onClick={viewPublicListing}><Globe2 className="mr-2 h-4 w-4"/>View public listing</Button><Link to={`/directory/${slug}/events?guided=1`}><Button type="button" variant="outline"><CalendarDays className="mr-2 h-4 w-4"/>Continue to event</Button></Link></div>
+                <p className="text-sm text-muted-foreground">{listingVisibility==='preview_only'?'Your essential details are saved as a private setup draft. Publish when you are happy, or continue to your event first. Publishing your first event can also make this organiser listing live.':'Your listing is live. You can view it, continue to your event, or come back later to add optional information.'}</p>
+                <div className="flex flex-wrap gap-2">{listingVisibility==='preview_only'?<Button type="button" onClick={publishListing} disabled={publishingListing||saving}>{publishingListing?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Globe2 className="mr-2 h-4 w-4"/>}{publishingListing?'Publishing…':'Publish listing'}</Button>:<Button type="button" onClick={viewPublicListing}><Globe2 className="mr-2 h-4 w-4"/>View public listing</Button>}<Link to={`/directory/${slug}/events?guided=1`}><Button type="button" variant="outline"><CalendarDays className="mr-2 h-4 w-4"/>Continue to event</Button></Link></div>
               </section>}
 
               {isClubListing && showEnhancements && <DirectorySpondPanel listingSlug={slug} clubName={baseClub?.name || ''} onImport={importSpondDirectoryData} onSave={save} saveBusy={saving} hasUnsavedChanges={dirty} saved={saved} existingSessions={form.sessions || []} />}
