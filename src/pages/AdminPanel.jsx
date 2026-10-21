@@ -1283,12 +1283,9 @@ Brian`;
     if (!targetUser?.id || !player?.person_id) return;
     const registeredEmail = String(targetUser.email || '').trim();
     const membershipEmail = String(player.email || '').trim();
-    const registeredMobile = String(targetUser.phone || targetUser.mobile || targetUser.phone_number || '').trim();
-    const membershipMobile = String(player.phone || '').trim();
     const emailDiffers = registeredEmail.toLowerCase() !== membershipEmail.toLowerCase();
-    const mobileDiffers = !!registeredMobile && !!membershipMobile && registeredMobile.replace(/\D/g,'') !== membershipMobile.replace(/\D/g,'');
-    const requiresConfirmation = confirmNameMismatch || emailDiffers || mobileDiffers;
-    if (requiresConfirmation && !window.confirm(`Verify existing member identity\n\nRallyHub account: ${targetUser.full_name || 'Not supplied'}\nMembership name: ${player.full_name}\n\nRallyHub login email: ${registeredEmail}\nMembership email: ${membershipEmail || 'Not recorded'}\n\nRallyHub mobile: ${registeredMobile || 'Not provided at registration'}\nMembership mobile: ${membershipMobile || 'Not recorded'}\n\nOnly approve if you personally know these records belong to the same person. This decision is logged. Contact details will NOT be overwritten automatically.\n\nApprove and connect?`)) return;
+    const requiresConfirmation = confirmNameMismatch || emailDiffers;
+    if (requiresConfirmation && !window.confirm(`Verify existing member identity\n\nRallyHub account: ${targetUser.full_name || 'Not supplied'}\nMembership name: ${player.full_name}\n\nRallyHub login email: ${registeredEmail}\nMembership email: ${membershipEmail || 'Not recorded'}\n\nOnly approve if you personally know these records belong to the same person. This decision is logged. Contact details will NOT be overwritten automatically.\n\nApprove and connect?`)) return;
     setConnectingMemberAccount(targetUser.id);
     setApprovalFeedback({ userId: targetUser.id, type: 'progress', text: 'Verifying membership and connecting RallyHub account…' });
     try {
