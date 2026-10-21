@@ -46,6 +46,7 @@ export default function TenantEvents({directoryListingSlug=''}){
   const requestedHost=searchParams.get('host')||'';
   const guidedDirectorySetup=directoryMode&&searchParams.get('guided')==='1';
   const openedEdit=useRef('');
+  const directoryPrefillDone=useRef(false);
   const freshBlank=()=>directoryMode?{...blank,member:false,public:true}:({...blank});
   const qc=useQueryClient();
   const [draft,setDraft]=useState(freshBlank);
@@ -81,12 +82,19 @@ export default function TenantEvents({directoryListingSlug=''}){
   const visibleDrafts=showOlder?drafts:drafts.slice(0,3);
   const visiblePublished=showOlder?published:published.slice(0,5);
 
-  const resetEditor=()=>{setEditingId(null);setDraft(freshBlank());setPreview(null);setSaveState('')};
+  const resetEditor=()=>{setEditingId(null);directoryPrefillDone.current=false;setDraft(freshBlank());setPreview(null);setSaveState('')};
   const removeEvent=async(e)=>{try{if(!window.confirm(`Delete “${e.name}”? This cannot be undone.`))return;if(directoryMode){const res=await base44.functions.invoke('directoryEvents',{action:'delete',listingSlug:directoryListingSlug,eventId:e.id});if(res.data?.error)throw new Error(res.data.error);await qc.invalidateQueries({queryKey:['directory-event-context',directoryListingSlug]})}else{const linkedInterclub=await base44.entities.ClubChallengeEvent.filter({tournament_id:e.id},'-updated_date',1).catch(()=>[]);if(linkedInterclub.length){toast.error('This calendar item is the live RallyHub Interclub competition. Archive it from the Interclub control centre instead so its teams, registrations and results remain connected.');return}await base44.entities.Tournament.delete(e.id);await qc.invalidateQueries({queryKey:['tenant-events']})}if(editingId===e.id)resetEditor();toast.success('Event deleted')}catch(err){toast.error(err?.message||'Could not delete event')}};
   const editEvent=e=>{if(!directoryMode&&isAdmin&&e.host_club_id)setAdminHostClubId(e.host_club_id);setEditingId(e.id);setDraft({...freshBlank(),name:e.name||'',category:e.event_category||'other',date:e.start_date||'',endDate:e.end_date||e.start_date||'',start:e.event_start_time||'',end:e.event_end_time||'',venue_id:e.venue_id||'',location:e.location||'',county:e.event_county||'',country:e.event_country||'Ireland',setting:e.event_indoor_outdoor||'',summary:e.event_public_summary||'',description:e.description||'',internal:directoryMode?'':(e.event_internal_info||''),contact:e.event_contact||'',contactPhone:e.event_contact_phone||'',phoneHiddenUntil:dateTimeLocal(e.event_contact_phone_hidden_until),phoneKeepPrivate:!!e.event_contact_phone_keep_private,statusOverride:e.event_status_override||'',registrationMode:e.event_registration_mode||(e.event_registration_url?'external':'none'),registration:e.event_registration_url||'',regOpen:dateTimeLocal(e.event_registration_open_at),regClose:dateTimeLocal(e.event_registration_close_at),feeText:e.event_fee_text||'',capacity:e.event_capacity??'',waitlist:!!e.event_waitlist_enabled,levels:e.event_levels||[],ageGroups:e.event_age_groups||[],disciplines:e.event_disciplines||[],eligibility:e.event_eligibility||'',playerInfo:e.event_player_info||'',feesCancellation:e.event_fees_cancellation||'',collaborators:Array.isArray(e.event_collaborators)?e.event_collaborators:[],schedule:e.event_schedule||[],sourceUrl:e.event_source_url||'',mapUrl:e.event_map_url||'',latitude:e.event_latitude??'',longitude:e.event_longitude??'',image:e.event_image_url||'',imageX:Number(e.event_image_position_x??50),imageY:Number(e.event_image_position_y??50),imageZoom:Number(e.event_image_zoom??1),cardX:Number(e.event_card_position_x??50),cardY:Number(e.event_card_position_y??50),cardZoom:Number(e.event_card_zoom??1),imageOriginal:e.event_image_original_url||e.event_image_url||'',imageSourceType:e.event_image_source_type||'',member:directoryMode?false:!!e.event_member_visible,public:!!e.event_public_visible,featured:directoryMode?false:!!e.event_featured_member,featuredPublic:!!e.event_featured_public,verifiedOrganiser:!!e.event_verified_organiser});setPreview(null);setSaveState('');window.scrollTo({top:0,behavior:'smooth'})};
 
   useEffect(()=>{if(!directoryMode&&isAdmin&&requestedEdit&&requestedHost&&adminClubs.length&&adminHostClubId!==requestedHost&&adminClubs.some(c=>c.id===requestedHost))setAdminHostClubId(requestedHost)},[directoryMode,isAdmin,requestedEdit,requestedHost,adminClubs,adminHostClubId]);
   useEffect(()=>{if(!requestedEdit||openedEdit.current===requestedEdit)return;const target=events.find(e=>e.id===requestedEdit);if(!target)return;openedEdit.current=requestedEdit;editEvent(target);},[requestedEdit,events]);
+  useEffect(()=>{
+    if(!directoryMode||!directoryContext||editingId||directoryPrefillDone.current)return;
+    const listing=directoryContext.listing||{};const profile=listing.profile||{};const contact=profile.contact||{};
+    const category=listing.listingType==='holidays'?'holiday':listing.listingType==='coaching'?'coaching':listing.listingType==='tournaments_events'?'tournament':'other';
+    setDraft(d=>({...d,category:d.category==='other'?category:d.category,contact:d.contact||contact.email||'',contactPhone:d.contactPhone||contact.phone||'',sourceUrl:d.sourceUrl||profile.website||'',country:listing.listingType==='holidays'&&d.country==='Ireland'?'':d.country}));
+    directoryPrefillDone.current=true;
+  },[directoryMode,directoryContext,editingId]);
 
   const save=useMutation({mutationFn:async(mode)=>{
     if(!draft.name||!draft.date)throw new Error('Event name and start date are required.');
