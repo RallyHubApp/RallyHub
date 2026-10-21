@@ -44,7 +44,7 @@ export default function Sidebar({ isOpen, onToggle }) {
   const superAdminNavItems = [
     { path: '/app', label: 'Dashboard', icon: LayoutDashboard, section: 'SUPER ADMIN' },
     { path: '/app/admin', label: 'Admin Panel', icon: Shield, admin: true, section: 'SUPER ADMIN' },
-    { path: '/app/admin?tab=control-library', label: 'Control Library', icon: BookOpen, admin: true, section: 'SUPER ADMIN' },
+    { path: '/app/admin?tab=control-library', label: 'Control Library', icon: BookOpen, controlLibrary: true, section: 'SUPER ADMIN' },
     { path: '/app/admin?tab=directory', label: 'Directory Admin', icon: Shield, directoryAdmin: true, section: 'SUPER ADMIN' },
     { path: '/app/communications', label: 'Communications', icon: MessageCircle, section: 'SUPER ADMIN' },
     { path: '/directory', label: 'Public Directory', icon: MapPin, section: 'SUPER ADMIN' },
@@ -155,14 +155,17 @@ export default function Sidebar({ isOpen, onToggle }) {
           {mainNavItems.map((item, index) => {
             const currentAdminTab = new URLSearchParams(location.search).get('tab');
             const directoryAdmin = item.directoryAdmin || item.path === '/app/admin?tab=directory';
-            const adminPanel = item.admin || item.path === '/app/admin';
+            const adminPanel = item.path === '/app/admin';
+            const controlLibrary = item.controlLibrary || item.path === '/app/admin?tab=control-library';
             const isActive = item.path === '/app'
               ? location.pathname === '/app' || location.pathname === '/app/'
               : directoryAdmin
                 ? location.pathname === '/app/admin' && currentAdminTab === 'directory'
                 : adminPanel
-                  ? location.pathname === '/app/admin' && currentAdminTab !== 'directory'
-                  : location.pathname.startsWith(item.path);
+                  ? location.pathname === '/app/admin' && !currentAdminTab
+                  : controlLibrary
+                    ? location.pathname === '/app/admin' && currentAdminTab === 'control-library'
+                    : location.pathname.startsWith(item.path);
             const showSection = isSuperAdmin && item.section && (index === 0 || mainNavItems[index - 1]?.section !== item.section);
             return (
               <React.Fragment key={item.path}>
