@@ -813,11 +813,12 @@ export default function DirectoryListingEdit() {
                 {editorMode === 'guided' && <div className="space-y-3" data-testid="directory-guided-progress">
                   <p className="text-sm font-semibold">Step {guidedStep + 1} of {guidedSections.length}: {guidedSections[guidedStep]?.label}</p>
                   <div className="flex gap-1" aria-label="Setup progress">{guidedSections.map((section, index) => <div key={section.id} className={`h-2 flex-1 rounded-full ${index <= guidedStep ? 'bg-primary' : 'bg-border'}`} />)}</div>
-                  <p className="text-xs text-muted-foreground">Review the section below, then save your changes before continuing. You can return to earlier steps.</p>
+                  <p className="text-xs text-muted-foreground">Complete only what is useful. Optional fields can be skipped, and your progress is saved as you go.</p>
+                  {!isClubListing && autoSaveState && <p aria-live="polite" className="text-xs font-semibold text-primary">{autoSaveState}</p>}
                   <div className="flex flex-wrap gap-2">
                     <Button type="button" variant="outline" disabled={guidedStep === 0 || saving} onClick={() => setGuidedStep(value => Math.max(0, value - 1))}>Previous</Button>
-                    <Button type="button" disabled={saving} onClick={advanceGuided}>{dirty ? 'Save this step' : guidedStep === guidedSections.length - 1 ? 'View public listing' : 'Continue'}</Button>
-                    {guidedSections[guidedStep]?.id === 'events' && isClubListing && <Link to={`/directory/${slug}/events`}><Button type="button" variant="outline">Manage events</Button></Link>}
+                    <Button type="button" disabled={saving} onClick={advanceGuided}>{dirty ? 'Save & continue' : guidedStep === guidedSections.length - 1 ? 'View public listing' : 'Continue'}</Button>
+                    {guidedSections[guidedStep]?.id === 'events' && <Link to={`/directory/${slug}/events?guided=1`}><Button type="button" variant="outline">{isClubListing?'Manage events':'Continue to your event'}</Button></Link>}
                   </div>
                 </div>}
               </section>
@@ -841,11 +842,11 @@ export default function DirectoryListingEdit() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2 sm:col-span-2"><Label>{isClubListing ? 'Club name' : 'Business / listing name'}</Label><Input value={form.name || ''} onChange={e => setField('name', e.target.value)} maxLength={220} placeholder={isClubListing ? 'e.g. Dalkey Pickleball Club' : 'Public listing name'} /><p className="text-xs text-muted-foreground">This changes the public heading only. The RallyHub listing link stays the same.</p></div>
                   <div className="space-y-2 sm:col-span-2"><Label>{isClubListing ? 'Club description' : 'Listing description'}</Label><Textarea value={form.description || ''} onChange={e => setField('description', e.target.value)} rows={4} placeholder={isClubListing ? 'Tell players what your club is about, where you play and who you welcome.' : 'Tell players clearly what you provide and why it may be useful.'} /><p className="text-xs text-muted-foreground">This is the main introduction players see in search and on the public listing page.</p></div>
-                  {!isClubListing && <div className="space-y-2 sm:col-span-2"><Label>Area, destination or service coverage</Label><Input value={form.serviceArea || ''} onChange={e => setField('serviceArea', e.target.value)} placeholder="e.g. Nationwide, Munster, Dublin, Spain, Online" /><p className="text-xs text-muted-foreground">Leave blank when location is not relevant.</p></div>}
-                  <div className="sm:col-span-2 rounded-xl border border-border bg-background/35 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  {!isClubListing && editorMode !== 'guided' && <div className="space-y-2 sm:col-span-2"><Label>Area, destination or service coverage</Label><Input value={form.serviceArea || ''} onChange={e => setField('serviceArea', e.target.value)} placeholder="e.g. Nationwide, Munster, Dublin, Portugal, Online" /><p className="text-xs text-muted-foreground">Leave blank when location is not relevant.</p></div>}
+                  {(isClubListing || editorMode !== 'guided') && <div className="sm:col-span-2 rounded-xl border border-border bg-background/35 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div><p className="font-semibold">{isClubListing ? 'Optional club details' : 'Optional listing details'}</p><p className="text-xs text-muted-foreground mt-1">{isClubListing ? 'Website, social links, joining information and attendance policy can all be added later. If your club uses Spond, you can also connect your Spond account here to bring your regular venues and session times into RallyHub instead of entering them manually.' : 'Add your website and social links so players can learn more or continue to your own site.'}</p></div>
                     <Button type="button" variant="outline" onClick={() => setShowEnhancements(value => !value)} className="gap-2 shrink-0"><Sparkles className="w-4 h-4" /> {showEnhancements ? 'Hide optional details' : 'Enhance listing'}</Button>
-                  </div>
+                  </div>}
                   {showEnhancements && <>
                   {isClubListing && <><div className="space-y-2"><Label>Membership / joining status</Label><Input value={form.membershipStatus || ''} onChange={e => setField('membershipStatus', e.target.value)} placeholder="e.g. New members welcome" /></div>
                   <div className="space-y-2"><Label>Information heading</Label><Input value={form.policyLabel || ''} onChange={e => setField('policyLabel', e.target.value)} placeholder="e.g. Joining information" /></div>
@@ -934,8 +935,8 @@ export default function DirectoryListingEdit() {
               </section>
 
               <section id="contact" style={{ display: editorMode === 'guided' && guidedSections[guidedStep]?.id !== 'contact' ? 'none' : undefined }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
-                <div className="flex items-center gap-2"><UserRound className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club contact' : 'Public listing contact'}</h2></div>
-                <p className="text-sm text-muted-foreground">These details are separate from the private verified owner/editor identity held by RallyHub. Use whatever public contact label is appropriate.</p>
+                <div className="flex items-center gap-2"><UserRound className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club contact' : 'Contact & social'}</h2></div>
+                <p className="text-sm text-muted-foreground">These details are separate from the private verified owner/editor identity held by RallyHub. Add only the public contact and social links you want players to use.</p>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2"><Label>Public contact label / name</Label><Input value={form.contact?.name || ''} onChange={e => setContact('name', e.target.value)} placeholder="e.g. Chairperson, Club Contact, Debbie Brown" /><p className="text-xs text-muted-foreground">This does not change the privately verified RallyHub account holder.</p></div>
                   <div className="space-y-2"><Label>Contact email</Label><Input type="email" value={form.contact?.email || ''} onChange={e => setContact('email', e.target.value)} /></div>
@@ -952,8 +953,31 @@ export default function DirectoryListingEdit() {
                       <Input value={form.contact?.whatsapp || ''} onChange={e => setContact('whatsapp', e.target.value)} placeholder="Optional custom https://wa.me/… link" />
                     )}
                   </div>
+                  {!isClubListing && editorMode === 'guided' && <>
+                    <div className="space-y-2"><Label>Website <span className="text-muted-foreground font-normal">(optional)</span></Label><Input value={form.website || ''} onChange={e => setField('website', e.target.value)} placeholder="https://…" /></div>
+                    <div className="space-y-2"><Label>Facebook <span className="text-muted-foreground font-normal">(optional)</span></Label><Input type="url" value={form.facebook || ''} onChange={e => setField('facebook', e.target.value)} placeholder="https://facebook.com/…" /></div>
+                    <div className="space-y-2"><Label>Instagram <span className="text-muted-foreground font-normal">(optional)</span></Label><Input type="url" value={form.instagram || ''} onChange={e => setField('instagram', e.target.value)} placeholder="https://instagram.com/…" /></div>
+                  </>}
                 </div>
               </section>
+
+              {!isClubListing && <section id="location" style={{ display: editorMode !== 'guided' || guidedSections[guidedStep]?.id !== 'location' ? 'none' : undefined }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
+                <div className="flex items-center gap-2"><MapPin className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Where do you operate?</h2></div>
+                <p className="text-sm text-muted-foreground">Keep this broad if you run trips or events in different places. The individual event will hold its own exact venue and destination.</p>
+                <div className="space-y-2"><Label>Area, destination or service coverage <span className="text-muted-foreground font-normal">(optional)</span></Label><Input value={form.serviceArea || ''} onChange={e => setField('serviceArea', e.target.value)} placeholder="e.g. Ireland & Portugal, European pickleball holidays, Nationwide" /><p className="text-xs text-muted-foreground">This describes your overall service, not the location of one particular event.</p></div>
+              </section>}
+
+              {!isClubListing && <section id="events" style={{ display: editorMode !== 'guided' || guidedSections[guidedStep]?.id !== 'events' ? 'none' : undefined }} className="rounded-2xl border border-primary/25 bg-primary/10 p-6 space-y-4 scroll-mt-24">
+                <div className="flex items-start gap-3"><CalendarDays className="mt-0.5 h-5 w-5 text-primary"/><div><h2 className="text-xl font-bold">Your listing is ready. Let’s add your event.</h2><p className="mt-2 text-sm text-muted-foreground">RallyHub reuses your organiser details so you do not have to type them again. If an event has already been started for you, it will be waiting in the Events editor.</p></div></div>
+                <div className="flex flex-wrap gap-2"><Link to={`/directory/${slug}/events?guided=1`}><Button type="button">Continue to your event</Button></Link><Link to="/events/quick-start"><Button type="button" variant="outline">Events Quick Start Guide</Button></Link></div>
+                <p className="text-xs text-muted-foreground">Each event is one canonical RallyHub record. If another organiser is collaborating, link them to the same event rather than creating a duplicate.</p>
+              </section>}
+
+              {!isClubListing && <section id="review" style={{ display: editorMode !== 'guided' || guidedSections[guidedStep]?.id !== 'review' ? 'none' : undefined }} className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
+                <div className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-primary"/><h2 className="text-xl font-bold">Review & finish</h2></div>
+                <p className="text-sm text-muted-foreground">Your essential listing details are saved. You can view the public listing now, continue to your event, or come back later to add optional information.</p>
+                <div className="flex flex-wrap gap-2"><Button type="button" onClick={viewPublicListing}><Globe2 className="mr-2 h-4 w-4"/>View public listing</Button><Link to={`/directory/${slug}/events?guided=1`}><Button type="button" variant="outline"><CalendarDays className="mr-2 h-4 w-4"/>Continue to event</Button></Link></div>
+              </section>}
 
               {isClubListing && showEnhancements && <DirectorySpondPanel listingSlug={slug} clubName={baseClub?.name || ''} onImport={importSpondDirectoryData} onSave={save} saveBusy={saving} hasUnsavedChanges={dirty} saved={saved} existingSessions={form.sessions || []} />}
 
