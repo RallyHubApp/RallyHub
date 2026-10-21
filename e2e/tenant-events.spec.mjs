@@ -16,7 +16,7 @@ async function installBackend(page){
     if(path.includes('/analytics/'))return json(route,{});
     if(path.endsWith('/entities/User/me'))return json(route,user);
     const fnMarker=`/api/apps/${APP_ID}/functions/`;const fi=path.indexOf(fnMarker);
-    if(fi>=0){const name=decodeURIComponent(path.slice(fi+fnMarker.length).split('/')[0]);let body={};try{body=req.postDataJSON()||{};}catch{}model.functions.push({name,body});if(name==='securityContext')return json(route,{success:true,context:null});if(name==='eventEngagement'&&body.action==='club_shared')return json(route,{success:true,items:[]});if(name==='secureCreditAction')return json(route,{success:true,preview_url:onePixel,file_url:'https://files.example.test/poster.png'});return json(route,{success:true})}
+    if(fi>=0){const name=decodeURIComponent(path.slice(fi+fnMarker.length).split('/')[0]);let body={};try{body=req.postDataJSON()||{};}catch{}model.functions.push({name,body});if(name==='securityContext')return json(route,{success:true,context:null});if(name==='eventEngagement'&&body.action==='club_shared')return json(route,{success:true,items:[]});if(name==='secureCreditAction')return json(route,{success:true,preview_url:onePixel,file_url:'https://files.example.test/poster.png'});if(name==='eventEditSave'){const existingIndex=model.events.findIndex(e=>e.id===body.eventId);const saved={...(existingIndex>=0?model.events[existingIndex]:{}),id:existingIndex>=0?body.eventId:`created-${model.events.length+1}`,...body.event};if(existingIndex>=0)model.events[existingIndex]=saved;else model.events.push(saved);model.writes.push({method:existingIndex>=0?'PATCH':'FUNCTION_CREATE',entity:'Tournament',body:saved});return json(route,{success:true,event:saved})}return json(route,{success:true})}
     const entityMarker=`/api/apps/${APP_ID}/entities/`;const ei=path.indexOf(entityMarker);
     if(ei>=0){const rest=path.slice(ei+entityMarker.length);const [entity,recordId]=rest.split('/').map(decodeURIComponent);let body={};try{body=req.postDataJSON()||{};}catch{}
       if(req.method()==='GET'){
@@ -59,6 +59,10 @@ test('tenant Events: create, upload/crop, preview and publish one canonical publ
   await page.getByText('Intermediate',{exact:true}).click();
   await page.getByText('18+',{exact:true}).click();
   await page.getByText('Mixed Doubles',{exact:true}).click();
+  await page.getByRole('button',{name:'Add collaborator'}).click();
+  await page.getByLabel('Collaborator 1 name').fill('Pickleball Escapes');
+  await page.getByLabel('Collaborator 1 role').fill('In collaboration with');
+  await page.getByLabel('Collaborator 1 link').fill('https://example.test/pickleball-escapes');
 
   const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WlW9qsAAAAASUVORK5CYII=','base64');
   await page.locator('input[type=file]').setInputFiles({name:'event-poster.png',mimeType:'image/png',buffer:png});
@@ -83,8 +87,9 @@ test('tenant Events: create, upload/crop, preview and publish one canonical publ
 
   await page.getByRole('button',{name:'Publish selected audiences'}).click();
   await expect(page.getByText('Published to members + public Events ✓')).toBeVisible();
-  expect(model.writes.filter(w=>w.entity==='Tournament'&&w.method==='POST')).toHaveLength(1);
-  const payload=model.writes.find(w=>w.entity==='Tournament')?.body;
+  const saveCall=model.functions.find(f=>f.name==='eventEditSave'&&f.body.mode==='publish');
+  expect(saveCall).toBeTruthy();
+  const payload=saveCall.body.event;
   expect(payload.event_public_visible).toBe(true);
   expect(payload.event_member_visible).toBe(true);
   expect(payload.event_card_zoom).toBe(1.5);
@@ -93,6 +98,7 @@ test('tenant Events: create, upload/crop, preview and publish one canonical publ
   expect(payload.event_levels).toContain('Intermediate');
   expect(payload.event_age_groups).toContain('18+');
   expect(payload.event_disciplines).toContain('Mixed Doubles');
+  expect(payload.event_collaborators).toEqual([{name:'Pickleball Escapes',listing_slug:'',url:'https://example.test/pickleball-escapes',role:'In collaboration with'}]);
   expect(payload.event_publish_status).toBe('published');
   await noHorizontalOverflow(page);
 });
