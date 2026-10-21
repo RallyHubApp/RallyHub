@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { CircleMarker, MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
@@ -202,6 +202,7 @@ export async function prepareLogoDraft(file) {
 
 export default function DirectoryListingEdit() {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
   const seed = getClub(slug);
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
   const [baseClub, setBaseClub] = useState(seed || null);
@@ -225,17 +226,26 @@ export default function DirectoryListingEdit() {
   const [validation, setValidation] = useState([]);
   const [editorMode, setEditorMode] = useState('choose');
   const [guidedStep, setGuidedStep] = useState(0);
+  const [autoSaveState, setAutoSaveState] = useState('');
+  const autoSaveInFlight = useRef(false);
   const returnTo = useMemo(() => `/directory/${slug}/edit`, [slug]);
   const dirty = !!form && !!baseline && JSON.stringify(form) !== baseline;
   const publicListingUrl = useMemo(() => `/directory/${slug}`, [slug]);
   const isClaimed = access?.listing?.verificationStatus === 'verified';
-  const guidedSections = [
+  const listingType = String(form?.listingType || baseClub?.listingType || 'club');
+  const isClubListing = listingType === 'club';
+  const guidedSections = isClubListing ? [
     { id: 'basics', label: 'Club details' },
     { id: 'contact', label: 'Contact information' },
-    ...(String(form?.listingType || baseClub?.listingType || 'club') === 'club' ? [
-      { id: 'venues', label: 'Playing venues' }, { id: 'sessions', label: 'Weekly sessions' },
-      { id: 'events', label: 'Events and review' },
-    ] : [{ id: 'events', label: 'Review listing' }]),
+    { id: 'venues', label: 'Playing venues' },
+    { id: 'sessions', label: 'Weekly sessions' },
+    { id: 'events', label: 'Events and review' },
+  ] : [
+    { id: 'basics', label: 'About you' },
+    { id: 'contact', label: 'Contact & social' },
+    { id: 'location', label: 'Where you operate' },
+    { id: 'events', label: 'Your event' },
+    { id: 'review', label: 'Review & finish' },
   ];
   const advanceGuided = async () => {
     if (saving) return;
@@ -260,16 +270,24 @@ export default function DirectoryListingEdit() {
         setBaseClub(resolvedBase);
         if (resolvedBase) {
           const merged = mergeProfile(resolvedBase, res.data?.profile || null);
-          setForm(merged);
-          setBaseline(JSON.stringify(merged));
-          const generatedWhatsApp = buildWhatsAppUrl(merged?.contact?.phone, resolvedBase?.county);
-          setAutoWhatsApp(Boolean(generatedWhatsApp && merged?.contact?.whatsapp === generatedWhatsApp));
+          const serverBaseline = JSON.stringify(merged);
+          let restored = merged;
+          try {
+            const draftKey = `rallyhub-directory-guided-draft-v1:${user?.id || 'user'}:${slug}`;
+            const cached = JSON.parse(localStorage.getItem(draftKey) || 'null');
+            if (cached?.baseline === serverBaseline && cached?.form) restored = cached.form;
+          } catch {}
+          setForm(restored);
+          setBaseline(serverBaseline);
+          if (searchParams.get('guided') === '1' || String(merged?.listingType || resolvedBase?.listingType || 'club') !== 'club') setEditorMode('guided');
+          const generatedWhatsApp = buildWhatsAppUrl(restored?.contact?.phone, resolvedBase?.county);
+          setAutoWhatsApp(Boolean(generatedWhatsApp && restored?.contact?.whatsapp === generatedWhatsApp));
         }
       })
       .catch(err => { if (active) setError(err.message || 'Could not load this listing.'); })
       .finally(() => { if (active) setLoadingListing(false); });
     return () => { active = false; };
-  }, [slug, seed, isAuthenticated]);
+  }, [slug, seed, isAuthenticated, searchParams, user?.id]);
 
   useEffect(() => {
     if (!isAuthenticated || !baseClub) return;
@@ -665,7 +683,6 @@ export default function DirectoryListingEdit() {
   };
 
   if (!loadingListing && !baseClub) return <Navigate to="/directory" replace />;
-  const isClubListing = String(form?.listingType || baseClub?.listingType || 'club') === 'club';
 
   return (
     <>
