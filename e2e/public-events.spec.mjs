@@ -53,7 +53,7 @@ test('public Events desktop: discover, filter, open detail, save, calendar and c
   await expect(page.getByRole('heading',{name:/Find your next event/i})).toBeVisible();
   await expect(page.getByRole('banner').getByRole('link',{name:'RallyHub home'})).toBeVisible();
   await expect(page.getByRole('banner').getByRole('link',{name:'Events',exact:true})).toBeVisible();
-  await expect(page.getByText('© 2026 RallyHub All rights reserved.')).toBeVisible();
+  await expect(page.getByText('© 2026 RallyHub. All rights reserved.')).toBeVisible();
   await expect(page.getByRole('heading',{name:'Kukri Irish Nationals 2026'})).toBeVisible();
   await expect(page.getByText('Open for booking').first()).toBeVisible();
   await expect(page.getByText(/Closes in \d+ days/).first()).toBeVisible();
