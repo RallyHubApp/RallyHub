@@ -322,8 +322,8 @@ export default function PublicDirectory() {
   return (
     <>
       <Seo
-        title="Pickleball Clubs in Ireland | RallyHub Club Directory"
-        description={`Search ${effectiveClubs.length} current pickleball club listings by county, club and venue. RallyHub supports directory listings across all 32 counties of Ireland.`}
+        title="Find Pickleball Clubs, Coaches, Holidays & More | RallyHub Directory"
+        description={`Search ${effectiveClubs.length} pickleball listings including clubs, coaches, event organisers, holidays and suppliers. RallyHub supports listings across Ireland and beyond.`}
         path="/directory"
         structuredData={directorySchema}
       />
@@ -336,17 +336,17 @@ export default function PublicDirectory() {
             <div className="flex items-center py-8 sm:py-10 lg:min-h-[355px] lg:py-11">
               <div className="max-w-[700px]">
                 <div className="inline-flex items-center gap-2 rounded-full border border-[#cfe4d8] bg-white px-3 py-2 text-[10px] font-extrabold uppercase tracking-[.08em] text-[#078e48] shadow-[0_6px_18px_rgba(8,33,76,.04)] sm:text-xs">
-                  <MapPin className="h-3.5 w-3.5" /> Players & clubs across Ireland · all 32 counties supported
+                  <MapPin className="h-3.5 w-3.5" /> Pickleball clubs, coaches, events, holidays & suppliers
                 </div>
 
                 <h1 className="mt-5 text-[2.65rem] font-black leading-[.97] tracking-[-.05em] text-[#061545] sm:text-[3.6rem] lg:text-[4.2rem]">
-                  Find a club.
-                  <span className="block">Find a session.</span>
+                  Find pickleball.
+                  <span className="block">Find your next thing.</span>
                   <span className="block text-[#0a5e5b]">Get playing.</span>
                 </h1>
 
                 <p className="mt-4 max-w-[650px] text-[14px] font-medium leading-[1.55] text-[#23365f] sm:text-[16px]">
-                  Search pickleball clubs across the whole island of Ireland by county, location, day and venue. Players can also stay informed about events, coaching and other opportunities, while clubs keep their public information accurate and up to date.
+                  Explore clubs and places to play, coaches, event organisers, pickleball holidays and equipment suppliers. Use one search across the whole RallyHub Directory, then narrow by the type of pickleball you are looking for.
                 </p>
 
                 <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
