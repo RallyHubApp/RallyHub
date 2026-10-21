@@ -236,6 +236,7 @@ export default function DirectoryListingEdit() {
   const [setupEvents, setSetupEvents] = useState([]);
   const [loadingSetupEvents, setLoadingSetupEvents] = useState(false);
   const [setupEventsChecked, setSetupEventsChecked] = useState(false);
+  const [setupEventsLoadedFor, setSetupEventsLoadedFor] = useState('');
   const [autoSaveState, setAutoSaveState] = useState('');
   const autoSaveInFlight = useRef(false);
   const continueAutoOpened = useRef(false);
@@ -320,11 +321,12 @@ export default function DirectoryListingEdit() {
 
   useEffect(() => {
     if (!isAuthenticated || (!(access?.hasAccess) && user?.role !== 'admin') || isClubListing || editorMode !== 'guided') {
-      if (isClubListing) { setSetupEvents([]); setSetupEventsChecked(true); }
+      if (isClubListing && form) { setSetupEvents([]); setSetupEventsChecked(true); setSetupEventsLoadedFor(`${slug}:club`); }
       return undefined;
     }
     let active = true;
     setSetupEventsChecked(false);
+    setSetupEventsLoadedFor('');
     setLoadingSetupEvents(true);
     base44.functions.invoke('directoryEvents', { action:'list', listingSlug:slug })
       .then(res => {
@@ -333,12 +335,13 @@ export default function DirectoryListingEdit() {
         setSetupEvents(Array.isArray(res.data?.events) ? res.data.events : []);
       })
       .catch(() => { if (active) setSetupEvents([]); })
-      .finally(() => { if (active) { setLoadingSetupEvents(false); setSetupEventsChecked(true); } });
+      .finally(() => { if (active) { setLoadingSetupEvents(false); setSetupEventsChecked(true); setSetupEventsLoadedFor(`${slug}:${listingType}`); } });
     return () => { active = false; };
-  }, [isAuthenticated, access?.hasAccess, user?.role, isClubListing, editorMode, slug]);
+  }, [isAuthenticated, access?.hasAccess, user?.role, isClubListing, listingType, form, editorMode, slug]);
 
   useEffect(() => {
-    if (!continueRequested || continueAutoOpened.current || !form || loadingAccess || (!isClubListing && !setupEventsChecked)) return;
+    const eventsReady = isClubListing || setupEventsLoadedFor === `${slug}:${listingType}`;
+    if (!continueRequested || continueAutoOpened.current || !form || loadingAccess || !eventsReady) return;
     const step = setupProgress.firstIncomplete;
     if (!step) return;
     continueAutoOpened.current = true;
@@ -350,7 +353,7 @@ export default function DirectoryListingEdit() {
     const index = guidedSections.findIndex(section => section.id === step.id);
     setGuidedStep(index >= 0 ? index : 0);
     setGuidedOverview(false);
-  }, [continueRequested, form, loadingAccess, isClubListing, setupEventsChecked, setupProgress, navigate, slug, guidedSections]);
+  }, [continueRequested, form, loadingAccess, isClubListing, setupEventsLoadedFor, listingType, setupProgress, navigate, slug, guidedSections]);
 
   useEffect(() => {
     if (!dirty) return undefined;
@@ -916,7 +919,7 @@ export default function DirectoryListingEdit() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <Button type="button" onClick={() => openGuidedStep(setupProgress.firstIncomplete)} disabled={(!isClubListing && !setupEventsChecked) || saving}>
+                    <Button type="button" onClick={() => openGuidedStep(setupProgress.firstIncomplete)} disabled={(!isClubListing && setupEventsLoadedFor !== `${slug}:${listingType}`) || saving}>
                       {loadingSetupEvents && !isClubListing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                       Continue setup
                     </Button>
