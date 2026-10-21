@@ -35,11 +35,10 @@ export async function createSpondMemberWorkbook(members) {
     row.getCell(18).numFmt='dd/mm/yyyy';
     row.getCell(19).numFmt='dd/mm/yyyy';
   }
-  const validationRanges=[['A',1,'A',4],['B',2,'B',2],['C',3,'C',7],['D',4,'D',5],['E',5,'E',3]];
+  const validationRanges=[['A','A',4],['B','B',2],['C','C',7],['D','D',5],['E','D',5],['T','E',3]];
   for(let row=2;row<=Math.max(501,members.length+1);row++) {
-    for(const [column,unused,refColumn,count] of validationRanges) {
-      const target = column==='D' ? ['D','E'] : [column];
-      for(const c of target) sheet.getCell(`${c}${row}`).dataValidation={type:'list',allowBlank:true,formulae:[`'Validation rules'!$${refColumn}$1:$${refColumn}$${count}`]};
+    for(const [column,source,count] of validationRanges) {
+      sheet.getCell(`${column}${row}`).dataValidation={type:'list',allowBlank:true,formulae:[`'Validation rules'!$${source}$1:$${source}$${count}`]};
     }
   }
   const buffer=await workbook.xlsx.writeBuffer();
