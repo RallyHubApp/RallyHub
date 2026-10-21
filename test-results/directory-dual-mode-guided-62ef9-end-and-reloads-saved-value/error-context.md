@@ -12,169 +12,26 @@
 # Error details
 
 ```
-Test timeout of 45000ms exceeded.
-```
+Error: expect(locator).toContainText(expected) failed
 
-```
-Error: locator.click: Test timeout of 45000ms exceeded.
+Locator: getByTestId('directory-guided-progress')
+Expected substring: "Step 2 of 5"
+Received string:    "Step 3 of 5: Playing venuesComplete only what is useful. Optional fields can be skipped, and your progress is saved as you go.PreviousContinue"
+Timeout: 3000ms
+
 Call log:
-  - waiting for getByRole('button', { name: 'Save this step' })
+  - Expect "toContainText" getByTestId('directory-guided-progress') with timeout 3000ms
+  - waiting for getByTestId('directory-guided-progress')
+    10 × locator resolved to <div class="space-y-3" data-dynamic-content="true" data-testid="directory-guided-progress" data-source-location="src/pages/DirectoryListingEdit.jsx:840:44">…</div>
+       - unexpected value "Step 3 of 5: Playing venuesComplete only what is useful. Optional fields can be skipped, and your progress is saved as you go.PreviousContinue"
 
 ```
-
-# Page snapshot
 
 ```yaml
-- generic [ref=e2]:
-  - generic [ref=e3]:
-    - banner [ref=e4]:
-      - generic [ref=e5]:
-        - link [ref=e6] [cursor=pointer]:
-          - /url: /
-          - img "RallyHub — Play Connect Belong" [ref=e7]
-        - navigation [ref=e8]:
-          - link "Home" [ref=e9] [cursor=pointer]:
-            - /url: /
-          - link "Directory" [ref=e10] [cursor=pointer]:
-            - /url: /directory
-          - link "Events" [ref=e11] [cursor=pointer]:
-            - /url: /events
-          - link "Club Guide" [ref=e12] [cursor=pointer]:
-            - /url: /directory/help
-          - link "About" [ref=e13] [cursor=pointer]:
-            - /url: /about
-        - generic [ref=e14]:
-          - link "Search directory" [ref=e15] [cursor=pointer]:
-            - /url: /directory
-          - generic [ref=e19]:
-            - paragraph [ref=e20]: Signed in
-            - paragraph [ref=e21]: Editor
-          - button "Sign out" [ref=e22] [cursor=pointer]
-          - button "Directory Admin" [ref=e23] [cursor=pointer]
-          - button "Open RallyHub" [ref=e24] [cursor=pointer]
-          - button "Current appearance Auto. Change appearance." [ref=e25] [cursor=pointer]
-    - main [ref=e26]:
-      - generic [ref=e27]:
-        - button "Back to public listing" [ref=e28] [cursor=pointer]
-        - generic [ref=e31]: Unsaved changes
-      - generic [ref=e32]:
-        - generic [ref=e33]:
-          - generic [ref=e35]:
-            - generic [ref=e36]:
-              - paragraph [ref=e37]: Super Admin · Unclaimed listing
-              - heading "Clare Pickleball Sandbox Persistence Test" [level=1] [ref=e38]
-              - generic [ref=e39]:
-                - generic [ref=e40]: County Clare
-                - generic [ref=e41]: 3 venues
-                - generic [ref=e42]: 7 weekly sessions
-              - paragraph [ref=e43]: Keep the public listing accurate. The displayed club name can be corrected at any time; the underlying RallyHub URL stays fixed so existing links and ownership are not affected. County remains fixed.
-            - generic [ref=e44]:
-              - button "View public listing" [ref=e45] [cursor=pointer]
-              - link [ref=e46] [cursor=pointer]:
-                - /url: /app/communications?scope=platform&source=directory&sourceId=clare-pickleball&template=directory_claim&returnTo=%2Fdirectory%2Fclare-pickleball%2Fedit&label=Clare%20Pickleball%20Sandbox%20Persistence%20Test
-                - button "Open in Communications" [ref=e47]
-              - link [ref=e48] [cursor=pointer]:
-                - /url: /directory/clare-pickleball/events
-                - button "Manage events" [ref=e49]
-              - button "Save changes" [ref=e50] [cursor=pointer]
-          - navigation [ref=e51]:
-            - link "Basics" [ref=e52] [cursor=pointer]:
-              - /url: "#basics"
-            - link "Contact" [ref=e53] [cursor=pointer]:
-              - /url: "#contact"
-            - link "Venues" [ref=e54] [cursor=pointer]:
-              - /url: "#venues"
-            - link "Sessions" [ref=e55] [cursor=pointer]:
-              - /url: "#sessions"
-            - link "Events" [ref=e56] [cursor=pointer]:
-              - /url: /directory/clare-pickleball/events
-            - button "Enhance listing" [ref=e59] [cursor=pointer]
-            - link "Help" [ref=e60] [cursor=pointer]:
-              - /url: /directory/help
-        - generic [ref=e64]:
-          - heading "How would you like to update your listing?" [level=2] [ref=e65]
-          - paragraph [ref=e66]: Both options update the same listing. Switch at any time.
-          - generic [ref=e67]:
-            - button "Guided setup" [ref=e68] [cursor=pointer]
-            - button "Edit directly" [ref=e69] [cursor=pointer]
-          - generic [ref=e70]:
-            - paragraph [ref=e71]: "Step 1 of 5: Club details"
-            - generic "Setup progress" [ref=e72]
-            - paragraph [ref=e78]: Complete only what is useful. Optional fields can be skipped, and your progress is saved as you go.
-            - generic [ref=e79]:
-              - button "Previous" [disabled]
-              - button "Save & continue" [ref=e80] [cursor=pointer]
-        - generic [ref=e82]:
-          - generic [ref=e83]:
-            - heading "Start with four things" [level=2] [ref=e88]
-            - paragraph [ref=e89]: 1. Check the club description · 2. Check the public contact · 3. Check the main venue · 4. Check the regular sessions. That is enough for a useful listing. Everything else is optional.
-            - paragraph [ref=e90]: Using Spond? Open Enhanced listing to connect Spond and automatically import your club’s events and regular sessions.
-          - link [ref=e91] [cursor=pointer]:
-            - /url: /directory/help
-            - button "Open help guide" [ref=e92]
-        - generic [ref=e93]:
-          - heading "Public club information" [level=2] [ref=e97]
-          - generic [ref=e98]:
-            - generic [ref=e99]:
-              - text: Club name
-              - textbox "e.g. Dalkey Pickleball Club" [active] [ref=e100]: Clare Pickleball Sandbox Persistence Test
-              - paragraph [ref=e101]: This changes the public heading only. The RallyHub listing link stays the same.
-            - generic [ref=e102]:
-              - text: Club description
-              - textbox "Tell players what your club is about, where you play and who you welcome." [ref=e103]: A welcoming, members-only pickleball club with indoor sessions across County Clare.
-              - paragraph [ref=e104]: This is the main introduction players see in search and on the public listing page.
-            - generic [ref=e105]:
-              - generic [ref=e106]:
-                - paragraph [ref=e107]: Optional club details
-                - paragraph [ref=e108]: Website, social links, joining information and attendance policy can all be added later. If your club uses Spond, you can also connect your Spond account here to bring your regular venues and session times into RallyHub instead of entering them manually.
-              - button "Enhance listing" [ref=e109] [cursor=pointer]
-            - generic [ref=e110]:
-              - text: Club logo
-              - generic [ref=e111]:
-                - img "Club logo preview" [ref=e112]
-                - generic [ref=e113]:
-                  - generic [ref=e114]:
-                    - generic [ref=e115] [cursor=pointer]: Replace logo
-                    - button "Remove logo" [ref=e119] [cursor=pointer]
-                  - paragraph [ref=e120]: JPG, PNG or WebP up to 5 MB. RallyHub automatically removes common transparent/white padding, centres the crest, then lets you resize and reposition it before upload.
-                  - generic [ref=e121]:
-                    - text: Or use a logo image URL (HTTPS)
-                    - textbox "Logo image HTTPS URL" [ref=e122]:
-                      - /placeholder: https://example.com/club-logo.png
-                      - text: https://clarepickleball.ie/wp-content/uploads/2025/06/491439977_17843980809473841_8409446969161026129_n-removebg-preview.png
-                    - paragraph [ref=e123]: Optional alternative to uploading an image. Paste a direct HTTPS image link, preview it above, then use Save changes to update this listing.
-        - generic [ref=e124]:
-          - generic [ref=e125]:
-            - paragraph [ref=e126]: You have unsaved changes
-            - paragraph [ref=e127]: Changes become public as soon as the save completes.
-          - generic [ref=e128]:
-            - button "View listing" [ref=e129] [cursor=pointer]
-            - button "Save changes" [ref=e130] [cursor=pointer]
-    - contentinfo "RallyHub footer" [ref=e132]:
-      - generic [ref=e133]:
-        - generic [ref=e134]:
-          - link "RallyHub home" [ref=e135] [cursor=pointer]:
-            - /url: /
-            - img "RallyHub" [ref=e136]
-          - navigation "Footer navigation" [ref=e137]:
-            - link "Directory" [ref=e138] [cursor=pointer]:
-              - /url: /directory
-            - link "Events" [ref=e139] [cursor=pointer]:
-              - /url: /events
-            - link "Club Guide" [ref=e140] [cursor=pointer]:
-              - /url: /directory/help
-            - link "About" [ref=e141] [cursor=pointer]:
-              - /url: /about
-            - link "Contact" [ref=e142] [cursor=pointer]:
-              - /url: /contact
-        - generic [ref=e143]: © 2026 RallyHub All rights reserved.
-  - generic [ref=e145]:
-    - generic [ref=e146]:
-      - paragraph [ref=e147]: Help us improve RallyHub
-      - paragraph [ref=e148]: We use optional analytics to understand which clubs, venues and Directory features people find useful. Analytics only starts if you allow it. We do not use this for advertising profiles.
-    - generic [ref=e149]:
-      - button "Necessary only" [ref=e150] [cursor=pointer]
-      - button "Allow analytics" [ref=e151] [cursor=pointer]
+- paragraph: "Step 3 of 5: Playing venues"
+- paragraph: Complete only what is useful. Optional fields can be skipped, and your progress is saved as you go.
+- button "Previous"
+- button "Continue"
 ```
 
 # Test source
@@ -248,13 +105,13 @@ Call log:
   66  |  await page.getByRole('button',{name:'Guided setup'}).click();
   67  |  const nameField=page.locator('#basics input').first();
   68  |  await nameField.fill('Clare Pickleball Sandbox Persistence Test');
-> 69  |  await page.getByRole('button',{name:'Save this step'}).click();
-      |                                                         ^ Error: locator.click: Test timeout of 45000ms exceeded.
+  69  |  await page.getByRole('button',{name:'Save & continue'}).click();
   70  |  await expect(page.getByText('Saved successfully.')).toBeVisible();
   71  |  expect(saveCalls).toBe(1);
   72  |  expect(savedProfile.name).toBe('Clare Pickleball Sandbox Persistence Test');
   73  |  await page.getByRole('button',{name:'Continue',exact:true}).click();
-  74  |  await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 2 of 5');
+> 74  |  await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 2 of 5');
+      |                                                              ^ Error: expect(locator).toContainText(expected) failed
   75  |  await page.reload();
   76  |  await expect(page.locator('#basics input').first()).toHaveValue('Clare Pickleball Sandbox Persistence Test');
   77  |  expect(saveCalls).toBe(1);

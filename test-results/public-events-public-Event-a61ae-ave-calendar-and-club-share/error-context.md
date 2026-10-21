@@ -14,14 +14,14 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('© 2026 RallyHub All rights reserved.')
+Locator: getByText('Eyva\'s Invitational Series – Autumn Classic 2026')
 Expected: visible
 Timeout: 3000ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('© 2026 RallyHub All rights reserved.') with timeout 3000ms
-  - waiting for getByText('© 2026 RallyHub All rights reserved.')
+  - Expect "toBeVisible" getByText('Eyva\'s Invitational Series – Autumn Classic 2026') with timeout 3000ms
+  - waiting for getByText('Eyva\'s Invitational Series – Autumn Classic 2026')
 
 ```
 
@@ -262,13 +262,13 @@ Call log:
   53  |   await expect(page.getByRole('heading',{name:/Find your next event/i})).toBeVisible();
   54  |   await expect(page.getByRole('banner').getByRole('link',{name:'RallyHub home'})).toBeVisible();
   55  |   await expect(page.getByRole('banner').getByRole('link',{name:'Events',exact:true})).toBeVisible();
-> 56  |   await expect(page.getByText('© 2026 RallyHub All rights reserved.')).toBeVisible();
-      |                                                                        ^ Error: expect(locator).toBeVisible() failed
+  56  |   await expect(page.getByText('© 2026 RallyHub. All rights reserved.')).toBeVisible();
   57  |   await expect(page.getByRole('heading',{name:'Kukri Irish Nationals 2026'})).toBeVisible();
   58  |   await expect(page.getByText('Open for booking').first()).toBeVisible();
   59  |   await expect(page.getByText(/Closes in \d+ days/).first()).toBeVisible();
   60  |   await expect(page.getByText('Clare v Galway Interclub')).toHaveCount(0);
-  61  |   await expect(page.getByText("Eyva's Invitational Series – Autumn Classic 2026")).toBeVisible();
+> 61  |   await expect(page.getByText("Eyva's Invitational Series – Autumn Classic 2026")).toBeVisible();
+      |                                                                                    ^ Error: expect(locator).toBeVisible() failed
   62  |   await expect(page.getByText('Invitation only').first()).toBeVisible();
   63  |   await page.getByRole('button',{name:'Invitation only'}).click();
   64  |   await expect(page.getByText("Eyva's Invitational Series – Autumn Classic 2026")).toBeVisible();

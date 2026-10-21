@@ -12,168 +12,166 @@
 # Error details
 
 ```
-Error: expect(locator).toHaveValue(expected) failed
+Error: expect(locator).toBeVisible() failed
 
-Locator: getByLabel('Website (optional)')
-Expected: "https://fourpointtravelgroup.com"
-Timeout: 3000ms
-Error: element(s) not found
+Locator: getByRole('button', { name: 'View public listing' })
+Expected: visible
+Error: strict mode violation: getByRole('button', { name: 'View public listing' }) resolved to 3 elements:
+    1) <button type="button" data-dynamic-content="true" data-source-location="src/pages/DirectoryListingEdit.jsx:796:20" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px…>…</button> aka getByRole('button', { name: 'View public listing' }).first()
+    2) <button type="button" data-dynamic-content="true" data-source-location="src/pages/DirectoryListingEdit.jsx:847:20" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2">View public listing</button> aka getByTestId('directory-guided-progress').getByRole('button', { name: 'View public listing' })
+    3) <button type="button" data-dynamic-content="true" data-source-location="src/pages/DirectoryListingEdit.jsx:1006:338" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2">…</button> aka locator('#review').getByRole('button', { name: 'View public listing' })
 
 Call log:
-  - Expect "toHaveValue" getByLabel('Website (optional)') with timeout 3000ms
-  - waiting for getByLabel('Website (optional)')
+  - Expect "toBeVisible" getByRole('button', { name: 'View public listing' }) with timeout 3000ms
+  - waiting for getByRole('button', { name: 'View public listing' })
 
 ```
 
+# Page snapshot
+
 ```yaml
-- banner:
-  - link "RallyHub — Play Connect Belong":
-    - /url: /
-    - img "RallyHub — Play Connect Belong"
-  - navigation:
-    - link "Home":
-      - /url: /
-    - link "Directory":
-      - /url: /directory
-    - link "Events":
-      - /url: /events
-    - link "Club Guide":
-      - /url: /directory/help
-    - link "About":
-      - /url: /about
-  - link "Search directory":
-    - /url: /directory
-    - img
-  - paragraph: Signed in
-  - paragraph: Sandra Example
-  - button "Sign out"
-  - button "Current appearance Auto. Change appearance.":
-    - img
-- main:
-  - button "Back to public listing":
-    - img
-    - text: Back to public listing
-  - paragraph: Primary Directory Owner
-  - heading "Sandra's Pickleball Passports" [level=1]
-  - text: Pickleball holidays & experiences Ireland & Portugal
-  - paragraph: Keep the public listing accurate. The displayed name, description, contact details, service area and links can be updated at any time; the underlying RallyHub URL stays fixed.
-  - button "View public listing":
-    - img
-    - text: View public listing
-  - button "All saved" [disabled]:
-    - img
-    - text: All saved
-  - navigation:
-    - link "Basics":
-      - /url: "#basics"
-    - link "Contact":
-      - /url: "#contact"
-    - link "Access":
-      - /url: "#access"
-    - button "Enhance listing"
-    - link "Help":
-      - /url: /directory/help
-      - img
-      - text: Help
-  - heading "How would you like to update your listing?" [level=2]
-  - paragraph: Both options update the same listing. Switch at any time.
-  - button "Guided setup"
-  - button "Edit directly"
-  - paragraph: "Step 2 of 5: Contact & social"
-  - paragraph: Complete only what is useful. Optional fields can be skipped, and your progress is saved as you go.
-  - button "Previous"
-  - button "Continue"
-  - img
-  - heading "Keep the essentials accurate" [level=2]
-  - paragraph: Check the listing name, description, public contact, area or coverage, website and social links. Keep it concise and useful for players.
-  - link "Open help guide":
-    - /url: /directory/help
-    - button "Open help guide":
-      - img
-      - text: Open help guide
-  - img
-  - heading "People with access" [level=2]
-  - paragraph: The Primary Owner remains responsible for this listing. Directory Editors can update public club information but cannot transfer ownership or add/remove other editors.
-  - img
-  - paragraph:
-    - strong: "Security:"
-    - text: delegated access uses a single-use 72-hour invitation tied to the chosen email address or mobile number. A forwarded link cannot be accepted by somebody whose verified details do not match the invitation. Primary Owner access cannot be removed from this screen.
-  - img
-  - heading "RallyHub Club" [level=2]
-  - paragraph: RallyHub Club is still under development. These features are shown so you can see what is planned, but they are not available for general use yet.
-  - button "Join waiting list"
-  - img
-  - text: RallyHub Club tools are not available from a Directory account. If you would like a demo or further information when they become available, join the waiting list.
-  - img
-  - heading "Help shape RallyHub" [level=2]
-  - paragraph: Found something confusing? Have an idea or feature you’d like to see? Send it directly to the RallyHub team.
-  - button "Send feedback":
-    - img
-    - text: Send feedback
-  - img
-  - heading "Contact & social" [level=2]
-  - paragraph: These details are separate from the private verified owner/editor identity held by RallyHub. Add only the public contact and social links you want players to use.
-  - text: Public contact label / name
-  - textbox "e.g. Chairperson, Club Contact, Debbie Brown": Sandra
-  - paragraph: This does not change the privately verified RallyHub account holder.
-  - text: Contact email
-  - textbox: sandra@example.test
-  - text: Contact phone
-  - textbox "e.g. 087 123 4567": "+353860488146"
-  - text: WhatsApp
-  - checkbox "Use this mobile for WhatsApp RallyHub will create the WhatsApp link automatically from the contact number." [checked]
-  - strong: Use this mobile for WhatsApp
-  - text: RallyHub will create the WhatsApp link automatically from the contact number.
-  - textbox "Generated WhatsApp link": https://wa.me/353860488146
-  - text: Website (optional)
-  - textbox "https://…": https://fourpointtravelgroup.com
-  - text: Facebook (optional)
-  - textbox "https://facebook.com/…"
-  - text: Instagram (optional)
-  - textbox "https://instagram.com/…": https://instagram.com/sandra
-  - paragraph: All changes saved
-  - paragraph: Changes become public as soon as the save completes.
-  - button "View listing":
-    - img
-    - text: View listing
-  - button "All saved" [disabled]:
-    - img
-    - text: All saved
-- contentinfo "RallyHub footer":
-  - link "RallyHub home":
-    - /url: /
-    - img "RallyHub"
-  - navigation "Footer navigation":
-    - link "Directory":
-      - /url: /directory
-    - link "Events":
-      - /url: /events
-    - link "Club Guide":
-      - /url: /directory/help
-    - link "About":
-      - /url: /about
-    - link "Contact":
-      - /url: /contact
-  - text: © 2026 RallyHub All rights reserved.
-- paragraph: Help us improve RallyHub
-- paragraph: We use optional analytics to understand which clubs, venues and Directory features people find useful. Analytics only starts if you allow it. We do not use this for advertising profiles.
-- button "Necessary only"
-- button "Allow analytics"
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "RallyHub — Play Connect Belong" [ref=e7]
+        - navigation [ref=e8]:
+          - link "Home" [ref=e9] [cursor=pointer]:
+            - /url: /
+          - link "Directory" [ref=e10] [cursor=pointer]:
+            - /url: /directory
+          - link "Events" [ref=e11] [cursor=pointer]:
+            - /url: /events
+          - link "Club Guide" [ref=e12] [cursor=pointer]:
+            - /url: /directory/help
+          - link "About" [ref=e13] [cursor=pointer]:
+            - /url: /about
+        - generic [ref=e14]:
+          - link "Search directory" [ref=e15] [cursor=pointer]:
+            - /url: /directory
+          - generic [ref=e19]:
+            - paragraph [ref=e20]: Signed in
+            - paragraph [ref=e21]: Sandra Example
+          - button "Sign out" [ref=e22] [cursor=pointer]
+          - button "Current appearance Auto. Change appearance." [ref=e23] [cursor=pointer]
+    - main [ref=e24]:
+      - generic [ref=e25]:
+        - button "Back to public listing" [ref=e26] [cursor=pointer]
+        - generic [ref=e29]: Saved
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - generic [ref=e37]:
+            - generic [ref=e38]:
+              - paragraph [ref=e39]: Primary Directory Owner
+              - heading "Sandra's Pickleball Passports" [level=1] [ref=e40]
+              - generic [ref=e41]:
+                - generic [ref=e42]: Pickleball holidays & experiences
+                - generic [ref=e43]: Ireland & Portugal
+              - paragraph [ref=e44]: Keep the public listing accurate. The displayed name, description, contact details, service area and links can be updated at any time; the underlying RallyHub URL stays fixed.
+            - generic [ref=e45]:
+              - button "View public listing" [ref=e46] [cursor=pointer]
+              - button "Saved ✓" [disabled]
+          - navigation [ref=e47]:
+            - link "Basics" [ref=e48] [cursor=pointer]:
+              - /url: "#basics"
+            - link "Contact" [ref=e49] [cursor=pointer]:
+              - /url: "#contact"
+            - link "Access" [ref=e50] [cursor=pointer]:
+              - /url: "#access"
+            - button "Enhance listing" [ref=e51] [cursor=pointer]
+            - link "Help" [ref=e52] [cursor=pointer]:
+              - /url: /directory/help
+          - generic [ref=e56]:
+            - generic [ref=e57]:
+              - strong [ref=e61]: Saved successfully.
+              - text: Changes are live in the public directory.
+            - button "View updated listing" [ref=e62] [cursor=pointer]
+        - generic [ref=e63]:
+          - heading "How would you like to update your listing?" [level=2] [ref=e64]
+          - paragraph [ref=e65]: Both options update the same listing. Switch at any time.
+          - generic [ref=e66]:
+            - button "Guided setup" [ref=e67] [cursor=pointer]
+            - button "Edit directly" [ref=e68] [cursor=pointer]
+          - generic [ref=e69]:
+            - paragraph [ref=e70]: "Step 5 of 5: Review & finish"
+            - generic "Setup progress" [ref=e71]
+            - paragraph [ref=e77]: Complete only what is useful. Optional fields can be skipped, and your progress is saved as you go.
+            - generic [ref=e78]:
+              - button "Previous" [ref=e79] [cursor=pointer]
+              - button "View public listing" [ref=e80] [cursor=pointer]
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - heading "Keep the essentials accurate" [level=2] [ref=e88]
+            - paragraph [ref=e89]: Check the listing name, description, public contact, area or coverage, website and social links. Keep it concise and useful for players.
+          - link [ref=e90] [cursor=pointer]:
+            - /url: /directory/help
+            - button "Open help guide" [ref=e91]
+        - generic [ref=e92]:
+          - generic [ref=e100]:
+            - heading "People with access" [level=2] [ref=e101]
+            - paragraph [ref=e102]: The Primary Owner remains responsible for this listing. Directory Editors can update public club information but cannot transfer ownership or add/remove other editors.
+          - paragraph [ref=e107]:
+            - strong [ref=e108]: "Security:"
+            - text: delegated access uses a single-use 72-hour invitation tied to the chosen email address or mobile number. A forwarded link cannot be accepted by somebody whose verified details do not match the invitation. Primary Owner access cannot be removed from this screen.
+        - generic [ref=e109]:
+          - generic [ref=e110]:
+            - generic [ref=e111]:
+              - heading "RallyHub Club" [level=2] [ref=e116]
+              - paragraph [ref=e117]: RallyHub Club is still under development. These features are shown so you can see what is planned, but they are not available for general use yet.
+            - button "Join waiting list" [ref=e118] [cursor=pointer]
+          - generic [ref=e119]: RallyHub Club tools are not available from a Directory account. If you would like a demo or further information when they become available, join the waiting list.
+        - generic [ref=e125]:
+          - generic [ref=e126]:
+            - heading "Help shape RallyHub" [level=2] [ref=e130]
+            - paragraph [ref=e131]: Found something confusing? Have an idea or feature you’d like to see? Send it directly to the RallyHub team.
+          - button "Send feedback" [ref=e132] [cursor=pointer]
+        - generic [ref=e133]:
+          - heading "Review & finish" [level=2] [ref=e138]
+          - paragraph [ref=e139]: Your listing is live. You can view it, continue to your event, or come back later to add optional information.
+          - generic [ref=e140]:
+            - button "View public listing" [ref=e141] [cursor=pointer]
+            - link [ref=e142] [cursor=pointer]:
+              - /url: /directory/sandras-pickleball-passports/events?guided=1
+              - button "Continue to event" [ref=e143]
+        - generic [ref=e144]:
+          - generic [ref=e145]:
+            - paragraph [ref=e146]: Saved successfully
+            - paragraph [ref=e150]: Your public Directory listing has been updated.
+          - generic [ref=e151]:
+            - button "View listing" [ref=e152] [cursor=pointer]
+            - button "Saved ✓" [disabled]
+    - contentinfo "RallyHub footer" [ref=e154]:
+      - generic [ref=e155]:
+        - generic [ref=e156]:
+          - link "RallyHub home" [ref=e157] [cursor=pointer]:
+            - /url: /
+            - img "RallyHub" [ref=e158]
+          - navigation "Footer navigation" [ref=e159]:
+            - link "Directory" [ref=e160] [cursor=pointer]:
+              - /url: /directory
+            - link "Events" [ref=e161] [cursor=pointer]:
+              - /url: /events
+            - link "Club Guide" [ref=e162] [cursor=pointer]:
+              - /url: /directory/help
+            - link "About" [ref=e163] [cursor=pointer]:
+              - /url: /about
+            - link "Contact" [ref=e164] [cursor=pointer]:
+              - /url: /contact
+        - generic [ref=e165]: © 2026 RallyHub All rights reserved.
+  - generic [ref=e167]:
+    - generic [ref=e168]:
+      - paragraph [ref=e169]: Help us improve RallyHub
+      - paragraph [ref=e170]: We use optional analytics to understand which clubs, venues and Directory features people find useful. Analytics only starts if you allow it. We do not use this for advertising profiles.
+    - generic [ref=e171]:
+      - button "Necessary only" [ref=e172] [cursor=pointer]
+      - button "Allow analytics" [ref=e173] [cursor=pointer]
 ```
 
 # Test source
 
 ```ts
-  1   | import { test, expect } from '@playwright/test';
-  2   | 
-  3   | const APP_ID='6a01dc00702b7dd2a2978c28';
-  4   | const user={id:'sandra-e2e',email:'sandra@example.test',full_name:'Sandra Example',role:'user',approval_status:'approved'};
-  5   | const json=(route,body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
-  6   | 
-  7   | const holidayBase={
-  8   |   id:'sandras-pickleball-passports',slug:'sandras-pickleball-passports',name:"Sandra's Pickleball Passports",
-  9   |   listingType:'holidays',listingCategoryLabel:'Pickleball holidays & experiences',serviceArea:'Ireland & Portugal',
-  10  |   description:'Pickleball holidays and experiences for players who want travel, play and connection.',
   11  |   website:'https://fourpointtravelgroup.com',facebook:'',instagram:'https://instagram.com/sandra',
   12  |   contact:{name:'Sandra',email:'sandra@example.test',phone:'+353860488146',whatsapp:'https://wa.me/353860488146'},
   13  |   venues:[],sessions:[]
@@ -262,8 +260,7 @@ Call log:
   96  |   await expect(page.locator('#basics')).toBeVisible();
   97  |   await page.getByRole('button',{name:'Continue',exact:true}).click();
   98  |   await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 2 of 5: Contact & social');
-> 99  |   await expect(page.getByLabel('Website (optional)')).toHaveValue('https://fourpointtravelgroup.com');
-      |                                                       ^ Error: expect(locator).toHaveValue(expected) failed
+  99  |   await expect(page.getByLabel('Website')).toHaveValue('https://fourpointtravelgroup.com');
   100 |   await page.getByRole('button',{name:'Continue',exact:true}).click();
   101 |   await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 3 of 5: Where you operate');
   102 |   await expect(page.getByLabel(/Area, destination or service coverage/)).toHaveValue('Ireland & Portugal');
@@ -275,7 +272,8 @@ Call log:
   108 |   await expect(page.getByRole('button',{name:'Publish listing'})).toBeVisible();
   109 |   await page.getByRole('button',{name:'Publish listing'}).click();
   110 |   await expect.poll(()=>calls.some(c=>c.name==='directoryClaim'&&c.body.action==='set_visibility'&&c.body.visibility==='public')).toBeTruthy();
-  111 |   await expect(page.getByRole('button',{name:'View public listing'})).toBeVisible();
+> 111 |   await expect(page.getByRole('button',{name:'View public listing'})).toBeVisible();
+      |                                                                       ^ Error: expect(locator).toBeVisible() failed
   112 | });
   113 | 
   114 | test('guided holiday event reuses organiser details, stores collaborator on the one event and publishes listing with it',async({page})=>{
