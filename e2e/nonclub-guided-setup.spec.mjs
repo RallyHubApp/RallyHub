@@ -1,16 +1,25 @@
 import { test, expect } from '@playwright/test';
 
 const APP_ID='6a01dc00702b7dd2a2978c28';
-const user={id:'sandra-e2e',email:'sandra@example.test',full_name:'Sandra Example',role:'user',approval_status:'approved'};
+const user={id:'sandra-e2e',email:'smartertravel77@gmail.com',full_name:'Sandra',role:'user',approval_status:'approved'};
 const json=(route,body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
 
 const holidayBase={
   id:'sandras-pickleball-passports',slug:'sandras-pickleball-passports',name:"Sandra's Pickleball Passports",
   listingType:'holidays',listingCategoryLabel:'Pickleball holidays & experiences',serviceArea:'Ireland & Portugal',
   description:'Pickleball holidays and experiences for players who want travel, play and connection.',
-  website:'https://fourpointtravelgroup.com',facebook:'',instagram:'https://instagram.com/sandra',
-  contact:{name:'Sandra',email:'sandra@example.test',phone:'+353860488146',whatsapp:'https://wa.me/353860488146'},
+  website:'',facebook:'',instagram:'https://www.instagram.com/p/Dewzng0O6j2/',
+  contact:{name:'Sandra',email:'smartertravel77@gmail.com',phone:'+353860488146',whatsapp:'https://wa.me/353860488146'},
   venues:[],sessions:[]
+};
+const sandraEvent={
+  id:'event-sandra',name:"Sandra's Pickleball Passports · Carvoeiro, Portugal",event_slug:'sandras-pickleball-passports-carvoeiro-2027',
+  start_date:'2027-05-14',end_date:'2027-05-18',location:'Rocha Brava Racquet Club, Carvoeiro',event_country:'Portugal',event_county:'Algarve',event_category:'holiday',
+  event_public_summary:'Four nights in Carvoeiro with 18 hours of hosted pickleball and coaching, welcome drinks, a three-course group dinner and a fun tournament at Rocha Brava Racquet Club.',
+  event_registration_mode:'contact',event_registration_url:'',event_fee_text:'£815 / €950 per person, based on two sharing a one-bedroom apartment.',event_contact:'smartertravel77@gmail.com',event_contact_phone:'+353860488146',
+  event_eligibility:'Designed for pickleball-loving women aged 60+.',event_player_info:'Come alone or with a friend. Non-playing partners are welcome. Single supplements and additional nights are available on request. Flights and transfers are extra.',
+  event_source_url:'https://www.instagram.com/p/Dewzng0O6j2/',event_publish_status:'draft',event_public_visible:false,event_member_visible:false,
+  event_collaborators:[{name:'Pickleball Escapes',role:'In collaboration with',url:'',listing_slug:''}],status:'Draft'
 };
 
 async function installBackend(page,{forAdd=false}={}){
@@ -51,7 +60,7 @@ async function installBackend(page,{forAdd=false}={}){
         return reply({success:true,profile:null,base:null});
       }
       if(name==='directoryEvents'){
-        if(body.action==='list')return reply({success:true,canManage:true,role:'owner',listing:{slug:holidayBase.slug,name:holidayBase.name,listingType:'holidays',serviceArea:'Ireland & Portugal',visibility:'preview_only',profile:{contact:holidayBase.contact,website:holidayBase.website,instagram:holidayBase.instagram,facebook:'',logoUrl:''}},host:{id:'host-sandra',name:holidayBase.name},tenant:{id:'tenant-sandra'},events:[],venues:[]});
+        if(body.action==='list')return reply({success:true,canManage:true,role:'owner',listing:{slug:holidayBase.slug,name:holidayBase.name,listingType:'holidays',serviceArea:'Ireland & Portugal',visibility:'preview_only',profile:{contact:holidayBase.contact,website:holidayBase.website,instagram:holidayBase.instagram,facebook:'',logoUrl:''}},host:{id:'host-sandra',name:holidayBase.name},tenant:{id:'tenant-sandra'},events:[sandraEvent],venues:[]});
         if(body.action==='save')return reply({success:true,event:{id:'event-sandra',...body.event},listingPublished:body.mode==='publish'});
         return reply({success:true});
       }
@@ -74,8 +83,7 @@ test('non-club organiser chooses holiday setup, autosaves and continues straight
   await expect(page.getByText('Pickleball holiday / experience',{exact:true})).toBeVisible();
   await page.getByLabel('Club, business or listing name').fill("Sandra's Pickleball Passports");
   await page.getByLabel(/Area, destination or service coverage/).fill('Ireland & Portugal');
-  await page.getByLabel('Website').fill('https://fourpointtravelgroup.com');
-  await page.getByLabel('Instagram').fill('https://instagram.com/sandra');
+  await page.getByLabel('Instagram').fill('https://www.instagram.com/p/Dewzng0O6j2/');
   await page.getByLabel('Your role / connection').fill('Travel organiser');
   await expect(page.getByText('Your progress is automatically saved on this device while you complete the form.')).toBeVisible();
   await page.waitForTimeout(450);
@@ -89,45 +97,38 @@ test('non-club organiser chooses holiday setup, autosaves and continues straight
   expect(submit?.body.claimantPhone).toBe('');
 });
 
-test('non-club guided editor has five simple steps and can publish its private setup draft',async({page})=>{
-  const calls=await installBackend(page);
+test('personalised guided overview shows what RallyHub already knows and continues to Sandra’s first unfinished item',async({page})=>{
+  await installBackend(page);
   await page.goto('/directory/sandras-pickleball-passports/edit?guided=1');
-  await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 1 of 5: About you');
-  await expect(page.locator('#basics')).toBeVisible();
-  await page.getByRole('button',{name:'Continue',exact:true}).click();
-  await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 2 of 5: Contact & social');
-  await expect(page.getByLabel('Website')).toHaveValue('https://fourpointtravelgroup.com');
-  await page.getByRole('button',{name:'Continue',exact:true}).click();
-  await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 3 of 5: Where you operate');
-  await expect(page.getByLabel(/Area, destination or service coverage/)).toHaveValue('Ireland & Portugal');
-  await page.getByRole('button',{name:'Continue',exact:true}).click();
-  await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 4 of 5: Your event');
-  await expect(page.getByRole('button',{name:'Continue to your event'}).first()).toBeVisible();
-  await page.getByRole('button',{name:'Continue',exact:true}).click();
-  await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 5 of 5: Review & finish');
-  await expect(page.getByRole('button',{name:'Publish listing'})).toBeVisible();
-  await page.getByRole('button',{name:'Publish listing'}).click();
-  await expect.poll(()=>calls.some(c=>c.name==='directoryClaim'&&c.body.action==='set_visibility'&&c.body.visibility==='public')).toBeTruthy();
-  await expect(page.locator('#review').getByRole('button',{name:'View public listing'})).toBeVisible();
+  const overview=page.getByTestId('directory-guided-overview');
+  await expect(overview).toBeVisible();
+  await expect(overview.getByText('Sandra, we’ve already started this for you.')).toBeVisible();
+  await expect(overview.getByText('3 of 5 ready')).toBeVisible();
+  await expect(page.getByTestId('setup-step-basics')).toContainText('Ready');
+  await expect(page.getByTestId('setup-step-contact')).toContainText('Ready');
+  await expect(page.getByTestId('setup-step-location')).toContainText('Ready');
+  await expect(page.getByTestId('setup-step-events')).toContainText('Started');
+  await expect(page.getByTestId('setup-step-events')).toContainText("Sandra's Pickleball Passports · Carvoeiro, Portugal");
+  await page.getByRole('button',{name:'Continue setup'}).click();
+  await expect(page).toHaveURL(/\/directory\/sandras-pickleball-passports\/events\?guided=1&edit=event-sandra/);
+  await expect(page.getByText("Editing: Sandra's Pickleball Passports · Carvoeiro, Portugal")).toBeVisible();
+  await expect(page.getByLabel('Starts')).toHaveValue('2027-05-14');
+  await expect(page.getByLabel('Ends')).toHaveValue('2027-05-18');
+  await expect(page.getByLabel('Venue / location')).toHaveValue('Rocha Brava Racquet Club, Carvoeiro');
 });
 
-test('guided holiday event reuses organiser details, stores collaborator on the one event and publishes listing with it',async({page})=>{
+test('Sandra email deep-link skips completed work, preserves the prefilled event and publishes one canonical collaboration',async({page})=>{
   const calls=await installBackend(page);
-  await page.goto('/directory/sandras-pickleball-passports/events?guided=1');
-  await expect(page.getByTestId('directory-event-guided-start')).toContainText('Your listing details are ready');
-  await expect(page.getByTestId('directory-event-guided-start')).toContainText('When you publish the event, RallyHub will also make your organiser listing live.');
+  await page.goto('/directory/sandras-pickleball-passports/edit?guided=1&continue=1');
+  await expect(page).toHaveURL(/\/directory\/sandras-pickleball-passports\/events\?guided=1&edit=event-sandra/);
   await expect(page.getByLabel('Event type')).toHaveValue('holiday');
-  await expect(page.getByLabel('Organiser email')).toHaveValue('sandra@example.test');
+  await expect(page.getByLabel('Event name')).toHaveValue("Sandra's Pickleball Passports · Carvoeiro, Portugal");
+  await expect(page.getByLabel('Organiser email')).toHaveValue('smartertravel77@gmail.com');
   await expect(page.getByLabel('Organiser mobile')).toHaveValue('+353860488146');
-  await page.getByLabel('Event name').fill("Sandra's Pickleball Passports · Carvoeiro");
-  await page.getByLabel('Starts').fill('2027-05-14');
-  await page.getByLabel('Ends').fill('2027-05-18');
-  await page.getByLabel('Venue / location').fill('Rocha Brava Racquet Club, Carvoeiro');
-  await page.getByLabel('Country').fill('Portugal');
-  await page.getByLabel('Registration method').selectOption('contact');
-  await page.getByRole('button',{name:'Add collaborator'}).click();
-  await page.getByLabel('Collaborator 1 name').fill('Pickleball Escapes');
-  await page.getByLabel('Collaborator 1 role').fill('In collaboration with');
+  await expect(page.getByLabel('Registration method')).toHaveValue('contact');
+  await expect(page.getByLabel('Collaborator 1 name')).toHaveValue('Pickleball Escapes');
+  await expect(page.getByLabel('Collaborator 1 role')).toHaveValue('In collaboration with');
+  await expect(page.getByLabel('Fee / price text')).toHaveValue('£815 / €950 per person, based on two sharing a one-bedroom apartment.');
   await page.getByLabel('Collaborator 1 link').fill('https://rallyhub.ie/directory/pickleball-escapes');
   await page.getByRole('button',{name:'Publish to RallyHub Events'}).click();
   await expect(page.getByText('Event published + organiser listing live ✓')).toBeVisible();
