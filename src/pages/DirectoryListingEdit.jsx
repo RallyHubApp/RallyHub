@@ -251,10 +251,8 @@ export default function DirectoryListingEdit() {
     if (saving) return;
     if (dirty) {
       if (!validate()) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
-      await save();
-      // The existing save operation controls validation, permissions and persistence.
-      // The user must explicitly continue after confirmation, avoiding navigation on failed saves.
-      return;
+      const ok = await save();
+      if (!ok) return;
     }
     if (guidedStep < guidedSections.length - 1) setGuidedStep(value => value + 1);
     else viewPublicListing();
@@ -397,7 +395,7 @@ export default function DirectoryListingEdit() {
   const save = async () => {
     if (!form || !validate()) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
+      return false;
     }
     setSaving(true); setSaved(false); setError('');
     try {
@@ -412,12 +410,46 @@ export default function DirectoryListingEdit() {
       invalidatePublicDirectoryCache();
       try {
         sessionStorage.setItem(`rallyhub-directory-profile-${slug}`, JSON.stringify({ profile: merged, savedAt: Date.now() }));
+        localStorage.removeItem(`rallyhub-directory-guided-draft-v1:${user?.id || 'user'}:${slug}`);
       } catch {}
+      return true;
     } catch (err) {
       setError(err.message || 'Could not save listing changes.');
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      return false;
     } finally { setSaving(false); }
   };
+
+  useEffect(() => {
+    if (!form || !baseline || editorMode !== 'guided' || isClubListing || !dirty || saving) return undefined;
+    const draftKey = `rallyhub-directory-guided-draft-v1:${user?.id || 'user'}:${slug}`;
+    try { localStorage.setItem(draftKey, JSON.stringify({ baseline, form, savedAt: Date.now() })); } catch {}
+    setAutoSaveState('Autosaving…');
+    const timer = window.setTimeout(async () => {
+      if (autoSaveInFlight.current) return;
+      const snapshot = clone(form);
+      const essentialReady = String(snapshot?.name || '').trim() && String(snapshot?.description || '').trim() && isValidEmail(snapshot?.contact?.email);
+      const urlsValid = [snapshot?.website,snapshot?.facebook,snapshot?.instagram,snapshot?.waitingListUrl,snapshot?.contact?.whatsapp].every(isValidUrl);
+      if (!essentialReady || !urlsValid) { setAutoSaveState('Progress saved on this device ✓'); return; }
+      autoSaveInFlight.current = true;
+      try {
+        const profileToSave = { ...snapshot, sessions: sortSessions(snapshot.sessions || []) };
+        const response = await base44.functions.invoke('directoryListingProfile', { action:'save', listingSlug:slug, profile:profileToSave, town:baseClub?.town || '', county:baseClub?.county || '' });
+        if (response.data?.error) throw new Error(response.data.error);
+        const savedProfile = mergeProfile(baseClub, response.data?.profile || profileToSave);
+        setBaseline(JSON.stringify(savedProfile));
+        setSaved(true);
+        setAutoSaveState('Saved automatically ✓');
+        invalidatePublicDirectoryCache();
+        try { localStorage.removeItem(draftKey); } catch {}
+      } catch {
+        setAutoSaveState('Progress saved on this device ✓');
+      } finally {
+        autoSaveInFlight.current = false;
+      }
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [form,baseline,editorMode,isClubListing,dirty,saving,user?.id,slug,baseClub]);
 
   const viewPublicListing = () => {
     if (saving) return;
