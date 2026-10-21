@@ -24,6 +24,9 @@ test('directory guided and direct modes share editor without losing changes', as
  await page.goto('/directory/clare-pickleball/edit?access_token=e2e');
  await expect(page.getByTestId('directory-editor-mode')).toBeVisible();
  await page.getByRole('button',{name:'Guided setup'}).click();
+ await expect(page.getByTestId('directory-guided-overview')).toBeVisible();
+ await expect(page.getByText(/we’ve already started this for you/i)).toBeVisible();
+ await page.getByTestId('setup-step-basics').click();
  await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 1 of 5');
  await expect(page.locator('#basics')).toBeVisible();
  await expect(page.locator('#sessions')).toBeHidden();
@@ -35,7 +38,7 @@ test('directory guided and direct modes share editor without losing changes', as
  await page.getByRole('button',{name:'Edit directly'}).click();
  await expect(page.locator('#sessions')).toBeVisible();
  await page.getByRole('button',{name:'Guided setup'}).click();
- await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 1 of 5');
+ await expect(page.getByTestId('directory-guided-overview')).toBeVisible();
  expect(saves).toBe(0);
 });
 
@@ -64,6 +67,8 @@ test('guided save persists through existing backend and reloads saved value', as
  await page.goto('/directory/clare-pickleball/edit?access_token=e2e');
  await expect(page.getByTestId('directory-editor-mode')).toBeVisible();
  await page.getByRole('button',{name:'Guided setup'}).click();
+ await expect(page.getByTestId('directory-guided-overview')).toBeVisible();
+ await page.getByTestId('setup-step-basics').click();
  const nameField=page.locator('#basics input').first();
  await nameField.fill('Clare Pickleball Sandbox Persistence Test');
  await page.getByRole('button',{name:'Save & continue'}).click();
