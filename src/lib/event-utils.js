@@ -5,6 +5,7 @@ export const EVENT_TYPES = [
   ['league','League'],
   ['social','Social'],
   ['coaching','Coaching / Clinic'],
+  ['holiday','Pickleball holiday / experience'],
   ['camp','Camp'],
   ['open_day','Open Day'],
   ['exhibition','Exhibition'],
