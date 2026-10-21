@@ -1281,7 +1281,14 @@ Brian`;
 
   const connectMemberAccount = async (targetUser, player, confirmNameMismatch = false) => {
     if (!targetUser?.id || !player?.person_id) return;
-    if (confirmNameMismatch && !window.confirm(`Confirm existing member identity\n\nRallyHub account: ${targetUser.full_name || targetUser.email}\nExisting membership: ${player.full_name}\nEmail: ${targetUser.email}\n\nI personally recognise and confirm this is the same Clare Pickleball member. This decision will be recorded in the audit log.\n\nApprove and connect this account?`)) return;
+    const registeredEmail = String(targetUser.email || '').trim();
+    const membershipEmail = String(player.email || '').trim();
+    const registeredMobile = String(targetUser.phone || targetUser.mobile || targetUser.phone_number || '').trim();
+    const membershipMobile = String(player.phone || '').trim();
+    const emailDiffers = registeredEmail.toLowerCase() !== membershipEmail.toLowerCase();
+    const mobileDiffers = !!registeredMobile && !!membershipMobile && registeredMobile.replace(/\D/g,'') !== membershipMobile.replace(/\D/g,'');
+    const requiresConfirmation = confirmNameMismatch || emailDiffers || mobileDiffers;
+    if (requiresConfirmation && !window.confirm(`Verify existing member identity\n\nRallyHub account: ${targetUser.full_name || 'Not supplied'}\nMembership name: ${player.full_name}\n\nRallyHub login email: ${registeredEmail}\nMembership email: ${membershipEmail || 'Not recorded'}\n\nRallyHub mobile: ${registeredMobile || 'Not provided at registration'}\nMembership mobile: ${membershipMobile || 'Not recorded'}\n\nOnly approve if you personally know these records belong to the same person. This decision is logged. Contact details will NOT be overwritten automatically.\n\nApprove and connect?`)) return;
     setConnectingMemberAccount(targetUser.id);
     setApprovalFeedback({ userId: targetUser.id, type: 'progress', text: 'Verifying membership and connecting RallyHub account…' });
     try {
@@ -1289,7 +1296,7 @@ Brian`;
         action: 'admin_connect_account',
         userId: targetUser.id,
         personId: player.person_id,
-        identityConfirmedByAdmin: !!confirmNameMismatch
+        identityConfirmedByAdmin: requiresConfirmation
       });
       if (res.data?.error) throw new Error(res.data.error);
       await Promise.all([
@@ -1343,12 +1350,14 @@ Brian`;
   const normaliseIdentityName = value => String(value || '').toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9]+/g, ' ').trim();
   const membershipCandidateForUser = targetUser => {
     const targetEmail = String(targetUser?.email || '').trim().toLowerCase();
-    if (!targetEmail) return null;
-    return clubPlayers.find(p =>
-      p.person_id &&
-      (!p.user_id || p.user_id === targetUser.id) &&
-      String(p.email || p.linked_user_email || '').trim().toLowerCase() === targetEmail
-    ) || null;
+    const eligible = clubPlayers.filter(p => p.person_id && (!p.user_id || p.user_id === targetUser.id));
+    const emailMatches = eligible.filter(p => targetEmail && String(p.email || p.linked_user_email || '').trim().toLowerCase() === targetEmail);
+    if (emailMatches.length === 1) return emailMatches[0];
+    if (emailMatches.length > 1) return null; // ambiguous identity: do not guess
+    const name = normaliseIdentityName(targetUser?.full_name || targetUser?.display_name || '');
+    if (!name) return null;
+    const exactNameMatches = eligible.filter(p => normaliseIdentityName(p.full_name) === name);
+    return exactNameMatches.length === 1 ? exactNameMatches[0] : null;
   };
 
   const filteredUsers = allUsers.filter(u => {
@@ -2843,12 +2852,12 @@ Brian`;
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                               <div className="min-w-0">
                                 <p className="text-xs font-semibold">
-                                  Membership email match: {candidate.full_name}
+                                  Existing membership candidate: {candidate.full_name}
                                 </p>
                                 <p className="text-[11px] text-muted-foreground mt-1">
                                   {nameMismatch
                                     ? `Account name “${u.full_name || u.display_name}” differs from membership name “${candidate.full_name}”. Confirm only if you have verified they are the same person.`
-                                    : 'Name and verified email match the existing Clare member/player record.'}
+                                    : String(u.email || '').toLowerCase() !== String(candidate.email || '').toLowerCase() ? 'Registration email differs from membership email. Review both addresses before confirming.' : 'Name and email match the existing Clare member/player record.'}
                                 </p>
                               </div>
                               <Button
