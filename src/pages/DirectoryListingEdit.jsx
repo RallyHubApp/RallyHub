@@ -857,22 +857,66 @@ export default function DirectoryListingEdit() {
                 {validation.length > 0 && <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm"><p className="font-semibold text-amber-700 dark:text-amber-200">Please fix these before saving:</p><ul className="mt-2 list-disc pl-5 space-y-1 text-muted-foreground">{validation.map(item => <li key={item}>{item}</li>)}</ul></div>}
               </section>
 
-              <section className="glass rounded-2xl p-5 sm:p-6 space-y-3" data-testid="directory-editor-mode">
-                <h2 className="font-bold text-lg">How would you like to update your listing?</h2>
-                <p className="text-sm text-muted-foreground">Both options update the same listing. Switch at any time.</p>
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant={editorMode === 'guided' ? 'default' : 'outline'} onClick={() => { setEditorMode('guided'); setGuidedStep(0); }}>Guided setup</Button>
-                  <Button type="button" variant={editorMode === 'direct' ? 'default' : 'outline'} onClick={() => setEditorMode('direct')}>Edit directly</Button>
+              <section className="glass rounded-2xl p-5 sm:p-6 space-y-4" data-testid="directory-editor-mode">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h2 className="font-bold text-lg">{editorMode === 'guided' ? 'Guided setup' : 'Edit directly'}</h2>
+                    <p className="text-sm text-muted-foreground">{editorMode === 'guided' ? 'RallyHub shows what is already done and takes you straight to what needs attention.' : 'Open the full listing and change any section yourself.'}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant={editorMode === 'guided' ? 'default' : 'outline'} onClick={() => { setEditorMode('guided'); setGuidedOverview(true); }}>Guided setup</Button>
+                    <Button type="button" variant={editorMode === 'direct' ? 'default' : 'outline'} onClick={() => setEditorMode('direct')}>Edit directly</Button>
+                  </div>
                 </div>
-                {editorMode === 'guided' && <div className="space-y-3" data-testid="directory-guided-progress">
-                  <p className="text-sm font-semibold">Step {guidedStep + 1} of {guidedSections.length}: {guidedSections[guidedStep]?.label}</p>
-                  <div className="flex gap-1" aria-label="Setup progress">{guidedSections.map((section, index) => <div key={section.id} className={`h-2 flex-1 rounded-full ${index <= guidedStep ? 'bg-primary' : 'bg-border'}`} />)}</div>
-                  <p className="text-xs text-muted-foreground">Complete only what is useful. Optional fields can be skipped, and your progress is saved as you go.</p>
+
+                {editorMode === 'guided' && guidedOverview && <div className="space-y-5" data-testid="directory-guided-overview">
+                  <div className="rounded-2xl border border-primary/25 bg-primary/10 p-5">
+                    <p className="text-xs font-black uppercase tracking-[0.15em] text-primary">Your RallyHub setup</p>
+                    <h3 className="mt-2 text-xl font-black">{firstName ? `${firstName}, we’ve already started this for you.` : 'We’ve already started this for you.'}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{blueprint.intro}</p>
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <span className="rounded-full bg-background/80 px-3 py-1 text-sm font-bold">{setupProgress.completedCount} of {setupProgress.totalCount} ready</span>
+                      {!isClubListing && loadingSetupEvents && <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin"/>Checking existing events…</span>}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2" aria-label="Setup checklist">
+                    {setupProgress.steps.map(step => (
+                      <button key={step.id} type="button" onClick={() => openGuidedStep(step)} className="flex w-full items-start gap-3 rounded-xl border border-border bg-background/35 p-4 text-left transition hover:border-primary/40" data-testid={`setup-step-${step.id}`}>
+                        <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${step.complete ? 'bg-emerald-500/15 text-emerald-700' : step.started ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}`}>{step.complete ? <CheckCircle2 className="h-4 w-4"/> : <span className="text-xs font-black">{step.index + 1}</span>}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex flex-wrap items-center gap-2">
+                            <span className="font-bold">{step.label}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${step.complete ? 'bg-emerald-500/10 text-emerald-700' : step.started ? 'bg-primary/10 text-primary' : step.optional ? 'bg-muted text-muted-foreground' : 'bg-amber-500/10 text-amber-700'}`}>{step.complete ? 'Ready' : step.started ? 'Started' : step.optional ? 'Optional' : 'Needs check'}</span>
+                          </span>
+                          <span className="mt-1 block text-xs text-muted-foreground">{step.detail}</span>
+                          {step.id === 'events' && step.event?.name && <span className="mt-1 block text-xs font-semibold text-foreground">{step.event.name}{step.event.start_date ? ` · ${step.event.start_date}` : ''}</span>}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button type="button" onClick={() => openGuidedStep(setupProgress.firstIncomplete)} disabled={loadingSetupEvents || saving}>
+                      {loadingSetupEvents && !isClubListing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                      Continue setup
+                    </Button>
+                    <span className="text-xs text-muted-foreground">We’ll open the first item that still needs your attention.</span>
+                  </div>
+                </div>}
+
+                {editorMode === 'guided' && !guidedOverview && <div className="space-y-3" data-testid="directory-guided-progress">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold">Step {guidedStep + 1} of {guidedSections.length}: {guidedSections[guidedStep]?.label}</p>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => setGuidedOverview(true)}>Back to checklist</Button>
+                  </div>
+                  <div className="flex gap-1" aria-label="Setup progress">{guidedSections.map((section, index) => <div key={section.id} className={`h-2 flex-1 rounded-full ${setupProgress.steps[index]?.complete ? 'bg-emerald-500' : index === guidedStep ? 'bg-primary' : 'bg-border'}`} />)}</div>
+                  <p className="text-xs text-muted-foreground">Check what RallyHub already found, change only what needs changing, then continue.</p>
                   {!isClubListing && autoSaveState && <p aria-live="polite" className="text-xs font-semibold text-primary">{autoSaveState}</p>}
                   <div className="flex flex-wrap gap-2">
                     <Button type="button" variant="outline" disabled={guidedStep === 0 || saving} onClick={() => setGuidedStep(value => Math.max(0, value - 1))}>Previous</Button>
-                    <Button type="button" disabled={saving} onClick={advanceGuided}>{dirty ? 'Save & continue' : guidedStep === guidedSections.length - 1 ? 'View public listing' : 'Continue'}</Button>
-                    {guidedSections[guidedStep]?.id === 'events' && <Link to={`/directory/${slug}/events?guided=1`}><Button type="button" variant="outline">{isClubListing?'Manage events':'Continue to your event'}</Button></Link>}
+                    <Button type="button" disabled={saving} onClick={advanceGuided}>{dirty ? 'Save & continue' : guidedStep === guidedSections.length - 1 ? 'Finish review' : 'Continue'}</Button>
+                    {guidedSections[guidedStep]?.id === 'events' && <Button type="button" variant="outline" onClick={() => openGuidedStep(setupProgress.steps.find(step => step.id === 'events'))}>{setupProgress.firstEvent ? 'Check your event' : 'Add your event'}</Button>}
                   </div>
                 </div>}
               </section>
