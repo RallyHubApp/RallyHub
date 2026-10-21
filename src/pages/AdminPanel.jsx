@@ -1305,23 +1305,19 @@ Brian`;
 
   const setApprovalStatus = async (userId, status) => {
     setUpdatingApproval(userId);
-    const approvalRes = await base44.functions.invoke('adminUserTools', { action: 'set_approval', userId, status });
-    if (approvalRes.data?.error) {
-      toast.error(approvalRes.data.error);
+    try {
+      const approvalRes = await base44.functions.invoke('adminUserTools', { action: 'set_approval', userId, status });
+      if (approvalRes.data?.error) throw new Error(approvalRes.data.error);
+      if (!approvalRes.data?.success) throw new Error('Approval was not confirmed. Please retry.');
+      await queryClient.invalidateQueries({ queryKey: ['all-users'] });
+      toast.success(approvalRes.data?.accessScope === 'kotc_host' ? 'KOTC host account approved — session-only access.' : `User ${status}`);
+      if (status === 'approved' || status === 'rejected') {
+        base44.functions.invoke('notifyAdminsOnSignup', { notifyUserApproval: true, userId, status }).catch(() => {});
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Approval failed. Account remains unchanged.', { duration: 9000 });
+    } finally {
       setUpdatingApproval(null);
-      return;
-    }
-    queryClient.invalidateQueries({ queryKey: ['all-users'] });
-    toast.success(`User ${status}`);
-    setUpdatingApproval(null);
-    // Notify the user by email if approved or rejected. The backend resolves the
-    // recipient/name from userId so no caller-controlled email address is accepted.
-    if (status === 'approved' || status === 'rejected') {
-      base44.functions.invoke('notifyAdminsOnSignup', {
-        notifyUserApproval: true,
-        userId,
-        status
-      }).catch(() => {});
     }
   };
 
