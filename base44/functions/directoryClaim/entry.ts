@@ -288,9 +288,17 @@ async function directoryCategoryConfig(base44:any, keyRaw:any) {
   return { key, ...fallback };
 }
 
-function safePublicUrl(value = '') {
-  const raw = String(value || '').trim();
+function safePublicUrl(value = '', kind = 'website') {
+  let raw = String(value || '').trim();
   if (!raw) return null;
+  if (/^@[A-Za-z0-9._-]+$/.test(raw)) {
+    const handle = raw.slice(1);
+    if (kind === 'facebook') raw = `https://www.facebook.com/${handle}`;
+    else if (kind === 'instagram') raw = `https://www.instagram.com/${handle}/`;
+    else return null;
+  } else if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(raw) && /^(?:www\.)?[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:\/.*)?$/.test(raw)) {
+    raw = `https://${raw}`;
+  }
   try {
     const url = new URL(raw);
     return ['http:', 'https:'].includes(url.protocol) ? url.toString() : null;
@@ -1039,9 +1047,9 @@ Deno.serve(async (req) => {
         membershipStatus: listingType === 'club' ? 'Contact the club for joining information' : null,
         affiliation: null,
         logoUrl: null,
-        website: safePublicUrl(website),
-        facebook: safePublicUrl(facebook),
-        instagram: safePublicUrl(instagram),
+        website: safePublicUrl(website, 'website'),
+        facebook: safePublicUrl(facebook, 'facebook'),
+        instagram: safePublicUrl(instagram, 'instagram'),
         waitingListUrl: null,
         joiningCtaLabel: listingType === 'club' ? 'Contact club' : 'Contact listing',
         policyLabel: listingType === 'club' ? 'Club information' : 'Listing information',
@@ -2163,9 +2171,9 @@ Deno.serve(async (req) => {
           membershipStatus: listingType === 'club' ? 'Contact the club for joining information' : null,
           affiliation: null,
           logoUrl: null,
-          website: safePublicUrl(request.website),
-          facebook: safePublicUrl(request.facebook),
-          instagram: safePublicUrl(request.instagram),
+          website: safePublicUrl(request.website, 'website'),
+          facebook: safePublicUrl(request.facebook, 'facebook'),
+          instagram: safePublicUrl(request.instagram, 'instagram'),
           waitingListUrl: null,
           joiningCtaLabel: listingType === 'club' ? 'Contact club' : 'Contact listing',
           policyLabel: listingType === 'club' ? 'Club information' : 'Listing information',
