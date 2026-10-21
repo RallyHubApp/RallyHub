@@ -14,7 +14,7 @@ import { EVENT_AGE_GROUPS, EVENT_DISCIPLINES, EVENT_LEVELS, EVENT_TYPES, registr
 const blank = {
   name:'', category:'other', date:'', endDate:'', start:'', end:'', venue_id:'', location:'', county:'', country:'Ireland', setting:'',
   summary:'', description:'', internal:'', contact:'', contactPhone:'', phoneHiddenUntil:'', phoneKeepPrivate:false, statusOverride:'', registrationMode:'external', registration:'', regOpen:'', regClose:'', feeText:'', capacity:'', waitlist:false,
-  levels:[], ageGroups:[], disciplines:[], eligibility:'', playerInfo:'', feesCancellation:'', schedule:[], sourceUrl:'', mapUrl:'', latitude:'', longitude:'',
+  levels:[], ageGroups:[], disciplines:[], eligibility:'', playerInfo:'', feesCancellation:'', collaborators:[], schedule:[], sourceUrl:'', mapUrl:'', latitude:'', longitude:'',
   image:'', imageX:50, imageY:50, imageZoom:1, cardX:50, cardY:50, cardZoom:1, imageOriginal:'', imageSourceType:'',
   member:true, public:false, featured:false, featuredPublic:false, verifiedOrganiser:false,
 };
@@ -23,6 +23,7 @@ const dateTimeLocal=value=>{if(!value)return '';const d=new Date(value);if(Numbe
 const toIso=value=>{if(!value)return null;const d=new Date(value);return Number.isNaN(d.getTime())?null:d.toISOString()};
 const numberOrNull=value=>value===''||value===null||value===undefined?null:Number(value);
 const eventSort=(a,b)=>(a.start_date||'9999-12-31').localeCompare(b.start_date||'9999-12-31');
+const blankCollaborator=()=>({name:'',listing_slug:'',url:'',role:'Partner'});
 
 function TogglePills({values,selected,onChange}){
   const set=new Set(selected||[]);
@@ -43,6 +44,7 @@ export default function TenantEvents({directoryListingSlug=''}){
   const [searchParams,setSearchParams]=useSearchParams();
   const requestedEdit=searchParams.get('edit')||'';
   const requestedHost=searchParams.get('host')||'';
+  const guidedDirectorySetup=directoryMode&&searchParams.get('guided')==='1';
   const openedEdit=useRef('');
   const freshBlank=()=>directoryMode?{...blank,member:false,public:true}:({...blank});
   const qc=useQueryClient();
@@ -110,6 +112,8 @@ export default function TenantEvents({directoryListingSlug=''}){
   useEffect(()=>{if(!deepLinkEvent||deepLinkLoaded.current||!user)return;const permitted=isAdmin||(user.active_club_role==='club_admin'&&user.active_club_id===deepLinkEvent.host_club_id&&user.active_tenant_id===deepLinkEvent.tenant_id);if(permitted){deepLinkLoaded.current=true;editEvent(deepLinkEvent)}},[deepLinkEvent,user,isAdmin]);
   const removeScheduleItem=index=>setDraft(d=>({...d,schedule:d.schedule.filter((_,i)=>i!==index)}));
   const updateSchedule=(index,key,value)=>setDraft(d=>({...d,schedule:d.schedule.map((row,i)=>i===index?{...row,[key]:value}:row)}));
+  const removeCollaborator=index=>setDraft(d=>({...d,collaborators:d.collaborators.filter((_,i)=>i!==index)}));
+  const updateCollaborator=(index,key,value)=>setDraft(d=>({...d,collaborators:d.collaborators.map((row,i)=>i===index?{...row,[key]:value}:row)}));
   const unshare=async eventId=>{try{const payload={action:'unshare_from_club',eventId};if(isAdmin){payload.clubId=effectiveHostClubId;payload.tenantId=effectiveTenantId}const res=await base44.functions.invoke('eventEngagement',payload);if(res.data?.error)throw new Error(res.data.error);await qc.invalidateQueries({queryKey:['club-shared-public-events']});toast.success('Removed from your club calendar')}catch(e){toast.error(e?.message||'Could not remove shared event')}};
 
   if(directoryMode&&directoryLoading)return <div className="p-6 text-sm text-muted-foreground">Loading event manager…</div>;
