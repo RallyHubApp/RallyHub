@@ -12,311 +12,402 @@
 # Error details
 
 ```
-Error: expect(locator).toHaveValue(expected) failed
+Test timeout of 45000ms exceeded.
+```
 
-Locator: getByLabel('Fee / price text')
-Expected: "£815 / €950 per person, based on two sharing a one-bedroom apartment."
-Timeout: 3000ms
-Error: element(s) not found
-
+```
+Error: locator.click: Test timeout of 45000ms exceeded.
 Call log:
-  - Expect "toHaveValue" getByLabel('Fee / price text') with timeout 3000ms
-  - waiting for getByLabel('Fee / price text')
+  - waiting for getByRole('button', { name: 'Publish to RallyHub Events' })
 
 ```
 
+# Page snapshot
+
 ```yaml
-- banner:
-  - link "RallyHub — Play Connect Belong":
-    - /url: /
-    - img "RallyHub — Play Connect Belong"
-  - navigation:
-    - link "Home":
-      - /url: /
-    - link "Directory":
-      - /url: /directory
-    - link "Events":
-      - /url: /events
-    - link "Club Guide":
-      - /url: /directory/help
-    - link "About":
-      - /url: /about
-  - link "Search directory":
-    - /url: /directory
-    - img
-  - paragraph: Signed in
-  - paragraph: Sandra
-  - button "Sign out"
-  - button "Current appearance Auto. Change appearance.":
-    - img
-- main:
-  - link "Back to manage listing":
-    - /url: /directory/sandras-pickleball-passports/edit
-    - img
-    - text: Back to manage listing
-  - link "Events Quick Start Guide":
-    - /url: /events/quick-start
-    - img
-    - text: Events Quick Start Guide
-  - heading "Events · Sandra's Pickleball Passports" [level=1]
-  - paragraph: Create and maintain public RallyHub events here. The editor is the same one clubs use inside RallyHub Club, so there is nothing new to relearn later.
-  - text: Listing ✓ → Event → Preview → Live
-  - paragraph: Your listing details are ready. Add the event you want players to see.
-  - paragraph: Your public organiser email, phone and website are reused below where available. When you publish the event, RallyHub will also make your organiser listing live.
-  - paragraph: The same seven-step event editor everywhere
-  - paragraph: Basics → Artwork → Registration → Who is it for? → Event information → Audience → Preview & publish.
-  - link "Events Quick Start Guide":
-    - /url: /events/quick-start
-  - img
-  - 'heading "Editing: Sandra''s Pickleball Passports · Carvoeiro, Portugal" [level=2]'
-  - button "Close editor":
-    - img
-    - text: Close editor
-  - paragraph: Edit the canonical event once; member and public views use the same record.
-  - paragraph: 1 · Basics
-  - paragraph: The information players need to identify the event quickly.
-  - text: Event name
-  - textbox "Event name": Sandra's Pickleball Passports · Carvoeiro, Portugal
-  - text: Event type
-  - combobox "Event type":
-    - option "Tournament"
-    - option "Interclub"
-    - option "League"
-    - option "Social"
-    - option "Coaching / Clinic"
-    - option "Pickleball holiday / experience" [selected]
-    - option "Camp"
-    - option "Open Day"
-    - option "Exhibition"
-    - option "Other"
-  - text: Indoor / outdoor
-  - combobox "Indoor / outdoor":
-    - option "Not specified" [selected]
-    - option "Indoor"
-    - option "Outdoor"
-    - option "Indoor / Outdoor"
-  - text: Starts
-  - textbox "Starts": 2027-05-14
-  - text: Ends
-  - textbox "Ends": 2027-05-18
-  - text: Start time
-  - textbox "Start time"
-  - text: End time
-  - textbox "End time"
-  - text: Club venue
-  - combobox "Club venue":
-    - option "Manual / external venue" [selected]
-  - text: Venue / location
-  - textbox "Venue / location":
-    - /placeholder: e.g. Lagan Valley LeisurePlex, Lisburn
-    - text: Rocha Brava Racquet Club, Carvoeiro
-  - text: County / region
-  - textbox "County / region": Algarve
-  - text: Country
-  - textbox "Country": Portugal
-  - text: Short public summary
-  - textbox "Short public summary":
-    - /placeholder: Two or three sentences for the public listing and event page.
-    - text: Four nights in Carvoeiro with 18 hours of hosted pickleball and coaching, welcome drinks, a three-course group dinner and a fun tournament at Rocha Brava Racquet Club.
-  - paragraph: 2 · Artwork
-  - paragraph: Reuse the same poster for the full event page and a separately positioned card crop.
-  - paragraph: Event poster / artwork
-  - paragraph: Upload once. RallyHub keeps the full poster and lets you make a separate wide crop for public event cards. JPG, PNG, WEBP or PDF · up to 20 MB.
-  - paragraph: Verify poster from event webpage
-  - paragraph: Find events on the organiser website, select one from the dropdown, and check whether it already exists in RallyHub. Poster verification does not create or duplicate events.
-  - textbox "Event webpage URL":
-    - /placeholder: https://pickleballireland.ie/events/
-    - text: https://pickleballireland.ie/events/
-  - button "Find event poster"
-  - button "Find events on this website"
-  - button "Run live poster verification"
-  - text: Checks discovery, real upload and SHA-256 read-back without changing the event.
-  - textbox "Original poster URL":
-    - /placeholder: Paste an original poster image URL
-  - button "Import original automatically" [disabled]
-  - paragraph: Approved source domains only. RallyHub checks dimensions and verifies stored image bytes. Unverified images require manual review.
-  - paragraph: Full artwork
-  - text: Event detail page
-  - img
-  - text: Poster / artwork preview
-  - paragraph: The full artwork keeps its natural portrait or landscape shape. The wide card crop is controlled separately.
-  - paragraph: Event-card crop
-  - text: Public Events / member cards
-  - img
-  - text: Wide card preview
-  - button "Upload poster":
-    - img
-    - text: Upload poster
-  - paragraph: 3 · Registration
-  - paragraph: RallyHub calculates normal registration status from the dates. Use a manual status only when something changes, such as an event filling up.
-  - text: Event status
-  - combobox "Event status “Event full” removes the normal registration action and clearly marks the public listing.":
-    - option "Automatic from registration dates" [selected]
-    - option "Save the date · registration not yet announced"
-    - option "Event full"
-    - option "Postponed"
-    - option "Cancelled"
-  - text: “Event full” removes the normal registration action and clearly marks the public listing. Registration method
-  - combobox "Registration method":
-    - option "External booking link"
-    - option "RallyHub booking"
-    - option "Contact organiser" [selected]
-    - option "No registration required"
-  - text: Registration opens
-  - textbox "Registration opens"
-  - text: Registration closes
-  - textbox "Registration closes"
-  - text: Entry fee / fee text
-  - textbox "Entry fee / fee text":
-    - /placeholder: e.g. €45 per event
-    - text: £815 / €950 per person, based on two sharing a one-bedroom apartment.
-  - text: Capacity
-  - spinbutton "Capacity"
-  - checkbox "Waitlist available when full"
-  - text: Waitlist available when full
-  - paragraph: 4 · Who is it for?
-  - paragraph: Structured information powers the public filters rather than forcing players to read a long page.
-  - paragraph: Playing levels
-  - button "Beginner"
-  - button "Recreational"
-  - button "Social"
-  - button "Improver"
-  - button "Intermediate"
-  - button "Advanced"
-  - button "Competition"
-  - button "Open"
-  - button "3.0-"
-  - button "3.5-"
-  - button "4.0+"
-  - paragraph: Age groups
-  - button "All ages"
-  - button "18+"
-  - button "35+"
-  - button "40+"
-  - button "50+"
-  - button "60+"
-  - button "65+"
-  - button "70+"
-  - button "Junior"
-  - paragraph: Disciplines
-  - button "Singles"
-  - button "Gender Doubles"
-  - button "Mixed Doubles"
-  - button "Open Doubles"
-  - button "Team"
-  - paragraph: 5 · Event information
-  - paragraph: Optional detail stays collapsed on the public page until a player needs it.
-  - text: General event description
-  - textbox "General event description"
-  - text: Eligibility & levels
-  - textbox "Eligibility & levels": Designed for pickleball-loving women aged 60+.
-  - text: Player information
-  - textbox "Player information": Come alone or with a friend. Non-playing partners are welcome. Single supplements and additional nights are available on request. Flights and transfers are extra.
-  - text: Fees & cancellation
-  - textbox "Fees & cancellation"
-  - paragraph: Collaboration / event partners (optional)
-  - paragraph: Keep one canonical event even when two businesses or organisers are working together. The primary organiser stays the owner; partners are credited on the public event.
-  - button "Add collaborator":
-    - img
-    - text: Add collaborator
-  - textbox "Collaborator 1 name":
-    - /placeholder: e.g. Pickleball Escapes
-    - text: Pickleball Escapes
-  - textbox "Collaborator 1 role":
-    - /placeholder: e.g. In collaboration with
-    - text: In collaboration with
-  - textbox "Collaborator 1 link":
-    - /placeholder: Website or RallyHub listing URL
-  - button "Remove collaborator 1":
-    - img
-  - text: Organiser email
-  - textbox "Organiser email":
-    - /placeholder: organiser@example.com
-    - text: smartertravel77@gmail.com
-  - text: Organiser mobile
-  - textbox "Organiser mobile":
-    - /placeholder: e.g. 087 123 4567
-    - text: "+353860488146"
-  - text: Hide mobile publicly until
-  - textbox "Hide mobile publicly until The mobile automatically appears after this time unless “keep private” is switched on."
-  - text: The mobile automatically appears after this time unless “keep private” is switched on.
-  - checkbox "Keep mobile private after that date"
-  - text: Keep mobile private after that date
-  - paragraph: Member-only information
-  - paragraph: This field becomes available in the same position if your organisation later uses RallyHub Club. Nothing changes in the rest of the event editor.
-  - paragraph: Day-by-day schedule
-  - paragraph: Optional. Keep each day short and scannable.
-  - button "Add day":
-    - img
-    - text: Add day
-  - text: Official/source URL
-  - textbox "Official/source URL": https://www.instagram.com/p/Dewzng0O6j2/
-  - text: Map/directions URL
-  - textbox "Map/directions URL"
-  - text: Latitude
-  - spinbutton "Latitude"
-  - text: Longitude
-  - spinbutton "Longitude"
-  - paragraph: 6 · Audience & publishing
-  - paragraph: Directory organisers publish the same canonical event to RallyHub public Events. If you later move into RallyHub Club, the member options appear here in the same place.
-  - checkbox "Show to club members and in their Play calendar (available with RallyHub Club)" [disabled]
-  - text: Show to club members and in their Play calendar (available with RallyHub Club)
-  - checkbox "Publish on RallyHub public Events"
-  - text: Publish on RallyHub public Events
-  - checkbox "Feature on member home (available with RallyHub Club)" [disabled]
-  - text: Feature on member home (available with RallyHub Club)
-  - paragraph: 7 · Preview & publish
-  - paragraph: Preview the same poster/crop and information before publishing.
-  - button "Public card":
-    - img
-    - text: Public card
-  - button "Public detail":
-    - img
-    - text: Public detail
-  - button "Save draft":
-    - img
-    - text: Save draft
-  - button "Save & update public event" [disabled]:
-    - img
-    - text: Save & update public event
-  - complementary:
-    - heading "Draft events" [level=2]
-    - text: 1 Draft
-    - paragraph: Sandra's Pickleball Passports · Carvoeiro, Portugal
-    - paragraph: 2027-05-14 · Rocha Brava Racquet Club, Carvoeiro
-    - button "Edit"
-    - button "Delete Sandra's Pickleball Passports · Carvoeiro, Portugal":
-      - img
-    - heading "Published events" [level=2]
-    - text: "0"
-    - paragraph: No published events yet.
-- contentinfo "RallyHub footer":
-  - link "RallyHub home":
-    - /url: /
-    - img "RallyHub"
-  - navigation "Footer navigation":
-    - link "Directory":
-      - /url: /directory
-    - link "Events":
-      - /url: /events
-    - link "Club Guide":
-      - /url: /directory/help
-    - link "About":
-      - /url: /about
-    - link "Contact":
-      - /url: /contact
-  - text: © 2026 RallyHub All rights reserved.
-- paragraph: Help us improve RallyHub
-- paragraph: We use optional analytics to understand which clubs, venues and Directory features people find useful. Analytics only starts if you allow it. We do not use this for advertising profiles.
-- button "Necessary only"
-- button "Allow analytics"
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "RallyHub — Play Connect Belong" [ref=e7]
+        - navigation [ref=e8]:
+          - link "Home" [ref=e9] [cursor=pointer]:
+            - /url: /
+          - link "Directory" [ref=e10] [cursor=pointer]:
+            - /url: /directory
+          - link "Events" [ref=e11] [cursor=pointer]:
+            - /url: /events
+          - link "Club Guide" [ref=e12] [cursor=pointer]:
+            - /url: /directory/help
+          - link "About" [ref=e13] [cursor=pointer]:
+            - /url: /about
+        - generic [ref=e14]:
+          - link "Search directory" [ref=e15] [cursor=pointer]:
+            - /url: /directory
+          - generic [ref=e19]:
+            - paragraph [ref=e20]: Signed in
+            - paragraph [ref=e21]: Sandra
+          - button "Sign out" [ref=e22] [cursor=pointer]
+          - button "Current appearance Auto. Change appearance." [ref=e23] [cursor=pointer]
+    - main [ref=e24]:
+      - generic [ref=e25]:
+        - link "Back to manage listing" [ref=e26] [cursor=pointer]:
+          - /url: /directory/sandras-pickleball-passports/edit
+        - link "Events Quick Start Guide" [ref=e29] [cursor=pointer]:
+          - /url: /events/quick-start
+      - generic [ref=e32]:
+        - generic [ref=e34]:
+          - heading "Events · Sandra's Pickleball Passports" [level=1] [ref=e35]
+          - paragraph [ref=e36]: Create and maintain public RallyHub events here. The editor is the same one clubs use inside RallyHub Club, so there is nothing new to relearn later.
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - generic [ref=e40]: Listing ✓
+              - generic [ref=e41]: →
+              - generic [ref=e42]: Event
+              - generic [ref=e43]: →
+              - generic [ref=e44]: Preview
+              - generic [ref=e45]: →
+              - generic [ref=e46]: Live
+            - link "Back to setup checklist" [ref=e47] [cursor=pointer]:
+              - /url: /directory/sandras-pickleball-passports/edit?guided=1
+          - generic [ref=e48]:
+            - paragraph [ref=e49]: Your listing details are ready. Add the event you want players to see.
+            - paragraph [ref=e50]: Your public organiser email, phone and website are reused below where available. When you publish the event, RallyHub will also make your organiser listing live.
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - paragraph [ref=e53]: The same seven-step event editor everywhere
+            - paragraph [ref=e54]: Basics → Artwork → Registration → Who is it for? → Event information → Audience → Preview & publish.
+          - link "Events Quick Start Guide" [ref=e55] [cursor=pointer]:
+            - /url: /events/quick-start
+        - generic [ref=e56]:
+          - generic [ref=e57]:
+            - generic [ref=e58]:
+              - generic [ref=e59]:
+                - 'heading "Editing: Sandra''s Pickleball Passports · Carvoeiro, Portugal" [level=2] [ref=e62]'
+                - button "Close editor" [ref=e63] [cursor=pointer]
+              - paragraph [ref=e64]: Edit the canonical event once; member and public views use the same record.
+            - generic [ref=e65]:
+              - generic [ref=e66]:
+                - paragraph [ref=e67]: 1 · Basics
+                - paragraph [ref=e68]: The information players need to identify the event quickly.
+              - generic [ref=e69]:
+                - generic [ref=e70]:
+                  - text: Event name
+                  - textbox "Event name" [ref=e71]: Sandra's Pickleball Passports · Carvoeiro, Portugal
+                - generic [ref=e72]:
+                  - text: Event type
+                  - combobox "Event type" [ref=e73]:
+                    - option "Tournament"
+                    - option "Interclub"
+                    - option "League"
+                    - option "Social"
+                    - option "Coaching / Clinic"
+                    - option "Pickleball holiday / experience" [selected]
+                    - option "Camp"
+                    - option "Open Day"
+                    - option "Exhibition"
+                    - option "Other"
+                - generic [ref=e74]:
+                  - text: Indoor / outdoor
+                  - combobox "Indoor / outdoor" [ref=e75]:
+                    - option "Not specified" [selected]
+                    - option "Indoor"
+                    - option "Outdoor"
+                    - option "Indoor / Outdoor"
+                - generic [ref=e76]:
+                  - text: Starts
+                  - textbox "Starts" [ref=e77]: 2027-05-14
+                - generic [ref=e78]:
+                  - text: Ends
+                  - textbox "Ends" [ref=e79]: 2027-05-18
+                - generic [ref=e80]:
+                  - text: Start time
+                  - textbox "Start time" [ref=e81]
+                - generic [ref=e82]:
+                  - text: End time
+                  - textbox "End time" [ref=e83]
+                - generic [ref=e84]:
+                  - text: Club venue
+                  - combobox "Club venue" [ref=e85]:
+                    - option "Manual / external venue" [selected]
+                - generic [ref=e86]:
+                  - text: Venue / location
+                  - textbox "Venue / location" [ref=e87]:
+                    - /placeholder: e.g. Lagan Valley LeisurePlex, Lisburn
+                    - text: Rocha Brava Racquet Club, Carvoeiro
+                - generic [ref=e88]:
+                  - text: County / region
+                  - textbox "County / region" [ref=e89]: Algarve
+                - generic [ref=e90]:
+                  - text: Country
+                  - textbox "Country" [ref=e91]: Portugal
+                - generic [ref=e92]:
+                  - text: Short public summary
+                  - textbox "Short public summary" [ref=e93]:
+                    - /placeholder: Two or three sentences for the public listing and event page.
+                    - text: Four nights in Carvoeiro with 18 hours of hosted pickleball and coaching, welcome drinks, a three-course group dinner and a fun tournament at Rocha Brava Racquet Club.
+            - generic [ref=e94]:
+              - generic [ref=e95]:
+                - paragraph [ref=e96]: 2 · Artwork
+                - paragraph [ref=e97]: Reuse the same poster for the full event page and a separately positioned card crop.
+              - generic [ref=e98]:
+                - generic [ref=e99]:
+                  - paragraph [ref=e100]: Event poster / artwork
+                  - paragraph [ref=e101]: Upload once. RallyHub keeps the full poster and lets you make a separate wide crop for public event cards. JPG, PNG, WEBP or PDF · up to 20 MB.
+                - generic [ref=e102]:
+                  - paragraph [ref=e103]: Verify poster from event webpage
+                  - paragraph [ref=e104]: Find events on the organiser website, select one from the dropdown, and check whether it already exists in RallyHub. Poster verification does not create or duplicate events.
+                  - generic [ref=e105]:
+                    - textbox "Event webpage URL" [ref=e106]:
+                      - /placeholder: https://pickleballireland.ie/events/
+                      - text: https://pickleballireland.ie/events/
+                    - button "Find event poster" [ref=e107] [cursor=pointer]
+                  - button "Find events on this website" [ref=e109] [cursor=pointer]
+                  - generic [ref=e110]:
+                    - button "Run live poster verification" [ref=e111] [cursor=pointer]
+                    - generic [ref=e112]: Checks discovery, real upload and SHA-256 read-back without changing the event.
+                - generic [ref=e113]:
+                  - textbox "Original poster URL" [ref=e114]:
+                    - /placeholder: Paste an original poster image URL
+                  - button "Import original automatically" [disabled] [ref=e115]
+                - paragraph [ref=e116]: Approved source domains only. RallyHub checks dimensions and verifies stored image bytes. Unverified images require manual review.
+                - generic [ref=e117]:
+                  - generic [ref=e118]:
+                    - generic [ref=e119]:
+                      - paragraph [ref=e120]: Full artwork
+                      - generic [ref=e121]: Event detail page
+                    - generic [ref=e122]: Poster / artwork preview
+                    - paragraph [ref=e130]: The full artwork keeps its natural portrait or landscape shape. The wide card crop is controlled separately.
+                  - generic [ref=e131]:
+                    - generic [ref=e132]:
+                      - paragraph [ref=e133]: Event-card crop
+                      - generic [ref=e134]: Public Events / member cards
+                    - generic [ref=e135]: Wide card preview
+                - button "Upload poster" [ref=e144] [cursor=pointer]
+            - generic [ref=e148]:
+              - generic [ref=e149]:
+                - paragraph [ref=e150]: 3 · Registration
+                - paragraph [ref=e151]: RallyHub calculates normal registration status from the dates. Use a manual status only when something changes, such as an event filling up.
+              - generic [ref=e152]:
+                - generic [ref=e153]:
+                  - text: Event status
+                  - combobox "Event status “Event full” removes the normal registration action and clearly marks the public listing." [ref=e154]:
+                    - option "Automatic from registration dates" [selected]
+                    - option "Save the date · registration not yet announced"
+                    - option "Event full"
+                    - option "Postponed"
+                    - option "Cancelled"
+                  - generic [ref=e155]: “Event full” removes the normal registration action and clearly marks the public listing.
+                - generic [ref=e156]:
+                  - text: Registration method
+                  - combobox "Registration method" [ref=e157]:
+                    - option "External booking link"
+                    - option "RallyHub booking"
+                    - option "Contact organiser" [selected]
+                    - option "No registration required"
+                - generic [ref=e158]:
+                  - text: Registration opens
+                  - textbox "Registration opens" [ref=e159]
+                - generic [ref=e160]:
+                  - text: Registration closes
+                  - textbox "Registration closes" [ref=e161]
+                - generic [ref=e162]:
+                  - text: Entry fee / fee text
+                  - textbox "Entry fee / fee text" [ref=e163]:
+                    - /placeholder: e.g. €45 per event
+                    - text: £815 / €950 per person, based on two sharing a one-bedroom apartment.
+                - generic [ref=e164]:
+                  - text: Capacity
+                  - spinbutton "Capacity" [ref=e165]
+                - generic [ref=e166]:
+                  - checkbox "Waitlist available when full" [ref=e167]
+                  - text: Waitlist available when full
+            - generic [ref=e168]:
+              - generic [ref=e169]:
+                - paragraph [ref=e170]: 4 · Who is it for?
+                - paragraph [ref=e171]: Structured information powers the public filters rather than forcing players to read a long page.
+              - generic [ref=e172]:
+                - paragraph [ref=e173]: Playing levels
+                - generic [ref=e174]:
+                  - button "Beginner" [ref=e175] [cursor=pointer]
+                  - button "Recreational" [ref=e176] [cursor=pointer]
+                  - button "Social" [ref=e177] [cursor=pointer]
+                  - button "Improver" [ref=e178] [cursor=pointer]
+                  - button "Intermediate" [ref=e179] [cursor=pointer]
+                  - button "Advanced" [ref=e180] [cursor=pointer]
+                  - button "Competition" [ref=e181] [cursor=pointer]
+                  - button "Open" [ref=e182] [cursor=pointer]
+                  - button "3.0-" [ref=e183] [cursor=pointer]
+                  - button "3.5-" [ref=e184] [cursor=pointer]
+                  - button "4.0+" [ref=e185] [cursor=pointer]
+              - generic [ref=e186]:
+                - paragraph [ref=e187]: Age groups
+                - generic [ref=e188]:
+                  - button "All ages" [ref=e189] [cursor=pointer]
+                  - button "18+" [ref=e190] [cursor=pointer]
+                  - button "35+" [ref=e191] [cursor=pointer]
+                  - button "40+" [ref=e192] [cursor=pointer]
+                  - button "50+" [ref=e193] [cursor=pointer]
+                  - button "60+" [ref=e194] [cursor=pointer]
+                  - button "65+" [ref=e195] [cursor=pointer]
+                  - button "70+" [ref=e196] [cursor=pointer]
+                  - button "Junior" [ref=e197] [cursor=pointer]
+              - generic [ref=e198]:
+                - paragraph [ref=e199]: Disciplines
+                - generic [ref=e200]:
+                  - button "Singles" [ref=e201] [cursor=pointer]
+                  - button "Gender Doubles" [ref=e202] [cursor=pointer]
+                  - button "Mixed Doubles" [ref=e203] [cursor=pointer]
+                  - button "Open Doubles" [ref=e204] [cursor=pointer]
+                  - button "Team" [ref=e205] [cursor=pointer]
+            - generic [ref=e206]:
+              - generic [ref=e207]:
+                - paragraph [ref=e208]: 5 · Event information
+                - paragraph [ref=e209]: Optional detail stays collapsed on the public page until a player needs it.
+              - generic [ref=e210]:
+                - text: General event description
+                - textbox "General event description" [ref=e211]
+              - generic [ref=e212]:
+                - text: Eligibility & levels
+                - textbox "Eligibility & levels" [ref=e213]: Designed for pickleball-loving women aged 60+.
+              - generic [ref=e214]:
+                - text: Player information
+                - textbox "Player information" [ref=e215]: Come alone or with a friend. Non-playing partners are welcome. Single supplements and additional nights are available on request. Flights and transfers are extra.
+              - generic [ref=e216]:
+                - text: Fees & cancellation
+                - textbox "Fees & cancellation" [ref=e217]
+              - generic [ref=e218]:
+                - generic [ref=e219]:
+                  - generic [ref=e220]:
+                    - paragraph [ref=e221]: Collaboration / event partners (optional)
+                    - paragraph [ref=e222]: Keep one canonical event even when two businesses or organisers are working together. The primary organiser stays the owner; partners are credited on the public event.
+                  - button "Add collaborator" [ref=e223] [cursor=pointer]
+                - generic [ref=e225]:
+                  - textbox "Collaborator 1 name" [ref=e226]:
+                    - /placeholder: e.g. Pickleball Escapes
+                    - text: Pickleball Escapes
+                  - textbox "Collaborator 1 role" [ref=e227]:
+                    - /placeholder: e.g. In collaboration with
+                    - text: In collaboration with
+                  - textbox "Collaborator 1 link" [active] [ref=e228]:
+                    - /placeholder: Website or RallyHub listing URL
+                    - text: https://rallyhub.ie/directory/pickleball-escapes
+                  - button "Remove collaborator 1" [ref=e229] [cursor=pointer]
+              - generic [ref=e230]:
+                - generic [ref=e231]:
+                  - text: Organiser email
+                  - textbox "Organiser email" [ref=e232]:
+                    - /placeholder: organiser@example.com
+                    - text: smartertravel77@gmail.com
+                - generic [ref=e233]:
+                  - text: Organiser mobile
+                  - textbox "Organiser mobile" [ref=e234]:
+                    - /placeholder: e.g. 087 123 4567
+                    - text: "+353860488146"
+                - generic [ref=e235]:
+                  - text: Hide mobile publicly until
+                  - textbox "Hide mobile publicly until The mobile automatically appears after this time unless “keep private” is switched on." [ref=e236]
+                  - generic [ref=e237]: The mobile automatically appears after this time unless “keep private” is switched on.
+                - generic [ref=e238]:
+                  - checkbox "Keep mobile private after that date" [ref=e239]
+                  - text: Keep mobile private after that date
+              - generic [ref=e240]:
+                - paragraph [ref=e241]: Member-only information
+                - paragraph [ref=e242]: This field becomes available in the same position if your organisation later uses RallyHub Club. Nothing changes in the rest of the event editor.
+              - generic [ref=e244]:
+                - generic [ref=e245]:
+                  - paragraph [ref=e246]: Day-by-day schedule
+                  - paragraph [ref=e247]: Optional. Keep each day short and scannable.
+                - button "Add day" [ref=e248] [cursor=pointer]
+              - generic [ref=e249]:
+                - generic [ref=e250]:
+                  - text: Official/source URL
+                  - textbox "Official/source URL" [ref=e251]: https://www.instagram.com/p/Dewzng0O6j2/
+                - generic [ref=e252]:
+                  - text: Map/directions URL
+                  - textbox "Map/directions URL" [ref=e253]
+                - generic [ref=e254]:
+                  - text: Latitude
+                  - spinbutton "Latitude" [ref=e255]
+                - generic [ref=e256]:
+                  - text: Longitude
+                  - spinbutton "Longitude" [ref=e257]
+            - generic [ref=e258]:
+              - generic [ref=e259]:
+                - paragraph [ref=e260]: 6 · Audience & publishing
+                - paragraph [ref=e261]: Directory organisers publish the same canonical event to RallyHub public Events. If you later move into RallyHub Club, the member options appear here in the same place.
+              - generic [ref=e262]:
+                - checkbox "Show to club members and in their Play calendar (available with RallyHub Club)" [disabled] [ref=e263]
+                - text: Show to club members and in their Play calendar
+                - generic [ref=e264]: (available with RallyHub Club)
+              - generic [ref=e265]:
+                - checkbox "Publish on RallyHub public Events" [ref=e266]
+                - text: Publish on RallyHub public Events
+              - generic [ref=e267]:
+                - checkbox "Feature on member home (available with RallyHub Club)" [disabled] [ref=e268]
+                - text: Feature on member home
+                - generic [ref=e269]: (available with RallyHub Club)
+            - generic [ref=e270]:
+              - generic [ref=e271]:
+                - paragraph [ref=e272]: 7 · Preview & publish
+                - paragraph [ref=e273]: Preview the same poster/crop and information before publishing.
+              - generic [ref=e274]:
+                - button "Public card" [ref=e275] [cursor=pointer]
+                - button "Public detail" [ref=e276] [cursor=pointer]
+              - generic [ref=e277]:
+                - button "Save draft" [ref=e278] [cursor=pointer]
+                - button "Save & update public event" [disabled]
+          - complementary [ref=e279]:
+            - generic [ref=e280]:
+              - generic [ref=e281]:
+                - heading "Draft events" [level=2] [ref=e282]
+                - generic [ref=e283]: "1"
+              - generic [ref=e286]:
+                - generic [ref=e287]:
+                  - generic [ref=e288]: Draft
+                  - paragraph [ref=e289]: Sandra's Pickleball Passports · Carvoeiro, Portugal
+                  - paragraph [ref=e290]: 2027-05-14 · Rocha Brava Racquet Club, Carvoeiro
+                - generic [ref=e291]:
+                  - button "Edit" [ref=e292] [cursor=pointer]
+                  - button "Delete Sandra's Pickleball Passports · Carvoeiro, Portugal" [ref=e293] [cursor=pointer]
+            - generic [ref=e294]:
+              - generic [ref=e295]:
+                - heading "Published events" [level=2] [ref=e296]
+                - generic [ref=e297]: "0"
+              - paragraph [ref=e299]: No published events yet.
+    - contentinfo "RallyHub footer" [ref=e301]:
+      - generic [ref=e302]:
+        - generic [ref=e303]:
+          - link "RallyHub home" [ref=e304] [cursor=pointer]:
+            - /url: /
+            - img "RallyHub" [ref=e305]
+          - navigation "Footer navigation" [ref=e306]:
+            - link "Directory" [ref=e307] [cursor=pointer]:
+              - /url: /directory
+            - link "Events" [ref=e308] [cursor=pointer]:
+              - /url: /events
+            - link "Club Guide" [ref=e309] [cursor=pointer]:
+              - /url: /directory/help
+            - link "About" [ref=e310] [cursor=pointer]:
+              - /url: /about
+            - link "Contact" [ref=e311] [cursor=pointer]:
+              - /url: /contact
+        - generic [ref=e312]: © 2026 RallyHub All rights reserved.
+  - generic [ref=e314]:
+    - generic [ref=e315]:
+      - paragraph [ref=e316]: Help us improve RallyHub
+      - paragraph [ref=e317]: We use optional analytics to understand which clubs, venues and Directory features people find useful. Analytics only starts if you allow it. We do not use this for advertising profiles.
+    - generic [ref=e318]:
+      - button "Necessary only" [ref=e319] [cursor=pointer]
+      - button "Allow analytics" [ref=e320] [cursor=pointer]
 ```
 
 # Test source
 
 ```ts
-  31  |     if(path.includes('/public-settings/'))return reply({id:APP_ID,public_settings:{}});
-  32  |     if(path.includes('/analytics/'))return reply({});
   33  |     if(path.endsWith('/entities/User/me'))return reply(user);
   34  |     const fnMarker=`/api/apps/${APP_ID}/functions/`;
   35  |     const idx=path.indexOf(fnMarker);
@@ -415,10 +506,10 @@ Call log:
   128 |   await expect(page.getByLabel('Registration method')).toHaveValue('contact');
   129 |   await expect(page.getByLabel('Collaborator 1 name')).toHaveValue('Pickleball Escapes');
   130 |   await expect(page.getByLabel('Collaborator 1 role')).toHaveValue('In collaboration with');
-> 131 |   await expect(page.getByLabel('Fee / price text')).toHaveValue('£815 / €950 per person, based on two sharing a one-bedroom apartment.');
-      |                                                     ^ Error: expect(locator).toHaveValue(expected) failed
+  131 |   await expect(page.getByLabel('Entry fee / fee text')).toHaveValue('£815 / €950 per person, based on two sharing a one-bedroom apartment.');
   132 |   await page.getByLabel('Collaborator 1 link').fill('https://rallyhub.ie/directory/pickleball-escapes');
-  133 |   await page.getByRole('button',{name:'Publish to RallyHub Events'}).click();
+> 133 |   await page.getByRole('button',{name:'Publish to RallyHub Events'}).click();
+      |                                                                      ^ Error: locator.click: Test timeout of 45000ms exceeded.
   134 |   await expect(page.getByText('Event published + organiser listing live ✓')).toBeVisible();
   135 |   const save=calls.find(c=>c.name==='directoryEvents'&&c.body.action==='save'&&c.body.mode==='publish');
   136 |   expect(save).toBeTruthy();
