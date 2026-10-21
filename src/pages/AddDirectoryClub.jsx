@@ -212,6 +212,10 @@ export default function AddDirectoryClub() {
       });
       if (res.data?.error) throw new Error(res.data.error);
       try { if (draftKey) localStorage.removeItem(draftKey); } catch {}
+      if (res.data?.status === 'approved' && res.data?.listingSlug) {
+        navigate(`/directory/${res.data.listingSlug}/edit?created=1&guided=1`);
+        return;
+      }
       setRequest(res.data?.request || { status: 'pending', club_name: clubName, county, town });
     } catch (err) {
       setError(err.message || 'Could not submit this listing for the directory.');
@@ -329,7 +333,7 @@ export default function AddDirectoryClub() {
                     <div role="radiogroup" aria-label="What are you setting up?" className="grid gap-2 sm:grid-cols-2">
                       {formCategories.map(item => <label key={item.key} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${listingType===item.key?'border-primary bg-primary/10 ring-1 ring-primary/20':'border-border bg-background/40 hover:border-primary/40'}`}>
                         <input type="radio" name="listingType" value={item.key} checked={listingType===item.key} onChange={() => { setListingType(item.key); setCounty(''); setTown(''); setPrimaryVenue(''); setAddress(''); setVenuePostcode(''); setServiceArea(''); }} className="mt-1 h-4 w-4 accent-primary" />
-                        <span><span className="block text-sm font-bold text-foreground">{item.label}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{LISTING_TYPE_HINTS[item.key] || 'A pickleball listing on RallyHub.'}</span></span>
+                        <span><span className="block text-sm font-bold text-foreground">{item.key==='holidays'?'Pickleball holiday / experience':item.label}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{LISTING_TYPE_HINTS[item.key] || 'A pickleball listing on RallyHub.'}</span></span>
                       </label>)}
                     </div>
                     <p className="text-xs text-muted-foreground">Choose the closest fit. RallyHub only shows the questions that are relevant to that type of listing.</p>
@@ -398,7 +402,7 @@ export default function AddDirectoryClub() {
                     <input type="checkbox" checked={publishContact} onChange={e => setPublishContact(e.target.checked)} className="mt-1 h-4 w-4 accent-primary" />
                     <span className="text-sm text-muted-foreground"><strong className="text-foreground">Use these as the public listing contact details.</strong> {isSuperAdmin ? 'They will appear on the club profile, while the email is also retained as the trusted contact for the future claim.' : 'If the listing is approved, show my submitted name, email and mobile on the club profile. Untick this if you want to add different public contact details later.'}</span>
                   </label>
-                  <div className="space-y-2 mt-4"><Label htmlFor="notes">Anything else we should know <span className="text-muted-foreground font-normal">(optional)</span></Label><Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows={4} maxLength={1500} /></div>
+                  <div className="space-y-2 mt-4"><Label htmlFor="notes">{listingType==='other'?'Tell us what you do':'Anything else we should know'} <span className="text-muted-foreground font-normal">(optional)</span></Label><Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows={listingType==='other'?3:4} placeholder={listingType==='other'?'A short description helps RallyHub understand where your listing fits.':''} maxLength={1500} /></div>
                   {!isSuperAdmin && <label className="mt-4 flex items-start gap-3 rounded-xl border border-border bg-background/30 p-4 cursor-pointer">
                     <input type="checkbox" checked={networkUpdatesOptIn} onChange={e => setNetworkUpdatesOptIn(e.target.checked)} className="mt-1 h-4 w-4 accent-primary" />
                     <span className="text-sm text-muted-foreground"><strong className="text-foreground">Keep me connected with RallyHub.</strong> I’m happy to receive occasional directory, club-network and RallyHub updates by email. I can opt out at any time.</span>
