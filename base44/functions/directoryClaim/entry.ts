@@ -1110,7 +1110,7 @@ Deno.serve(async (req) => {
       const facebook = String(body.facebook || '').trim().slice(0, 320);
       const instagram = String(body.instagram || '').trim().slice(0, 320);
       const claimantName = String(body.claimantName || user.full_name || user.display_name || '').trim().slice(0, 160);
-      const claimantRole = String(body.claimantRole || '').trim().slice(0, 160);
+      const claimantRole = String(body.claimantRole || (listingType === 'club' ? '' : 'Organiser / provider')).trim().slice(0, 160);
       const claimantPhone = String(body.claimantPhone || '').trim().slice(0, 80);
       const publishContact = body.publishContact !== false;
       const networkUpdatesOptIn = body.networkUpdatesOptIn === true;
@@ -1119,8 +1119,8 @@ Deno.serve(async (req) => {
       if (!clubName) return Response.json({ error: 'Listing name is required' }, { status: 400 });
       if (category.locationMode === 'county' && !county) return Response.json({ error: 'County is required for clubs and places to play' }, { status: 400 });
       if (!claimantName) return Response.json({ error: 'Your name is required' }, { status: 400 });
-      if (!claimantRole) return Response.json({ error: 'Your role or connection to the listing is required' }, { status: 400 });
-      if (!claimantPhone) return Response.json({ error: 'Your mobile number is required' }, { status: 400 });
+      if (listingType === 'club' && !claimantRole) return Response.json({ error: 'Your role or connection to the listing is required' }, { status: 400 });
+      if (listingType === 'club' && !claimantPhone) return Response.json({ error: 'Your mobile number is required' }, { status: 400 });
 
       const staticDuplicate = listingType === 'club' ? directoryVerificationIndex.find(x =>
         normaliseName(x.name) === normaliseName(clubName) &&
