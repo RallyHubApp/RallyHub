@@ -12,6 +12,7 @@ const holidayBase={
   contact:{name:'Sandra',email:'smartertravel77@gmail.com',phone:'+353860488146',whatsapp:'https://wa.me/353860488146'},
   venues:[],sessions:[]
 };
+const sandraSetup={identity:{requiresConfirmation:true,confirmed:false,personName:'Sandra',allowOwnName:true,allowCustom:true,candidates:[{name:'Smarter Travel',source:'Name used on your travel/social presence'},{name:"Sandra's Pickleball Passports",source:'Name used on the Carvoeiro pickleball trip'}]}};
 const sandraEvent={
   id:'event-sandra',name:"Sandra's Pickleball Passports · Carvoeiro, Portugal",event_slug:'sandras-pickleball-passports-carvoeiro-2027',
   start_date:'2027-05-14',end_date:'2027-05-18',location:'Rocha Brava Racquet Club, Carvoeiro',event_country:'Portugal',event_county:'Algarve',event_category:'holiday',
@@ -55,7 +56,8 @@ async function installBackend(page,{forAdd=false}={}){
       }
       if(name==='directoryListingProfile'){
         if(body.action==='public_list')return reply({success:true,listings:[]});
-        if(body.action==='private_get')return reply({success:true,listingSlug:holidayBase.slug,visibility:'preview_only',verificationStatus:'verified',profile:null,base:holidayBase});
+        if(body.action==='private_get')return reply({success:true,listingSlug:holidayBase.slug,visibility:'preview_only',verificationStatus:'verified',profile:null,base:holidayBase,setup:sandraSetup});
+        if(body.action==='confirm_identity')return reply({success:true,listingSlug:holidayBase.slug,publicName:body.publicName,setup:{identity:{...sandraSetup.identity,requiresConfirmation:false,confirmed:true,selectedPublicName:body.publicName}}});
         if(body.action==='save')return reply({success:true,profile:body.profile,id:'profile-1'});
         return reply({success:true,profile:null,base:null});
       }
@@ -103,13 +105,20 @@ test('personalised guided overview shows what RallyHub already knows and continu
   const overview=page.getByTestId('directory-guided-overview');
   await expect(overview).toBeVisible();
   await expect(overview.getByText('Sandra, we’ve already started this for you.')).toBeVisible();
-  await expect(overview.getByText('3 of 5 ready')).toBeVisible();
+  await expect(overview.getByText('3 of 6 ready')).toBeVisible();
+  await expect(page.getByTestId('setup-step-identity')).toContainText('Needs check');
   await expect(page.getByTestId('setup-step-basics')).toContainText('Ready');
   await expect(page.getByTestId('setup-step-contact')).toContainText('Ready');
   await expect(page.getByTestId('setup-step-location')).toContainText('Ready');
   await expect(page.getByTestId('setup-step-events')).toContainText('Started');
   await expect(page.getByTestId('setup-step-events')).toContainText("Sandra's Pickleball Passports · Carvoeiro, Portugal");
   await page.getByRole('button',{name:'Continue setup'}).click();
+  await expect(page.getByTestId('directory-identity-step')).toBeVisible();
+  await expect(page.getByText('Which name should players see?')).toBeVisible();
+  await expect(page.getByText('Smarter Travel',{exact:true})).toBeVisible();
+  await expect(page.getByText("Sandra's Pickleball Passports",{exact:true})).toBeVisible();
+  await page.locator('input[name="identityChoice"][value="Smarter Travel"]').check();
+  await page.getByRole('button',{name:'Confirm & continue'}).click();
   await expect(page).toHaveURL(/\/directory\/sandras-pickleball-passports\/events\?guided=1&edit=event-sandra/);
   await expect(page.getByText("Editing: Sandra's Pickleball Passports · Carvoeiro, Portugal")).toBeVisible();
   await expect(page.getByLabel('Starts')).toHaveValue('2027-05-14');
@@ -120,6 +129,9 @@ test('personalised guided overview shows what RallyHub already knows and continu
 test('Sandra email deep-link skips completed work, preserves the prefilled event and publishes one canonical collaboration',async({page})=>{
   const calls=await installBackend(page);
   await page.goto('/directory/sandras-pickleball-passports/edit?guided=1&continue=1');
+  await expect(page.getByTestId('directory-identity-step')).toBeVisible();
+  await page.locator('input[name="identityChoice"][value="Sandra\'s Pickleball Passports"]').check();
+  await page.getByRole('button',{name:'Confirm & continue'}).click();
   await expect(page).toHaveURL(/\/directory\/sandras-pickleball-passports\/events\?guided=1&edit=event-sandra/);
   await expect(page.getByLabel('Event type')).toHaveValue('holiday');
   await expect(page.getByLabel('Event name')).toHaveValue("Sandra's Pickleball Passports · Carvoeiro, Portugal");
@@ -132,6 +144,8 @@ test('Sandra email deep-link skips completed work, preserves the prefilled event
   await page.getByLabel('Collaborator 1 link').fill('https://rallyhub.ie/directory/pickleball-escapes');
   await page.getByRole('button',{name:'Publish to RallyHub Events'}).click();
   await expect(page.getByText('Event published + organiser listing live ✓')).toBeVisible();
+  const identityConfirm=calls.find(c=>c.name==='directoryListingProfile'&&c.body.action==='confirm_identity');
+  expect(identityConfirm?.body.publicName).toBe("Sandra's Pickleball Passports");
   const save=calls.find(c=>c.name==='directoryEvents'&&c.body.action==='save'&&c.body.mode==='publish');
   expect(save).toBeTruthy();
   expect(save.body.event.event_collaborators).toEqual([{name:'Pickleball Escapes',role:'In collaboration with',url:'https://rallyhub.ie/directory/pickleball-escapes',listing_slug:'pickleball-escapes'}]);
