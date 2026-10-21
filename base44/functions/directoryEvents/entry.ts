@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
       const baseProfile=parseJson(listing.base_json,{});
       const savedProfile=parseJson(profileRows?.[0]?.public_json,{});
       const mergedProfile={...baseProfile,...savedProfile,contact:{...(baseProfile?.contact||{}),...(savedProfile?.contact||{})}};
-      return Response.json({ success:true, canManage:true, role:access.role, listing:{slug:listing.slug,name:listing.name,county:listing.county,listingType:listing.listing_type||mergedProfile.listingType||'club',serviceArea:listing.service_area||mergedProfile.serviceArea||'',profile:{contact:mergedProfile.contact||{},website:mergedProfile.website||'',facebook:mergedProfile.facebook||'',instagram:mergedProfile.instagram||'',logoUrl:mergedProfile.logoUrl||''}}, host:club, tenant, events:events||[], venues });
+      return Response.json({ success:true, canManage:true, role:access.role, listing:{slug:listing.slug,name:listing.name,county:listing.county,visibility:listing.visibility||'public',listingType:listing.listing_type||mergedProfile.listingType||'club',serviceArea:listing.service_area||mergedProfile.serviceArea||'',profile:{contact:mergedProfile.contact||{},website:mergedProfile.website||'',facebook:mergedProfile.facebook||'',instagram:mergedProfile.instagram||'',logoUrl:mergedProfile.logoUrl||''}}, host:club, tenant, events:events||[], venues });
     }
 
     if (action === 'save') {
@@ -200,11 +200,16 @@ Deno.serve(async (req) => {
       const saved = existing
         ? await base44.asServiceRole.entities.Tournament.update(existing.id, payload)
         : await base44.asServiceRole.entities.Tournament.create(payload);
+      let listingPublished = false;
+      if (mode === 'publish' && String(listing.visibility || 'public') === 'preview_only' && String(listing.listing_type || '') !== 'club' && listing.id) {
+        await base44.asServiceRole.entities.DirectoryListingRecord.update(listing.id, { visibility:'public' });
+        listingPublished = true;
+      }
       await base44.asServiceRole.entities.AuditLog.create({
         tenant_id:tenant.id, club_id:club.id, user_id:user.id, action:'directory_event_save', entity_type:'Tournament', entity_id:saved?.id || existing?.id || '', scope_type:'DirectoryListing', scope_id:listingSlug,
         after_state:JSON.stringify({ mode, event_name:incoming.name, public:mode==='publish' }), reason:'Directory owner/editor managed a public event.'
       }).catch(()=>{});
-      return Response.json({ success:true, event:saved });
+      return Response.json({ success:true, event:saved, listingPublished });
     }
 
     if (action === 'delete') {
