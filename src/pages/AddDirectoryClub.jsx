@@ -411,7 +411,7 @@ export default function AddDirectoryClub() {
 
                 {!isSuperAdmin && <p className="text-xs text-muted-foreground">Your progress is automatically saved on this device while you complete the form.</p>}
                 <Button type="submit" disabled={submitting || !!exactExisting} className="w-full sm:w-auto">
-                  {submitting ? (isSuperAdmin ? 'Creating…' : 'Submitting…') : (isSuperAdmin ? 'Create unclaimed listing & continue' : 'Submit listing for review')}
+                  {submitting ? (isSuperAdmin ? 'Creating…' : clubListing ? 'Submitting…' : 'Saving…') : (isSuperAdmin ? 'Create unclaimed listing & continue' : clubListing ? 'Submit listing for review' : 'Save & continue')}
                 </Button>
               </form>
             )}
