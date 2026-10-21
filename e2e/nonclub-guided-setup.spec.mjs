@@ -116,7 +116,7 @@ test('personalised guided overview shows what RallyHub already knows and continu
   await expect(page.getByTestId('directory-identity-step')).toBeVisible();
   await expect(page.getByText('Which name should players see?')).toBeVisible();
   await expect(page.getByText('Smarter Travel',{exact:true})).toBeVisible();
-  await expect(page.getByText("Sandra's Pickleball Passports",{exact:true})).toBeVisible();
+  await expect(page.getByTestId('directory-identity-step').getByText("Sandra's Pickleball Passports",{exact:true})).toBeVisible();
   await page.locator('input[name="identityChoice"][value="Smarter Travel"]').check();
   await page.getByRole('button',{name:'Confirm & continue'}).click();
   await expect(page).toHaveURL(/\/directory\/sandras-pickleball-passports\/events\?guided=1&edit=event-sandra/);
