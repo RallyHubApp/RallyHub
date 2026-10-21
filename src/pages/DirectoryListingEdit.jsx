@@ -1147,13 +1147,13 @@ export default function DirectoryListingEdit() {
 
               </>}
 
-              <div className={`sticky bottom-3 z-20 rounded-2xl border backdrop-blur-xl p-3 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${saving ? 'border-primary/40 bg-card/98' : saved && !dirty ? 'border-green-500/40 bg-card/98' : 'border-border bg-card/95'}`}>
+              {!(editorMode === 'guided' && guidedOverview) && <div className={`sticky bottom-3 z-20 rounded-2xl border backdrop-blur-xl p-3 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${saving ? 'border-primary/40 bg-card/98' : saved && !dirty ? 'border-green-500/40 bg-card/98' : 'border-border bg-card/95'}`}>
                 <div className="text-sm" aria-live="polite">
                   <p className="font-semibold flex items-center gap-2">{saving ? <><Loader2 className="w-4 h-4 animate-spin text-primary" /> Saving your changes…</> : dirty ? 'You have unsaved changes' : saved ? <><CheckCircle2 className="w-4 h-4 text-green-400" /> Saved successfully</> : 'All changes saved'}</p>
-                  <p className="text-xs text-muted-foreground">{saving ? 'Keep this page open until the save is confirmed.' : saved && !dirty ? 'Your public Directory listing has been updated.' : 'Changes become public as soon as the save completes.'}</p>
+                  <p className="text-xs text-muted-foreground">{saving ? 'Keep this page open until the save is confirmed.' : listingVisibility === 'preview_only' ? (saved && !dirty ? 'Your private setup draft is up to date.' : 'Changes stay private until you publish.') : saved && !dirty ? 'Your public Directory listing has been updated.' : 'Changes become public as soon as the save completes.'}</p>
                 </div>
                 <div className="flex gap-2"><Button type="button" variant="outline" className="gap-2" onClick={viewPublicListing} disabled={saving}><Globe2 className="w-4 h-4" /> View listing</Button><Button onClick={save} disabled={saving || !dirty} size="lg" className="gap-2 min-w-40">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : !dirty && saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />} {saving ? 'Saving changes…' : dirty ? 'Save changes' : saved ? 'Saved ✓' : 'All saved'}</Button></div>
-              </div>
+              </div>}
             </div>
           ) : null}
         </main>
