@@ -316,6 +316,24 @@ export default function DirectoryListingEdit() {
   }, [isAuthenticated, baseClub, slug]);
 
   useEffect(() => {
+    if (!isAuthenticated || !access?.hasAccess || isClubListing || editorMode !== 'guided') {
+      if (isClubListing) setSetupEvents([]);
+      return undefined;
+    }
+    let active = true;
+    setLoadingSetupEvents(true);
+    base44.functions.invoke('directoryEvents', { action:'list', listingSlug:slug })
+      .then(res => {
+        if (!active) return;
+        if (res.data?.error) throw new Error(res.data.error);
+        setSetupEvents(Array.isArray(res.data?.events) ? res.data.events : []);
+      })
+      .catch(() => { if (active) setSetupEvents([]); })
+      .finally(() => { if (active) setLoadingSetupEvents(false); });
+    return () => { active = false; };
+  }, [isAuthenticated, access?.hasAccess, isClubListing, editorMode, slug]);
+
+  useEffect(() => {
     if (!dirty) return undefined;
     const warn = event => { event.preventDefault(); event.returnValue = ''; };
     window.addEventListener('beforeunload', warn);
