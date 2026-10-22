@@ -1,4 +1,4 @@
-import {rallyHubEmailShell} from '../../shared/rallyHubPlatformEmail.ts';
+import {rallyHubEmailShellUsingTemplate} from '../../shared/rallyHubPlatformEmail.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { importedContactEndpointFor } from './importedContactEndpoints.ts';
@@ -477,7 +477,7 @@ Deno.serve(async (req) => {
         '',
         'This enquiry was generated through RallyHub. Replying to this email will reply to the visitor when the configured mail provider supports Reply-To.',
       ].join('\n');
-      const htmlBody = rallyHubEmailShell({
+      const htmlBody = await rallyHubEmailShellUsingTemplate(base44,'directory_enquiry',{
         title:'New club enquiry',
         preheader:`New enquiry for ${listingName} through the RallyHub Directory.`,
         footerNote:'RallyHub Directory',

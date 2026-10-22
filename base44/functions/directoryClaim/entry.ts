@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 import { directoryVerificationIndex } from './contactIndex.ts';
 import { geocodeDirectoryVenue } from './geocode.ts';
-import { rallyHubEmailShell } from '../../shared/rallyHubPlatformEmail.ts';
+import { rallyHubEmailShellUsingTemplate } from '../../shared/rallyHubPlatformEmail.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 
 function normaliseEmail(value = '') {
@@ -386,7 +386,7 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
   const inviteTitle = delegated
     ? `Directory Editor invitation · ${listing.name}`
     : `Your free Directory listing · ${listing.name}`;
-  const htmlBody = rallyHubEmailShell({
+  const htmlBody = await rallyHubEmailShellUsingTemplate(base44,'directory_claim',{
     title: inviteTitle,
     preheader: delegated
       ? `You have been invited to help manage ${listing.name} on the RallyHub Directory.`
@@ -466,7 +466,7 @@ Brian Moore
 RallyHub
 https://rallyhub.ie`;
   const finalTextBody = normaliseDirectorySignatureText(textBody);
-  const htmlBody = rallyHubEmailShell({
+  const htmlBody = await rallyHubEmailShellUsingTemplate(base44,'directory_welcome',{
     title: `Welcome to the RallyHub Directory`,
     preheader: `Your ${clubName} Directory listing is ready to manage.`,
     content: `${textToBrandedHtml(finalTextBody, manageUrl)}
@@ -569,7 +569,7 @@ async function sendAdminDirectoryEmail(base44, { user, subject, body, kind, cont
 
     const adminUrl = String(body || '').match(/https:\/\/rallyhub\.ie\/app\/admin[^\s]*/i)?.[0] || '';
     const finalTextBody = normaliseDirectorySignatureText(body);
-    const htmlBody = rallyHubEmailShell({
+    const htmlBody = await rallyHubEmailShellUsingTemplate(base44,'directory_review_admin',{
       title: subject.replace(/^\[RallyHub Directory\]\s*/i, ''),
       preheader: 'RallyHub Directory admin notification',
       content: textToBrandedHtml(finalTextBody, adminUrl),
@@ -1782,7 +1782,7 @@ Deno.serve(async (req) => {
           .replaceAll('{{name}}', String(user.full_name || 'Brian'))
           .replaceAll('{{clubs}}', 'Test Directory clubs');
         const finalTestText = normaliseDirectorySignatureText(testText);
-        const testHtmlBody = rallyHubEmailShell({
+        const testHtmlBody = await rallyHubEmailShellUsingTemplate(base44,'directory_broadcast',{
           title: subject,
           preheader: 'Test preview of a RallyHub Directory email',
           content: textToBrandedHtml(finalTestText),
@@ -1844,7 +1844,7 @@ Deno.serve(async (req) => {
             .replaceAll('{{name}}', recipient.name || firstName)
             .replaceAll('{{clubs}}', recipient.clubs.join(', ') || 'your Directory listing');
           const finalPersonalised = normaliseDirectorySignatureText(personalised);
-          const htmlBody = rallyHubEmailShell({
+          const htmlBody = await rallyHubEmailShellUsingTemplate(base44,'directory_broadcast',{
             title: subject,
             preheader: 'RallyHub Directory update',
             content: textToBrandedHtml(finalPersonalised),

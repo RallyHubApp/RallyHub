@@ -110,3 +110,23 @@ export async function renderRallyHubSystemEmail(base44:any,options:{
  const htmlBody=rallyHubEmailShell({title:options.title,content:'<p style="line-height:1.65;font-size:15px;color:#334155;">'+escaped+'</p>',footerNote:options.footerNote||'RallyHub App',utilityLinks:links});
  return {subject,textBody:body,htmlBody,templateApplied:!!record};
 }
+
+/** Read approved per-template preferences without replacing transactional message content.
+ * Drafts are editorial only and never change outgoing customer emails.
+ */
+export async function rallyHubEmailShellUsingTemplate(base44:any,purpose:string,options:any){
+ let utilityLinks=options.utilityLinks??null;
+ try{
+  const matches=await base44.asServiceRole.entities.CommunicationTemplate.filter(
+    {owner_scope:'platform',purpose,status:'approved'},'-updated_date',5);
+  const approved=matches?.[0];
+  if(approved){
+   const saved=approved.channel_templates?.email?.utility_links;
+   if(Array.isArray(saved)){
+    const allowed=new Set(RALLYHUB_UTILITY_LINKS.map(x=>x.key));
+    utilityLinks=saved.filter((key:any)=>typeof key==='string'&&allowed.has(key));
+   }
+  }
+ }catch(e){console.warn('Platform email utility preference lookup unavailable; using approved standard defaults',String(e?.message||e).slice(0,180))}
+ return rallyHubEmailShell({...options,utilityLinks});
+}
