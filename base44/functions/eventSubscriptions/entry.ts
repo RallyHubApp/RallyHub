@@ -1,3 +1,4 @@
+import {rallyHubEmailShell} from '../../shared/rallyHubPlatformEmail.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
 import { sendWithConfiguredEmailTransport } from '../../shared/emailTransport.ts';
 const emailOK=(v:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -19,7 +20,8 @@ Deno.serve(async(req)=>{
    const record=existing[0];
    if(record) await entity.update(record.id,data);else await entity.create(data);
    const url=`${base}?subscription=confirm&token=${encodeURIComponent(confirm)}`;
-   try{await sendWithConfiguredEmailTransport(b,{scopeType:'platform',purpose:'directory'},{to:email,senderName:'RallyHub Events',subject:'Confirm your RallyHub event updates',textBody:`Confirm your RallyHub event updates by opening:\n${url}\n\nIf you did not request this, ignore this email.\n\nTo unsubscribe at any time: ${base}?subscription=unsubscribe&token=${encodeURIComponent(unsubscribe)}`});}
+   const confirmHtml=rallyHubEmailShell({title:'Confirm your RallyHub event updates',preheader:'Confirm your subscription to RallyHub Events',content:'<p style="font-size:15px;line-height:1.7">Please confirm your request to receive RallyHub event updates. If you did not request them, you can ignore this email.</p><p style="font-size:12px;color:#64748b">You can unsubscribe from any future update.</p>',actionUrl:url,actionLabel:'Confirm event updates',footerNote:'RallyHub Events',utilityLinks:['website','directory','facebook','instagram']});
+   try{await sendWithConfiguredEmailTransport(b,{scopeType:'platform',purpose:'directory'},{to:email,senderName:'RallyHub Events',subject:'Confirm your RallyHub event updates',htmlBody:confirmHtml,textBody:`Confirm your RallyHub event updates by opening:\n${url}\n\nIf you did not request this, ignore this email.\n\nTo unsubscribe at any time: ${base}?subscription=unsubscribe&token=${encodeURIComponent(unsubscribe)}`});}
    catch(e){return Response.json({error:'Confirmation email could not be sent. Please try again later.'},{status:503});}
    return Response.json({success:true,pending:true});
   }
