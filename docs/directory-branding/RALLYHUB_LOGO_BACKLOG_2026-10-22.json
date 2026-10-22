@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-22",
+  "inventory": {
+    "importedStatic": 78,
+    "curatedStatic": 4,
+    "dynamicPublic": 22,
+    "uniquePublic": 104,
+    "effectiveLogoUrls": 63,
+    "hiddenExisting": 7,
+    "genuinelyMissing": 34,
+    "requiringAttention": 41,
+    "countiesRepresented": 27,
+    "absentCounties": [
+      "Derry",
+      "Fermanagh",
+      "Roscommon",
+      "Tipperary",
+      "Tyrone"
+    ]
+  },
+  "reviewed": [
+    {
+      "slug": "sandra-s-travel-treasures",
+      "status": "owner_managed_holiday_organiser_no_logo"
+    },
+    {
+      "slug": "newbridge-community-pickleball",
+      "status": "owner_managed_no_logo_identity_overlap"
+    },
+    {
+      "slug": "stepaside-pickleball",
+      "status": "owner_managed_no_logo"
+    },
+    {
+      "slug": "fenside-pickleball",
+      "status": "no_verified_artwork"
+    },
+    {
+      "slug": "iveragh-pickleball-club",
+      "status": "no_verified_artwork"
+    },
+    {
+      "slug": "clonakilty-pickleball-club",
+      "status": "related_tennis_club_not_automatically_same_logo"
+    },
+    {
+      "slug": "sports-lab-pickleball",
+      "status": "parent_brand_only"
+    },
+    {
+      "slug": "picklepub-club",
+      "status": "previous_candidate_unapproved"
+    },
+    {
+      "slug": "shankill-tennis-club",
+      "status": "official_website_candidate_not_approved_or_exported"
+    },
+    {
+      "slug": "coolmine-pickleheads-club",
+      "status": "owner_approved_repo_png_staging_blocked",
+      "sha256": "068d8267233f41b062bfb1a2cafb5cdfdf67e9ee6473c529f74aa13e6be616cf"
+    }
+  ],
+  "newStagedReceipts": 0,
+  "productionWrites": 0,
+  "deployed": false,
+  "backlogComplete": false
+}
