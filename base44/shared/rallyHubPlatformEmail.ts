@@ -145,7 +145,12 @@ export async function rallyHubEmailShellUsingTemplate(base44:any,purpose:string,
       && required.every(k=>template.includes('{{'+k+'}}'))){
       const resolved=template.replace(/{{\s*([A-Za-z0-9_.]+)\s*}}/g,(_,key)=>String(values[key]));
       // The branded sender owns the signature; remove an old plain-text signoff.
-      const body=resolved.replace(/\n*Yours in sport,[\s\S]*$/i,'').trim();
+      let body=resolved.replace(/\n*Yours in sport,[\s\S]*$/i,'').trim();
+      // The mandatory private URL stays in the text alternative, but the HTML email
+      // presents it in the approved CTA rather than duplicating the raw link.
+      if(options.actionUrl && body.includes(String(options.actionUrl))){
+        body=body.replaceAll(String(options.actionUrl),'').replace(/(?:Continue your guided setup|Manage your Directory listing|Review & enhance your listing):\s*(?=\n|$)/gi,'').trim();
+      }
       content=body.split(/\n{2,}/).map(block=>'<p style="font-size:15px;line-height:1.7;color:#334155;">'+escapeHtml(block).replace(/\n/g,'<br>')+'</p>').join('')
         + String(options.postTemplateHtml||'');
     }else{
