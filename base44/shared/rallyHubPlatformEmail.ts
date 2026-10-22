@@ -77,3 +77,36 @@ export function normaliseRallyHubPlatformHtml(html:string,{title='',footerNote='
   }
   return rallyHubEmailShell({title,content:source,footerNote,utilityLinks});
 }
+
+// Applied only to owner-approved stored templates. Drafts never alter system-generated mail.
+export async function renderRallyHubSystemEmail(base44:any,options:{
+ purpose:string;subject:string;textBody:string;title:string;footerNote?:string;
+ variables?:Record<string,string|number>;requiredTokens?:string[];
+}){
+ const substitutions=options.variables||{};
+ const approved=await base44.asServiceRole.entities.CommunicationTemplate.filter(
+  {owner_scope:'platform',purpose:options.purpose,status:'approved'},'-updated_date',10
+ ).catch(()=>[]);
+ const record=(approved||[])[0]||null;
+ let subject=options.subject,body=options.textBody;
+ let links:string[]|null=null;
+ if(record){
+  const template=String(record.plain_text_template||'');
+  const allKeys=[...template.matchAll(/{{\s*([A-Z0-9_]+)\s*}}/g)].map(x=>x[1]);
+  const required=options.requiredTokens||[];
+  if(template && allKeys.every(k=>Object.hasOwn(substitutions,k))
+    && required.every(k=>template.includes('{{'+k+'}}'))){
+    body=template.replace(/{{\s*([A-Z0-9_]+)\s*}}/g,(_,key)=>String(substitutions[key]));
+    const sb=String(record.subject_template||'');
+    if([...sb.matchAll(/{{\s*([A-Z0-9_]+)\s*}}/g)].every(x=>Object.hasOwn(substitutions,x[1])))
+      subject=sb.replace(/{{\s*([A-Z0-9_]+)\s*}}/g,(_,key)=>String(substitutions[key]));
+  }
+  // Link selections can be updated independently of the body.
+  const values=record.channel_templates?.email?.utility_links;
+  if(Array.isArray(values))links=values.filter((key:any)=>RALLYHUB_UTILITY_LINKS.some(x=>x.key===key));
+ }
+ const cleanBody=body.replace(/\n*(?:Yours in sport,|Yours in support,|Thanks,|RallyHub)\s*\n(?:Brian Moore[\s\S]*)?$/i,'').trim();
+ const escaped=escapeHtml(cleanBody).replace(/\n/g,'<br>');
+ const htmlBody=rallyHubEmailShell({title:options.title,content:'<p style="line-height:1.65;font-size:15px;color:#334155;">'+escaped+'</p>',footerNote:options.footerNote||'RallyHub App',utilityLinks:links});
+ return {subject,textBody:body,htmlBody,templateApplied:!!record};
+}
