@@ -116,6 +116,7 @@ export async function renderRallyHubSystemEmail(base44:any,options:{
  */
 export async function rallyHubEmailShellUsingTemplate(base44:any,purpose:string,options:any){
  let utilityLinks=options.utilityLinks??null;
+ let content=options.content||'';
  try{
   const matches=await base44.asServiceRole.entities.CommunicationTemplate.filter(
     {owner_scope:'platform',purpose,status:'approved'},'-updated_date',5);
@@ -126,7 +127,25 @@ export async function rallyHubEmailShellUsingTemplate(base44:any,purpose:string,
     const allowed=new Set(RALLYHUB_UTILITY_LINKS.map(x=>x.key));
     utilityLinks=saved.filter((key:any)=>typeof key==='string'&&allowed.has(key));
    }
+   // Only use owner-approved editable wording when the sender explicitly supplies
+   // the required variables. Never replace secure links with missing placeholders.
+   if(options.allowTemplateBody===true && options.templateVariables){
+    const template=String(approved.plain_text_template||'').trim();
+    const values=options.templateVariables;
+    const tokens=[...template.matchAll(/{{\s*([A-Za-z0-9_.]+)\s*}}/g)].map(x=>x[1]);
+    const required=Array.isArray(options.requiredTemplateTokens)?options.requiredTemplateTokens:[];
+    if(template && tokens.every(k=>Object.hasOwn(values,k))
+      && required.every(k=>template.includes('{{'+k+'}}'))){
+      const resolved=template.replace(/{{\s*([A-Za-z0-9_.]+)\s*}}/g,(_,key)=>String(values[key]));
+      // The branded sender owns the signature; remove an old plain-text signoff.
+      const body=resolved.replace(/\n*Yours in sport,[\s\S]*$/i,'').trim();
+      content=body.split(/\n{2,}/).map(block=>'<p style="font-size:15px;line-height:1.7;color:#334155;">'+escapeHtml(block).replace(/\n/g,'<br>')+'</p>').join('')
+        + String(options.postTemplateHtml||'');
+    }else{
+      console.warn('Approved RallyHub email body not applied: required transactional fields unresolved',purpose);
+    }
+   }
   }
- }catch(e){console.warn('Platform email utility preference lookup unavailable; using approved standard defaults',String(e?.message||e).slice(0,180))}
- return rallyHubEmailShell({...options,utilityLinks});
+ }catch(e){console.warn('Platform email template preference lookup unavailable; using safe sender defaults',String(e?.message||e).slice(0,180))}
+ return rallyHubEmailShell({...options,content,utilityLinks});
 }
