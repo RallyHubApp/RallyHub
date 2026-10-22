@@ -1,3 +1,5 @@
+import {renderRallyHubSystemEmail} from '../../shared/rallyHubPlatformEmail.ts';
+import {sendWithConfiguredEmailTransport} from '../../shared/emailTransport.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { tenantCapabilityDecision } from './tenantCapability.ts';
 
@@ -194,7 +196,31 @@ Deno.serve(async(req)=>{try{
     const rawToken=randomToken(),tokenHash=await sha256(rawToken),approvedAt=nowIso(),activationDeadline=new Date(Date.now()+14*dayMs).toISOString(),trialDays=Math.max(1,Math.min(90,Number(body.trialDays||row.trial_days||30)));
     row=await base44.asServiceRole.entities.RallyHubTrialApplication.update(row.id,{status:'approved',approved_by_user_id:user.id,approved_at:approvedAt,tenant_id:tenantId,club_id:clubId,trial_days:trialDays,selected_capability_keys:selected,activation_token_hash:tokenHash,activation_link_issued_at:approvedAt,activation_deadline:activationDeadline,notes:clean(body.notes,3000)||row.notes});
     const activationUrl=`${APP_URL}/trial/activate?token=${encodeURIComponent(rawToken)}`;
-    let emailSent=false;try{await base44.asServiceRole.integrations.Core.SendEmail({to:row.contact_email,from_name:'RallyHub',subject:`${row.club_name} · RallyHub trial approved`,body:`Hi ${row.contact_name},\n\nYour controlled RallyHub trial has been approved.\n\nUse this link to sign in (or create your RallyHub account using ${row.contact_email}), review the RallyHub Trial & Evaluation Agreement and activate the ${trialDays}-day trial:\n\n${activationUrl}\n\nThe activation link expires in 14 days. Trial time starts when you accept the agreement and activate.\n\nPlease do not share this link or your RallyHub access with another club.\n\nYours in support,\nBrian Moore\nFounder, RallyHub`});emailSent=true;}catch(e){console.warn('trial approval email failed',(e as any)?.message||e)}
+    let emailSent=false;try{
+      const textBody=`Hi ${row.contact_name},
+
+Your controlled RallyHub trial has been approved.
+
+Use this link to sign in (or create your RallyHub account using ${row.contact_email}), review the RallyHub Trial & Evaluation Agreement and activate the ${trialDays}-day trial:
+
+${activationUrl}
+
+The activation link expires in 14 days. Trial time starts when you accept the agreement and activate.
+
+Please do not share this link or your RallyHub access with another club.
+
+Yours in support,
+Brian Moore
+Founder, RallyHub`;
+      const rendered=await renderRallyHubSystemEmail(base44,{
+        purpose:'trial_approved',subject:`${row.club_name} · RallyHub trial approved`,
+        title:'Your RallyHub trial has been approved',
+        textBody,footerNote:'RallyHub App',
+        variables:{CLUB_NAME:row.club_name,CONTACT_NAME:row.contact_name,CONTACT_EMAIL:row.contact_email,TRIAL_DAYS:trialDays,ACTIVATION_URL:activationUrl},
+        requiredTokens:['ACTIVATION_URL'],
+      });
+      await sendWithConfiguredEmailTransport(base44,{scopeType:'platform',purpose:'directory'},{to:row.contact_email,senderName:'RallyHub',...rendered});emailSent=true;
+    }catch(e){console.warn('trial approval email failed',(e as any)?.message||e)}
     await audit(base44,user,tenantId,'trial_application_approved','RallyHubTrialApplication',row.id,row,`Approved ${selected.join(', ')}`);
     return Response.json({success:true,application:row,activationUrl,emailSent});
   }
