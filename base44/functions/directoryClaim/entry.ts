@@ -181,22 +181,24 @@ function rallyHubEmailSignatureHtml() {
   });
 }
 
-function rallyHubEmailUtilityMenuHtml() {
+const RALLYHUB_UTILITY_LINKS = [
+  {key:'help',label:'Help Centre',url:'https://rallyhub.ie/directory/help'},
+  {key:'contact',label:'Contact',url:'mailto:rallyhubapp@gmail.com'},
+  {key:'directory',label:'Directory',url:'https://rallyhub.ie/directory'},
+  {key:'website',label:'RallyHub',url:'https://rallyhub.ie/',accent:true},
+  {key:'facebook',label:'Facebook',url:'https://www.facebook.com/rallyhubapp/'},
+  {key:'instagram',label:'Instagram',url:'https://www.instagram.com/rallyhubapp/'},
+];
+function rallyHubEmailUtilityMenuHtml(selectedKeys:string[]|null=null) {
+  const links=selectedKeys===null?RALLYHUB_UTILITY_LINKS:RALLYHUB_UTILITY_LINKS.filter(x=>selectedKeys.includes(x.key));
   return emailUtilityMenuHtml({
     primary:RALLYHUB_NAVY,
     secondary:RALLYHUB_GREEN,
-    links:[
-      {label:'Help Centre',url:'https://rallyhub.ie/directory/help'},
-      {label:'Contact',url:'mailto:rallyhubapp@gmail.com'},
-      {label:'Directory',url:'https://rallyhub.ie/directory'},
-      {label:'RallyHub',url:'https://rallyhub.ie/',accent:true},
-      {label:'Facebook',url:'https://www.facebook.com/rallyhubapp/'},
-      {label:'Instagram',url:'https://www.instagram.com/rallyhubapp/'},
-    ],
+    links,
   });
 }
 
-function rallyHubEmailShell({ title = '', preheader = '', content = '', actionUrl = '', actionLabel = '', footerNote = 'RallyHub Directory' }:any) {
+function rallyHubEmailShell({ title = '', preheader = '', content = '', actionUrl = '', actionLabel = '', footerNote = 'RallyHub Directory', utilityLinks = null }:any) {
   const button = actionUrl && actionLabel ? `
     <table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px auto 24px;"><tr>
       <td bgcolor="${RALLYHUB_GREEN}" style="border-radius:12px;">
@@ -218,10 +220,10 @@ function rallyHubEmailShell({ title = '', preheader = '', content = '', actionUr
           ${button}
           ${rallyHubEmailSignatureHtml()}
         </td></tr>
-        <tr><td>${rallyHubEmailUtilityMenuHtml()}</td></tr>
+        <tr><td>${rallyHubEmailUtilityMenuHtml(utilityLinks)}</td></tr>
         <tr><td style="padding:16px 24px;background:${RALLYHUB_NAVY};text-align:center;">
           <a href="https://rallyhub.ie/" style="display:inline-block;text-decoration:none;margin:0 auto 9px;"><img src="${RALLYHUB_EMAIL_REVERSED_LOGO}" alt="RallyHub" width="145" style="display:block;width:145px;max-width:100%;height:auto;border:0;"></a>
-          <div style="font-size:11px;line-height:1.6;color:#dfe8ff;">${escapeHtml(footerNote)}</div>
+          <div style="width:145px;max-width:100%;margin:1px auto 0;font-size:17px;line-height:1.15;letter-spacing:-.45px;font-family:Arial,Helvetica,sans-serif;font-weight:900;color:#ffffff;text-align:center;white-space:nowrap;">${escapeHtml(footerNote)}</div>
         </td></tr>
       </table>
     </td></tr></table>
@@ -456,7 +458,7 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
       </div>`,
     actionUrl: claimUrl,
     actionLabel,
-    footerNote: 'RallyHub Club Directory',
+    footerNote: 'RallyHub Directory',
   });
 
   await sendWithConfiguredEmailTransport(
@@ -534,7 +536,7 @@ https://rallyhub.ie`;
       </div>`,
     actionUrl: manageUrl,
     actionLabel: 'Manage your Directory listing',
-    footerNote: 'RallyHub Club Directory',
+    footerNote: 'RallyHub Directory',
   });
   await sendWithConfiguredEmailTransport(
     base44,
@@ -633,7 +635,7 @@ async function sendAdminDirectoryEmail(base44, { user, subject, body, kind, cont
       content: textToBrandedHtml(finalTextBody, adminUrl),
       actionUrl: adminUrl,
       actionLabel: adminUrl ? 'Open Directory Admin' : '',
-      footerNote: 'RallyHub Directory · Admin notification',
+      footerNote: 'RallyHub Directory',
     });
     await sendWithConfiguredEmailTransport(
       base44,
@@ -1844,7 +1846,7 @@ Deno.serve(async (req) => {
           title: subject,
           preheader: 'Test preview of a RallyHub Directory email',
           content: textToBrandedHtml(finalTestText),
-          footerNote: 'RallyHub Directory · Test email',
+          footerNote: 'RallyHub Directory',
         });
         await sendWithConfiguredEmailTransport(
           base44,
