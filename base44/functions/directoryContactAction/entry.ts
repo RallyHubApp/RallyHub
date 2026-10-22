@@ -480,6 +480,9 @@ Deno.serve(async (req) => {
       const htmlBody = await rallyHubEmailShellUsingTemplate(base44,'directory_enquiry',{
         title:'New club enquiry',
         preheader:`New enquiry for ${listingName} through the RallyHub Directory.`,
+        allowTemplateBody:true,
+        templateVariables:{LISTING_NAME:listingName,SENDER_NAME:displayName,SENDER_EMAIL:senderEmail,MESSAGE:message,SOURCE_URL:`https://rallyhub.ie${sourcePath.startsWith('/') ? sourcePath : `/directory/${listingSlug}`}`},
+        requiredTemplateTokens:['SENDER_EMAIL','MESSAGE'],
         footerNote:'RallyHub Directory',
         content:`<p style="font-size:15px;line-height:1.65;color:#334155;">A visitor has contacted <strong>${escapeHtml(listingName)}</strong> through your RallyHub Directory listing.</p>
           <div style="margin:18px 0;padding:18px;border-radius:14px;background:#fbfdfd;border:1px solid #dbe6e8;">

@@ -398,6 +398,9 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
       </div>`,
     actionUrl: claimUrl,
     actionLabel,
+    allowTemplateBody:!String(customText||'').trim(),
+    templateVariables:{CONTACT_NAME:recipientName,LISTING_NAME:listing.name,CLAIM_LINK:claimUrl},
+    requiredTemplateTokens:['CLAIM_LINK'],
     footerNote: 'RallyHub Directory',
   });
 
@@ -476,6 +479,9 @@ https://rallyhub.ie`;
       </div>`,
     actionUrl: manageUrl,
     actionLabel: 'Manage your Directory listing',
+    allowTemplateBody:true,
+    templateVariables:{'recipient.first_name':firstName,'listing.name':clubName,'links.manage_listing':manageUrl},
+    requiredTemplateTokens:['links.manage_listing'],
     footerNote: 'RallyHub Directory',
   });
   await sendWithConfiguredEmailTransport(
