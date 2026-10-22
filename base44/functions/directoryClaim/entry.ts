@@ -133,7 +133,7 @@ function escapeHtml(value = '') {
 }
 
 function standardDirectorySignatureText() {
-  return 'Yours in sport,\nBrian Moore\nFounder, RallyHub\n087 810 0333\nrallyhubapp@gmail.com\nhttps://rallyhub.ie';
+  return 'Yours in sport,\nBrian Moore\nFounder, RallyHub\n087 810 0333\nrallyhubapp@gmail.com';
 }
 
 function normaliseDirectorySignatureText(value = '') {
@@ -174,9 +174,10 @@ function textToBrandedHtml(value = '', primaryUrl = '') {
 
 function rallyHubEmailSignatureHtml() {
   return emailSignatureBlockHtml({
-    contact:{signoff:'Yours in sport,',name:'Brian Moore',role:'Founder',organisation:'RallyHub',phone_whatsapp:'087 810 0333',phone_href:'tel:+353878100333',whatsapp_href:'https://wa.me/353878100333',email:'rallyhubapp@gmail.com',email_href:'mailto:rallyhubapp@gmail.com',website:'https://rallyhub.ie/',website_label:'RallyHub.ie'},
+    contact:{signoff:'Yours in sport,',name:'Brian Moore',role:'Founder',organisation:'RallyHub',phone_whatsapp:'087 810 0333',phone_href:'tel:+353878100333',whatsapp_href:'https://wa.me/353878100333',email:'rallyhubapp@gmail.com',email_href:'mailto:rallyhubapp@gmail.com'},
     primary:RALLYHUB_NAVY,
     secondary:RALLYHUB_GREEN,
+    presentation:'platform-card',
   });
 }
 
@@ -218,8 +219,7 @@ function rallyHubEmailShell({ title = '', preheader = '', content = '', actionUr
         <tr><td>${rallyHubEmailUtilityMenuHtml()}</td></tr>
         <tr><td style="padding:16px 24px;background:${RALLYHUB_NAVY};text-align:center;">
           <a href="https://rallyhub.ie/" style="display:inline-block;text-decoration:none;margin:0 auto 9px;"><img src="${RALLYHUB_EMAIL_REVERSED_LOGO}" alt="RallyHub" width="145" style="display:block;width:145px;max-width:100%;height:auto;border:0;"></a>
-          <div style="font-size:11px;line-height:1.6;color:#dfe8ff;">${escapeHtml(footerNote)} · <span style="color:#83d1a0;">Play • Connect • Belong</span></div>
-          <div style="margin-top:4px;font-size:10px;color:#aab8d6;"><a href="https://rallyhub.ie/" style="color:#aab8d6;text-decoration:none;">rallyhub.ie</a> · <a href="mailto:rallyhubapp@gmail.com" style="color:#aab8d6;text-decoration:none;">Email</a> · <a href="https://wa.me/353878100333" style="color:#83d1a0;text-decoration:none;">WhatsApp</a></div>
+          <div style="font-size:11px;line-height:1.6;color:#dfe8ff;">${escapeHtml(footerNote)}</div>
         </td></tr>
       </table>
     </td></tr></table>

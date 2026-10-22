@@ -24,15 +24,20 @@ export function emailSignatureBlockHtml({
   contact,
   primary='#07184c',
   secondary='#078e48',
+  presentation='standard',
 }:{
   contact:EmailBrandContact;
   primary?:string;
   secondary?:string;
+  presentation?:'standard'|'platform-card';
 }){
   if(!contact?.name)return '';
   const roleLine=[contact.role,contact.organisation].filter(Boolean).join(', ');
   const websiteLabel=contact.website_label||String(contact.website||'').replace(/^https?:\/\//,'').replace(/\/$/,'');
-  return `<div style="margin-top:26px;padding:18px 0 0 16px;border-left:4px solid ${esc(secondary)};border-top:1px solid #e2e8f0;">
+  const containerStyle=presentation==='platform-card'
+    ? `margin-top:24px;padding:18px 20px;background:#f8fafc;border:1px solid #dbe5ee;border-left:4px solid ${esc(secondary)};border-radius:12px;`
+    : `margin-top:26px;padding:18px 0 0 16px;border-left:4px solid ${esc(secondary)};border-top:1px solid #e2e8f0;`;
+  return `<div style="${containerStyle}">
     <p style="margin:0 0 7px;font-size:15px;line-height:1.5;color:#334155;">${esc(contact.signoff||'Yours in sport,')}</p>
     <p style="margin:0;font-size:20px;font-weight:800;color:${esc(primary)};">${esc(contact.name)}</p>
     ${roleLine?`<p style="margin:3px 0 0;font-size:13px;font-weight:700;color:${esc(secondary)};">${esc(roleLine)}</p>`:''}
