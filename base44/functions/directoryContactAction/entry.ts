@@ -1,3 +1,4 @@
+import {rallyHubEmailShell} from '../../shared/rallyHubPlatformEmail.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { importedContactEndpointFor } from './importedContactEndpoints.ts';
@@ -14,7 +15,6 @@ const endpointCache = new Map<string,{savedAt:number,value:any}>();
 const resolveBuckets = new Map<string, { count:number; resetAt:number }>();
 const emailBuckets = new Map<string, { count:number; resetAt:number }>();
 const idempotencyCache = new Map<string, { expiresAt:number; payload:any; status:number }>();
-const RALLYHUB_EMAIL_LOGO = 'https://rallyhub.ie/assets/brand/rallyhub-signature-light.png';
 const RALLYHUB_NAVY = '#07184c';
 const RALLYHUB_GREEN = '#078e48';
 const RALLYHUB_SUPPORT_TEL = 'tel:+353878100333';
@@ -477,36 +477,20 @@ Deno.serve(async (req) => {
         '',
         'This enquiry was generated through RallyHub. Replying to this email will reply to the visitor when the configured mail provider supports Reply-To.',
       ].join('\n');
-      const htmlBody = `<!doctype html><html><body style="margin:0;padding:0;background:#eef3f2;font-family:Arial,Helvetica,sans-serif;color:#172033;">
-        <div style="display:none;max-height:0;overflow:hidden;opacity:0;">New enquiry for ${escapeHtml(listingName)} through the RallyHub Directory.</div>
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef3f2;padding:24px 10px;"><tr><td align="center">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:660px;background:#ffffff;border:1px solid #d8e3df;border-radius:20px;overflow:hidden;box-shadow:0 8px 28px rgba(7,24,76,.08);">
-            <tr><td style="height:7px;background:${RALLYHUB_GREEN};"></td></tr>
-            <tr><td style="padding:24px 24px 18px;background:#ffffff;">
-              <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto;"><tr><td style="vertical-align:middle;text-align:center;"><img src="${RALLYHUB_EMAIL_LOGO}" width="232" alt="RallyHub Play Connect Belong" style="display:block;width:232px;max-width:100%;height:auto;margin:0 auto;border:0;"></td></tr></table>
-            </td></tr>
-            <tr><td style="padding:0 24px 28px;">
-              <div style="height:1px;background:#e7eeec;margin:0 0 24px;"></div>
-              <div style="font-size:12px;font-weight:800;letter-spacing:.12em;color:${RALLYHUB_GREEN};">RALLYHUB DIRECTORY</div>
-              <h1 style="margin:8px 0 12px;font-size:24px;line-height:1.25;color:${RALLYHUB_NAVY};font-weight:850;">New club enquiry</h1>
-              <p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#334155;">A visitor has contacted <strong>${escapeHtml(listingName)}</strong> through your RallyHub Directory listing.</p>
-              <div style="margin:18px 0;padding:18px;border-radius:14px;background:#fbfdfd;border:1px solid #dbe6e8;">
-                <p style="margin:0 0 12px;font-size:14px;line-height:1.55;color:#334155;"><strong style="color:${RALLYHUB_NAVY};">Name</strong><br>${escapeHtml(displayName)}</p>
-                <p style="margin:0 0 12px;font-size:14px;line-height:1.55;color:#334155;"><strong style="color:${RALLYHUB_NAVY};">Email</strong><br><a href="mailto:${escapeHtml(senderEmail)}" style="color:${RALLYHUB_GREEN};font-weight:700;text-decoration:underline;">${escapeHtml(senderEmail)}</a></p>
-                <p style="margin:0;font-size:14px;line-height:1.6;color:#334155;"><strong style="color:${RALLYHUB_NAVY};">Message</strong><br>${escapeHtml(message).replace(/\n/g,'<br>')}</p>
-              </div>
-              <table role="presentation" cellspacing="0" cellpadding="0" style="margin:22px auto 20px;"><tr><td bgcolor="${RALLYHUB_GREEN}" style="border-radius:12px;">
-                <a href="mailto:${escapeHtml(senderEmail)}" style="display:inline-block;padding:13px 22px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:800;">Reply to ${escapeHtml(displayName)}</a>
-              </td></tr></table>
-              <p style="margin:0;font-size:12px;line-height:1.6;color:#64748b;text-align:center;">This enquiry relates to your ${escapeHtml(listingName)} listing on the RallyHub Directory.</p>
-            </td></tr>
-            <tr><td style="padding:16px 24px;background:${RALLYHUB_NAVY};text-align:center;">
-              <div style="font-size:11px;line-height:1.7;color:#dfe8ff;">Need help? <a href="${RALLYHUB_SUPPORT_TEL}" style="color:#ffffff;font-weight:800;text-decoration:underline;">Call</a> or <a href="${RALLYHUB_SUPPORT_WHATSAPP}" style="color:#ffffff;font-weight:800;text-decoration:underline;">WhatsApp Brian</a></div>
-              <div style="margin-top:5px;font-size:10px;line-height:1.6;"><a href="https://rallyhub.ie" style="color:#83d1a0;font-weight:800;text-decoration:none;">Powered by RallyHub</a></div>
-            </td></tr>
-          </table>
-        </td></tr></table>
-      </body></html>`;
+      const htmlBody = rallyHubEmailShell({
+        title:'New club enquiry',
+        preheader:`New enquiry for ${listingName} through the RallyHub Directory.`,
+        footerNote:'RallyHub Directory',
+        content:`<p style="font-size:15px;line-height:1.65;color:#334155;">A visitor has contacted <strong>${escapeHtml(listingName)}</strong> through your RallyHub Directory listing.</p>
+          <div style="margin:18px 0;padding:18px;border-radius:14px;background:#fbfdfd;border:1px solid #dbe6e8;">
+            <p><strong>Name</strong><br>${escapeHtml(displayName)}</p>
+            <p><strong>Email</strong><br><a href="mailto:${escapeHtml(senderEmail)}">${escapeHtml(senderEmail)}</a></p>
+            <p><strong>Message</strong><br>${escapeHtml(message).replace(/\n/g,'<br>')}</p>
+          </div>
+          <p style="font-size:12px;color:#64748b;">Replying to this email will reply to the visitor when your email provider supports Reply-To.</p>`,
+        actionUrl:`mailto:${senderEmail}`,
+        actionLabel:`Reply to ${displayName}`,
+      });
       const now = new Date().toISOString();
       try {
         const delivery = await sendWithConfiguredEmailTransport(base44, { scopeType:'platform', purpose:'directory' }, {
