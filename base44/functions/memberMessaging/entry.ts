@@ -1,3 +1,5 @@
+import {renderRallyHubSystemEmail} from '../../shared/rallyHubPlatformEmail.ts';
+import {sendWithConfiguredEmailTransport} from '../../shared/emailTransport.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import webpush from 'npm:web-push@3.6.7';
 
@@ -67,12 +69,13 @@ async function getThreadForAccess(base44:any,user:any,config:any,tenantId:string
   return ensureMemberThread(base44,user,config,tenantId,clubId);
 }
 
-async function sendEmailNotice(base44:any,to:string,subject:string,body:string){
+async function sendEmailNotice(base44:any,to:string,subject:string,body:string,purpose:string,variables:Record<string,string>,requiredTokens:string[]){
   if(!to) return;
   try{
-    await base44.asServiceRole.integrations.Core.SendEmail({to,from_name:'RallyHub',subject,body});
+    const rendered=await renderRallyHubSystemEmail(base44,{purpose,subject,textBody:body,title:subject,footerNote:'RallyHub App',variables,requiredTokens});
+    await sendWithConfiguredEmailTransport(base44,{scopeType:'platform',purpose:'directory'},{to,senderName:'RallyHub',subject:rendered.subject,textBody:rendered.textBody,htmlBody:rendered.htmlBody});
   }catch(error){
-    console.warn('member messaging email fallback failed',error?.message||error);
+    console.warn('member messaging email fallback failed',(error as any)?.message||error);
   }
 }
 
@@ -213,10 +216,10 @@ Deno.serve(async(req)=>{
       if(chair){
         const target=await safeUser(base44,thread.member_user_id);
         await sendPushToUser(base44,config,thread.member_user_id,{title:`RallyHub · Reply from ${config.chair_name||'Chairperson'}`,body:'Open RallyHub to read your message.',url:`/app/messages?thread=${thread.id}`,tag:`member-message-${thread.id}`});
-        if(config.email_fallback_enabled!==false&&target?.email) await sendEmailNotice(base44,target.email,`RallyHub · Reply from ${config.chair_name||'Chairperson'}`,`You have a new private RallyHub message from ${config.chair_name||'the club'}.\n\nOpen RallyHub to read and reply: https://rallyhub.ie/app/messages\n\nYour contact details are not shared with other members.`);
+        if(config.email_fallback_enabled!==false&&target?.email) await sendEmailNotice(base44,target.email,`RallyHub · Reply from ${config.chair_name||'Chairperson'}`,`You have a new private RallyHub message from ${config.chair_name||'the club'}.\n\nOpen RallyHub to read and reply: https://rallyhub.ie/app/messages\n\nYour contact details are not shared with other members.`,'member_message_to_member',{CHAIR_NAME:config.chair_name||'the club',MESSAGES_URL:'https://rallyhub.ie/app/messages'},['MESSAGES_URL']);
       }else{
         await sendPushToUser(base44,config,config.chair_user_id,{title:`RallyHub · New message from ${identity.name}`,body:'Open RallyHub to read and reply.',url:`/app/messages?thread=${thread.id}`,tag:`member-message-${thread.id}`});
-        if(config.email_fallback_enabled!==false&&config.notification_email) await sendEmailNotice(base44,config.notification_email,`RallyHub · New member message from ${identity.name}`,`A Clare Pickleball member has sent you a private RallyHub message.\n\nOpen RallyHub to read and reply: https://rallyhub.ie/app/messages?thread=${thread.id}\n\nThe message content is kept inside RallyHub.`);
+        if(config.email_fallback_enabled!==false&&config.notification_email) await sendEmailNotice(base44,config.notification_email,`RallyHub · New member message from ${identity.name}`,`A member has sent you a private RallyHub message.\n\nOpen RallyHub to read and reply: https://rallyhub.ie/app/messages?thread=${thread.id}\n\nThe message content is kept inside RallyHub.`,'member_message_to_chair',{MEMBER_NAME:identity.name,THREAD_URL:`https://rallyhub.ie/app/messages?thread=${thread.id}`},['THREAD_URL']);
       }
       const refreshed=await firstBy(base44,'MemberMessageThread',{id:thread.id});
       return Response.json({success:true,thread:await serializeThread(base44,refreshed)});
