@@ -190,6 +190,8 @@ function rallyHubEmailUtilityMenuHtml() {
       {label:'Contact',url:'mailto:rallyhubapp@gmail.com'},
       {label:'Directory',url:'https://rallyhub.ie/directory'},
       {label:'RallyHub',url:'https://rallyhub.ie/',accent:true},
+      {label:'Facebook',url:'https://www.facebook.com/rallyhubapp/'},
+      {label:'Instagram',url:'https://www.instagram.com/rallyhubapp/'},
     ],
   });
 }
