@@ -386,7 +386,7 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
   const inviteTitle = delegated
     ? `Directory Editor invitation · ${listing.name}`
     : `Your free Directory listing · ${listing.name}`;
-  const htmlBody = await rallyHubEmailShellUsingTemplate(base44,'directory_claim',{
+  const htmlBody = await rallyHubEmailShellUsingTemplate(base44,delegated?'directory_claim_editor':'directory_claim',{
     title: inviteTitle,
     preheader: delegated
       ? `You have been invited to help manage ${listing.name} on the RallyHub Directory.`
@@ -569,7 +569,7 @@ async function sendAdminDirectoryEmail(base44, { user, subject, body, kind, cont
 
     const adminUrl = String(body || '').match(/https:\/\/rallyhub\.ie\/app\/admin[^\s]*/i)?.[0] || '';
     const finalTextBody = normaliseDirectorySignatureText(body);
-    const htmlBody = await rallyHubEmailShellUsingTemplate(base44,'directory_review_admin',{
+    const htmlBody = await rallyHubEmailShellUsingTemplate(base44,kind==='claim_review'?'directory_verification_admin':kind==='new_club_review'?'directory_new_submission_admin':'directory_review_admin',{
       title: subject.replace(/^\[RallyHub Directory\]\s*/i, ''),
       preheader: 'RallyHub Directory admin notification',
       content: textToBrandedHtml(finalTextBody, adminUrl),
