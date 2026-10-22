@@ -1,3 +1,5 @@
+import {renderRallyHubSystemEmail} from '../../shared/rallyHubPlatformEmail.ts';
+import {sendWithConfiguredEmailTransport} from '../../shared/emailTransport.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 Deno.serve(async (req) => {
@@ -29,12 +31,8 @@ Deno.serve(async (req) => {
 
       const userList = pendingUsers.map(u => `• ${u.full_name || 'Unknown'} (${u.email})`).join('\n');
 
-      const emailPromises = admins.map(admin =>
-        base44.asServiceRole.integrations.Core.SendEmail({
-          to: admin.email,
-          from_name: 'RallyHub',
-          subject: `[RallyHub] ${pendingUsers.length} User(s) Awaiting Approval`,
-          body: `Hi ${admin.full_name || 'Admin'},
+      const emailPromises = admins.map(async admin => {
+        const textBody=`Hi ${admin.full_name || 'Admin'},
 
 The following user(s) are currently awaiting approval on RallyHub:
 
@@ -44,9 +42,10 @@ Please log in to the Admin Panel to approve or reject them:
 https://rallyhub.ie/app/admin
 
 Thanks,
-RallyHub`.trim()
-        })
-      );
+RallyHub`.trim();
+        const rendered=await renderRallyHubSystemEmail(base44,{purpose:'admin_pending_users',subject:`[RallyHub] ${pendingUsers.length} User(s) Awaiting Approval`,title:'Accounts awaiting approval',textBody,variables:{PENDING_COUNT:pendingUsers.length,ADMIN_NAME:admin.full_name||'Admin',PENDING_USER_LIST:userList},footerNote:'RallyHub App'});
+        return sendWithConfiguredEmailTransport(base44,{scopeType:'platform',purpose:'directory'},{to:admin.email,senderName:'RallyHub',...rendered});
+      });
 
       await Promise.all(emailPromises);
       return Response.json({ success: true, notified: admins.length, pendingCount: pendingUsers.length });
@@ -71,12 +70,7 @@ RallyHub`.trim()
       const userName = target.full_name || target.display_name || target.email;
 
       const isApproved = status === 'approved';
-      await base44.asServiceRole.integrations.Core.SendEmail({
-        to: userEmail,
-        from_name: 'RallyHub',
-        subject: isApproved ? '[RallyHub] Your account has been approved!' : '[RallyHub] Account access update',
-        body: isApproved
-          ? `Hi ${userName || 'there'},
+      const approvedText=`Hi ${userName || 'there'},
 
 Great news! Your RallyHub account has been approved. You can now log in and access the app:
 
@@ -84,15 +78,22 @@ https://rallyhub.ie/app
 
 Welcome to the community!
 
-RallyHub`.trim()
-          : `Hi ${userName || 'there'},
+RallyHub`.trim();
+      const rejectedText=`Hi ${userName || 'there'},
 
 Unfortunately your RallyHub account access request has not been approved at this time.
 
 If you think this is a mistake, please contact your club admin.
 
-RallyHub`.trim()
+RallyHub`.trim();
+      const rendered=await renderRallyHubSystemEmail(base44,{
+        purpose:isApproved?'account_approved':'account_rejected',
+        subject:isApproved?'[RallyHub] Your account has been approved!':'[RallyHub] Account access update',
+        title:isApproved?'Welcome to RallyHub':'Account access update',
+        textBody:isApproved?approvedText:rejectedText,
+        variables:{USER_NAME:userName||'there'},footerNote:'RallyHub App',
       });
+      await sendWithConfiguredEmailTransport(base44,{scopeType:'platform',purpose:'directory'},{to:userEmail,senderName:'RallyHub',...rendered});
 
       return Response.json({ success: true });
     }
