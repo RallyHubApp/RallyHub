@@ -121,7 +121,8 @@ function recentCount(rows:any[] = [], hours = 24) {
   }).length;
 }
 
-const RALLYHUB_EMAIL_LOGO = 'https://rallyhub.ie/assets/brand/rallyhub-signature-light.png';
+const RALLYHUB_EMAIL_LOGO = 'https://rallyhub.ie/assets/brand/master-review/C3-primary-with-strapline.png';
+const RALLYHUB_EMAIL_REVERSED_LOGO = 'https://rallyhub.ie/assets/brand/master-review/rallyhub-master-02-reversed.png';
 const RALLYHUB_NAVY = '#07184c';
 const RALLYHUB_GREEN = '#078e48';
 
@@ -216,6 +217,7 @@ function rallyHubEmailShell({ title = '', preheader = '', content = '', actionUr
         </td></tr>
         <tr><td>${rallyHubEmailUtilityMenuHtml()}</td></tr>
         <tr><td style="padding:16px 24px;background:${RALLYHUB_NAVY};text-align:center;">
+          <a href="https://rallyhub.ie/" style="display:inline-block;text-decoration:none;margin:0 auto 9px;"><img src="${RALLYHUB_EMAIL_REVERSED_LOGO}" alt="RallyHub" width="145" style="display:block;width:145px;max-width:100%;height:auto;border:0;"></a>
           <div style="font-size:11px;line-height:1.6;color:#dfe8ff;">${escapeHtml(footerNote)} · <span style="color:#83d1a0;">Play • Connect • Belong</span></div>
           <div style="margin-top:4px;font-size:10px;color:#aab8d6;"><a href="https://rallyhub.ie/" style="color:#aab8d6;text-decoration:none;">rallyhub.ie</a> · <a href="mailto:rallyhubapp@gmail.com" style="color:#aab8d6;text-decoration:none;">Email</a> · <a href="https://wa.me/353878100333" style="color:#83d1a0;text-decoration:none;">WhatsApp</a></div>
         </td></tr>
