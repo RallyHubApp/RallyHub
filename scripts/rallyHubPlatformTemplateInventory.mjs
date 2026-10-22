@@ -7,6 +7,12 @@ const system=[
 {id:'account_approved',module:'Accounts',name:'Accounts — Access Approved',source:'notifyAdminsOnSignup',subject:'[RallyHub] Your account has been approved!',text:'Hi {{USER_NAME}},\n\nGreat news! Your RallyHub account has been approved. You can now log in and access the app:\n\nhttps://rallyhub.ie/app\n\nWelcome to the community!\n\nRallyHub'},
 {id:'account_rejected',module:'Accounts',name:'Accounts — Access Update / Rejected',source:'notifyAdminsOnSignup',subject:'[RallyHub] Account access update',text:'Hi {{USER_NAME}},\n\nUnfortunately your RallyHub account access request has not been approved at this time.\n\nIf you think this is a mistake, please contact your club admin.\n\nRallyHub'}
 ];
+const recovered={
+ directory_claim:'Hi {{CONTACT_NAME}},\n\nYou have been invited to manage the {{LISTING_NAME}} listing in the RallyHub Directory.\n\nOpen your secure invitation: {{CLAIM_LINK}}\n\nThis invitation may expire and should not be shared.\n\nIf you did not expect this invitation, please contact RallyHub.',
+ directory_broadcast:'Hi {{FIRST_NAME}},\n\n{{MESSAGE_BODY}}\n\n{{ACTION_LINK}}',
+ directory_enquiry:'A visitor has contacted {{LISTING_NAME}} through RallyHub.\n\nName: {{SENDER_NAME}}\nEmail: {{SENDER_EMAIL}}\n\n{{MESSAGE}}\n\nSource: {{SOURCE_URL}}\n\nReplying to this email will reply to the visitor when the provider supports Reply-To.',
+ event_future_invite:'A player has asked to be considered for a future invitation through RallyHub.\n\nOrganiser: {{ORGANISER_NAME}}\nEvent they viewed: {{EVENT_NAME}}\nEvent page: {{EVENT_URL}}\n\nName: {{SENDER_NAME}}\nEmail: {{SENDER_EMAIL}}\nMessage: {{MESSAGE}}\n\nReplying to this email will reply to the player.'
+};
 const fromCatalogue=LEGACY_APPROVED_TEMPLATES.filter(x=>x.brand==='RallyHub');
-const records=[...fromCatalogue.map(x=>({id:x.id,module:x.module,name:x.name,source:x.source,subject:x.subject||x.name,text:x.plainText||'',status:x.plainText?'source-extracted':'source-reference'})),...system.map(x=>({...x,status:'source-extracted'}))];
+const records=[...fromCatalogue.map(x=>({id:x.id,module:x.module,name:x.name,source:x.source,subject:x.subject||x.name,text:x.plainText||recovered[x.id]||'',status:x.plainText?'source-extracted':'source-reconstructed-review'})),...system.map(x=>({...x,status:'source-extracted'}))];
 export {records,defaults};
