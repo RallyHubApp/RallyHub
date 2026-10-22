@@ -33,11 +33,17 @@ function rallyHubEmailUtilityMenuHtml(selectedKeys:string[]|null=null) {
   });
 }
 
-export function rallyHubEmailShell({ title = '', preheader = '', content = '', actionUrl = '', actionLabel = '', footerNote = 'RallyHub Directory', utilityLinks = null }:any) {
+export function rallyHubEmailShell({ title = '', preheader = '', content = '', actionUrl = '', actionLabel = '', footerNote = 'RallyHub Directory', utilityLinks = null, secondaryActionUrl = '', secondaryActionLabel = '' }:any) {
   const button = actionUrl && actionLabel ? `
     <table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px auto 24px;"><tr>
       <td bgcolor="${RALLYHUB_GREEN}" style="border-radius:12px;">
         <a href="${escapeHtml(actionUrl)}" style="display:inline-block;padding:14px 24px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:800;letter-spacing:.01em;">${escapeHtml(actionLabel)}</a>
+      </td>
+    </tr></table>` : '';
+  const secondaryButton = secondaryActionUrl && secondaryActionLabel ? `
+    <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto 20px;"><tr>
+      <td style="border:1px solid ${RALLYHUB_GREEN};border-radius:12px;background:#ffffff;">
+        <a href="${escapeHtml(secondaryActionUrl)}" style="display:inline-block;padding:12px 22px;color:${RALLYHUB_NAVY};text-decoration:none;font-size:14px;font-weight:800;">${escapeHtml(secondaryActionLabel)}</a>
       </td>
     </tr></table>` : '';
   return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>@media only screen and (max-width:680px){.rh-email-shell{width:100%!important;max-width:100%!important;table-layout:fixed!important}.rh-email-body{padding-left:18px!important;padding-right:18px!important}body{overflow-wrap:anywhere}}</style></head><body style="margin:0;padding:0;background:#eef3f2;font-family:Arial,Helvetica,sans-serif;color:#172033;">
@@ -53,6 +59,7 @@ export function rallyHubEmailShell({ title = '', preheader = '', content = '', a
           ${title ? `<h1 style="margin:0 0 20px;font-size:24px;line-height:1.25;color:${RALLYHUB_NAVY};font-weight:850;">${escapeHtml(title)}</h1>` : ''}
           ${content}
           ${button}
+          ${secondaryButton}
           ${rallyHubEmailSignatureHtml()}
         </td></tr>
         <tr><td>${rallyHubEmailUtilityMenuHtml(utilityLinks)}</td></tr>

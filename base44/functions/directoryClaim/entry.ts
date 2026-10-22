@@ -422,7 +422,7 @@ async function sendDirectoryWelcomeEmail(base44, { listing, recipientName = '', 
   const listingSlug = String(listing?.slug || '').trim();
   const listingType = String(listing?.listingType || listing?.listing_type || 'club');
   const isClubListing = listingType === 'club';
-  const manageUrl = `https://rallyhub.ie/directory/${encodeURIComponent(listingSlug)}/edit`;
+  const manageUrl = `https://rallyhub.ie/directory/${encodeURIComponent(listingSlug)}/edit?guided=1`;
   const helpUrl = 'https://rallyhub.ie/directory/help';
   const subject = `Welcome to RallyHub – your ${clubName} Directory listing is ready`;
   const textBody = isClubListing ? `Hi ${firstName},
@@ -478,7 +478,9 @@ https://rallyhub.ie`;
         <div style="font-size:13px;line-height:1.6;color:#52606d;">${isClubListing ? 'You can update your club description, public contact details, venues and regular sessions at any time. If you use Spond, Enhanced listing can help bring in regular venue and session information.' : 'You can update the listing description, public contact details, service area, website and social links at any time.'}</div>
       </div>`,
     actionUrl: manageUrl,
-    actionLabel: 'Manage your Directory listing',
+    actionLabel: 'Continue your guided setup',
+    secondaryActionUrl: helpUrl,
+    secondaryActionLabel: 'Club Guide & Help',
     allowTemplateBody:true,
     templateVariables:{'recipient.first_name':firstName,'listing.name':clubName,'links.manage_listing':manageUrl},
     requiredTemplateTokens:['links.manage_listing'],
