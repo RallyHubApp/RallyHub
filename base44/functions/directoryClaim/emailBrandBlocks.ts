@@ -40,7 +40,7 @@ export function emailSignatureBlockHtml({
   return `<div style="${containerStyle}">
     <p style="margin:0 0 7px;font-size:15px;line-height:1.5;color:#334155;">${esc(contact.signoff||'Yours in sport,')}</p>
     <p style="margin:0;font-size:20px;font-weight:800;color:${esc(primary)};">${esc(contact.name)}</p>
-    ${presentation==='platform-card' ? [contact.role,contact.organisation].filter(Boolean).map(line=>`<p style="margin:3px 0 0;font-size:13px;font-weight:700;color:${esc(secondary)};">${esc(line)}</p>`).join('') : roleLine?`<p style="margin:3px 0 0;font-size:13px;font-weight:700;color:${esc(secondary)};">${esc(roleLine)}</p>`:''}
+    ${roleLine?`<p style="margin:3px 0 0;font-size:13px;font-weight:700;color:${esc(secondary)};">${esc(roleLine)}</p>`:''}
     <p style="margin:8px 0 0;font-size:12px;line-height:1.8;color:#64748b;">
       ${presentation==='platform-card'&&contact.phone_href?`Phone / WhatsApp: <a href="${esc(contact.phone_href)}" style="color:${esc(primary)};text-decoration:underline;font-weight:700;">${esc(contact.phone_whatsapp||'Phone')}</a>`:contact.phone_href?`<a href="${esc(contact.phone_href)}" style="color:${esc(primary)};text-decoration:none;font-weight:700;">${esc(contact.phone_whatsapp||'Phone')}</a>`:''}
       ${presentation!=='platform-card'&&contact.whatsapp_href?` · <a href="${esc(contact.whatsapp_href)}" style="color:${esc(secondary)};text-decoration:none;font-weight:700;">WhatsApp</a>`:''}
