@@ -65,3 +65,15 @@ export function rallyHubEmailShell({ title = '', preheader = '', content = '', a
   </body></html>`;
 }
 
+
+export function normaliseRallyHubPlatformHtml(html:string,{title='',footerNote='RallyHub Directory',utilityLinks=null}:{title?:string;footerNote?:string;utilityLinks?:string[]|null}={}){
+  const source=String(html||'').trim();
+  if(!source)throw new Error('PLATFORM_EMAIL_BODY_REQUIRED');
+  const isDocument=/^<!doctype|^<html[\s>]/i.test(source);
+  if(isDocument){
+    if(source.includes(RALLYHUB_EMAIL_LOGO)&&source.includes(RALLYHUB_EMAIL_REVERSED_LOGO))
+      return source;
+    throw new Error('RALLYHUB_LEGACY_BRANDING_BLOCKED: Re-preview with approved platform email template.');
+  }
+  return rallyHubEmailShell({title,content:source,footerNote,utilityLinks});
+}

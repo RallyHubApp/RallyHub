@@ -1,3 +1,4 @@
+import {normaliseRallyHubPlatformHtml} from '../../shared/rallyHubPlatformEmail.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { resolveEmailTransport, sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { resolveApprovedTournivalTemplate } from './tournivalTemplates.ts';
@@ -358,8 +359,9 @@ Deno.serve(async(req)=>{
     return Response.json({success:true,provider:config.provider,status:config.status,senderName:config.sender_name,senderEmail:config.sender_email,replyTo:config.reply_to||config.sender_email});
   }
   if(action==='test_email'){
-    const to=clean(body.to,240).toLowerCase(),subject=clean(body.subject,500),textBody=clean(body.textBody,20000),htmlBody=String(body.htmlBody||'').slice(0,100000);
+    const to=clean(body.to,240).toLowerCase(),subject=clean(body.subject,500),textBody=clean(body.textBody,20000);let htmlBody=String(body.htmlBody||'').slice(0,100000);
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)||!subject||!textBody||!htmlBody)return Response.json({error:'Valid test recipient, subject, HTML and plain text are required.'},{status:400});
+    if(ownerScope==='platform'){try{htmlBody=normaliseRallyHubPlatformHtml(htmlBody,{title:subject,footerNote:purpose==='events'?'RallyHub Events':purpose==='app'?'RallyHub App':'RallyHub Directory',utilityLinks:Array.isArray(body.utilityLinks)?body.utilityLinks:null})}catch(error:any){return Response.json({error:String(error?.message||'Unapproved platform email')},{status:409})}}
     const idem=clean(body.idempotencyKey,500); if(!idem)return Response.json({error:'idempotencyKey required'},{status:400});
     const existing=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({idempotency_key:idem},'-created_date',1);
     if(existing?.length)return Response.json({success:true,deduplicated:true,deliveryAttempt:existing[0]});
