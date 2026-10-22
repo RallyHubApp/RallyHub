@@ -55,12 +55,15 @@ export function emailUtilityMenuHtml({
   links=[],
   primary='#07184c',
   secondary='#078e48',
+  wrapLinks=false,
 }:{
   links?:EmailUtilityLink[];
   primary?:string;
   secondary?:string;
+  wrapLinks?:boolean;
 }){
   const valid=(links||[]).filter(x=>x?.label&&x?.url);
   if(!valid.length)return '';
+  if(wrapLinks)return `<div style="padding:14px 18px 10px;border-top:1px solid #e7eeec;background:#ffffff;text-align:center;font-size:11px;line-height:1.7;color:#64748b;">${valid.map(item=>`<span style="display:inline-block;white-space:nowrap;margin:0 7px 5px;"><a href="${esc(item.url)}" style="color:${esc(item.accent?secondary:primary)};font-weight:${item.accent?'800':'700'};text-decoration:none;">${esc(item.label)}</a></span>`).join('')}</div>`;
   return `<div style="padding:14px 24px;border-top:1px solid #e7eeec;background:#ffffff;text-align:center;font-size:11px;line-height:1.7;color:#64748b;">${valid.map((item,index)=>`${index?'<span style="color:#cbd5e1;padding:0 7px;">·</span>':''}<a href="${esc(item.url)}" style="color:${esc(item.accent?secondary:primary)};font-weight:${item.accent?'800':'700'};text-decoration:none;">${esc(item.label)}</a>`).join('')}</div>`;
 }

@@ -195,6 +195,7 @@ function rallyHubEmailUtilityMenuHtml(selectedKeys:string[]|null=null) {
     primary:RALLYHUB_NAVY,
     secondary:RALLYHUB_GREEN,
     links,
+    wrapLinks:true,
   });
 }
 
