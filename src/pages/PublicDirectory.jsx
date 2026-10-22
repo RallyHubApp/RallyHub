@@ -13,6 +13,7 @@ import DirectoryPlayerNetworkPanel from '@/components/directory/DirectoryPlayerN
 import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 import { trackSiteEvent } from '@/lib/site-analytics';
 import { DIRECTORY_CATEGORY_FALLBACK, loadDirectoryCategories } from '@/lib/directory-categories';
+import { base44 } from '@/api/base44Client';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -173,6 +174,7 @@ export default function PublicDirectory() {
   const [categoryKey, setCategoryKey] = useState(searchParams.get('category') || 'all');
   const [categories, setCategories] = useState(DIRECTORY_CATEGORY_FALLBACK);
   const [directoryState, setDirectoryState] = useState({});
+  const [publicEventCount, setPublicEventCount] = useState(null);
   const [shareCopiedSlug, setShareCopiedSlug] = useState('');
 
   useEffect(() => {
@@ -185,6 +187,19 @@ export default function PublicDirectory() {
     let active = true;
     loadPublicDirectoryState()
       .then(listings => { if (active) setDirectoryState(listings || {}); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    base44.functions.invoke('publicEvents', { action:'list' })
+      .then(res => {
+        if (!active || res.data?.error) return;
+        const today = new Date().toISOString().slice(0,10);
+        const events = Array.isArray(res.data?.events) ? res.data.events : [];
+        setPublicEventCount(events.filter(event => (event.end_date || event.start_date || '9999-12-31') >= today).length);
+      })
       .catch(() => {});
     return () => { active = false; };
   }, []);
@@ -250,7 +265,11 @@ export default function PublicDirectory() {
     .sort((a, b) => query.trim() ? (b.searchScore - a.searchScore || a.club.name.localeCompare(b.club.name)) : a.club.name.localeCompare(b.club.name))
     .map(({ club }) => club), [effectiveClubs, query, county, day, categoryKey, clubCategoryActive]);
 
-  const categoryCounts = useMemo(() => Object.fromEntries(categoryOptions.map(item => [item.key, item.key === 'all' ? effectiveClubs.length : effectiveClubs.filter(club => String(club.listingType || 'club') === item.key).length])), [categoryOptions, effectiveClubs]);
+  const categoryCounts = useMemo(() => {
+    const counts = Object.fromEntries(categoryOptions.map(item => [item.key, item.key === 'all' ? effectiveClubs.length : effectiveClubs.filter(club => String(club.listingType || 'club') === item.key).length]));
+    if (publicEventCount !== null) counts.tournaments_events = publicEventCount;
+    return counts;
+  }, [categoryOptions, effectiveClubs, publicEventCount]);
   const categoryIcon = key => key === 'club' ? Building2 : key === 'tournaments_events' ? Trophy : key === 'coaching' ? GraduationCap : key === 'holidays' ? Plane : key === 'equipment' ? ShoppingBag : LayoutGrid;
 
   useEffect(() => {
@@ -403,7 +422,7 @@ export default function PublicDirectory() {
             <div className="mb-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-6" data-testid="directory-category-choices">
               {categoryOptions.map(item => {
                 const Icon = categoryIcon(item.key);
-                return <button key={item.key} type="button" onClick={()=>{setCategoryKey(item.key);setCounty('All counties');setDay('Any day');setView('clubs');}} className={`rounded-2xl border p-3 text-left transition ${categoryKey===item.key?'border-[#078e48] bg-[#eef9f3] ring-1 ring-[#078e48]/20':'border-[#dbe6e8] bg-white hover:border-[#b8dfc7]'}`}>
+                return <button key={item.key} type="button" onClick={()=>{if(item.key==='tournaments_events'){window.location.assign('/events');return;}setCategoryKey(item.key);setCounty('All counties');setDay('Any day');setView('clubs');}} className={`rounded-2xl border p-3 text-left transition ${categoryKey===item.key?'border-[#078e48] bg-[#eef9f3] ring-1 ring-[#078e48]/20':'border-[#dbe6e8] bg-white hover:border-[#b8dfc7]'}`}>
                   <div className="flex items-center gap-2"><Icon className="h-4 w-4 text-[#078e48]"/><span className="text-xs font-black text-[#07184c]">{item.pluralLabel||item.label}</span></div>
                   <p className="mt-1 text-[11px] text-[#6a778a]">{categoryCounts[item.key]||0} listed</p>
                 </button>
