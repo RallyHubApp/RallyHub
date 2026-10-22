@@ -174,7 +174,7 @@ function textToBrandedHtml(value = '', primaryUrl = '') {
 
 function rallyHubEmailSignatureHtml() {
   return emailSignatureBlockHtml({
-    contact:{signoff:'Yours in sport,',name:'Brian Moore',role:'Founder',organisation:'RallyHub',phone_whatsapp:'087 810 0333',phone_href:'tel:+353878100333',whatsapp_href:'https://wa.me/353878100333',email:'rallyhubapp@gmail.com',email_href:'mailto:rallyhubapp@gmail.com'},
+    contact:{signoff:'Yours in sport,',name:'Brian Moore',role:'Founder',organisation:'RallyHub',phone_whatsapp:'087 810 0333',phone_href:'tel:+353878100333',whatsapp_href:'https://wa.me/353878100333',email:'rallyhubapp@gmail.com',email_href:'mailto:rallyhubapp@gmail.com',website:'https://rallyhub.ie/',website_label:'rallyhub.ie'},
     primary:RALLYHUB_NAVY,
     secondary:RALLYHUB_GREEN,
     presentation:'platform-card',
@@ -222,8 +222,8 @@ function rallyHubEmailShell({ title = '', preheader = '', content = '', actionUr
         </td></tr>
         <tr><td>${rallyHubEmailUtilityMenuHtml(utilityLinks)}</td></tr>
         <tr><td style="padding:16px 24px;background:${RALLYHUB_NAVY};text-align:center;">
-          <a href="https://rallyhub.ie/" style="display:inline-block;text-decoration:none;margin:0 auto 9px;"><img src="${RALLYHUB_EMAIL_REVERSED_LOGO}" alt="RallyHub" width="200" style="display:block;width:200px;max-width:100%;height:auto;border:0;"></a>
-          <div style="width:200px;max-width:100%;margin:5px auto 0;font-size:18px;line-height:1.2;letter-spacing:.25px;font-family:Arial,Helvetica,sans-serif;font-weight:900;color:#ffffff;text-align:center;white-space:nowrap;">${escapeHtml(footerNote)}</div>
+          <a href="https://rallyhub.ie/" style="display:inline-block;text-decoration:none;margin:0 auto;"><img src="${RALLYHUB_EMAIL_REVERSED_LOGO}" alt="RallyHub" width="200" style="display:block;width:200px;max-width:100%;height:auto;border:0;"></a>
+          <div style="width:200px;max-width:100%;margin:-9px auto 0;font-size:18px;line-height:1.2;letter-spacing:.25px;font-family:Arial,Helvetica,sans-serif;font-weight:900;color:#ffffff;text-align:center;white-space:nowrap;">${escapeHtml(footerNote)}</div>
         </td></tr>
       </table>
     </td></tr></table>
