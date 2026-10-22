@@ -121,8 +121,6 @@ function recentCount(rows:any[] = [], hours = 24) {
   }).length;
 }
 
-const RALLYHUB_EMAIL_LOGO = 'https://rallyhub.ie/assets/brand/master-review/C3-primary-with-strapline.png';
-const RALLYHUB_EMAIL_REVERSED_LOGO = 'https://rallyhub.ie/assets/brand/master-review/rallyhub-master-02-reversed.png';
 const RALLYHUB_NAVY = '#07184c';
 const RALLYHUB_GREEN = '#078e48';
 
