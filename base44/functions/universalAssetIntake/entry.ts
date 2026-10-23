@@ -26,7 +26,15 @@ async function retrieveHttpsImage(raw:string){
   const u=await publicHttpsUrl(address);
   // Use the same uncomplicated HTTPS GET as the proven eventPosterIngest function.
   // No custom Accept header or manual redirect handling for the first request.
-  const response=await fetch(u.toString(),{redirect:'follow',signal:AbortSignal.timeout(15000)});
+  let response=await fetch(u.toString(),{redirect:'follow',signal:AbortSignal.timeout(15000)});
+  // Some image origins return Cloudflare 526 to Base44's egress despite being public.
+  // For this specific TLS-origin error, retrieve the same public image through an
+  // HTTPS image proxy; preserve the original source URL in the intake receipt.
+  if(response.status===526){
+   const proxy=new URL('https://images.weserv.nl/');
+   proxy.searchParams.set('url',u.hostname+u.pathname+u.search);
+   response=await fetch(proxy.toString(),{redirect:'follow',signal:AbortSignal.timeout(15000)});
+  }
   if([301,302,303,307,308].includes(response.status)){const next=response.headers.get('location');await response.body?.cancel();if(!next)throw Error('Image redirect has no destination');address=new URL(next,u).toString();continue;}
   if(!response.ok||!response.body)throw Error('Image source returned HTTP '+response.status+' ('+new URL(response.url||u.toString()).hostname+')');
   const type=(response.headers.get('content-type')||'').toLowerCase();const max=type.includes('text/html')?1_000_000:MAX_BYTES;
