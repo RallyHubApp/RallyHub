@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
+import { Image } from 'npm:imagescript@1.3.0';
 
 // Standalone, transport-neutral intake. Never attaches or publishes assets automatically.
 const MAX_BYTES=12_000_000;
