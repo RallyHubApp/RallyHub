@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
-import { Image } from 'npm:imagescript@1.3.0';
+import { Image } from 'https://deno.land/x/imagescript@1.3.0/mod.ts';
 
 // Dedicated image crop service, isolated from HTTPS image intake.
 const MAX_BYTES=12_000_000;
