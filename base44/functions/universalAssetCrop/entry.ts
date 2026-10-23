@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
 import { Image } from 'npm:imagescript@1.3.0';
 
-// Standalone, transport-neutral intake. Never attaches or publishes assets automatically.
+// Dedicated image crop service, isolated from HTTPS image intake.
 const MAX_BYTES=12_000_000;
 // Embedded release marker: reports the code actually executing, not repository state.
 const RELEASE_ID='asset-intake-receipts-v2-20261011';
