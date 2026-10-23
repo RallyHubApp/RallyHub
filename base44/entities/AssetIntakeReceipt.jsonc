@@ -14,6 +14,11 @@
     "sha256": {
       "type": "string"
     },
+    "asset_type": {"type":"string"},
+    "owner_name": {"type":"string"},
+    "owner_slug": {"type":"string"},
+    "source_url": {"type":"string"},
+    "source_method": {"type":"string"},
     "scope": {
       "type": "string"
     },

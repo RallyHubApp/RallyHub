@@ -23,15 +23,24 @@ async function retrieveHttpsImage(raw:string){
  let address=raw;
  for(let hop=0;hop<5;hop++){
   const u=await publicHttpsUrl(address);
-  const response=await fetch(u.toString(),{redirect:'manual',signal:AbortSignal.timeout(15000),headers:{accept:'image/*,application/pdf;q=0.8'}});
+  const response=await fetch(u.toString(),{redirect:'manual',signal:AbortSignal.timeout(15000),headers:{accept:'image/*,text/html;q=0.8,application/pdf;q=0.7'}});
   if([301,302,303,307,308].includes(response.status)){const next=response.headers.get('location');await response.body?.cancel();if(!next)throw Error('Image redirect has no destination');address=new URL(next,u).toString();continue;}
   if(!response.ok||!response.body)throw Error('Image source is unavailable or requires login');
-  if(Number(response.headers.get('content-length')||0)>MAX_BYTES)throw Error('Image exceeds 12 MB');
+  const type=(response.headers.get('content-type')||'').toLowerCase();const max=type.includes('text/html')?1_000_000:MAX_BYTES;
+  if(Number(response.headers.get('content-length')||0)>max)throw Error('Source exceeds size limit');
   const reader=response.body.getReader();const parts:Uint8Array[]=[];let length=0;
-  while(true){const {done,value}=await reader.read();if(done)break;length+=value.length;if(length>MAX_BYTES){await reader.cancel();throw Error('Image exceeds 12 MB');}parts.push(value);}
-  const result=new Uint8Array(length);let offset=0;for(const part of parts){result.set(part,offset);offset+=part.length;}return result;
+  while(true){const {done,value}=await reader.read();if(done)break;length+=value.length;if(length>max){await reader.cancel();throw Error('Source exceeds size limit');}parts.push(value);}
+  const result=new Uint8Array(length);let offset=0;for(const part of parts){result.set(part,offset);offset+=part.length;}
+  if(type.includes('text/html')||new TextDecoder().decode(result.slice(0,80)).toLowerCase().includes('<!doctype html')){
+   const html=new TextDecoder().decode(result);const tags=html.match(/<meta\s+[^>]*>/gi)||[];
+   const candidates:string[]=[];
+   for(const tag of tags){const prop=tag.match(/(?:property|name)\s*=\s*['"]([^'"]+)['"]/i)?.[1]?.toLowerCase();if(!['og:image','og:image:url','twitter:image','twitter:image:src'].includes(prop||''))continue;const value=tag.match(/content\s*=\s*['"]([^'"]+)['"]/i)?.[1];if(value)candidates.push(value.replace(/&amp;/g,'&'));}
+   if(!candidates.length)throw Error('This webpage has no public image metadata. Paste a direct image URL or upload the file manually.');
+   address=new URL(candidates[0],u).toString();continue;
+  }
+  inspect(result);return result;
  }
- throw Error('Too many image redirects');
+ throw Error('Too many redirects or image metadata links');
 }
 const hex=async (bytes:Uint8Array)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(x=>x.toString(16).padStart(2,'0')).join('');
 function inspect(bytes:Uint8Array){
@@ -88,6 +97,7 @@ Deno.serve(async req=>{
   }
   const scope=String(body.scope||'platform');if(!['platform','tenant','directory'].includes(scope))return fail('Invalid asset scope');if(serviceAuthenticated&&scope!=='platform')return fail('Service key restricted to platform staging',403);if(serviceAuthenticated&&!/^[0-9a-f]{64}$/i.test(String(body.expectedSha256||'')))return fail('Service transfers require approved SHA-256',422);
   const tenantId=String(body.tenantId||'').trim(),listingSlug=String(body.listingSlug||'').trim();
+  const assetType=String(body.assetType||'').slice(0,40),ownerName=String(body.ownerName||'').slice(0,180);
   if(scope==='tenant'&&!tenantId||scope==='directory'&&!listingSlug)return fail('Scope identifier required');
   if(!serviceAuthenticated&&user.role!=='admin'){
    if(scope==='platform')return fail('Platform assets require administrator',403);
@@ -108,7 +118,7 @@ Deno.serve(async req=>{
   const file=new File([bytes],storedName,{type:info.mime});
   const uploaded=await sdk.asServiceRole.integrations.Core.UploadFile({file});if(!uploaded?.file_url)throw Error('Storage did not return URL');
   const uploadedAt=new Date().toISOString();
-  const receipt=await sdk.asServiceRole.entities.AssetIntakeReceipt.create({approval_id:approvalId,original_filename:originalName,stored_filename:storedName,sha256:digest,scope,status:'uploaded',file_url:uploaded.file_url,bytes:bytes.length,uploaded_at:uploadedAt});
+  const receipt=await sdk.asServiceRole.entities.AssetIntakeReceipt.create({approval_id:approvalId,original_filename:originalName,stored_filename:storedName,sha256:digest,scope,asset_type:assetType,owner_name:ownerName,owner_slug:listingSlug||tenantId,source_url:typeof body.sourceUrl==='string'?body.sourceUrl.slice(0,2048):'',source_method:source,status:'uploaded',file_url:uploaded.file_url,bytes:bytes.length,uploaded_at:uploadedAt});
   try {
    const url=new URL(uploaded.file_url);if(url.protocol!=='https:'||!['base44.app','www.base44.app'].includes(url.hostname))throw Error('Storage readback domain not trusted');
    const read=await fetch(url.toString(),{redirect:'follow',signal:AbortSignal.timeout(15000)});if(!read.ok)throw Error(`Storage readback failed (HTTP ${read.status})`);
