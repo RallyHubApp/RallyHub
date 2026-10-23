@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 const TYPES = {club:'directory_logo',coach:'directory_logo',event:'event_poster',organiser:'directory_logo'};
 const initial = [{name:'Leeside Pickleball',slug:'leeside-pickleball',type:'club'},{name:'Kinsale Pickleball',slug:'kinsale-pickleball',type:'club'},{name:'Coolmine Pickleheads',slug:'coolmine-pickleheads',type:'club',approved:true},{name:'Shankill Tennis Club',slug:'shankill-tennis-club',type:'club'},{name:'PicklePub Club',slug:'picklepub-club',type:'club'}];
 export default function AdminMediaReview(){
- const {user}=useAuth();const [cards,setCards]=useState(initial);const [draft,setDraft]=useState({});
+ const {user}=useAuth();const [cards,setCards]=useState(()=>{const q=new URLSearchParams(window.location.search);const name=q.get('name'),slug=q.get('slug'),type=q.get('type');return name&&slug&&TYPES[type]?[{name,slug,type},...initial]:initial;});const [draft,setDraft]=useState({});
  useEffect(()=>()=>Object.values(draft).forEach(v=>{if(v?.blob)URL.revokeObjectURL(v.blob)}),[]);
  if(user?.role!=='admin')return <main className="p-8">Administrator access required.</main>;
  const update=(i,patch)=>setDraft(old=>({...old,[i]:{...old[i],...patch}}));
