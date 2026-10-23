@@ -98,6 +98,20 @@ Deno.serve(async req=>{
     let encoded='';for(let offset=0;offset<image.length;offset+=8192)encoded+=String.fromCharCode(...image.slice(offset,offset+8192));
     return Response.json({success:true,mime:info.mime,dataBase64:btoa(encoded),sourceUrl:url},{headers:{'cache-control':'no-store'}});
    }
+   if(body.action==='stageServerCrop'){
+    if(!user||user.role!=='admin')return fail('Administrator required',403);
+    const u=new URL(String(body.sourceUrl||''));
+    if(u.protocol!=='https:'||u.hostname!=='base44.app'||!u.pathname.startsWith('/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/'))return fail('Verified RallyHub original required',403);
+    const image=await Image.decode(await retrieveHttpsImage(u.toString()));
+    const z=Number(body.crop?.zoom),x=Number(body.crop?.x),y=Number(body.crop?.y),stage=Number(body.crop?.stage);
+    if(![z,x,y,stage].every(Number.isFinite)||z<1||z>4.5||stage<100||stage>2000)return fail('Invalid crop',422);
+    const k=Math.max(stage/image.width,stage/image.height)*z;
+    const side=Math.max(1,Math.min(image.width,image.height,Math.round(stage/k)));
+    const left=Math.max(0,Math.min(image.width-side,Math.round(((image.width*k-stage)/2-x)/k)));
+    const top=Math.max(0,Math.min(image.height-side,Math.round(((image.height*k-stage)/2-y)/k)));
+    bytes=new Uint8Array(await image.crop(left,top,side,side).resize(600,600).encode());
+    source='server-crop';body.name=String(body.name||'coach-crop.png');
+   }else
    if(typeof body.dataBase64==='string'){
     const data=body.dataBase64;if(data.length>Math.ceil(MAX_BYTES/3)*4+4||!/^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(data))return fail('Invalid base64 payload',413);
     bytes=Uint8Array.from(atob(data),c=>c.charCodeAt(0));
