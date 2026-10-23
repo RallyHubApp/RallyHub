@@ -24,9 +24,11 @@ async function retrieveHttpsImage(raw:string){
  let address=raw;
  for(let hop=0;hop<5;hop++){
   const u=await publicHttpsUrl(address);
-  const response=await fetch(u.toString(),{redirect:'manual',signal:AbortSignal.timeout(15000),headers:{accept:'image/*,text/html;q=0.8,application/pdf;q=0.7'}});
+  // Use the same uncomplicated HTTPS GET as the proven eventPosterIngest function.
+  // No custom Accept header or manual redirect handling for the first request.
+  const response=await fetch(u.toString(),{redirect:'follow',signal:AbortSignal.timeout(15000)});
   if([301,302,303,307,308].includes(response.status)){const next=response.headers.get('location');await response.body?.cancel();if(!next)throw Error('Image redirect has no destination');address=new URL(next,u).toString();continue;}
-  if(!response.ok||!response.body)throw Error('Image source is unavailable or requires login');
+  if(!response.ok||!response.body)throw Error('Image source returned HTTP '+response.status+' ('+new URL(response.url||u.toString()).hostname+')');
   const type=(response.headers.get('content-type')||'').toLowerCase();const max=type.includes('text/html')?1_000_000:MAX_BYTES;
   if(Number(response.headers.get('content-length')||0)>max)throw Error('Source exceeds size limit');
   const reader=response.body.getReader();const parts:Uint8Array[]=[];let length=0;
