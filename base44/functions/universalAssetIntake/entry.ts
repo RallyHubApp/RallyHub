@@ -18,8 +18,11 @@ async function publicHttpsUrl(raw:string){
  let ips=[...(await Deno.resolveDns(u.hostname,'A').catch(()=>[])),...(await Deno.resolveDns(u.hostname,'AAAA').catch(()=>[]))];
  // Some deployed runtimes cannot use Deno DNS directly. Resolve via a public HTTPS DNS service before rejecting a legitimate host; never skip address validation.
  if(!ips.length){
-  const dns=await fetch('https://dns.google/resolve?name='+encodeURIComponent(u.hostname)+'&type=A',{signal:AbortSignal.timeout(5000)}).then(r=>r.ok?r.json():null).catch(()=>null);
-  ips=(dns?.Answer||[]).filter((a:any)=>a.type===1).map((a:any)=>String(a.data));
+  for(const endpoint of ['https://cloudflare-dns.com/dns-query?name=','https://dns.google/resolve?name=']){
+   const dns=await fetch(endpoint+encodeURIComponent(u.hostname)+'&type=A',{headers:{accept:'application/dns-json'},signal:AbortSignal.timeout(5000)}).then(r=>r.ok?r.json():null).catch(()=>null);
+   const answers=(dns?.Answer||[]).filter((a:any)=>a.type===1).map((a:any)=>String(a.data));
+   if(answers.length){ips=answers;break;}
+  }
  }
  if(!ips.length||ips.some(ip=>!publicAddress(ip)))throw Error('Image host is not publicly routable');
  return u;
