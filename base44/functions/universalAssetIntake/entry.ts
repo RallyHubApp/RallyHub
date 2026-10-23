@@ -5,7 +5,34 @@ const MAX_BYTES=12_000_000;
 // Embedded release marker: reports the code actually executing, not repository state.
 const RELEASE_ID='asset-intake-receipts-v2-20261011';
 const RELEASE_SCHEMA=2;
-const trustedHosts=new Set(['pickleballireland.ie','www.pickleballireland.ie','pickledsports.ie','www.pickledsports.ie','base44.app','www.base44.app']);
+// All public HTTPS domains are eligible; network-private addresses remain prohibited.
+function publicAddress(ip:string){
+ const v=ip.toLowerCase();
+ if(v.includes(':'))return !(v==='::'||v==='::1'||v.startsWith('fc')||v.startsWith('fd')||/^fe[89ab]/.test(v)||v.startsWith('::ffff:'));
+ const a=v.split('.').map(Number);if(a.length!==4||a.some(n=>!Number.isInteger(n)||n<0||n>255))return false;
+ return !(a[0]===0||a[0]===10||a[0]===127||a[0]>=224||a[0]===169&&a[1]===254||a[0]===172&&a[1]>=16&&a[1]<=31||a[0]===192&&a[1]===168||a[0]===100&&a[1]>=64&&a[1]<=127||a[0]===192&&a[1]===0||a[0]===198&&a[1]>=18&&a[1]<=19||a[0]===198&&a[1]===51&&a[2]===100||a[0]===203&&a[1]===0&&a[2]===113);
+}
+async function publicHttpsUrl(raw:string){
+ const u=new URL(raw);if(u.protocol!=='https:'||u.username||u.password||u.port||!u.hostname||u.hostname==='localhost'||u.hostname.endsWith('.local')||u.hostname.endsWith('.internal')||u.hostname.endsWith('.localhost'))throw Error('A public HTTPS image address is required');
+ if(/^[0-9.]+$/.test(u.hostname)||u.hostname.includes(':'))throw Error('Use a public HTTPS hostname');
+ const ips=[...(await Deno.resolveDns(u.hostname,'A').catch(()=>[])),...(await Deno.resolveDns(u.hostname,'AAAA').catch(()=>[]))];
+ if(!ips.length||ips.some(ip=>!publicAddress(ip)))throw Error('Image host is not publicly routable');
+ return u;
+}
+async function retrieveHttpsImage(raw:string){
+ let address=raw;
+ for(let hop=0;hop<5;hop++){
+  const u=await publicHttpsUrl(address);
+  const response=await fetch(u.toString(),{redirect:'manual',signal:AbortSignal.timeout(15000),headers:{accept:'image/*,application/pdf;q=0.8'}});
+  if([301,302,303,307,308].includes(response.status)){const next=response.headers.get('location');await response.body?.cancel();if(!next)throw Error('Image redirect has no destination');address=new URL(next,u).toString();continue;}
+  if(!response.ok||!response.body)throw Error('Image source is unavailable or requires login');
+  if(Number(response.headers.get('content-length')||0)>MAX_BYTES)throw Error('Image exceeds 12 MB');
+  const reader=response.body.getReader();const parts:Uint8Array[]=[];let length=0;
+  while(true){const {done,value}=await reader.read();if(done)break;length+=value.length;if(length>MAX_BYTES){await reader.cancel();throw Error('Image exceeds 12 MB');}parts.push(value);}
+  const result=new Uint8Array(length);let offset=0;for(const part of parts){result.set(part,offset);offset+=part.length;}return result;
+ }
+ throw Error('Too many image redirects');
+}
 const hex=async (bytes:Uint8Array)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(x=>x.toString(16).padStart(2,'0')).join('');
 function inspect(bytes:Uint8Array){
  const b=bytes, v=new DataView(b.buffer,b.byteOffset,b.byteLength);
@@ -56,10 +83,7 @@ Deno.serve(async req=>{
     const data=body.dataBase64;if(data.length>Math.ceil(MAX_BYTES/3)*4+4||!/^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(data))return fail('Invalid base64 payload',413);
     bytes=Uint8Array.from(atob(data),c=>c.charCodeAt(0));
    }else if(typeof body.sourceUrl==='string'){
-    const url=new URL(body.sourceUrl);if(url.protocol!=='https:'||!trustedHosts.has(url.hostname)||url.username||url.password||url.port)return fail('Untrusted source URL');
-    const response=await fetch(url.toString(),{redirect:'manual',signal:AbortSignal.timeout(15000)});if(!response.ok)return fail('Source unavailable',422);
-    const size=Number(response.headers.get('content-length')||0);if(size>MAX_BYTES)return fail('Source too large',413);
-    bytes=new Uint8Array(await response.arrayBuffer());source='https';
+    bytes=await retrieveHttpsImage(body.sourceUrl);source='https';
    }else return fail('Provide file, dataBase64 or approved sourceUrl');
   }
   const scope=String(body.scope||'platform');if(!['platform','tenant','directory'].includes(scope))return fail('Invalid asset scope');if(serviceAuthenticated&&scope!=='platform')return fail('Service key restricted to platform staging',403);if(serviceAuthenticated&&!/^[0-9a-f]{64}$/i.test(String(body.expectedSha256||'')))return fail('Service transfers require approved SHA-256',422);
