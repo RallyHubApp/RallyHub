@@ -38,8 +38,9 @@ Deno.serve(async req=>{
   }
   if(req.method!=='POST')return fail('POST required',405);
   const expectedRelease=req.headers.get('x-rallyhub-expected-release');
-  if(!expectedRelease||expectedRelease!==RELEASE_ID)return Response.json({success:false,error:'Backend release mismatch',runningRelease:RELEASE_ID},{status:409,headers:{'cache-control':'no-store'}});
+  if(expectedRelease&&expectedRelease!==RELEASE_ID)return Response.json({success:false,error:'Backend release mismatch',runningRelease:RELEASE_ID},{status:409,headers:{'cache-control':'no-store'}});
   const serviceAuthenticated=await validTransferKey(req);
+  if(serviceAuthenticated&&!expectedRelease)return fail('Machine transfers require release header',409);
   const sdk=createClientFromRequest(req);
   let user:any=null;
   if(!serviceAuthenticated){try{user=await sdk.auth.me()}catch(_){return fail('Authentication required',401)}if(!user)return fail('Authentication required',401);}
