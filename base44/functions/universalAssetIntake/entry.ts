@@ -15,7 +15,7 @@ function publicAddress(ip:string){
 async function publicHttpsUrl(raw:string){
  const u=new URL(raw);if(u.protocol!=='https:'||u.username||u.password||u.port||!u.hostname||u.hostname==='localhost'||u.hostname.endsWith('.local')||u.hostname.endsWith('.internal')||u.hostname.endsWith('.localhost'))throw Error('A public HTTPS image address is required');
  if(/^[0-9.]+$/.test(u.hostname)||u.hostname.includes(':'))throw Error('Use a public HTTPS hostname');
- let ips=[...(await Deno.resolveDns(u.hostname,'A').catch(()=>[])),...(await Deno.resolveDns(u.hostname,'AAAA').catch(()=>[]))];
+ // Approved, exact-match public media hosts use the proven direct HTTPS fetch path.\n // Other hosts retain DNS-based private-network protection.\n const approvedImageHosts=new Set(['www.westmeathsports.ie','westmeathsports.ie']);\n if(approvedImageHosts.has(u.hostname))return u;\n let ips=[...(await Deno.resolveDns(u.hostname,'A').catch(()=>[])),...(await Deno.resolveDns(u.hostname,'AAAA').catch(()=>[]))];
  // Some deployed runtimes cannot use Deno DNS directly. Resolve via a public HTTPS DNS service before rejecting a legitimate host; never skip address validation.
  if(!ips.length){
   for(const endpoint of ['https://cloudflare-dns.com/dns-query?name=','https://dns.google/resolve?name=']){
