@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
 
-// Standalone, transport-neutral intake. Never attaches or publishes assets automatically.
+// Independent HTTPS intake. Never attaches or publishes assets automatically.
 const MAX_BYTES=12_000_000;
 // Embedded release marker: reports the code actually executing, not repository state.
 const RELEASE_ID='asset-intake-receipts-v2-20261011';
