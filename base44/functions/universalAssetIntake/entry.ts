@@ -88,6 +88,15 @@ Deno.serve(async req=>{
    bytes=new Uint8Array(await file.arrayBuffer());body={scope:form.get('scope'),tenantId:form.get('tenantId'),listingSlug:form.get('listingSlug'),expectedSha256:form.get('expectedSha256'),approvalId:form.get('approvalId'),assetType:form.get('assetType'),ownerName:form.get('ownerName'),name:form.get('name')||file.name};
   }else{
    body=await req.json().catch(()=>null);if(!body||typeof body!=='object')return fail('Invalid JSON');
+   if(body.action==='previewStagedImage'){
+    if(!user||user.role!=='admin')return fail('Administrator authentication required',403);
+    const url=String(body.sourceUrl||'');const u=new URL(url);
+    if(u.protocol!=='https:'||u.hostname!=='base44.app'||!u.pathname.startsWith('/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/'))return fail('Only verified RallyHub staged files can be previewed',403);
+    const image=await retrieveHttpsImage(url);const info=inspect(image);
+    if(!info.mime.startsWith('image/'))return fail('Image required',422);
+    let encoded='';for(let offset=0;offset<image.length;offset+=8192)encoded+=String.fromCharCode(...image.slice(offset,offset+8192));
+    return Response.json({success:true,mime:info.mime,dataBase64:btoa(encoded),sourceUrl:url},{headers:{'cache-control':'no-store'}});
+   }
    if(typeof body.dataBase64==='string'){
     const data=body.dataBase64;if(data.length>Math.ceil(MAX_BYTES/3)*4+4||!/^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(data))return fail('Invalid base64 payload',413);
     bytes=Uint8Array.from(atob(data),c=>c.charCodeAt(0));
