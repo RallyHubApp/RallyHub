@@ -85,7 +85,7 @@ Deno.serve(async req=>{
   if(contentType.includes('multipart/form-data')){
    const form=await req.formData();const file=form.get('file');if(!(file instanceof File))return fail('File required');
    if(file.size>MAX_BYTES)return fail('File too large',413);
-   bytes=new Uint8Array(await file.arrayBuffer());body={scope:form.get('scope'),tenantId:form.get('tenantId'),listingSlug:form.get('listingSlug'),expectedSha256:form.get('expectedSha256'),approvalId:form.get('approvalId'),name:form.get('name')||file.name};
+   bytes=new Uint8Array(await file.arrayBuffer());body={scope:form.get('scope'),tenantId:form.get('tenantId'),listingSlug:form.get('listingSlug'),expectedSha256:form.get('expectedSha256'),approvalId:form.get('approvalId'),assetType:form.get('assetType'),ownerName:form.get('ownerName'),name:form.get('name')||file.name};
   }else{
    body=await req.json().catch(()=>null);if(!body||typeof body!=='object')return fail('Invalid JSON');
    if(typeof body.dataBase64==='string'){
