@@ -1,0 +1,20 @@
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/lib/AuthContext';
+import { base44 } from '@/api/base44Client';
+
+const TYPES = {club:'directory_logo',coach:'directory_logo',event:'event_poster',organiser:'directory_logo'};
+const initial = [{name:'Leeside Pickleball',slug:'leeside-pickleball',type:'club'},{name:'Kinsale Pickleball',slug:'kinsale-pickleball',type:'club'},{name:'Coolmine Pickleheads',slug:'coolmine-pickleheads',type:'club',approved:true},{name:'Shankill Tennis Club',slug:'shankill-tennis-club',type:'club'},{name:'PicklePub Club',slug:'picklepub-club',type:'club'}];
+export default function AdminMediaReview(){
+ const {user}=useAuth();const [cards,setCards]=useState(initial);const [draft,setDraft]=useState({});
+ useEffect(()=>()=>Object.values(draft).forEach(v=>{if(v?.blob)URL.revokeObjectURL(v.blob)}),[]);
+ if(user?.role!=='admin')return <main className="p-8">Administrator access required.</main>;
+ const update=(i,patch)=>setDraft(old=>({...old,[i]:{...old[i],...patch}}));
+ const stage=async(i)=>{const c=cards[i],d=draft[i]||{};if(!d.file&&!d.url)return;update(i,{busy:true,error:''});try{
+ let url=d.url;
+ if(d.file){const result=await base44.functions.invoke('secureCreditAction',{action:'upload_image',purpose:TYPES[c.type],listingSlug:c.slug,file:d.file});if(result.data?.error)throw new Error(result.data.error);url=result.data?.file_url;if(!url)throw new Error('Upload returned no permanent URL');}
+ if(!/^https:\/\//i.test(url))throw new Error('Only HTTPS artwork is accepted');
+ update(i,{staged:url,busy:false});
+ }catch(e){update(i,{busy:false,error:e.message||'Upload failed; selection retained'});}};
+ const add=()=>{const name=window.prompt('Listing name');if(!name?.trim())return;const slug=window.prompt('Exact existing listing slug (required)');if(!slug?.trim())return;const type=window.prompt('Type: club, coach, event, organiser','club');if(!TYPES[type])return;setCards(v=>[...v,{name:name.trim(),slug:slug.trim(),type}]);};
+ return <main className="mx-auto max-w-6xl p-6"><h1 className="text-2xl font-bold">RallyHub — Universal Media Review</h1><p className="my-3">Authenticated Super Admin image staging. Upload does not modify or publish a Directory or event record. Existing approvals remain valid. Confirm exact listing identity before staging.</p><button className="rounded border p-2 mb-5" onClick={add}>Add existing listing review card</button><div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{cards.map((c,i)=>{const d=draft[i]||{};return <section key={i} className="rounded-xl border p-4 bg-white text-slate-900"><h2 className="font-bold">{c.name}</h2><p className="text-xs">{c.type} · {c.slug} · {c.approved?'Owner approved':'Awaiting review'}</p><div className="my-3 h-48 bg-slate-100 flex items-center justify-center">{(d.blob||d.staged||d.url)?<img className="max-h-full max-w-full object-contain" src={d.blob||d.staged||d.url} alt="Selected artwork preview"/>:'No image selected'}</div><label className="block text-sm">Upload JPG, PNG or WebP<input className="block w-full mt-1" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{const file=e.target.files?.[0];if(!file)return;if(file.size>5*1024*1024){update(i,{error:'Maximum 5 MB'});return;}if(d.blob)URL.revokeObjectURL(d.blob);update(i,{file,blob:URL.createObjectURL(file),error:''});}}/></label><label className="block text-sm mt-3">Or direct HTTPS image URL<input className="border rounded p-2 w-full" type="url" placeholder="https://..." value={d.url||''} onChange={e=>update(i,{url:e.target.value,file:null,blob:null})}/></label><button disabled={d.busy||(!d.file&&!d.url)} onClick={()=>stage(i)} className="rounded bg-slate-800 text-white p-2 mt-3 disabled:opacity-40">{d.busy?'Uploading…':'Stage image — do not publish'}</button>{d.staged&&<p className="text-sm mt-2 break-all">Staged HTTPS: <a className="underline" href={d.staged} target="_blank" rel="noreferrer">{d.staged}</a></p>}{d.error&&<p role="alert" className="text-red-700">{d.error}</p>}</section>})}</div></main>;
+}

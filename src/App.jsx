@@ -23,6 +23,7 @@ const Leaderboard = lazy(() => import('@/pages/Leaderboard'));
 const Analytics = lazy(() => import('@/pages/Analytics'));
 const MyProfile = lazy(() => import('@/pages/MyProfile'));
 const AdminPanel = lazy(() => import('@/pages/AdminPanel'));
+const AdminMediaReview = lazy(() => import('@/pages/AdminMediaReview'));
 const PublicRegister = lazy(() => import('@/pages/PublicRegister'));
 const PublicTournament = lazy(() => import('@/pages/PublicTournament'));
 import Landing from '@/pages/Landing';
@@ -216,6 +217,7 @@ const AuthenticatedRoutes = () => (
       <Route path="forecast" element={<MemberForecast />} />
       <Route path="my-profile" element={<MyProfile />} />
       <Route path="admin" element={<AdminPanel />} />
+      <Route path="admin/media-review" element={<AdminMediaReview />} />
       <Route path="admin/contact-action-preview" element={<ProtectedContactActionPreview />} />
       <Route path="guest-bookings" element={<GuestBookings />} />
       <Route path="membership" element={<MembershipConsole />} />
