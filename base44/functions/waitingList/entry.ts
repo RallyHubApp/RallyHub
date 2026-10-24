@@ -77,9 +77,9 @@ const UTILITY_LINKS:any={
   facebook:{label:'Facebook',url:'https://www.facebook.com/ClarePickleball/'},
   instagram:{label:'Instagram',url:'https://www.instagram.com/clarepickleball/'},
 };
-function emailShell(club:any,headline:string,content:string,_options:any={}){
+function emailShell(club:any,headline:string,content:string,options:any={}){
   if(!club?.brandKit)throw new Error('Approved tenant Communications Centre brand kit missing; email blocked');
-  return renderBasicBrandedEmail(content,club.brandKit,club.clubRecord,club.name,'Waiting List',headline);
+  return renderBasicBrandedEmail(content,club.brandKit,club.clubRecord,club.name,'Waiting List',headline,'',options);
 }
 async function sendConfirmation(base44:any,config:any,club:any,sport:string,entry:any){
   const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:config.tenant_id,clubId:config.club_id};
