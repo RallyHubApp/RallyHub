@@ -657,7 +657,7 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.User.update(user.id, {
         full_name: fullName,
         directory_mobile: mobile,
-        ...(user.role === 'admin' || existingClubAccess?.length ? {} : { account_scope: 'directory', approval_status: 'pending' }),
+        ...(authorisedDirectorySuperAdmin(user) || existingClubAccess?.length ? {} : { account_scope: 'directory', approval_status: 'pending' }),
       });
       return Response.json({ success: true, fullName, mobile });
     }
@@ -754,7 +754,7 @@ Deno.serve(async (req) => {
 
       // Prevent a signed-in account from using the verification workflow as a
       // high-volume email/database spam surface. Platform admins are exempt for testing/support.
-      if (user.role !== 'admin') {
+      if (!authorisedDirectorySuperAdmin(user)) {
         const recentClaims = await base44.asServiceRole.entities.DirectoryClaim.filter({ claimant_user_id: user.id }, '-created_date', 100);
         if (recentCount(recentClaims, 24) >= 10) {
           return Response.json({ error: 'Too many directory verification requests. Please try again later.' }, { status: 429 });
@@ -784,7 +784,7 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.User.update(user.id, {
         full_name: claimantName,
         directory_mobile: claimantPhone,
-        ...(user.role === 'admin' || existingClubAccessForClaimant?.length ? {} : { account_scope: 'directory', approval_status: 'pending' }),
+        ...(authorisedDirectorySuperAdmin(user) || existingClubAccessForClaimant?.length ? {} : { account_scope: 'directory', approval_status: 'pending' }),
       });
 
       const userEmail = normaliseEmail(user.email);
@@ -827,7 +827,7 @@ Deno.serve(async (req) => {
       // but it does not itself approve Directory ownership. This preserves the agreed beta
       // journey: invitation -> sign in/verify -> submit claim -> RallyHub review -> access.
       // The only exception is a platform admin whose trusted name and phone both match.
-      const adminIdentityMatch = user.role === 'admin' && nameMatch && phoneMatch;
+      const adminIdentityMatch = authorisedDirectorySuperAdmin(user) && nameMatch && phoneMatch;
       const anyExistingAccess = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' });
       const listingAlreadyVerified = listing.verificationStatus === 'verified' || !!anyExistingAccess?.length;
       const autoVerified = adminIdentityMatch && !listingAlreadyVerified;
@@ -1109,7 +1109,7 @@ Deno.serve(async (req) => {
       if (samePending) {
         return Response.json({ success: true, status: 'pending', request: publicListingRequest(samePending) });
       }
-      if (user.role !== 'admin' && recentCount(existingRequests, 24) >= 5) {
+      if (!authorisedDirectorySuperAdmin(user) && recentCount(existingRequests, 24) >= 5) {
         return Response.json({ error: 'Too many new listing submissions. Please try again later.' }, { status: 429 });
       }
 
@@ -1306,7 +1306,7 @@ Deno.serve(async (req) => {
         claim: publicClaim(latest),
         hasAccess: !!access,
         accessRole: access?.role || null,
-        canManageAccess: user.role === 'admin' || access?.role === 'owner',
+        canManageAccess: authorisedDirectorySuperAdmin(user) || access?.role === 'owner',
         secureInvitation,
       });
     }
@@ -1444,7 +1444,7 @@ Deno.serve(async (req) => {
       const rows = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ id: invitationId });
       const invitation = rows?.[0];
       if (!invitation || invitation.status !== 'pending') return Response.json({ error: 'Prepared invitation not found' }, { status: 404 });
-      if (user.role !== 'admin' && String(invitation.created_by_user_id || '') !== String(user.id)) return Response.json({ error: 'You cannot send this invitation' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user) && String(invitation.created_by_user_id || '') !== String(user.id)) return Response.json({ error: 'You cannot send this invitation' }, { status: 403 });
       const listing = await resolveListing(base44, invitation.listing_slug);
       if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
       const result = await sendClaimInviteEmail(base44, {
@@ -1460,10 +1460,10 @@ Deno.serve(async (req) => {
     if (action === 'access_list') {
       const listingSlug = String(body.listingSlug || '').trim();
       if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
-      const ownAccess = user.role === 'admin' ? null : (await base44.asServiceRole.entities.DirectoryListingAccess.filter({
+      const ownAccess = authorisedDirectorySuperAdmin(user) ? null : (await base44.asServiceRole.entities.DirectoryListingAccess.filter({
         listing_slug: listingSlug, user_id: user.id, status: 'active'
       }))[0] || null;
-      if (user.role !== 'admin' && !ownAccess) return Response.json({ error: 'Directory access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user) && !ownAccess) return Response.json({ error: 'Directory access required' }, { status: 403 });
 
       const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' }, 'granted_at', 50);
       // User directory enrichment must not break access management if the SDK's
@@ -1478,7 +1478,7 @@ Deno.serve(async (req) => {
         warnings.push('User names are temporarily unavailable. Access permissions remain unchanged.');
       }
       const userMap = new Map((users || []).map((row:any) => [String(row.id), row]));
-      const canManageAccess = user.role === 'admin' || ownAccess?.role === 'owner';
+      const canManageAccess = authorisedDirectorySuperAdmin(user) || ownAccess?.role === 'owner';
       const people = (accesses || []).map((row:any) => {
         const person = userMap.get(String(row.user_id));
         const isCurrentUser = String(row.user_id) === String(user.id);
@@ -1524,10 +1524,10 @@ Deno.serve(async (req) => {
       if (inviteChannel === 'email' && (!contactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail))) return Response.json({ error: 'A valid email address is required for an email invitation.' }, { status: 400 });
       if (inviteChannel === 'whatsapp' && !contactPhone) return Response.json({ error: 'A mobile number is required for a WhatsApp invitation.' }, { status: 400 });
 
-      const ownerAccess = user.role === 'admin' ? null : (await base44.asServiceRole.entities.DirectoryListingAccess.filter({
+      const ownerAccess = authorisedDirectorySuperAdmin(user) ? null : (await base44.asServiceRole.entities.DirectoryListingAccess.filter({
         listing_slug: listingSlug, user_id: user.id, status: 'active'
       }))[0] || null;
-      if (user.role !== 'admin' && ownerAccess?.role !== 'owner') return Response.json({ error: 'Only the Primary Owner can invite Directory Editors.' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user) && ownerAccess?.role !== 'owner') return Response.json({ error: 'Only the Primary Owner can invite Directory Editors.' }, { status: 403 });
 
       const listing = await resolveListing(base44, listingSlug);
       if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
@@ -1575,10 +1575,10 @@ Deno.serve(async (req) => {
       const accessId = String(body.accessId || '').trim();
       if (!listingSlug || !accessId) return Response.json({ error: 'listingSlug and accessId required' }, { status: 400 });
 
-      const ownerAccess = user.role === 'admin' ? null : (await base44.asServiceRole.entities.DirectoryListingAccess.filter({
+      const ownerAccess = authorisedDirectorySuperAdmin(user) ? null : (await base44.asServiceRole.entities.DirectoryListingAccess.filter({
         listing_slug: listingSlug, user_id: user.id, status: 'active'
       }))[0] || null;
-      if (user.role !== 'admin' && ownerAccess?.role !== 'owner') return Response.json({ error: 'Only the Primary Owner can remove Directory Editors.' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user) && ownerAccess?.role !== 'owner') return Response.json({ error: 'Only the Primary Owner can remove Directory Editors.' }, { status: 403 });
 
       const matches = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ id: accessId });
       const target = matches?.[0];
@@ -2202,7 +2202,7 @@ Deno.serve(async (req) => {
       const records = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 5);
       const record = records?.[0];
       if (!record) return Response.json({ error:'Active database-backed listing not found' }, { status:404 });
-      if (user.role !== 'admin') {
+      if (!authorisedDirectorySuperAdmin(user)) {
         const accessRows = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug:listingSlug, user_id:user.id, status:'active' });
         const owner = accessRows?.find((row:any)=>row.role === 'owner');
         if (!owner || String(record.listing_type || 'club') === 'club' || visibility !== 'public') {

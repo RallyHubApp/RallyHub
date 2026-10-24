@@ -38,3 +38,10 @@ test('Directory claim administrative endpoints use verified super-admin policy',
  assert.ok((source.match(/!authorisedDirectorySuperAdmin\(user\)/g)||[]).length >= 10);
  assert.doesNotMatch(source,/if \(user\.role !== 'admin'\) return Response\.json\(\{ error: 'Admin access required'/);
 });
+
+test('Directory claim owner journeys never bypass via generic admin role',()=>{
+ const source=readFileSync('base44/functions/directoryClaim/entry.ts','utf8');
+ assert.doesNotMatch(source,/user\.role\s*(?:===|!==)\s*'admin'/);
+ assert.match(source,/ownAccess\?\.role === 'owner'/);
+ assert.match(source,/authorisedDirectorySuperAdmin\(user\)/);
+});
