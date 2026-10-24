@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+import { authorisedDirectorySuperAdmin } from '../../shared/directorySuperAdmin.ts';
 
 const CONSENT_VERSION='rallyhub-directory-player-updates-v1-2026-09';
 const LEGACY_TOPICS=['tournaments_events','coaching','club'];
@@ -36,7 +37,7 @@ Deno.serve(async(req)=>{
 
     if(action.startsWith('admin_')){
       const user=await base44.auth.me();
-      if(user?.role!=='admin')return Response.json({error:'Admin access required'},{status:403});
+      if(!authorisedDirectorySuperAdmin(user))return Response.json({error:'Admin access required'},{status:403});
       if(action==='admin_list'){
         const rows=await base44.asServiceRole.entities.DirectoryPlayerSubscriber.list('-updated_at',500);
         const active=(rows||[]).filter((r:any)=>r.status==='active'&&(r.email_opt_in===true||r.whatsapp_opt_in===true));
