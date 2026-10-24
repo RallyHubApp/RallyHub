@@ -36,6 +36,14 @@ for(const mobile of [false,true])test('coach review '+(mobile?'mobile':'desktop'
  expect(published).toEqual(['ava-battles']);expect(rows.filter(r=>r.visibility==='preview_only')).toHaveLength(13);
  await page.getByTestId('coach-row').first().getByRole('button',{name:'Preview',exact:true}).click();
  await expect(page.locator('iframe')).toHaveAttribute('src',/preview=1/);
+ for(let i=0;i<14;i++){
+  const frame=page.frameLocator('iframe');
+  await expect(frame.getByTestId('coach-profile')).toBeVisible({timeout:15000});
+  await expect(frame.getByRole('heading',{name:fixtures[i].name,exact:true})).toBeVisible();
+  const html=await frame.locator('body').innerHTML();expect(html).not.toMatch(/mailto:|tel:|cassiemooney@hotmail|francie@cascadia/);
+  if(i<13)await page.getByRole('button',{name:'Next',exact:true}).click();
+ }
+ for(let i=0;i<13;i++)await page.getByRole('button',{name:'Previous',exact:true}).click();
  await page.getByRole('button',{name:'Next',exact:true}).click();
  await expect(page.getByRole('heading',{name:/2 of 14/})).toBeVisible();
  await page.getByRole('button',{name:'Previous',exact:true}).click();
