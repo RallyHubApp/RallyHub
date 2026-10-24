@@ -16,3 +16,8 @@ No live records or schema deployments were changed during this audit.
 - `npm run test:directory` runs focused Directory tests; a passing unit-test result does **not** imply security acceptance.
 - `npm run gate:directory-security` is deliberately **failing** while generic-admin RLS remains and approved identity IDs are not independently verified. Release automation must require this gate and authenticated negative tests to pass.
 - Base44 API security verification currently prompts for new device authentication and could not be completed from the existing sandbox session; no account IDs or backend secrets were changed.
+
+## Supported policy and read-only identity findings (24 October 2026)
+Official Base44 CLI entity-security guidance documents `user_condition` exact equality on `id`, `$and`, and `$or`. A policy constructor and negative-actor unit tests now live in `base44/shared/directoryRlsPolicy.ts` and `testing/directory/directoryRlsPolicy.test.mjs`. **Neither is an applied entity schema change.**
+
+Direct read-only querying of Base44's app User records identified two distinct current admin accounts matching Brian Moore and Conall Moore, plus a third general platform-admin account. This proves that `role = admin` alone cannot implement the approved two-account Directory boundary. Owner confirmation, backend secret configuration, actual schema migration and authenticated direct SDK negative tests remain outstanding. Do not print personal emails or User IDs in general reports.
