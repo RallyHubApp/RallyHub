@@ -9,7 +9,10 @@ export default function CoachesReview() {
  const [selected,setSelected]=useState(new Set()),[preview,setPreview]=useState(-1),[confirm,setConfirm]=useState(null),[busy,setBusy]=useState(false),[report,setReport]=useState([]);
  const allRef=useRef(null);
  const query=useQuery({queryKey:['coach-review'],queryFn:async()=>{
- const [rows,profiles]=await Promise.all([base44.entities.DirectoryListingRecord.filter({listing_type:'coach',status:'active'},'name',100),base44.entities.DirectoryListingProfile.filter({status:'active'},'-updated_at',500)]);
+ const response=await base44.functions.invoke('directoryClaim',{action:'list_admin'});
+ if(response.data?.success!==true)throw Error(response.data?.error||'Directory administration unavailable');
+ const rows=(response.data.listingRecords||[]).filter(r=>r.listing_type==='coach'&&r.status==='active');
+ const profiles=response.data.listingProfiles||[];
  return rows.filter(r=>!['heather-campbell-kelly','mark-topping'].includes(r.slug)).map(r=>({...r,coach:{...parse(r.base_json),...parse(profiles.find(p=>p.listing_slug===r.slug)?.public_json),name:r.name,slug:r.slug}}));
  }});
  const rows=query.data||[],eligible=rows.filter(r=>r.visibility==='preview_only');
@@ -22,11 +25,17 @@ export default function CoachesReview() {
  setBusy(true);const results=[];
  for(const row of confirm){
  try{
- const fresh=await base44.entities.DirectoryListingRecord.get(row.id);
+ const review=await base44.functions.invoke('directoryClaim',{action:'list_admin'});
+ if(review.data?.success!==true)throw Error(review.data?.error||'Could not recheck Directory listing');
+ const fresh=(review.data.listingRecords||[]).find(item=>item.id===row.id);
+ if(!fresh)throw Error('Listing no longer available');
  if(fresh.visibility!=='preview_only'||fresh.listing_type!=='coach')throw Error('Listing changed. Refresh and review again.');
  const res=await base44.functions.invoke('directoryClaim',{action:'set_visibility',listingSlug:row.slug,visibility:'public'});
  if(res.data?.success!==true)throw Error(res.data?.error||'Publication was not confirmed.');
- const check=await base44.entities.DirectoryListingRecord.get(row.id);
+ const verified=await base44.functions.invoke('directoryClaim',{action:'list_admin'});
+ if(verified.data?.success!==true)throw Error(verified.data?.error||'Could not verify Directory listing visibility');
+ const check=(verified.data.listingRecords||[]).find(item=>item.id===row.id);
+ if(!check)throw Error('Listing verification failed');
  if(check.visibility!=='public')throw Error('Publication readback failed.');
  results.push({name:row.name,ok:true});
  setSelected(old=>{const n=new Set(old);n.delete(row.id);return n;});
