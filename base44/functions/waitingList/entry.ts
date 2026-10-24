@@ -31,8 +31,11 @@ async function clubBrand(base44:any,clubId:string,tenantId:string){
   const club=await first(base44,'Club',{id:clubId,tenant_id:tenantId});
   if(!club)return null;
   const kits=await base44.asServiceRole.entities.CommunicationBrandKit.filter({tenant_id:tenantId,owner_scope:'tenant',status:'active'},'-updated_date',30);
-  const brandKit=(kits||[]).find((k:any)=>!k.club_id||String(k.club_id)===String(clubId))||null;
-  return {id:club.id,name:club.name||'',slug:club.slug||'',logoUrl:brandKit?.logos?.primary||club.logo_url||'',primaryColour:brandKit?.colours?.primary||club.primary_colour||'#2563eb',secondaryColour:brandKit?.colours?.secondary||club.secondary_colour||'#facc15',brandKit,clubRecord:club};
+  const matches=(kits||[]).filter((k:any)=>!k.club_id||String(k.club_id)===String(clubId));
+  if(matches.length!==1)throw new Error('Exactly one active approved tenant Communications Centre brand kit is required; no fallback permitted');
+  const brandKit=matches[0];
+  if(!brandKit.logos?.primary||!brandKit.compliance_footer?.powered_by_html)throw new Error('Approved tenant header/footer assets missing; no fallback permitted');
+  return {id:club.id,name:club.name||'',slug:club.slug||'',brandKit,clubRecord:club};
 }
 async function activeConfig(base44:any,slug:string){
   const rows=await base44.asServiceRole.entities.ClubWaitingListConfig.filter({public_slug:slug,status:'active'},'-updated_date',20);
@@ -74,14 +77,9 @@ const UTILITY_LINKS:any={
   facebook:{label:'Facebook',url:'https://www.facebook.com/ClarePickleball/'},
   instagram:{label:'Instagram',url:'https://www.instagram.com/clarepickleball/'},
 };
-function emailShell(club:any,headline:string,content:string,options:any={}){
-  if(club?.brandKit)return renderBasicBrandedEmail(content,club.brandKit,club.clubRecord,club.name,'Waiting List',headline);
-  const logo=club?.logoUrl?`<img src="${escapeHtml(club.logoUrl)}" alt="${escapeHtml(club.name)} logo" width="72" height="72" style="display:block;margin:0 auto 12px;object-fit:contain;border-radius:12px;">`:'';
-  const contact=options.contact||{signoff:'Yours in sport,',name:'Brian Moore',role:'Chairperson',organisation:'Clare Pickleball',phone_whatsapp:'087 810 0333',phone_href:'tel:+353878100333',whatsapp_href:'https://wa.me/353878100333',email:'clarepb2025@gmail.com',email_href:'mailto:clarepb2025@gmail.com',website:'https://clarepickleball.ie/',website_label:'ClarePickleball.ie'};
-  const signature=options.signature===true?emailSignatureBlockHtml({contact,primary:club?.primaryColour||'#2667f2',secondary:club?.secondaryColour||'#facc15'}):'';
-  const utilityLinks=(options.utilityLinks||[]).map((key:any)=>UTILITY_LINKS[String(key)]).filter(Boolean);
-  const utility=options.utility===true?emailUtilityMenuHtml({links:utilityLinks,primary:club?.primaryColour||'#2667f2',secondary:club?.secondaryColour||'#facc15'}):'';
-  return `<!doctype html><html><body style="margin:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px 12px;background:#f4f7fb"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#fff;border:1px solid #d9e1ec;border-radius:18px;overflow:hidden"><tr><td style="height:6px;background:${escapeHtml(club?.primaryColour||'#2563eb')};border-bottom:3px solid ${escapeHtml(club?.secondaryColour||'#facc15')}"></td></tr><tr><td style="padding:26px 28px 18px;text-align:center">${logo}<div style="font-size:25px;font-weight:800">${escapeHtml(club?.name||'Club')}</div><div style="margin-top:5px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6b7280">Waiting List</div></td></tr><tr><td style="padding:0 28px 28px"><h1 style="margin:0 0 18px;font-size:23px">${escapeHtml(headline)}</h1>${content}${signature}</td></tr>${utility?'<tr><td>'+utility+'</td></tr>':''}<tr><td style="padding:16px 20px;background:#f7f9fc;border-top:1px solid #e4e9f1"><div style="text-align:center;line-height:1.3"><a href="https://rallyhub.ie/" target="_blank" style="display:inline-table;text-decoration:none;color:#081342"><span style="display:table-cell;vertical-align:middle;padding-right:7px"><img src="https://rallyhub.ie/assets/brand/master-review/rallyhub-master-01-horizontal.png" alt="RallyHub" width="28" height="28" style="display:block;width:28px;height:28px;object-fit:contain;border:0"></span><span style="display:table-cell;vertical-align:middle;text-align:left"><span style="display:block;font-size:10px;color:#7b8494">Powered by</span><span style="display:block;font-size:17px;font-weight:900;letter-spacing:-.4px;color:#081342">RallyHub</span></span></a></div></td></tr></table></td></tr></table></body></html>`;
+function emailShell(club:any,headline:string,content:string,_options:any={}){
+  if(!club?.brandKit)throw new Error('Approved tenant Communications Centre brand kit missing; email blocked');
+  return renderBasicBrandedEmail(content,club.brandKit,club.clubRecord,club.name,'Waiting List',headline);
 }
 async function sendConfirmation(base44:any,config:any,club:any,sport:string,entry:any){
   const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:config.tenant_id,clubId:config.club_id};
