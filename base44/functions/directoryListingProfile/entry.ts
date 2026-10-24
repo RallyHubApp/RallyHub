@@ -109,6 +109,7 @@ async function protectedStateWithPrivacy(base44:any, listingSlug:string, state:a
 }
 
 async function publicStateForRollout(base44:any, listingSlug:string, state:any) {
+  if (state?.base?.listingType === 'coach' || state?.profile?.listingType === 'coach') return protectedDirectoryState(state, { hideContactName:true });
   const config = await contactProtectionConfig(base44);
   const protectedForListing = config.failClosed || config.protectedSlugs.has(listingSlug) || (config.defaultDirectoryEnabled && !config.legacyHoldSlugs.has(listingSlug));
   return protectedForListing
@@ -125,6 +126,11 @@ async function protectedListWithPrivacy(base44:any, listings:any) {
 
 async function publicListForRollout(base44:any, listings:any) {
   const config = await contactProtectionConfig(base44);
+  const coachSafe:any = { ...(listings || {}) };
+  for (const [slug, state] of Object.entries(coachSafe) as any) {
+    if (state?.base?.listingType === 'coach' || state?.profile?.listingType === 'coach') coachSafe[slug] = protectedDirectoryState(state, { hideContactName:true });
+  }
+  listings = coachSafe;
   if (!config.globalEnabled) return listings;
   if (!config.defaultDirectoryEnabled && !config.protectedSlugs.size) return listings;
   const out:any = { ...(listings || {}) };
@@ -492,7 +498,11 @@ Deno.serve(async (req) => {
       }
       if (!allowed) return Response.json({ error: 'Verified directory editor access required' }, { status: 403 });
 
+      const listingRecords = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 5);
+      const coachListing = listingRecords?.[0]?.listing_type === 'coach';
       const publicProfile = sanitiseProfile(body.profile || {});
+      if (coachListing) { publicProfile.listingType = 'coach'; publicProfile.contact = { name:null, phone:null, phoneHref:null, email:null, whatsapp:null }; }
+
       publicProfile.venues = await geocodeDirectoryVenues(publicProfile.venues || [], { town: clean(body.town, 120), county: clean(body.county, 120) });
       const publicJson = JSON.stringify(publicProfile);
       const now = new Date().toISOString();
@@ -509,6 +519,7 @@ Deno.serve(async (req) => {
         });
       }
 
+      if (!coachListing) {
       // Keep the protected-contact override aligned with owner/editor changes.
       // Claim privacy preferences remain authoritative over raw contact fields.
       try {
@@ -538,6 +549,8 @@ Deno.serve(async (req) => {
       } catch (contactEndpointSyncError) {
         console.warn('Protected contact endpoint sync failed', contactEndpointSyncError?.message || contactEndpointSyncError);
       }
+
+      } // Coach public edits never overwrite private contact endpoints.
 
       // Keep the editable display name aligned with database-backed listings while
       // deliberately preserving the stable listing slug / URL.

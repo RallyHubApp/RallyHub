@@ -9,8 +9,8 @@ export default function CoachesReview() {
  const [selected,setSelected]=useState(new Set()),[preview,setPreview]=useState(-1),[confirm,setConfirm]=useState(null),[busy,setBusy]=useState(false),[report,setReport]=useState([]);
  const allRef=useRef(null);
  const query=useQuery({queryKey:['coach-review'],queryFn:async()=>{
- const rows=await base44.entities.DirectoryListingRecord.filter({listing_type:'coach',status:'active'},'name',100);
- return rows.filter(r=>!['heather-campbell-kelly','mark-topping'].includes(r.slug)).map(r=>({...r,coach:{...parse(r.base_json),name:r.name,slug:r.slug}}));
+ const [rows,profiles]=await Promise.all([base44.entities.DirectoryListingRecord.filter({listing_type:'coach',status:'active'},'name',100),base44.entities.DirectoryListingProfile.filter({status:'active'},'-updated_at',500)]);
+ return rows.filter(r=>!['heather-campbell-kelly','mark-topping'].includes(r.slug)).map(r=>({...r,coach:{...parse(r.base_json),...parse(profiles.find(p=>p.listing_slug===r.slug)?.public_json),name:r.name,slug:r.slug}}));
  }});
  const rows=query.data||[],eligible=rows.filter(r=>r.visibility==='preview_only');
  useEffect(()=>{if(allRef.current)allRef.current.indeterminate=selected.size>0&&selected.size<eligible.length;},[selected.size,eligible.length]);

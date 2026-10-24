@@ -8,6 +8,7 @@ for(const mobile of [false,true])test('coach review '+(mobile?'mobile':'desktop'
  const reply=data=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data)});
  if(path.includes('/entities/DirectoryListingRecord/'))return reply(rows.find(r=>r.id===path.split('/').pop()));
  if(path.endsWith('/entities/DirectoryListingRecord'))return reply(rows);
+ if(path.endsWith('/entities/DirectoryListingProfile'))return reply([]);
  if(path.endsWith('/functions/directoryClaim')&&body.action==='set_visibility'){
  published.push(body.listingSlug);rows=rows.map(r=>r.slug===body.listingSlug?{...r,visibility:body.visibility}:r);return reply({success:true});
  }

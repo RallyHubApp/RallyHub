@@ -385,6 +385,8 @@ Deno.serve(async (req) => {
     }
 
     if (!listingSlug) return responseJson({ error:'listingSlug required' }, 400);
+    const listingRecords = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 1);
+    if (listingRecords?.[0]?.listing_type === 'coach') return responseJson({ error:'Coach enquiries are awaiting verified forwarding. No contact destination is exposed.', awaitingVerification:true }, 409);
     const state = await protectedState(base44, listingSlug);
     if (!state.enabled) return responseJson({ error:'Protected contact actions are not enabled for this listing.', featureDisabled:true, rolloutMode:state.rollout?.mode || 'legacy' }, 404);
     const endpoint = await endpointFor(base44, listingSlug);
