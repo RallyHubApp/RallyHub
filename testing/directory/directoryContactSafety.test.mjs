@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const code=readFileSync('base44/functions/directoryContactAction/entry.ts','utf8');
 const coach=code.slice(code.indexOf("if (listingRecords?.[0]?.listing_type === 'coach')"),code.indexOf('    const state = await protectedState(base44, listingSlug);'));
-const club=code.slice(code.indexOf("if (action === 'send_email')",code.indexOf('    const state = await protectedState(base44, listingSlug);'));
+const club=code.slice(code.indexOf("if (action === 'send_email')",code.indexOf('    const state = await protectedState(base44, listingSlug);')));
 test('coach honeytrap silently acknowledges without sending',()=>assert.match(coach,/if \(clean\(body\.website,200\)\) return responseJson\(\{ success:true, acknowledged:true \}\)/));
 test('coach enquiry saved before verified endpoint forwarding',()=>{
  const save=coach.indexOf('DirectoryContactEnquiry.create(');
