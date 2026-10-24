@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { CoachPortrait } from '@/components/directory/CoachProfile';
+import CoachProfile, { CoachPortrait } from '@/components/directory/CoachProfile';
 const parse = text => { try { return JSON.parse(text || '{}'); } catch { return {}; } };
 export default function CoachesReview() {
  const [selected,setSelected]=useState(new Set()),[preview,setPreview]=useState(-1),[confirm,setConfirm]=useState(null),[busy,setBusy]=useState(false),[report,setReport]=useState([]);
@@ -13,6 +13,8 @@ export default function CoachesReview() {
  return rows.filter(r=>!['heather-campbell-kelly','mark-topping'].includes(r.slug)).map(r=>({...r,coach:{...parse(r.base_json),...parse(profiles.find(p=>p.listing_slug===r.slug)?.public_json),name:r.name,slug:r.slug}}));
  }});
  const rows=query.data||[],eligible=rows.filter(r=>r.visibility==='preview_only');
+ const previewSlug=rows[preview]?.slug;
+ const previewQuery=useQuery({queryKey:['coach-stored-preview',previewSlug],enabled:!!previewSlug,staleTime:0,queryFn:async()=>{const response=await base44.functions.invoke('directoryListingProfile',{action:'private_get',listingSlug:previewSlug});if(!response.data?.success)throw Error(response.data?.error||'Could not load stored coach profile');return {...response.data.base,...response.data.profile,slug:previewSlug};}});
  useEffect(()=>{if(allRef.current)allRef.current.indeterminate=selected.size>0&&selected.size<eligible.length;},[selected.size,eligible.length]);
  const toggle=id=>setSelected(old=>{const next=new Set(old);next.has(id)?next.delete(id):next.add(id);return next;});
  const publish=async()=>{
@@ -43,7 +45,7 @@ export default function CoachesReview() {
  <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={()=>setPreview(i)}>Preview</Button><Button variant="outline" disabled={busy||r.visibility!=='preview_only'} onClick={()=>setConfirm([r])}>Approve</Button><a className="p-2 text-sm underline" href={'/directory/'+r.slug+'/edit'}>Edit coach</a></div>
  </div>)}</div>
  {report.length>0&&<div role="status" className="rounded-xl border p-3">{report.map(r=><p key={r.name}>{r.name}: {r.ok?'Published successfully':r.error}</p>)}</div>}
- <Dialog open={preview>=0} onOpenChange={open=>{if(!open)setPreview(-1)}}><DialogContent className="max-w-6xl h-[92dvh] flex flex-col p-3 sm:p-5"><DialogHeader><DialogTitle>{rows[preview]?.name} · {preview+1} of {rows.length}</DialogTitle><DialogDescription>Actual stored directory profile. Private contact details are excluded.</DialogDescription></DialogHeader><div className="flex gap-2"><Button variant="outline" disabled={preview<=0} onClick={()=>setPreview(i=>i-1)}>Previous</Button><Button variant="outline" disabled={preview>=rows.length-1} onClick={()=>setPreview(i=>i+1)}>Next</Button></div>{rows[preview]&&<iframe title={'Coach preview: '+rows[preview].name} className="w-full flex-1 rounded-xl border bg-background" src={'/directory/'+rows[preview].slug+'?preview=1'}/>}</DialogContent></Dialog>
+ <Dialog open={preview>=0} onOpenChange={open=>{if(!open)setPreview(-1)}}><DialogContent className="max-w-6xl h-[92dvh] flex flex-col p-3 sm:p-5"><DialogHeader><DialogTitle>{rows[preview]?.name} · {preview+1} of {rows.length}</DialogTitle><DialogDescription>Actual stored directory profile. Private contact details are excluded.</DialogDescription></DialogHeader><div className="flex gap-2"><Button variant="outline" disabled={preview<=0} onClick={()=>setPreview(i=>i-1)}>Previous</Button><Button variant="outline" disabled={preview>=rows.length-1} onClick={()=>setPreview(i=>i+1)}>Next</Button></div><div className="flex-1 overflow-y-auto p-1">{previewQuery.isLoading?<p>Loading stored coach profile…</p>:previewQuery.isError?<p role="alert">{previewQuery.error.message}</p>:previewQuery.data&&<CoachProfile key={previewSlug} coach={previewQuery.data} preview/>}</div><a className="text-sm underline" href={'/directory/'+previewSlug+'?preview=1'} target="_blank" rel="noreferrer">Open actual directory profile in a new tab</a>}</DialogContent></Dialog>
  <Dialog open={!!confirm} onOpenChange={open=>{if(!open&&!busy)setConfirm(null)}}><DialogContent><DialogHeader><DialogTitle>Make {confirm?.length||0} coach{confirm?.length===1?'':'es'} public?</DialogTitle><DialogDescription>Only these selected existing listings will become public. Unchecked coaches remain private.</DialogDescription></DialogHeader><ul className="max-h-48 overflow-auto">{confirm?.map(r=><li key={r.id}>{r.name}</li>)}</ul><p className="text-sm text-amber-600">Publication is your approval of the displayed profile. Contact forwarding remains disabled.</p><Button disabled={busy} onClick={publish}>{busy?'Publishing…':'Confirm: Approve & Make Public'}</Button><Button variant="outline" disabled={busy} onClick={()=>setConfirm(null)}>Cancel</Button></DialogContent></Dialog>
  </section>;
 }
