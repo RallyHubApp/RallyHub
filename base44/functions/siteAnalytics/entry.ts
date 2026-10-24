@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
+import { authorisedDirectorySuperAdmin } from '../../shared/directorySuperAdmin.ts';
 
 const EVENT_NAMES = new Set([
   'page_view','page_engagement','directory_view','directory_search','directory_zero_result','county_filter','day_filter',
@@ -192,7 +193,7 @@ Deno.serve(async(req)=>{
     }
 
     const user=await base44.auth.me();
-    if(!user||user.role!=='admin') return Response.json({error:'Admin access required'},{status:403});
+    if(!authorisedDirectorySuperAdmin(user)) return Response.json({error:'Admin access required'},{status:403});
 
     if(action==='admin_dashboard'){
       const days=Math.max(7,Math.min(90,Number(body.days||30)));

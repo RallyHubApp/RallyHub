@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+import { authorisedDirectorySuperAdmin } from '../../shared/directorySuperAdmin.ts';
 
 const DEFAULTS = [
   { key:'club', label:'Club / place to play', plural_label:'Clubs & places to play', description:'Clubs, playing groups and regular places to play pickleball.', active:true, sort_order:10, club_first:true, location_mode:'county', show_public_filter:true, show_listing_form:true, allow_player_notifications:true, commercial_listing:false, entitlement_mode:'free' },
@@ -37,7 +38,7 @@ Deno.serve(async(req)=>{
     }
 
     const user=await base44.auth.me();
-    if(user?.role!=='admin')return Response.json({error:'Admin access required'},{status:403});
+    if(!authorisedDirectorySuperAdmin(user))return Response.json({error:'Admin access required'},{status:403});
 
     if(action==='admin_list'){
       return Response.json({success:true,categories:await rowsOrDefaults(base44),usingDefaults:(await base44.asServiceRole.entities.DirectoryCategory.list('sort_order',1)).length===0});

@@ -1,5 +1,6 @@
 import {rallyHubEmailShellUsingTemplate} from '../../shared/rallyHubPlatformEmail.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
+import { authorisedDirectorySuperAdmin } from '../../shared/directorySuperAdmin.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { importedContactEndpointFor } from './importedContactEndpoints.ts';
 import { NAME_OPTOUT_SLUGS, PHONE_OPTOUT_SLUGS, STATIC_LEGACY_HOLD_SLUGS, staticContactOverrideFor } from './staticContactOverrides.ts';
@@ -321,7 +322,7 @@ Deno.serve(async (req) => {
 
     if (action === 'admin_preview' || action === 'admin_test_resolve' || action === 'admin_set_rollout') {
       const user = await base44.auth.me();
-      if (!user || user.role !== 'admin') return responseJson({ error:'Admin access required' }, 403);
+      if (!authorisedDirectorySuperAdmin(user)) return responseJson({ error:'Admin access required' }, 403);
       if (!listingSlug) return responseJson({ error:'listingSlug required' }, 400);
 
       if (action === 'admin_set_rollout') {
