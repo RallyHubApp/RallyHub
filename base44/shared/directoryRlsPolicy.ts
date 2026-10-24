@@ -1,22 +1,18 @@
-/** Build a two-account direct entity security condition (Base44 simple-equality RLS). */
-export function directorySuperAdminRls(firstId: string, secondId: string) {
-  const valid = (id: unknown) => typeof id === 'string' && /^[a-f0-9]{24}$/i.test(id);
-  if (!valid(firstId) || !valid(secondId) || firstId === secondId) throw new Error('Two distinct verified immutable IDs required');
-  return {
-    $and: [
-      { user_condition: { role: 'admin' } },
-      { $or: [
-        { user_condition: { id: firstId } },
-        { user_condition: { id: secondId } },
-      ] },
-    ],
-  };
+/** Base44 direct-entity access policy for separately governed Directory records.
+ * Privileged Directory operations use authenticated service-role backend functions,
+ * which independently check the two immutable allowed user IDs.
+ * Direct SDK access is denied by default, without embedding static identities in RLS.
+ */
+export function directoryServiceOnlyRls() {
+  return {create:false, read:false, update:false, delete:false};
 }
 
-/** Permit record owners only to read their individual access row, not Directory administration. */
-export function directoryAccessReadRls(firstId: string, secondId: string) {
-  return { $or: [
-    { 'data.user_id': '{{user.id}}' },
-    directorySuperAdminRls(firstId, secondId),
-  ] };
+/** A listing owner/editor may read only their own access grants via the SDK. */
+export function directoryAccessRls() {
+  return {
+    create:false,
+    read:{ 'data.user_id':'{{user.id}}' },
+    update:false,
+    delete:false,
+  };
 }
