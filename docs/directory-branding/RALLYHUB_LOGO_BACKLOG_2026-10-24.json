@@ -205,14 +205,14 @@
       "ownerApprovalPreserved": true,
       "status": "preview_export_ready_awaiting_owner_approval",
       "ownerApproved": false,
-      "previewUrl": "./shankill-official-website-candidate.webp",
-      "localDownload": "./shankill-official-website-candidate.webp",
-      "sha256": "e10773e67d816705799a812124d9a6edf1519bd7362cbb667d2c7971595057a2",
-      "bytes": 3474,
+      "previewUrl": "./shankill-official-website-original.webp",
+      "localDownload": "./shankill-official-website-original.webp",
+      "sha256": "b8f8055bca8f544de3c413e6ad955610c6197dec87e0dc5ac61e87756d415b5c",
+      "bytes": 22310,
       "sourcePriority": "facebook_not_verified_instagram_not_verified_official_website_fallback",
       "website": "https://shankilltennisclub.com/",
-      "sourceImage": "https://shankilltennisclub.com/wp-content/uploads/elementor/thumbs/Shankill-Tennis-Club-Logo-qmh0ljto76fc00ima0z0i5zyo8zcfzatdxyiesdd0g.webp",
-      "note": "Official website logo thumbnail fetched 24 October and visually inspected; small low-resolution thumbnail only. No fresh official Facebook/Instagram avatar verified. Candidate only, not approved or staged."
+      "sourceImage": "https://shankilltennisclub.com/wp-content/uploads/2022/07/Shankill-Tennis-Club-Logo.webp",
+      "note": "Official website original logo (113\u00d7113, white-on-transparent) fetched 24 October and inspected. Small resolution; preview against navy. No fresh official Facebook/Instagram avatar verified. Candidate only; owner approval pending."
     }
   ],
   "priorDecisions": {

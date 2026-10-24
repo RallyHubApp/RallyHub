@@ -21,7 +21,7 @@ Ten unresolved cards reviewed; **one approved logo permanently staged with verif
 **Bluestack:** existing 6,332-byte AVIF readback HTTP 200 but Content-Type application/octet-stream; original JPG/PNG needed for safe display/import. Facebook CDN 403 does not cancel owner approval.
 **Seven hidden:** existing stored images returned HTTP 200 with checksum readback; explicit profile logoUrl:null hides them. Do not override an owner-managed profile without separate publication authorisation.
 **PicklePub:** preserved 15 Oct Facebook candidate exported for review; social avatar not freshly accessible.
-**Shankill:** official website thumbnail downloaded for preview, visually inspected; low resolution, owner approval pending.
+**Shankill:** official website original (113×113, white-on-transparent) downloaded for preview against navy; low resolution, owner approval pending.
 
 Kingdom approved; Annascaul/Kingdom shared branding preserved; East Cork identity/legacy Midleton decisions preserved. No duplicates, no overwrites.
 
