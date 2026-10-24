@@ -41,3 +41,8 @@ test('tenant finance supports read-only preview and explicit sync only',()=>{
  assert.match(server,/if \(action === 'preview'\) \{/);
  assert.match(server,/\['preview','sync'\]\.includes\(action\)/);
 });
+
+test('unauthenticated requests return 401 before any tenant or Spond access',()=>{
+ assert.match(server,/base44\.auth\.me\(\)\.catch\(\(\)=>null\)/);
+ assert.match(server,/if\(!user\)return Response\.json\(\{error:'Authentication required\.'\},\{status:401\}\)/);
+});

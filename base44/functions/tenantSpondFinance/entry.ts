@@ -109,8 +109,9 @@ function dublinParts(value) {
 Deno.serve(async(req)=>{
  try{
   const base44=createClientFromRequest(req);
-  const user=await base44.auth.me();
-  if(!user || user.role!=='admin' || !user.active_tenant_id || !user.active_club_id)
+  const user=await base44.auth.me().catch(()=>null);
+  if(!user)return Response.json({error:'Authentication required.'},{status:401});
+  if(user.role!=='admin' || !user.active_tenant_id || !user.active_club_id)
    return Response.json({error:'Club finance administrator access required.'},{status:403});
   const body=await req.json().catch(()=>({}));
   const action=String(body.action||'');
