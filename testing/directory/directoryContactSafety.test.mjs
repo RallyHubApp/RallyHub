@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const code=readFileSync('base44/functions/directoryContactAction/entry.ts','utf8');
-const coach=code.slice(code.indexOf("if (listingRecords?.[0]?.listing_type === 'coach')"),code.indexOf('    const state = await protectedState(base44, listingSlug);'));
+const coachStart=code.indexOf("if (listingRecords?.[0]?.listing_type === 'coach')");
+const coachEnd=code.indexOf('    const state = await protectedState(base44, listingSlug);',coachStart);
+const coach=code.slice(coachStart,coachEnd);
 const club=code.slice(code.indexOf("if (action === 'send_email')",code.indexOf('    const state = await protectedState(base44, listingSlug);')));
 test('coach honeytrap silently acknowledges without sending',()=>assert.match(coach,/if \(clean\(body\.website,200\)\) return responseJson\(\{ success:true, acknowledged:true \}\)/));
 test('coach enquiry saved before verified endpoint forwarding',()=>{
