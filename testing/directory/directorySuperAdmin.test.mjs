@@ -31,3 +31,10 @@ test('listing owners retain active listing-specific access checks',()=>{
   assert.match(source,/status: ?'active'/);
  }
 });
+
+test('Directory claim administrative endpoints use verified super-admin policy',()=>{
+ const source=readFileSync('base44/functions/directoryClaim/entry.ts','utf8');
+ assert.match(source,/shared\/directorySuperAdmin\.ts/);
+ assert.ok((source.match(/!authorisedDirectorySuperAdmin\(user\)/g)||[]).length >= 10);
+ assert.doesNotMatch(source,/if \(user\.role !== 'admin'\) return Response\.json\(\{ error: 'Admin access required'/);
+});

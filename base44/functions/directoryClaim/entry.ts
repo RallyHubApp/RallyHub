@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
+import { authorisedDirectorySuperAdmin } from '../../shared/directorySuperAdmin.ts';
 import { directoryVerificationIndex } from './contactIndex.ts';
 import { geocodeDirectoryVenue } from './geocode.ts';
 import { rallyHubEmailShellUsingTemplate } from '../../shared/rallyHubPlatformEmail.ts';
@@ -609,7 +610,7 @@ Deno.serve(async (req) => {
     const action = body.action || 'submit';
 
     if (action === 'pending_admin_count') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
       const [claims, listingRequests] = await Promise.all([
         base44.asServiceRole.entities.DirectoryClaim.filter({ status: 'pending' }, '-created_date', 300),
         base44.asServiceRole.entities.DirectoryListingRequest.filter({ status: 'pending' }, '-created_date', 300),
@@ -624,7 +625,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'test_clare_mail_gateway') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
       const to = normaliseEmail(String(body.to || user.email || ''));
       if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
         return Response.json({ error: 'A valid test email address is required.' }, { status: 400 });
@@ -919,7 +920,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'admin_create_unclaimed') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
 
       const clubName = String(body.clubName || '').trim().slice(0, 180);
       const category = await directoryCategoryConfig(base44, body.listingType || 'club');
@@ -1311,7 +1312,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'send_claim_invite') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
       const listingSlug = String(body.listingSlug || '').trim();
       const contactEmail = normaliseEmail(body.contactEmail || '').slice(0, 240);
       const contactName = String(body.contactName || '').trim().slice(0, 160);
@@ -1362,7 +1363,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'create_claim_invite') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
       const listingSlug = String(body.listingSlug || '').trim();
       const contactName = String(body.contactName || '').trim().slice(0, 160);
       const contactEmail = normaliseEmail(body.contactEmail || '').slice(0, 240);
@@ -1422,7 +1423,7 @@ Deno.serve(async (req) => {
 
 
     if (action === 'prepare_resend_invitation') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
       const invitationId = String(body.invitationId || '').trim();
       const rows = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ id: invitationId });
       const previous = rows?.[0];
@@ -1601,7 +1602,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'list_admin') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
       const [claims, accesses, listingRequests, listingRecords, listingProfiles, invitations] = await Promise.all([
         base44.asServiceRole.entities.DirectoryClaim.list('-created_date', 300),
         base44.asServiceRole.entities.DirectoryListingAccess.list('-created_date', 1000),
@@ -1617,7 +1618,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'send_welcome_email') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
       const accessId = String(body.accessId || '').trim();
       if (!accessId) return Response.json({ error: 'accessId required' }, { status: 400 });
       const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ id: accessId });
@@ -1643,7 +1644,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'admin_update_pending_claim_identity') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
       const claimId = String(body.claimId || '').trim();
       const fullName = String(body.fullName || '').trim().slice(0, 160);
       const mobile = String(body.mobile || '').trim().slice(0, 80);
@@ -1717,7 +1718,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'update_verified_identity') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
       const accessId = String(body.accessId || '').trim();
       const fullName = String(body.fullName || '').trim().slice(0, 160);
       const mobile = String(body.mobile || '').trim().slice(0, 80);
@@ -1770,7 +1771,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'directory_broadcast_email') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
       const subject = String(body.subject || '').trim().slice(0, 180);
       const message = String(body.message || '').trim().slice(0, 6000);
       const audience = body.audience === 'opted_in' ? 'opted_in' : 'service';
@@ -1908,7 +1909,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'review') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
       const claimId = String(body.claimId || '').trim();
       const decision = String(body.decision || '').trim();
       const reviewNotes = String(body.reviewNotes || '').trim().slice(0, 1500);
@@ -1976,7 +1977,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'approve_invitation') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
       const invitationId = String(body.invitationId || '').trim();
       if (!invitationId) return Response.json({ error: 'invitationId required' }, { status: 400 });
       const invitations = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ id: invitationId });
@@ -2055,7 +2056,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'review_new') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
       const requestId = String(body.requestId || '').trim();
       const decision = String(body.decision || '').trim();
       const reviewNotes = String(body.reviewNotes || '').trim().slice(0, 1500);
@@ -2218,7 +2219,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'archive_listing') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
       const listingSlug = String(body.listingSlug || '').trim();
       if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
 
@@ -2261,7 +2262,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'revoke') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error: 'Directory super-admin access required' }, { status: 403 });
       const accessId = String(body.accessId || '').trim();
       if (!accessId) return Response.json({ error: 'accessId required' }, { status: 400 });
       const matches = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ id: accessId });
