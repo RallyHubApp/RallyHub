@@ -1,0 +1,1 @@
+import React from 'react';import{createRoot}from'react-dom/client';import{QueryClient,QueryClientProvider}from'@tanstack/react-query';import CoachesReview from '../src/components/admin/CoachesReview';import '../src/index.css';createRoot(document.getElementById('root')).render(<QueryClientProvider client={new QueryClient()}><CoachesReview/></QueryClientProvider>);
