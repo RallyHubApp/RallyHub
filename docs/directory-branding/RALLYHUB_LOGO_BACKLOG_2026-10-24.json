@@ -1,0 +1,225 @@
+{
+  "date": "2026-10-24",
+  "basis": "Live Base44 DirectoryListingRecord/Profile/Access and current static directoryImported/directorySeed, checked 24 Oct; prior 15 Oct owner decisions preserved",
+  "inventory": {
+    "staticImported": 78,
+    "staticCurated": 4,
+    "dynamicPublic": 22,
+    "uniquePublic": 104,
+    "effectiveLogoUrls": 63,
+    "hiddenByExplicitNullProfile": 7,
+    "genuinelyMissing": 34,
+    "attention": 41,
+    "countiesRepresented": 27,
+    "absentCounties": [
+      "Derry",
+      "Fermanagh",
+      "Roscommon",
+      "Tipperary",
+      "Tyrone"
+    ]
+  },
+  "processed": 10,
+  "newVerifiedStagingReceipts": 1,
+  "newPublishedLogos": 0,
+  "directoryRecordsModified": 0,
+  "deployPerformed": false,
+  "backlogComplete": false,
+  "ownerPolicy": "Owner-approved candidates remain approved across transport or import errors; publication remains separate.",
+  "entries": [
+    {
+      "slug": "bluestack-pickleball-club",
+      "name": "Bluestack Pickleball Club",
+      "liveStatus": "missing_or_hidden",
+      "published": false,
+      "ownerApprovalPreserved": true,
+      "status": "approved_asset_hidden_transport_mime_check",
+      "baseAssetUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/52686c7e1_rallyhub-stage-20261015-07-07-bluestack-pickleball-club-saved-from-review.avif",
+      "readback": {
+        "http": 200,
+        "bytes": 6332,
+        "sha256": "3e6a22c5a44eab543d32fa92635e29abd4179a13a3a3d2c59230928fe9a1d36d",
+        "contentType": "application/octet-stream",
+        "transport": "verified_readback"
+      },
+      "sourcePriority": "facebook_owner_selected",
+      "ownerApproved": true,
+      "note": "Owner-selected Bluestack source retained. Existing AVIF readback works but MIME is application/octet-stream; original JPG/PNG still requested for robust import. Facebook CDN source previously 403. No re-research required.",
+      "localDownload": "../2026-10-15/07-bluestack-pickleball-club-saved-from-review.avif",
+      "previewUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/52686c7e1_rallyhub-stage-20261015-07-07-bluestack-pickleball-club-saved-from-review.avif"
+    },
+    {
+      "slug": "cobh-pickleball",
+      "name": "Cobh Pickleball",
+      "liveStatus": "missing_or_hidden",
+      "published": false,
+      "ownerApprovalPreserved": true,
+      "status": "hidden_by_explicit_null_profile",
+      "baseAssetUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/5427dc801_rh-logo-20261014-11-62dd4dd12f5810a4.jpg",
+      "readback": {
+        "http": 200,
+        "bytes": 5931,
+        "sha256": "62dd4dd12f5810a47e0bdc2f4ba82b3bd95fd6635a9a97dc2fa7c60969361fc8",
+        "contentType": "image/jpeg",
+        "transport": "verified_readback"
+      },
+      "sourcePriority": "existing_reviewed_asset_preserved",
+      "note": "Previously imported logo exists in RallyHub storage but live profile logoUrl is explicitly null. Do not overwrite owner profile without separate publication authorisation.",
+      "previewUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/5427dc801_rh-logo-20261014-11-62dd4dd12f5810a4.jpg"
+    },
+    {
+      "slug": "connemara-pickleball-club",
+      "name": "Connemara Pickleball Club",
+      "liveStatus": "missing_or_hidden",
+      "published": false,
+      "ownerApprovalPreserved": true,
+      "status": "hidden_by_explicit_null_profile",
+      "baseAssetUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/721b6cf35_rallyhub-review-20261015-11-8432230aafc947b4.jpg",
+      "readback": {
+        "http": 200,
+        "bytes": 71069,
+        "sha256": "8432230aafc947b4a4f1f5302ac55990cd9e7b2ae70fc62f84927451d8c46aa7",
+        "contentType": "image/jpeg",
+        "transport": "verified_readback"
+      },
+      "sourcePriority": "existing_reviewed_asset_preserved",
+      "note": "Previously imported logo exists in RallyHub storage but live profile logoUrl is explicitly null. Do not overwrite owner profile without separate publication authorisation.",
+      "previewUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/721b6cf35_rallyhub-review-20261015-11-8432230aafc947b4.jpg"
+    },
+    {
+      "slug": "dalkey-pickkeball-club",
+      "name": "Dalkey Pickleball Club",
+      "liveStatus": "missing_or_hidden",
+      "published": false,
+      "ownerApprovalPreserved": true,
+      "status": "hidden_by_explicit_null_profile",
+      "baseAssetUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/ae3a25cc4_rallyhub-stage-20261015-55-55-user-reviewed-20261015.jpg",
+      "readback": {
+        "http": 200,
+        "bytes": 7634,
+        "sha256": "af1319ffa6d87c5d3904c78e80a28d32f474b2d8fb7224f04449e0fd899ead60",
+        "contentType": "image/jpeg",
+        "transport": "verified_readback"
+      },
+      "sourcePriority": "existing_reviewed_asset_preserved",
+      "note": "Previously imported logo exists in RallyHub storage but live profile logoUrl is explicitly null. Do not overwrite owner profile without separate publication authorisation.",
+      "previewUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/ae3a25cc4_rallyhub-stage-20261015-55-55-user-reviewed-20261015.jpg"
+    },
+    {
+      "slug": "multyfarnham-pickleball-club",
+      "name": "Multyfarnham Pickleball Club",
+      "liveStatus": "missing_or_hidden",
+      "published": false,
+      "ownerApprovalPreserved": true,
+      "status": "hidden_by_explicit_null_profile",
+      "baseAssetUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/b9b000a7f_rh-logo-20261014-25-42db1fba20e07640.jpg",
+      "readback": {
+        "http": 200,
+        "bytes": 27838,
+        "sha256": "42db1fba20e0764002df70873db4a3cbde24cbaf2b0d2e74082ea49ce529c88c",
+        "contentType": "image/jpeg",
+        "transport": "verified_readback"
+      },
+      "sourcePriority": "existing_reviewed_asset_preserved",
+      "note": "Previously imported logo exists in RallyHub storage but live profile logoUrl is explicitly null. Do not overwrite owner profile without separate publication authorisation.",
+      "previewUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/b9b000a7f_rh-logo-20261014-25-42db1fba20e07640.jpg"
+    },
+    {
+      "slug": "southside-pickleball-club",
+      "name": "Southside Pickleball Club",
+      "liveStatus": "missing_or_hidden",
+      "published": false,
+      "ownerApprovalPreserved": true,
+      "status": "hidden_by_explicit_null_profile",
+      "baseAssetUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/e818d47f7_rh-logo-20261014-36-08fc83e51d6eba26.png",
+      "readback": {
+        "http": 200,
+        "bytes": 36022,
+        "sha256": "08fc83e51d6eba2645133bfe418a08a791172551e24a13b4eb7e9cf0161b7e9f",
+        "contentType": "image/png",
+        "transport": "verified_readback"
+      },
+      "sourcePriority": "existing_reviewed_asset_preserved",
+      "note": "Previously imported logo exists in RallyHub storage but live profile logoUrl is explicitly null. Do not overwrite owner profile without separate publication authorisation.",
+      "previewUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/e818d47f7_rh-logo-20261014-36-08fc83e51d6eba26.png"
+    },
+    {
+      "slug": "terenure-pickleball-club",
+      "name": "Terenure Pickleball Club",
+      "liveStatus": "missing_or_hidden",
+      "published": false,
+      "ownerApprovalPreserved": true,
+      "status": "hidden_by_explicit_null_profile",
+      "baseAssetUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/fd38c5a9a_rh-logo-20261014-38-b52f73a956aa5959.jpg",
+      "readback": {
+        "http": 200,
+        "bytes": 50525,
+        "sha256": "b52f73a956aa59595f4b83ed17cd0a45ad63ec899c4ccac56b9330c3215e7456",
+        "contentType": "image/jpeg",
+        "transport": "verified_readback"
+      },
+      "sourcePriority": "existing_reviewed_asset_preserved",
+      "note": "Previously imported logo exists in RallyHub storage but live profile logoUrl is explicitly null. Do not overwrite owner profile without separate publication authorisation.",
+      "previewUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/fd38c5a9a_rh-logo-20261014-38-b52f73a956aa5959.jpg"
+    },
+    {
+      "slug": "coolmine-pickleheads-club",
+      "name": "Coolmine Pickleheads Club",
+      "liveStatus": "missing_or_hidden",
+      "published": false,
+      "ownerApprovalPreserved": true,
+      "status": "owner_approved_staged_verified_not_published",
+      "ownerApproved": true,
+      "previewUrl": "https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/90916fa80_rallyhub-approved-coolmine-pickleheads-068d8267233f41b0.png",
+      "stagedUrl": "https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/90916fa80_rallyhub-approved-coolmine-pickleheads-068d8267233f41b0.png",
+      "localDownload": "../2026-10-15/46-coolmine-owner-approved-preview.png",
+      "sha256": "068d8267233f41b062bfb1a2cafb5cdfdf67e9ee6473c529f74aa13e6be616cf",
+      "bytes": 64402,
+      "stagingReceiptId": "6adc5883f7bd0ef41a39aa03",
+      "stagingReadback": "HTTP 200, exact SHA-256 match",
+      "sourcePriority": "owner_approved_15_oct_review",
+      "note": "Owner-approved image staged in permanent RallyHub media, checksum readback verified; not published. No existing owner-uploaded logo found on this listing."
+    },
+    {
+      "slug": "picklepub-club",
+      "name": "PicklePub Club",
+      "liveStatus": "missing_or_hidden",
+      "published": false,
+      "ownerApprovalPreserved": true,
+      "status": "preview_export_ready_awaiting_owner_approval",
+      "ownerApproved": false,
+      "previewUrl": "./picklepub-facebook-candidate.jpg",
+      "localDownload": "./picklepub-facebook-candidate.jpg",
+      "sha256": "b2212bf65feacab895546dd6edd4e6b337ebb0078b522a260c37b28115c7e89c",
+      "bytes": 60303,
+      "sourcePriority": "facebook_first_15_oct_candidate",
+      "facebook": "https://www.facebook.com/share/1BhfxVQAhU/",
+      "instagram": "https://www.instagram.com/picklepub.ireland/",
+      "note": "15 October Facebook-derived candidate visually inspected from preserved file. No fresh live Facebook image access established; requires owner visual approval before staging/publishing."
+    },
+    {
+      "slug": "shankill-tennis-club",
+      "name": "Shankill Tennis Club",
+      "liveStatus": "missing_or_hidden",
+      "published": false,
+      "ownerApprovalPreserved": true,
+      "status": "preview_export_ready_awaiting_owner_approval",
+      "ownerApproved": false,
+      "previewUrl": "./shankill-official-website-candidate.webp",
+      "localDownload": "./shankill-official-website-candidate.webp",
+      "sha256": "e10773e67d816705799a812124d9a6edf1519bd7362cbb667d2c7971595057a2",
+      "bytes": 3474,
+      "sourcePriority": "facebook_not_verified_instagram_not_verified_official_website_fallback",
+      "website": "https://shankilltennisclub.com/",
+      "sourceImage": "https://shankilltennisclub.com/wp-content/uploads/elementor/thumbs/Shankill-Tennis-Club-Logo-qmh0ljto76fc00ima0z0i5zyo8zcfzatdxyiesdd0g.webp",
+      "note": "Official website logo thumbnail fetched 24 October and visually inspected; small low-resolution thumbnail only. No fresh official Facebook/Instagram avatar verified. Candidate only, not approved or staged."
+    }
+  ],
+  "priorDecisions": {
+    "kingdom": "approved; existing effective logo; unchanged",
+    "annascaul": "Kingdom shared image permitted; effective URL; unchanged",
+    "eastCork": "Valid approved logo retained; no Midleton duplicate slug found in 22 Oct reconciliation",
+    "bluestack": "approval preserved; original JPG/PNG requested due historical CDN 403",
+    "coolmine": "approved image accepted and staged; no owner-uploaded conflict found"
+  }
+}
