@@ -26,3 +26,6 @@
 
 ## Regression update
 The existing member/guest test gate failed because two source-string assertions were stale: experienced guests now reset previous-sport fields using a conditional object spread, and beginner venue guidance now includes Clarecastle and Shannon. The test assertions were updated to match inspected behaviour; no production guest form was changed. Afterward the member/guest booking gate passed. Tenant finance route source-contract checks and Directory tests passed; live Spond API/tenant-authenticated acceptance is still pending.
+
+## Follow-up boundary closure
+The legacy `directory_finance_preview` and `directory_finance_sync` actions now return 403 instead of processing tenant finance under Directory editor access. The separate `tenantSpondFinance` function is the approved tenant route. `spondIntegrationWorking.directoryAccessAllowed` no longer accepts every generic platform admin. All related source tests pass. Authenticated backend and real Spond UAT are still outstanding, and no production finance records were touched.
