@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const server=readFileSync('base44/functions/tenantSpondFinance/entry.ts','utf8');
 const client=readFileSync('src/pages/FinanceSummary.jsx','utf8');
-const legacy=readFileSync('base44/functions/spondIntegrationWorking/entry.ts','utf8');
+const matcher=readFileSync('base44/functions/spondIntegrationWorking/financeMatch.mjs','utf8');
 test('tenant Finance previews and syncs only through dedicated backend',()=>{
  assert.match(client,/functions\.invoke\('tenantSpondFinance',\{ action:'preview'/);
  assert.match(client,/functions\.invoke\('tenantSpondFinance',\{ action:'sync'/);
@@ -27,7 +27,7 @@ test('tenant finance only reads/writes tenant-scoped finance records',()=>{
 test('tenant finance retains the matching and payment calculation contracts extracted from the previous adapter',()=>{
  for(const fragment of ['financeSpondPatternKey(', 'findFinanceRuleForEvent(', 'financeRuleIsSelected(', 'financeResponseMeta(event, fee)', 'paidPlaces = response.goingCount + response.declinedPaidCount', 'financialYearLabelFor(activityDate,fyMonth,fyDay)', 'source_type:\'spond_session\'']){
   assert.ok(server.includes(fragment),fragment);
-  assert.ok(fragment.includes('financeSpondPatternKey(') ? legacy.includes('financeSpondPatternKey(') : true);
+  if(['financeSpondPatternKey(', 'findFinanceRuleForEvent(', 'financeRuleIsSelected('].includes(fragment)) assert.ok(matcher.includes('function '+fragment)||matcher.includes('export function '+fragment),fragment);
  }
 });
 test('tenant finance supports read-only preview and explicit sync only',()=>{
