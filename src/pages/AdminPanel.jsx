@@ -29,7 +29,7 @@ export default function AdminPanel() {
   const [searchParams, setSearchParams] = useSearchParams();
   const canAccessAdmin = user?.role === 'admin';
   // Tenant administration and Directory administration are independent capabilities.
-  const directoryTabNames = ['directory', 'directory-contacts', 'directory-players', 'directory-analytics'];
+  const directoryTabNames = ['directory-command', 'directory-crm', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics'];
   const { data: directoryCapability } = useQuery({
     queryKey: ['directory-admin-capability', user?.id],
     queryFn: async () => {
@@ -42,10 +42,11 @@ export default function AdminPanel() {
   });
   const canAccessDirectoryAdmin = canAccessAdmin && directoryCapability === true;
 
-  const allowedAdminTabs = ['linking', 'preview', 'announcements', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'feedback', 'control-library', 'dupr', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
+  const allowedAdminTabs = ['linking', 'preview', 'announcements', 'directory-command', 'directory-crm', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'feedback', 'control-library', 'dupr', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
   const rawAdminTab = requestedTab === 'approvals' ? 'linking' : allowedAdminTabs.includes(requestedTab) ? requestedTab : 'linking';
   const activeAdminTab = directoryTabNames.includes(rawAdminTab) && !canAccessDirectoryAdmin ? 'linking' : rawAdminTab;
+  const directoryContext = directoryTabNames.includes(activeAdminTab);
   const directoryFocus = searchParams.get('focus');
   const queryClient = useQueryClient();
 
@@ -190,6 +191,7 @@ export default function AdminPanel() {
   const [welcomeBusy, setWelcomeBusy] = useState('');
   const [directoryContactSearch, setDirectoryContactSearch] = useState('');
   const [directoryPlayerSearch, setDirectoryPlayerSearch] = useState('');
+  const [directoryCrmSearch, setDirectoryCrmSearch] = useState('');
   const [editingDirectoryContact, setEditingDirectoryContact] = useState(null);
   const [directoryContactEditForm, setDirectoryContactEditForm] = useState({ fullName: '', mobile: '' });
   const [savingDirectoryIdentity, setSavingDirectoryIdentity] = useState(false);
@@ -370,7 +372,7 @@ export default function AdminPanel() {
       if (res.data?.error) throw new Error(res.data.error);
       return res.data || { counts: {}, subscribers: [] };
     },
-    enabled: canAccessDirectoryAdmin && activeAdminTab === 'directory-players'
+    enabled: canAccessDirectoryAdmin && ['directory-command', 'directory-crm', 'directory-players'].includes(activeAdminTab)
   });
 
   const { data: clubFeedbackRows = [] } = useQuery({
@@ -1543,6 +1545,14 @@ Brian`;
       .some(value => String(value ?? '').toLowerCase().includes(q));
   });
   const activeDirectoryPlayerRows = directoryPlayerRows.filter(row => row.status === 'active' && (row.emailOptIn || row.whatsappOptIn));
+  // Directory CRM is a read-only presentation of independent domain records.
+  // Never import tenant guests/members or merge people merely by name/email.
+  const directoryCrmRows = [
+    ...directoryContactRows.map(row => ({key:`owner:${row.userId}`,name:row.fullName,email:row.email,mobile:row.mobile,detail:row.clubs.map(club=>club.name).join(', '),type:'Verified owner / editor',source:'directory-contacts',consent:row.networkUpdatesOptIn?'Network updates opted in':'Service contact only'})),
+    ...directoryPlayerRows.map(row => ({key:`subscriber:${row.id}`,name:row.fullName||row.firstName,email:row.email,mobile:row.mobile,detail:[row.clubName,row.county].filter(Boolean).join(' · '),type:'Player Network',source:'directory-players',consent:row.status==='active' ? [row.emailOptIn&&'Email opted in',row.whatsappOptIn&&'WhatsApp opted in'].filter(Boolean).join(' · ')||'No active marketing opt-in' : 'Unsubscribed'}))
+  ];
+  const filteredDirectoryCrmRows = directoryCrmRows.filter(row=>[row.name,row.email,row.mobile,row.detail,row.type].join(' ').toLowerCase().includes(directoryCrmSearch.trim().toLowerCase()));
+
 
   const downloadDirectoryPlayerCsv = () => {
     const headings = ['First name','Email','Mobile / WhatsApp','Club','County','DUPR rating','Email opt-in','WhatsApp/SMS opt-in','Status','Consent date'];
@@ -1654,14 +1664,17 @@ Brian`;
 
   return (
     <div className="space-y-6">
-      <PageHeader title={activeAdminTab === 'directory' ? 'Directory Admin' : activeAdminTab === 'directory-contacts' ? 'Directory Contacts' : activeAdminTab === 'directory-players' ? 'Player Network' : activeAdminTab === 'directory-analytics' ? 'Directory Analytics' : activeAdminTab === 'announcements' ? 'Announcements' : 'Admin Panel'} description={activeAdminTab === 'directory' ? 'Directory ownership, invitations, claims and listing access' : activeAdminTab === 'directory-contacts' ? 'Private verified owner and editor contact register' : activeAdminTab === 'directory-players' ? 'National opted-in pickleball player distribution list' : activeAdminTab === 'directory-analytics' ? 'Traffic, search visibility and commercial audience evidence' : activeAdminTab === 'announcements' ? 'Review and customise automatic hall announcements' : 'Site owner control panel'}>
-        <Badge className="bg-destructive/20 text-destructive gap-1.5">
-          <Shield className="w-3 h-3" /> Admin Only
-        </Badge>
+      <PageHeader title={directoryContext ? 'Directory Command Centre' : activeAdminTab === 'announcements' ? 'Announcements' : 'RallyHub / Clare Pickleball Admin'} description={directoryContext ? 'Independent Directory administration · people, listings, consent and analytics' : 'RallyHub platform and Clare Pickleball tenant administration'}>
+        <Badge className="bg-destructive/20 text-destructive gap-1.5"><Shield className="w-3 h-3" /> Admin Only</Badge>
       </PageHeader>
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-secondary/40 p-2" aria-label="Administration workspace switch">
+        {canAccessDirectoryAdmin && <Button type="button" size="sm" variant={directoryContext?'default':'outline'} onClick={()=>setSearchParams({tab:'directory-command'})}>Directory Command Centre</Button>}
+        <Button type="button" size="sm" variant={!directoryContext?'default':'outline'} onClick={()=>setSearchParams({tab:'linking'})}>RallyHub / Clare Pickleball Admin</Button>
+        <span className="text-xs text-muted-foreground sm:ml-auto">{directoryContext?'Directory-only data and controls':'Platform and tenant operations'}</span>
+      </div>
 
       {/* Context-specific dashboard summary */}
-      {activeAdminTab === 'directory' ? (
+      {['directory', 'directory-command'].includes(activeAdminTab) ? (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5 sm:gap-3">
           <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection('directory-clubs')} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection('directory-clubs'); } }} delay={0} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-primary/40 hover:bg-primary/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
             <p className="text-2xl sm:text-3xl font-black text-foreground">{directoryVerificationError ? <button type="button" className="text-sm underline text-destructive" disabled={directoryVerificationFetching} onClick={() => retryDirectoryVerification()} title={directoryVerificationFailure?.message || 'Directory load failed'}>{directoryVerificationFetching ? 'Retrying…' : 'Load failed — Retry'}</button> : directoryVerificationFetched ? directoryAdminListings.length : '—'}</p>
@@ -1701,7 +1714,7 @@ Brian`;
           <GlassCard className="min-h-[112px] p-3 sm:p-4"><p className="text-2xl sm:text-3xl font-black text-green-500">{directoryPlayerNetwork.counts?.whatsapp || 0}</p><p className="mt-1 text-xs sm:text-sm font-semibold">WhatsApp opt-ins</p><p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">Available for mobile updates</p></GlassCard>
           <GlassCard className="min-h-[112px] p-3 sm:p-4"><p className="text-2xl sm:text-3xl font-black text-amber-500">{directoryPlayerNetwork.counts?.counties || 0}</p><p className="mt-1 text-xs sm:text-sm font-semibold">Counties represented</p><p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">National reach</p></GlassCard>
         </div>
-      ) : activeAdminTab === 'directory-contacts' || activeAdminTab === 'directory-analytics' ? null : (
+      ) : activeAdminTab === 'directory-contacts' || activeAdminTab === 'directory-crm' || activeAdminTab === 'directory-analytics' ? null : (
         <GlassCard role="button" tabIndex={0} onClick={() => { window.location.href='/app/membership'; }} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.location.href='/app/membership'; } }} className="cursor-pointer hover:border-primary/40 hover:bg-primary/5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -1725,51 +1738,66 @@ Brian`;
         if (value === 'directory' && pendingDirectoryActionCount > 0) return setSearchParams({ tab: 'directory', focus: 'pending-actions' });
         setSearchParams({ tab: value });
       }}>
-        <TabsList className="bg-secondary flex-wrap h-auto gap-1">
-          <TabsTrigger value="preview" className="text-xs gap-1.5">
-            <Eye className="w-3.5 h-3.5" /> Member Preview
-          </TabsTrigger>
-          <TabsTrigger value="announcements" className="text-xs gap-1.5">
-            <Megaphone className="w-3.5 h-3.5" /> Announcements
-          </TabsTrigger>
-          {canAccessDirectoryAdmin && (<>
-          <TabsTrigger value="directory" className="text-xs gap-1.5" onClick={() => {
-            if (activeAdminTab !== 'directory' || pendingDirectoryActionCount <= 0) return;
-            const target = document.querySelector('[data-directory-action="pending-claim"][data-has-pending="true"]')
-              || document.querySelector('[data-directory-action="new-club"][data-has-pending="true"]');
-            target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }}>
-            <UserCheck className="w-3.5 h-3.5" /> Directory Claims
-            {pendingDirectoryActionCount > 0 && (
-              <span className="ml-1 bg-amber-400 text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{pendingDirectoryActionCount}</span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="directory-contacts" className="text-xs gap-1.5">
-            <Users className="w-3.5 h-3.5" /> Directory Contacts
-          </TabsTrigger>
-          <TabsTrigger value="directory-players" className="text-xs gap-1.5">
-            <Users className="w-3.5 h-3.5" /> Player Network
-          </TabsTrigger>
-          <TabsTrigger value="directory-analytics" className="text-xs gap-1.5">
-            <Eye className="w-3.5 h-3.5" /> Directory Analytics
-          </TabsTrigger>
+        <TabsList className="bg-secondary flex-wrap h-auto gap-1" aria-label={directoryContext ? 'Directory Command Centre navigation' : 'RallyHub administration navigation'}>
+          {directoryContext ? (<>
+            <TabsTrigger value="directory-command" className="text-xs gap-1.5"><BookOpen className="w-3.5 h-3.5" /> Overview</TabsTrigger>
+            <TabsTrigger value="directory-crm" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> People & CRM</TabsTrigger>
+            <TabsTrigger value="directory" className="text-xs gap-1.5"><UserCheck className="w-3.5 h-3.5" /> Listings & Claims {pendingDirectoryActionCount > 0 && <span className="rounded-full bg-amber-400 px-1.5 text-[10px] text-black">{pendingDirectoryActionCount}</span>}</TabsTrigger>
+            <TabsTrigger value="directory-contacts" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Owners & Editors</TabsTrigger>
+            <TabsTrigger value="directory-players" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Player Network</TabsTrigger>
+            <TabsTrigger value="directory-analytics" className="text-xs gap-1.5"><Eye className="w-3.5 h-3.5" /> Analytics</TabsTrigger>
+          </>) : (<>
+            <TabsTrigger value="preview" className="text-xs gap-1.5"><Eye className="w-3.5 h-3.5" /> Member Preview</TabsTrigger>
+            <TabsTrigger value="announcements" className="text-xs gap-1.5"><Megaphone className="w-3.5 h-3.5" /> Announcements</TabsTrigger>
+            <TabsTrigger value="feedback" className="text-xs gap-1.5"><MessageCircle className="w-3.5 h-3.5" /> Feedback</TabsTrigger>
+            <TabsTrigger value="control-library" className="text-xs gap-1.5"><BookOpen className="w-3.5 h-3.5" /> Control Library</TabsTrigger>
+            <TabsTrigger value="dupr" className="text-xs gap-1.5"><ShieldCheck className="w-3.5 h-3.5" /> DUPR UAT</TabsTrigger>
+            <TabsTrigger value="assets" className="text-xs gap-1.5"><Upload className="w-3.5 h-3.5" /> Platform Assets</TabsTrigger>
+            <TabsTrigger value="users" className="text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Users & Roles</TabsTrigger>
+            <TabsTrigger value="players" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Club Players</TabsTrigger>
+            <TabsTrigger value="matches" className="text-xs gap-1.5"><Swords className="w-3.5 h-3.5" /> Matches</TabsTrigger>
+            <TabsTrigger value="linking" className="text-xs gap-1.5"><Link2 className="w-3.5 h-3.5" /> Accounts & Approvals {pendingPlatformApprovalCount > 0 && <span className="rounded-full bg-yellow-500 px-1.5 text-[10px] font-bold text-black">{pendingPlatformApprovalCount}</span>}</TabsTrigger>
+            <TabsTrigger value="invitations" className="text-xs gap-1.5"><Mail className="w-3.5 h-3.5" /> Invite Users</TabsTrigger>
           </>)}
-          <TabsTrigger value="feedback" className="text-xs gap-1.5">
-            <MessageCircle className="w-3.5 h-3.5" /> Feedback
-            {clubFeedbackRows.filter(row => row.status === 'new').length > 0 && (
-              <span className="ml-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{clubFeedbackRows.filter(row => row.status === 'new').length}</span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="control-library" className="text-xs gap-1.5"><BookOpen className="w-3.5 h-3.5" /> Control Library</TabsTrigger>
-          <TabsTrigger value="dupr" className="text-xs gap-1.5"><ShieldCheck className="w-3.5 h-3.5" /> DUPR UAT</TabsTrigger>
-          <TabsTrigger value="assets" className="text-xs gap-1.5"><Upload className="w-3.5 h-3.5" /> Asset Uploader</TabsTrigger>
-          <TabsTrigger value="users" className="text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Users & Roles</TabsTrigger>
-          <TabsTrigger value="players" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Players</TabsTrigger>
-          <TabsTrigger value="matches" className="text-xs gap-1.5"><Swords className="w-3.5 h-3.5" /> Matches</TabsTrigger>
-          <TabsTrigger value="linking" className="text-xs gap-1.5"><Link2 className="w-3.5 h-3.5" /> Accounts & Approvals {pendingPlatformApprovalCount > 0 && <span className="rounded-full bg-yellow-500 px-1.5 text-[10px] font-bold text-black">{pendingPlatformApprovalCount}</span>}</TabsTrigger>
-          <TabsTrigger value="invitations" className="text-xs gap-1.5"><Mail className="w-3.5 h-3.5" /> Invite Users</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="directory-command" className="mt-4">
+          <div className="glass rounded-xl p-5 space-y-4">
+            <h2 className="text-xl font-bold">Directory Command Centre</h2>
+            <p className="text-sm text-muted-foreground">A separate business domain. Only verified Directory super-administrators can use this workspace; club guests, members and matches remain in RallyHub / Clare Pickleball Admin.</p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                ['People & CRM','directory-crm','Owners, editors and national player subscribers'],
+                ['Listings & Claims','directory','Listing verification, invitations, coaches and categories'],
+                ['Owners & Editors','directory-contacts','Verified Directory contacts and permissions'],
+                ['Player Network','directory-players','National opt-in register and consent'],
+                ['Directory Analytics','directory-analytics','Traffic and engagement reporting'],
+              ].map(([label,tab,description])=><button type="button" key={tab} onClick={()=>setSearchParams({tab})} className="rounded-xl border border-border bg-background/40 p-4 text-left hover:border-primary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"><strong className="block">{label}</strong><span className="mt-1 block text-xs text-muted-foreground">{description}</span></button>)}
+            </div>
+            <p className="text-xs text-muted-foreground">Directory enquiries are captured separately; a combined admin enquiry inbox is still pending. No consent or person records are automatically shared with tenants.</p>
+          </div>
+        </TabsContent>
+        <TabsContent value="directory-crm" className="mt-4">
+          <div className="glass rounded-xl p-5 space-y-4">
+            <h2 className="text-xl font-bold">Directory People & CRM</h2>
+            <p className="text-sm text-muted-foreground">One read-only register of existing Directory owner/editor identities and Player Network subscribers. Each source record remains independent, even where the same person appears in more than one group.</p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border p-3"><strong className="text-2xl">{directoryContactRows.length}</strong><p className="text-xs text-muted-foreground">Verified owners / editors</p></div>
+              <div className="rounded-lg border p-3"><strong className="text-2xl">{directoryPlayerRows.length}</strong><p className="text-xs text-muted-foreground">Player subscriptions (including unsubscribed)</p></div>
+              <div className="rounded-lg border p-3"><strong className="text-2xl">—</strong><p className="text-xs text-muted-foreground">Enquiries · inbox integration pending</p></div>
+            </div>
+            <Input value={directoryCrmSearch} onChange={event=>setDirectoryCrmSearch(event.target.value)} placeholder="Search Directory people by name, contact or club" aria-label="Search Directory CRM" />
+            <p className="text-xs text-muted-foreground">Showing {filteredDirectoryCrmRows.length} source records · no tenant guests or members included.</p>
+            <div className="max-h-[32rem] space-y-2 overflow-y-auto">
+              {filteredDirectoryCrmRows.map(row=><div key={row.key} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3">
+                <div className="min-w-0"><div className="flex items-center gap-2"><strong>{row.name||'Unnamed contact'}</strong><Badge variant="outline">{row.type}</Badge></div><p className="break-all text-xs text-muted-foreground">{[row.email,row.mobile,row.detail].filter(Boolean).join(' · ')}</p><p className="text-xs text-muted-foreground">{row.consent}</p></div>
+                <Button type="button" size="sm" variant="outline" onClick={()=>setSearchParams({tab:row.source})}>View source record</Button>
+              </div>)}
+              {!filteredDirectoryCrmRows.length && <p className="p-5 text-center text-sm text-muted-foreground">No Directory records match this search.</p>}
+            </div>
+            <div className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">Enquiries and interaction history are stored separately. A consolidated enquiry inbox has not yet been implemented; this view does not imply that enquiries are already searchable here.</div>
+          </div>
+        </TabsContent>
         {/* ── MEMBER PREVIEW TAB ── */}
         <TabsContent value="preview" className="mt-4">
           <div className="space-y-4">
