@@ -472,17 +472,8 @@ Deno.serve(async (req) => {
         if (endpoint.listing_name_snapshot !== publicName) await base44.asServiceRole.entities.DirectoryContactEndpoint.update(endpoint.id, { listing_name_snapshot:publicName, updated_by_user_id:user.id, updated_at:now });
       }
 
-      if (String(dynamic.listing_type || 'club') !== 'club') {
-        const clubs = await base44.asServiceRole.entities.Club.filter({ slug:listingSlug, status:'active' }, '-updated_date', 10).catch(()=>[]);
-        for (const club of clubs || []) {
-          if (club.name !== publicName) await base44.asServiceRole.entities.Club.update(club.id, { name:publicName });
-        }
-        const tenantSlug = `directory-${listingSlug}`.slice(0, 150);
-        const tenants = await base44.asServiceRole.entities.Tenant.filter({ slug:tenantSlug, status:'active' }, '-updated_date', 10).catch(()=>[]);
-        for (const tenant of tenants || []) {
-          if (tenant.name !== publicName) await base44.asServiceRole.entities.Tenant.update(tenant.id, { name:publicName });
-        }
-      }
+      // Directory identity confirmation updates Directory-owned records only.
+      // Tenant/Club identity changes require a separate explicit, audited action.
 
       invalidatePublicListCache();
       invalidatePublicGetCache(listingSlug);

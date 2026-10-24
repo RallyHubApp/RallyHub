@@ -16,3 +16,18 @@ for(const f of ['directoryCategory','directoryContactAction','siteAnalytics','di
  assert.match(source,/authorisedDirectorySuperAdmin\(user\)/);
  assert.match(source,/shared\/directorySuperAdmin\.ts/);
 });
+
+test('Directory identity confirmation never renames tenant or club records',()=>{
+ const source=readFileSync('base44/functions/directoryListingProfile/entry.ts','utf8');
+ assert.doesNotMatch(source,/entities\.(?:Club|Tenant)\.update\(/);
+ assert.match(source,/separate explicit, audited action/);
+});
+test('listing owners retain active listing-specific access checks',()=>{
+ for(const file of ['directoryEvents','directoryListingProfile']){
+  const source=readFileSync('base44/functions/'+file+'/entry.ts','utf8');
+  assert.match(source,/DirectoryListingAccess\.filter\(/);
+  assert.match(source,/listing_slug: ?listingSlug/);
+  assert.match(source,/user_id: ?user\.id/);
+  assert.match(source,/status: ?'active'/);
+ }
+});
