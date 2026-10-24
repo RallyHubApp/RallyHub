@@ -1,3 +1,4 @@
+import CoachEditor from '@/components/directory/CoachEditor';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { CircleMarker, MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
@@ -827,6 +828,8 @@ export default function DirectoryListingEdit() {
       ? 'Previous Spond-imported sessions were replaced. Manually entered sessions were preserved. Review the result below, then press Save changes.'
       : 'Spond import merged safely. Existing sessions were preserved and matching duplicates were skipped. Review the result below, then press Save changes.');
   };
+
+  if (!loadingListing && !loadingAccess && form && listingType === 'coach' && (user?.role === 'admin' || access?.hasAccess)) return <CoachEditor key={slug} initial={form} slug={slug}/>;
 
   if (!loadingListing && !baseClub) return <Navigate to="/directory" replace />;
 

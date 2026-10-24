@@ -325,6 +325,15 @@ function sanitiseProfile(input:any) {
   })).filter((s:any) => s.venueId && s.start));
 
   return {
+    listingType: nullable(input?.listingType, 60),
+    photoUrl: safeUrl(input?.photoUrl),
+    town: nullable(input?.town, 160),
+    county: nullable(input?.county, 160),
+    qualifications: (Array.isArray(input?.qualifications) ? input.qualifications : []).slice(0,30).map((v:any)=>clean(v,300)).filter(Boolean),
+    coachingExperience: nullable(input?.coachingExperience, 1600),
+    coachingServices: (Array.isArray(input?.coachingServices) ? input.coachingServices : []).slice(0,30).map((v:any)=>clean(v,300)).filter(Boolean),
+    areasServed: (Array.isArray(input?.areasServed) ? input.areasServed : []).slice(0,32).map((v:any)=>clean(v,160)).filter(Boolean),
+    linkedin: safeUrl(input?.linkedin),
     name: nullable(input?.name, 220),
     description: nullable(input?.description, 1600),
     membershipStatus: nullable(input?.membershipStatus, 240),
