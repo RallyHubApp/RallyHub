@@ -1,4 +1,4 @@
-import {rallyHubEmailShell} from ./shared/rallyHubPlatformEmail.ts';
+import {rallyHubEmailShell} from './shared/rallyHubPlatformEmail.ts';
 const APP_BASE_URL='https://rallyhub.ie';
 function escapeHtml(value:string){return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function basicStyle(style:any={},fallback:any={}){const s={...fallback,...(style||{})};return `font-size:${Number(s.size||13)}px;font-weight:${s.bold?800:400};font-style:${s.italic?'italic':'normal'};text-decoration:${s.underline?'underline':'none'};color:${escapeHtml(String(s.color||'#172033'))};text-align:${['center','right'].includes(String(s.align||''))?String(s.align):'left'};${s.shadow?'text-shadow:0 1px 2px rgba(15,23,42,.22);':''}`;}
