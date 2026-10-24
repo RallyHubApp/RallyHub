@@ -17,7 +17,7 @@ test('none of the Directory entities expose direct generic-admin access',()=>{
 test('all Directory writes are service-only; non-owner reads fail closed',()=>{
  for(const {schema,name} of configs){
   for(const op of ['create','update','delete'])assert.equal(schema.rls[op],false,`${name}:${op}`);
-  if(name==='DirectoryListingAccess')assert.deepEqual(schema.rls.read,{'data.user_id':'{{user.id}}'});
+  if(schema.name==='DirectoryListingAccess')assert.deepEqual(schema.rls.read,{'data.user_id':'{{user.id}}'});
   else assert.equal(schema.rls.read,false,`${name}:read`);
  }
 });
