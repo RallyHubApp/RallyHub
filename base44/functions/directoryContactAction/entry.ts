@@ -414,16 +414,20 @@ Deno.serve(async (req) => {
         const enquiry = await base44.asServiceRole.entities.DirectoryContactEnquiry.create({listing_slug:listingSlug,listing_name:clean(coach.name,240),enquiry_type:'email',sender_name:senderName,sender_email:senderEmail,message,source_path:sourcePath,delivery_status:'pending_verification',delivery_provider:'',sent_at:now});
         const verified = await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:listingSlug,status:'active'},'-updated_at',1).catch(()=>[]);
         const endpoint = verified?.[0];
+        let forwarded = false;
         if (endpoint?.allow_email === true && validEmail(clean(endpoint.email,240).toLowerCase())) {
           try {
             const delivery = await sendWithConfiguredEmailTransport(base44,{scopeType:'platform',purpose:'directory'},{to:clean(endpoint.email,240).toLowerCase(),replyTo:senderEmail,senderName:'RallyHub Directory',subject:`RallyHub coach enquiry – ${clean(coach.name,240)}`,textBody:`RallyHub coach enquiry for ${clean(coach.name,240)}\nFrom: ${senderName} <${senderEmail}>\n\n${message}\n\nReply to the visitor using Reply-To.`,htmlBody:`<p>RallyHub coach enquiry for ${escapeHtml(coach.name)}</p><p>From: ${escapeHtml(senderName)} (${escapeHtml(senderEmail)})</p><p>${escapeHtml(message).replace(/\n/g,'<br>')}</p>`});
             await base44.asServiceRole.entities.DirectoryContactEnquiry.update(enquiry.id,{delivery_status:'sent',delivery_provider:delivery?.provider||'',sent_at:new Date().toISOString()});
+            forwarded = true;
           } catch (forwardError) {
             await base44.asServiceRole.entities.DirectoryContactEnquiry.update(enquiry.id,{delivery_status:'failed'}).catch(()=>{});
             console.error('coach enquiry forwarding failed',forwardError);
           }
         }
-        await setDurableActionStatus(base44,actionRow,'sent');
+        // A saved enquiry is acknowledged even if forwarding cannot be completed.
+        // Never report the transport as sent unless the email provider confirmed it.
+        await setDurableActionStatus(base44,actionRow,forwarded ? 'sent' : 'acknowledged');
         const payload = {success:true,acknowledged:true,message:'Your enquiry has been received by RallyHub.'};
         setIdempotent(idemKey,payload,200,10*60*1000);
         return responseJson(payload);
