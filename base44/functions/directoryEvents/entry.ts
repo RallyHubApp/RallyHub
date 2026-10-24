@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+import { authorisedDirectorySuperAdmin } from '../../shared/directorySuperAdmin.ts';
 
 const clean = (value:any, max=500) => String(value ?? '').trim().slice(0, max);
 const parseJson = (value:any, fallback:any={}) => { try { return value ? JSON.parse(value) : fallback; } catch { return fallback; } };
@@ -6,7 +7,7 @@ const numOrNull = (value:any) => value === '' || value === null || value === und
 
 async function requireDirectoryAccess(base44:any, user:any, listingSlug:string) {
   if (!user) throw new Response(JSON.stringify({ error:'Authentication required.' }), { status:401, headers:{'content-type':'application/json'} });
-  if (user.role === 'admin') return { role:'admin' };
+  if (authorisedDirectorySuperAdmin(user)) return { role:'admin' };
   const rows = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug:listingSlug, user_id:user.id, status:'active' }, '-granted_at', 10);
   if (!rows?.length) throw new Response(JSON.stringify({ error:'You do not have permission to manage events for this Directory listing.' }), { status:403, headers:{'content-type':'application/json'} });
   return rows[0];

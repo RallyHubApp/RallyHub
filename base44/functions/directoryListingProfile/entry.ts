@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
+import { authorisedDirectorySuperAdmin } from '../../shared/directorySuperAdmin.ts';
 import { geocodeDirectoryVenues } from './geocode.ts';
 import { publicDirectoryFallbackSnapshot } from './publicFallbackSnapshot.ts';
 import { protectedDirectoryList, protectedDirectoryState } from './protectedContract.ts';
@@ -404,7 +405,7 @@ Deno.serve(async (req) => {
     if (action === 'private_get') {
       const listingSlug = clean(body.listingSlug, 180);
       if (!listingSlug) return Response.json({ error:'listingSlug required' }, { status:400 });
-      let allowed = user.role === 'admin';
+      let allowed = authorisedDirectorySuperAdmin(user);
       if (!allowed) {
         const access = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug:listingSlug, user_id:user.id, status:'active' });
         allowed = !!access?.length;
@@ -424,7 +425,7 @@ Deno.serve(async (req) => {
       const listingSlug = clean(body.listingSlug, 180);
       const publicName = clean(body.publicName, 220);
       if (!listingSlug || !publicName) return Response.json({ error:'listingSlug and publicName required' }, { status:400 });
-      let allowed = user.role === 'admin';
+      let allowed = authorisedDirectorySuperAdmin(user);
       if (!allowed) {
         const access = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug:listingSlug, user_id:user.id, status:'active' });
         allowed = !!access?.length;
@@ -491,7 +492,7 @@ Deno.serve(async (req) => {
     if (action === 'save') {
       const listingSlug = clean(body.listingSlug, 180);
       if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
-      let allowed = user.role === 'admin';
+      let allowed = authorisedDirectorySuperAdmin(user);
       if (!allowed) {
         const access = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, user_id: user.id, status: 'active' });
         allowed = !!access?.length;
@@ -579,7 +580,7 @@ Deno.serve(async (req) => {
       // For database-backed listings curated by a RallyHub Super Admin, keep the
       // trusted claim contact aligned with the contact shown in the editor. This is
       // what allows an invited representative to auto-verify with the same email.
-      if (user.role === 'admin' && publicProfile?.contact?.email) {
+      if (authorisedDirectorySuperAdmin(user) && publicProfile?.contact?.email) {
         try {
           const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5);
           const dynamic = dynamicRows?.[0];

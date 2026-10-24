@@ -11,7 +11,7 @@ for(const [title,user,a,b] of [
  ['missing first secret',{id:brian,role:'admin'},undefined,conal],['missing second secret',{id:brian,role:'admin'},brian,undefined],
  ['duplicate secrets',{id:brian,role:'admin'},brian,brian],['malformed secret',{id:brian,role:'admin'},'Brian Moore',conal]
 ]) test('denies '+title,()=>assert.equal(isDirectorySuperAdmin(user,a,b),false));
-for(const f of ['directoryCategory','directoryContactAction','siteAnalytics','directoryPlayerNetwork'])test(f+' uses directory-only gate',()=>{
+for(const f of ['directoryCategory','directoryContactAction','siteAnalytics','directoryPlayerNetwork','directoryEvents','directoryListingProfile'])test(f+' uses directory-only gate',()=>{
  const source=readFileSync('base44/functions/'+f+'/entry.ts','utf8');
  assert.match(source,/authorisedDirectorySuperAdmin\(user\)/);
  assert.match(source,/shared\/directorySuperAdmin\.ts/);
