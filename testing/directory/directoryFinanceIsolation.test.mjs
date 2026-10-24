@@ -11,3 +11,9 @@ test('finance group binding is not misrepresented as verified Spond connection',
  assert.match(finance,/Spond group linked/);
  assert.doesNotMatch(finance,/Spond connected ·/);
 });
+
+test('tenant Finance assignments never save into the Directory Spond connection',()=>{
+ assert.doesNotMatch(finance,/action:'directory_save_connection'/);
+ assert.match(finance,/ClubFinanceVenueRule\.update/);
+ assert.match(finance,/financeRuleGroupId/);
+});

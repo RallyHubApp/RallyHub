@@ -116,7 +116,8 @@ export default function FinanceSummary() {
   // Finance uses its own tenant-scoped recurring session bindings.
   // Do not query the independent Directory Spond connection from this tenant screen.
   const financeSpondGroup = spondBindings.find(binding => binding.spond_group_id) || null;
-  const selectedSpondGroupId = String(spondSelection?.group?.id || financeSpondGroup?.spond_group_id || '');
+  const financeRuleGroupId = rules.find(rule => rule.income_source === 'spond' && rule.spond_group_id)?.spond_group_id || '';
+  const selectedSpondGroupId = String(spondSelection?.group?.id || financeRuleGroupId || financeSpondGroup?.spond_group_id || '');
   const financeScanPatternKeys = useMemo(()=>{
     if (selectedVenueIds.length !== 1) return [];
     const venueId = String(selectedVenueIds[0]);
@@ -281,9 +282,8 @@ export default function FinanceSummary() {
           spond_venue_address:String(row.spondVenueAddress||''),
         });
       }
-      await base44.functions.invoke('spondIntegrationWorking',{ action:'directory_save_connection', listingSlug, groupId:selectedSpondGroupId, summary:`Finance linked ${chosen.length} recurring Spond session pattern${chosen.length===1?'':'s'}.` });
+      // Finance assignments are tenant records. Do not overwrite the Directory organiser's Spond connection.
       await queryClient.invalidateQueries({queryKey:['finance-rules',tenantId,clubId]});
-      await queryClient.invalidateQueries({queryKey:['finance-spond-connection',listingSlug]});
       toast.success(`Saved ${chosen.length} Spond session assignment${chosen.length===1?'':'s'} for Finance`);
     } catch(e){ toast.error(e?.message || 'Could not save Spond session assignments'); }
     finally { setSavingPatternAssignments(false); }
