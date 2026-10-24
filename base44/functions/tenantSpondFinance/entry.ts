@@ -115,11 +115,6 @@ Deno.serve(async(req)=>{
   const body=await req.json().catch(()=>({}));
   const action=String(body.action||'');
   if(!['preview','sync'].includes(action))return Response.json({error:'Unsupported tenant Spond finance action.'},{status:400});
-  // Determine tenant permissions and group ownership before authenticating to Spond.
-  const email=Deno.env.get('SPOND_EMAIL');
-  const password=Deno.env.get('SPOND_PASSWORD');
-  if(!email||!password)return Response.json({error:'Spond tenant finance credentials unavailable.'},{status:503});
-  const token=await spondLogin(email,password);
     if (action === 'preview' || action === 'sync') {
       const tenantId=String(user.active_tenant_id);
       const clubId=String(user.active_club_id);
@@ -127,6 +122,11 @@ Deno.serve(async(req)=>{
       const validGroups=new Set((bindings||[]).map(row=>String(row.spond_group_id||'')).filter(Boolean));
       const financeGroupId=String(body.groupId||'');
       if(!financeGroupId || !validGroups.has(financeGroupId)) return Response.json({error:'The Spond group is not linked to this tenant and club.'},{status:403});
+      // Authenticate to the external system only after authorisation and group ownership checks.
+      const email=Deno.env.get('SPOND_EMAIL');
+      const password=Deno.env.get('SPOND_PASSWORD');
+      if(!email||!password)return Response.json({error:'Spond tenant finance credentials unavailable.'},{status:503});
+      const token=await spondLogin(email,password);
       const today = irelandDate(new Date().toISOString());
       const fromDate = clean(body.fromDate || `${new Date().getUTCFullYear()}-09-01`, 10);
       const toDate = clean(body.toDate || today, 10);
