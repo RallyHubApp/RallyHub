@@ -32,6 +32,9 @@ export default function Sidebar({ isOpen, onToggle }) {
   const canManageMembership = user?.role === 'admin' || user?.active_club_role === 'club_admin';
   const isMemberExperience = !!user?.id && user?.role !== 'admin' && user?.active_club_role !== 'club_admin';
   const isSuperAdmin = role === 'super_admin';
+  const currentAdminTab = new URLSearchParams(location.search).get('tab');
+  const directoryWorkspaceTabs = new Set(['directory-command','directory-crm','directory','directory-contacts','directory-players','directory-analytics']);
+  const inDirectoryWorkspace = location.pathname === '/app/admin' && directoryWorkspaceTabs.has(currentAdminTab);
   const { data: memberMessageUnread = 0 } = useMemberMessageUnread();
   const memberNavItems = [
     { path: '/app', label: 'Home', icon: Home },
@@ -45,7 +48,7 @@ export default function Sidebar({ isOpen, onToggle }) {
     { path: '/app', label: 'Dashboard', icon: LayoutDashboard, section: 'SUPER ADMIN' },
     { path: '/app/admin', label: 'Admin Panel', icon: Shield, admin: true, section: 'SUPER ADMIN' },
     { path: '/app/admin?tab=control-library', label: 'Control Library', icon: BookOpen, controlLibrary: true, section: 'SUPER ADMIN' },
-    { path: '/app/admin?tab=directory', label: 'Directory Admin', icon: Shield, directoryAdmin: true, section: 'SUPER ADMIN' },
+    { path: '/app/admin?tab=directory-command', label: 'Directory Command Centre', icon: Shield, directoryAdmin: true, section: 'SUPER ADMIN' },
     { path: '/app/communications', label: 'Communications', icon: MessageCircle, section: 'SUPER ADMIN' },
     { path: '/directory', label: 'Public Directory', icon: MapPin, section: 'SUPER ADMIN' },
     { path: '/app/messages', label: 'Member Messages', icon: MessageCircle, messages: true, section: 'CLUB OPERATIONS' },
@@ -62,7 +65,15 @@ export default function Sidebar({ isOpen, onToggle }) {
     { path: '/app/analytics', label: 'Analytics', icon: BarChart3, section: 'CLUB OPERATIONS' },
     { path: '/app/my-profile', label: 'My Profile', icon: UserCircle, section: 'ACCOUNT' }
   ];
-  const mainNavItems = isMemberExperience ? memberNavItems : isSuperAdmin ? superAdminNavItems : [
+  const directoryWorkspaceNavItems = [
+    { path:'/app/admin?tab=directory-command', label:'Directory Overview', icon:LayoutDashboard, directoryAdmin:true, section:'DIRECTORY COMMAND CENTRE' },
+    { path:'/app/admin?tab=directory-crm', label:'People & CRM', icon:ContactRound, section:'DIRECTORY COMMAND CENTRE' },
+    { path:'/app/admin?tab=directory', label:'Listings & Claims', icon:ShieldCheck, section:'DIRECTORY COMMAND CENTRE' },
+    { path:'/app/admin?tab=directory-contacts', label:'Owners & Editors', icon:Users, section:'DIRECTORY COMMAND CENTRE' },
+    { path:'/app/admin?tab=directory-players', label:'Player Network', icon:Users, section:'DIRECTORY COMMAND CENTRE' },
+    { path:'/app/admin?tab=directory-analytics', label:'Directory Analytics', icon:BarChart3, section:'DIRECTORY COMMAND CENTRE' },
+  ];
+  const mainNavItems = inDirectoryWorkspace && isSuperAdmin ? directoryWorkspaceNavItems : isMemberExperience ? memberNavItems : isSuperAdmin ? superAdminNavItems : [
     navItems[0],
     ...(canAccessAdmin ? [{ path: '/app/messages', label: 'Member Messages', icon: MessageCircle, messages: true }] : []),
     ...(canManageMembership ? [
@@ -153,19 +164,18 @@ export default function Sidebar({ isOpen, onToggle }) {
         {/* Nav */}
         <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-3 px-3 space-y-1 [scrollbar-width:thin]">
           {mainNavItems.map((item, index) => {
-            const currentAdminTab = new URLSearchParams(location.search).get('tab');
-            const directoryAdmin = item.directoryAdmin || item.path === '/app/admin?tab=directory';
+            const directoryAdmin = item.directoryAdmin || item.path === '/app/admin?tab=directory-command';
             const adminPanel = item.path === '/app/admin';
             const controlLibrary = item.controlLibrary || item.path === '/app/admin?tab=control-library';
             const isActive = item.path === '/app'
               ? location.pathname === '/app' || location.pathname === '/app/'
               : directoryAdmin
-                ? location.pathname === '/app/admin' && currentAdminTab === 'directory'
+                ? location.pathname === '/app/admin' && currentAdminTab === 'directory-command'
                 : adminPanel
                   ? location.pathname === '/app/admin' && !currentAdminTab
                   : controlLibrary
                     ? location.pathname === '/app/admin' && currentAdminTab === 'control-library'
-                    : location.pathname.startsWith(item.path);
+                    : item.path.startsWith('/app/admin?tab=') ? location.pathname === '/app/admin' && currentAdminTab === new URLSearchParams(item.path.split('?')[1]).get('tab') : location.pathname.startsWith(item.path);
             const showSection = isSuperAdmin && item.section && (index === 0 || mainNavItems[index - 1]?.section !== item.section);
             return (
               <React.Fragment key={item.path}>
@@ -179,7 +189,7 @@ export default function Sidebar({ isOpen, onToggle }) {
                   onClick={(event) => {
                     if (directoryAdmin) {
                       event.preventDefault();
-                      navigate('/app/admin?tab=directory');
+                      navigate('/app/admin?tab=directory-command');
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                     if (window.innerWidth < 1024) onToggle();
@@ -214,9 +224,13 @@ export default function Sidebar({ isOpen, onToggle }) {
           })}
         </nav>
 
+        {inDirectoryWorkspace && isSuperAdmin && <div className="border-t border-sidebar-border p-3 space-y-2">
+          <Link to="/app/admin?tab=linking" onClick={()=>{if(window.innerWidth<1024)onToggle();}} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-secondary"><ChevronRight className="h-4 w-4 rotate-180"/> Switch to RallyHub / Club Admin</Link>
+          <Link to="/directory" onClick={()=>{if(window.innerWidth<1024)onToggle();}} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-secondary"><MapPin className="h-4 w-4"/> View public Directory</Link>
+        </div>}
         {/* Bottom links */}
         <div className="px-3 pb-2 space-y-1">
-          {!isMemberExperience && !isSuperAdmin && [
+          {!inDirectoryWorkspace && !isMemberExperience && !isSuperAdmin && [
             ...(isSuperAdmin ? [
               { path: '/directory', label: 'Switch to Directory', icon: MapPin },
               { path: '/app/admin?tab=directory', label: 'Directory Admin', icon: Shield }
