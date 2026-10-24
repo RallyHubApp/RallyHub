@@ -1,3 +1,4 @@
+import { CoachPortrait } from '@/components/directory/CoachProfile';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
@@ -256,7 +257,7 @@ export default function PublicDirectory() {
   const filteredClubs = useMemo(() => effectiveClubs
     .map(club => ({ club, searchScore: directorySearchScore(club, query) }))
     .filter(({ club, searchScore }) => {
-      const categoryMatch = categoryKey === 'all' || String(club.listingType || 'club') === categoryKey;
+      const categoryMatch = categoryKey === 'all' || (club.listingType === 'coach' ? 'coaching' : String(club.listingType || 'club')) === categoryKey;
       const queryMatch = !query.trim() || searchScore > 0;
       const countyMatch = !clubCategoryActive || county === 'All counties' || club.county === county;
       const dayMatch = !clubCategoryActive || day === 'Any day' || (club.sessions || []).some(session => session.day === day);
@@ -266,7 +267,7 @@ export default function PublicDirectory() {
     .map(({ club }) => club), [effectiveClubs, query, county, day, categoryKey, clubCategoryActive]);
 
   const categoryCounts = useMemo(() => {
-    const counts = Object.fromEntries(categoryOptions.map(item => [item.key, item.key === 'all' ? effectiveClubs.length : effectiveClubs.filter(club => String(club.listingType || 'club') === item.key).length]));
+    const counts = Object.fromEntries(categoryOptions.map(item => [item.key, item.key === 'all' ? effectiveClubs.length : effectiveClubs.filter(club => (club.listingType === 'coach' ? 'coaching' : String(club.listingType || 'club')) === item.key).length]));
     if (publicEventCount !== null) counts.tournaments_events = publicEventCount;
     return counts;
   }, [categoryOptions, effectiveClubs, publicEventCount]);
@@ -502,12 +503,12 @@ export default function PublicDirectory() {
                       {filteredClubs.map(club => (
                         <article key={club.id} className="rounded-2xl border border-[#dbe6e8] bg-white p-4 shadow-[0_6px_18px_rgba(8,24,77,.035)] transition hover:border-[#b8dfc7] sm:p-5">
                           <div className="flex gap-3 sm:gap-4">
-                            <PublicDirectoryLogo
+                            {club.listingType === 'coach' ? <CoachPortrait coach={club} small/> : <PublicDirectoryLogo
                               src={club.logoUrl}
                               name={club.name}
                               imageClassName="h-[60px] w-[60px] shrink-0 rounded-[14px] border border-[#dbe9e2] bg-white object-contain p-1 sm:h-[74px] sm:w-[74px]"
                               fallbackClassName="h-[60px] w-[60px] shrink-0 rounded-[14px] border border-[#dbe9e2] bg-[linear-gradient(145deg,#eaf8ef,#e8f0f6)] flex items-center justify-center text-lg sm:h-[74px] sm:w-[74px] sm:text-xl font-black text-[#078e48]"
-                            />
+                            />}
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-start justify-between gap-2">
                                 <div>
