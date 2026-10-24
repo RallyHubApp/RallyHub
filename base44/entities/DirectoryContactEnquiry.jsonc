@@ -35,7 +35,8 @@
       "type": "string",
       "enum": [
         "sent",
-        "failed"
+        "failed",
+        "pending_verification"
       ],
       "default": "sent"
     },

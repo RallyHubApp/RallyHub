@@ -386,7 +386,52 @@ Deno.serve(async (req) => {
 
     if (!listingSlug) return responseJson({ error:'listingSlug required' }, 400);
     const listingRecords = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 1);
-    if (listingRecords?.[0]?.listing_type === 'coach') return responseJson({ error:'Coach enquiries are awaiting verified forwarding. No contact destination is exposed.', awaitingVerification:true }, 409);
+    if (listingRecords?.[0]?.listing_type === 'coach') {
+      const coach = listingRecords[0];
+      if (coach.visibility !== 'public') return responseJson({ error:'This coach listing is not public.' }, 404);
+      if (action === 'public_card') return responseJson({ success:true, card:{ listingSlug, listingName:clean(coach.name,240), actions:{ email:true,call:false,whatsapp:false }, privacyCopy:'Send an enquiry through RallyHub. Coach contact details remain private.' } });
+      if (action !== 'send_email') return responseJson({ error:'Coach contact is available by enquiry form only.' }, 400);
+      if (clean(body.website,200)) return responseJson({ success:true, acknowledged:true });
+      const requestId = requestIdFrom(body);
+      if (!requestId) return responseJson({ error:'Request ID required.' },400);
+      const idemKey = idempotencyKey(body,listingSlug,'email');
+      const prior = getIdempotent(idemKey);
+      if (prior) return responseJson({...prior.payload,duplicate:true},prior.status);
+      const senderName = clean(body.name,160);
+      const senderEmail = clean(body.email,240).toLowerCase();
+      const message = clean(body.message,2000);
+      if (!senderName || !validEmail(senderEmail) || message.length < 5) return responseJson({error:'Enter your name, a valid email and a message.'},400);
+      const key = `${clientKey(req,body)}:${listingSlug}:coach-email`;
+      if (!consumeBucket(emailBuckets,key,3,30*60*1000)) return responseJson({error:'Too many enquiries. Please try again later.'},429);
+      const durable = await durableActionFor(base44,idemKey);
+      if (durable) return responseJson({success:true,acknowledged:true,duplicate:true,message:'Your enquiry has been received by RallyHub.'});
+      const actionRow = await createDurableAction(base44,{requestKey:idemKey,requestId,listingSlug,listingName:clean(coach.name,240),channel:'email',actionType:'submitted',status:'processing',ttlMinutes:30});
+      const sourcePath = clean(body.sourcePath || `/directory/${listingSlug}`,500);
+      const now = new Date().toISOString();
+      try {
+        // Persist before attempting forwarding. Disabled/unverified endpoints are never used.
+        const enquiry = await base44.asServiceRole.entities.DirectoryContactEnquiry.create({listing_slug:listingSlug,listing_name:clean(coach.name,240),enquiry_type:'email',sender_name:senderName,sender_email:senderEmail,message,source_path:sourcePath,delivery_status:'pending_verification',delivery_provider:'',sent_at:now});
+        const verified = await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:listingSlug,status:'active'},'-updated_at',1).catch(()=>[]);
+        const endpoint = verified?.[0];
+        if (endpoint?.allow_email === true && validEmail(clean(endpoint.email,240).toLowerCase())) {
+          try {
+            const delivery = await sendWithConfiguredEmailTransport(base44,{scopeType:'platform',purpose:'directory'},{to:clean(endpoint.email,240).toLowerCase(),replyTo:senderEmail,senderName:'RallyHub Directory',subject:`RallyHub coach enquiry – ${clean(coach.name,240)}`,textBody:`RallyHub coach enquiry for ${clean(coach.name,240)}\nFrom: ${senderName} <${senderEmail}>\n\n${message}\n\nReply to the visitor using Reply-To.`,htmlBody:`<p>RallyHub coach enquiry for ${escapeHtml(coach.name)}</p><p>From: ${escapeHtml(senderName)} (${escapeHtml(senderEmail)})</p><p>${escapeHtml(message).replace(/\n/g,'<br>')}</p>`});
+            await base44.asServiceRole.entities.DirectoryContactEnquiry.update(enquiry.id,{delivery_status:'sent',delivery_provider:delivery?.provider||'',sent_at:new Date().toISOString()});
+          } catch (forwardError) {
+            await base44.asServiceRole.entities.DirectoryContactEnquiry.update(enquiry.id,{delivery_status:'failed'}).catch(()=>{});
+            console.error('coach enquiry forwarding failed',forwardError);
+          }
+        }
+        await setDurableActionStatus(base44,actionRow,'sent');
+        const payload = {success:true,acknowledged:true,message:'Your enquiry has been received by RallyHub.'};
+        setIdempotent(idemKey,payload,200,10*60*1000);
+        return responseJson(payload);
+      } catch(error) {
+        await setDurableActionStatus(base44,actionRow,'failed').catch(()=>{});
+        console.error('coach enquiry capture failed',error);
+        return responseJson({error:'Could not save your enquiry. Please try again.'},500);
+      }
+    }
     const state = await protectedState(base44, listingSlug);
     if (!state.enabled) return responseJson({ error:'Protected contact actions are not enabled for this listing.', featureDisabled:true, rolloutMode:state.rollout?.mode || 'legacy' }, 404);
     const endpoint = await endpointFor(base44, listingSlug);
