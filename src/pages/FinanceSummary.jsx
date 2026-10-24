@@ -113,13 +113,10 @@ export default function FinanceSummary() {
     enabled:user?.role === 'admin' && !!tenantId && !!clubId,
   });
   const listingSlug = spondBindings[0]?.listing_slug || '';
-  const { data: spondConnections = [] } = useQuery({
-    queryKey:['finance-spond-connection',listingSlug],
-    queryFn:()=>base44.entities.DirectorySpondConnection.filter({ listing_slug:listingSlug, status:'active' }, '-last_synced_at', 5),
-    enabled:user?.role === 'admin' && !!listingSlug,
-  });
-  const spondConnection = spondConnections[0] || null;
-  const selectedSpondGroupId = String(spondSelection?.group?.id || spondConnection?.spond_group_id || '');
+  // Finance uses its own tenant-scoped recurring session bindings.
+  // Do not query the independent Directory Spond connection from this tenant screen.
+  const financeSpondGroup = spondBindings.find(binding => binding.spond_group_id) || null;
+  const selectedSpondGroupId = String(spondSelection?.group?.id || financeSpondGroup?.spond_group_id || '');
   const financeScanPatternKeys = useMemo(()=>{
     if (selectedVenueIds.length !== 1) return [];
     const venueId = String(selectedVenueIds[0]);
@@ -346,7 +343,7 @@ export default function FinanceSummary() {
         <div className="rounded-lg border border-border p-3"><p className="text-xs font-bold text-primary">4 · Read details & sync</p><p className="mt-1 text-xs text-muted-foreground">RallyHub reads Going/Declined/comments, shows the € fee and hall cost, then you choose exactly which rows to write.</p></div>
       </div>
       <div className="flex flex-wrap gap-2 text-xs">
-        {spondConnection ? <Badge data-testid="finance-spond-status" className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-700"><CheckCircle2 className="mr-1 h-3 w-3" />Spond connected · {spondConnection.spond_group_name}</Badge> : <Badge data-testid="finance-spond-status" variant="outline">Spond connection not confirmed</Badge>}
+        {financeSpondGroup ? <Badge data-testid="finance-spond-status" variant="outline">Spond group linked · {financeSpondGroup.spond_group_id}</Badge> : <Badge data-testid="finance-spond-status" variant="outline">No finance Spond group linked</Badge>}
         <Badge variant="outline">{rules.filter(r=>r.active!==false&&r.spond_pattern_key).length} Spond patterns linked to Finance</Badge>
         <Badge variant="outline">{venues.filter(v=>v.finance_tracking_enabled).length} venues with finance tracking enabled</Badge>
       </div>
@@ -403,7 +400,7 @@ export default function FinanceSummary() {
       </div>}
 
       <div className="rounded-lg border border-border bg-secondary/20 p-3">
-        <p className="text-xs font-medium">{spondConnection ? `Spond connection: ${spondConnection.spond_group_name} ✓` : 'Spond connection: not confirmed'}</p>
+        <p className="text-xs font-medium">{financeSpondGroup ? `Finance Spond group: ${financeSpondGroup.spond_group_id}` : 'Finance Spond group: not linked'}</p>
         <p className="mt-1 text-xs text-muted-foreground">Financial year starts {monthsOfYear[Number(settings?.financial_year_start_month || 1)-1]} {Number(settings?.financial_year_start_day || 1)}. Tracking begins {settings?.tracking_start_date || 'when configured'}.</p>
         {syncMessage && <p data-testid="finance-sync-message" className={`mt-2 text-xs font-semibold ${syncResult?.error?'text-red-600':'text-foreground'}`}>{syncMessage}</p>}
         {syncResult && !syncResult.error && <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5"><div className="rounded-md bg-background p-2"><p className="text-[11px] text-muted-foreground">Spond events in range</p><p className="font-bold">{syncResult.totalSpondEventsInRange ?? syncResult.fetchedCount ?? 0}</p></div><div className="rounded-md bg-background p-2"><p className="text-[11px] text-muted-foreground">In selected venues</p><p className="font-bold">{syncResult.fetchedCount||0}</p></div><div className="rounded-md bg-background p-2"><p className="text-[11px] text-muted-foreground">Matched to finance</p><p className="font-bold">{syncResult.matchedCount ?? syncResult.synced?.length ?? 0}</p></div><div className="rounded-md bg-background p-2"><p className="text-[11px] text-muted-foreground">Added / refreshed</p><p className="font-bold">{syncResult.created||0} / {syncResult.updated||0}</p></div><div className="rounded-md bg-background p-2"><p className="text-[11px] text-muted-foreground">Skipped</p><p className="font-bold">{syncResult.skipped||0}</p></div></div>}
