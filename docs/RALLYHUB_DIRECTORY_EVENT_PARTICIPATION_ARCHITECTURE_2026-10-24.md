@@ -18,6 +18,14 @@ Organiser, participant, account, tenant membership and event registration are in
 - **Registration:** Public event and event-specific registrations; no tenant membership required.
 - **Sporting operation:** Explicit activation of competition capabilities; reuse sporting engine for draws, courts, scoring and results. A technical host identity may be provisioned only when genuinely necessary, scoped and audited. A technical host is not club membership or a public club listing.
 
+## Optional guest-to-tenant-member conversion (owner clarification, 24 October 2026)
+- Guest attendance or public event registration does **not** create tenant membership, a membership charge or member permissions.
+- If a guest independently chooses to join a club, start that club's **existing membership application journey**, not an event-registration shortcut.
+- With appropriate permission and the applicant's confirmation, prefill reusable guest/person contact details into the membership application. Preserve separate source records and an audit trail; never copy guest or Directory communication consent into membership consent.
+- Collect or confirm all required membership fields and club-specific permissions, complete the normal approval and payment steps, and activate membership **only when the club's normal eligibility, approval and payment rules are satisfied**.
+- Link the new tenant member identity to the existing guest/person reference where explicitly authorised. Prefer one authoritative tenant member record, not duplicate guest and member records within that tenant; retain prior guest/event history as separate relationships.
+- Failure, abandonment or rejection of the application leaves the guest status and any existing event registration intact.
+
 ## Contract invariants
 - Directory owns public listings, organiser profiles, discovery and Directory audience consent.
 - Sporting domain owns competition state, scoring and results.
@@ -35,6 +43,8 @@ Organiser, participant, account, tenant membership and event registration are in
 - A member of one tenant enters an independent Directory organiser's event without becoming a member of the organiser.
 - External unassociated player enters a Directory event without tenant membership.
 - Existing guest details may be suggested for reuse subject to permission and confirmation; the separate event registration is created only once.
+- Guest elects to join: membership application is prefilled, then normal approval/payment creates or activates a single member record and explicitly links guest history.
+- Abandoned/unpaid/declined membership application never activates tenant membership and does not remove guest event access.
 - Promotion-only event read/list leaves tenant and club entity counts unchanged.
 - Activate sporting capability and verify the optional technical host is scoped, reusable and non-public.
 - Results made public through a scoped interface do not expose membership or private contact data.
