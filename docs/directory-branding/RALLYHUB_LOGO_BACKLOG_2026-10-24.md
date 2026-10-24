@@ -1,6 +1,6 @@
 # RallyHub Directory logo backlog — 24 October 2026
 
-Current live reconciliation: **104 public listings** (78 imported static, 4 curated static, 22 dynamic); **63 effective logo URLs**, **7 hidden by explicit null profile override**, **34 genuinely missing**, **41 requiring attention**. **27/32 counties** represented; absent Derry, Fermanagh, Roscommon, Tipperary and Tyrone.
+Current live reconciliation: **105 public listings** (78 imported static, 4 curated static, 23 dynamic); **64 effective logo URLs**, **7 hidden by explicit null profile override**, **34 genuinely missing**, **41 requiring attention**. **27/32 counties** represented; absent Derry, Fermanagh, Roscommon, Tipperary and Tyrone.
 
 Ten unresolved cards reviewed; **one approved logo permanently staged with verified SHA-256 readback**, none published, no Directory profile/base writes or deployment. Source order: Facebook → Instagram → official website; no inaccessible social avatar claimed as verified.
 
@@ -26,3 +26,5 @@ Ten unresolved cards reviewed; **one approved logo permanently staged with verif
 Kingdom approved; Annascaul/Kingdom shared branding preserved; East Cork identity/legacy Midleton decisions preserved. No duplicates, no overwrites.
 
 **Backlog incomplete; keep daily.**
+
+**Public-feed correction:** VAMOS Pickleball has implicit public visibility and an existing profile logo. It was omitted by the 22 October entity-only inventory. Live Directory feed and SEO build both report 105 public listings (23 dynamic).

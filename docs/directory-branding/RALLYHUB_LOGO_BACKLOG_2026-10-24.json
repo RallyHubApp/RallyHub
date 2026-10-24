@@ -1,12 +1,12 @@
 {
   "date": "2026-10-24",
-  "basis": "Live Base44 DirectoryListingRecord/Profile/Access and current static directoryImported/directorySeed, checked 24 Oct; prior 15 Oct owner decisions preserved",
+  "basis": "Current live directoryListingProfile public_list (same feed used by live Directory and SEO), plus current static directoryImported/directorySeed and Base44 DirectoryListingRecord/Profile/Access. VAMOS Pickleball has implicit public visibility and must not be excluded.",
   "inventory": {
     "staticImported": 78,
     "staticCurated": 4,
-    "dynamicPublic": 22,
-    "uniquePublic": 104,
-    "effectiveLogoUrls": 63,
+    "dynamicPublic": 23,
+    "uniquePublic": 105,
+    "effectiveLogoUrls": 64,
     "hiddenByExplicitNullProfile": 7,
     "genuinelyMissing": 34,
     "attention": 41,
@@ -221,5 +221,6 @@
     "eastCork": "Valid approved logo retained; no Midleton duplicate slug found in 22 Oct reconciliation",
     "bluestack": "approval preserved; original JPG/PNG requested due historical CDN 403",
     "coolmine": "approved image accepted and staged; no owner-uploaded conflict found"
-  }
+  },
+  "reconciliationNote": "Previous entity-only audit excluded VAMOS Pickleball because visibility was omitted on its record (schema default public). Public feed confirms VAMOS has an existing profile logo. 105 is the correct current total."
 }
