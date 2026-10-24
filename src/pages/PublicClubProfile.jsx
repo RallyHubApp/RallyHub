@@ -1,3 +1,4 @@
+import CoachProfile from '@/components/directory/CoachProfile';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
@@ -175,6 +176,7 @@ export default function PublicClubProfile() {
   };
 
   const listingType = club.listingType || 'club';
+  if (listingType === 'coach') return <div className="min-h-screen bg-background text-foreground"><PublicDirectoryHeader/><main className="mx-auto max-w-5xl px-4 py-8"><CoachProfile coach={club} preview={previewMode}/></main><PublicCopyrightFooter maxWidthClass="max-w-5xl"/></div>;
   if (listingType !== 'club') {
     const listingDescription = String(club.description || '').trim() || `${club.name} is listed in the RallyHub Pickleball Directory.`;
     const listingUrl = `${SITE_URL}/directory/${club.slug}`;
