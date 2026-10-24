@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {isDirectorySuperAdmin} from '../../base44/shared/directorySuperAdmin.ts';
+import {isDirectorySuperAdmin,authorisedDirectorySuperAdmin,DIRECTORY_SUPERADMIN_USER_IDS} from '../../base44/shared/directorySuperAdmin.ts';
 const brian='aaaaaaaaaaaaaaaaaaaaaaaa';
 const conal='bbbbbbbbbbbbbbbbbbbbbbbb';
 for(const id of [brian,conal]) test('authorised immutable ID '+id[0],()=>assert.equal(isDirectorySuperAdmin({id,role:'admin'},brian,conal),true));
@@ -44,4 +44,13 @@ test('Directory claim owner journeys never bypass via generic admin role',()=>{
  assert.doesNotMatch(source,/user\.role\s*(?:===|!==)\s*'admin'/);
  assert.match(source,/ownAccess\?\.role === 'owner'/);
  assert.match(source,/authorisedDirectorySuperAdmin\(user\)/);
+});
+
+test('backend allowlist is exactly two distinct immutable verified accounts',()=>{
+ assert.equal(DIRECTORY_SUPERADMIN_USER_IDS.length,2);
+ assert.equal(new Set(DIRECTORY_SUPERADMIN_USER_IDS).size,2);
+ assert.ok(DIRECTORY_SUPERADMIN_USER_IDS.every(id=>/^[a-f0-9]{24}$/i.test(id)));
+ for(const id of DIRECTORY_SUPERADMIN_USER_IDS) assert.equal(authorisedDirectorySuperAdmin({id,role:'admin'}),true);
+ assert.equal(authorisedDirectorySuperAdmin({id:'6a0de66260b54416bd777a3f',role:'admin'}),false);
+ assert.equal(authorisedDirectorySuperAdmin({id:DIRECTORY_SUPERADMIN_USER_IDS[0],role:'user'}),false);
 });

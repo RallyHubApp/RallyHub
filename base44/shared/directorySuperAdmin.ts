@@ -1,6 +1,6 @@
 /** Directory Command Centre access is separate from general platform admin access.
- * Configure only immutable, independently verified Base44 User IDs in backend secrets.
- * Missing, duplicated or malformed configuration DENIES access; names/emails never authorise.
+ * Grant only to two independently verified immutable Base44 User IDs.
+ * Authentication comes from the Base44 SDK, never from client-supplied IDs.
  */
 export function isDirectorySuperAdmin(user: any, firstId: unknown, secondId: unknown): boolean {
   if (!user || user.role !== 'admin') return false;
@@ -9,10 +9,13 @@ export function isDirectorySuperAdmin(user: any, firstId: unknown, secondId: unk
   return user.id === firstId || user.id === secondId;
 }
 
+// Verified read-only against Base44 User records on 24 October 2026.
+// These are public identifiers, not authentication secrets. Never trust a client-supplied ID.
+export const DIRECTORY_SUPERADMIN_USER_IDS = Object.freeze([
+  '6a0b5afd3f4b9681265a1398', // Brian Moore
+  '6a01dc00702b7dd2a2978c29', // Conall Moore
+]);
+
 export function authorisedDirectorySuperAdmin(user: any): boolean {
-  return isDirectorySuperAdmin(
-    user,
-    Deno.env.get('RALLYHUB_DIRECTORY_SUPERADMIN_BRIAN_ID'),
-    Deno.env.get('RALLYHUB_DIRECTORY_SUPERADMIN_CONAL_ID'),
-  );
+  return isDirectorySuperAdmin(user, DIRECTORY_SUPERADMIN_USER_IDS[0], DIRECTORY_SUPERADMIN_USER_IDS[1]);
 }
