@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
-import { findFinanceRuleForEvent, financeOccurrenceStartInWindow, financeRuleIsSelected, financeSpondPatternKey } from '../spondIntegrationWorking/financeMatch.mjs';
+import { findFinanceRuleForEvent, financeOccurrenceStartInWindow, financeRuleIsSelected, financeSpondPatternKey } from './financeMatch.mjs';
 
 // Independent tenant finance adapter. No Directory entities or listing-editor access.
 const SPOND_API_BASE = 'https://api.spond.com/core/v1';
@@ -104,7 +104,7 @@ function dublinParts(value) {
 }
 
 
-function occurrenceStartInWindow(event,minMs,maxMs){return financeOccurrenceStartInWindow(event,minMs,maxMs);}
+
 
 Deno.serve(async(req)=>{
  try{

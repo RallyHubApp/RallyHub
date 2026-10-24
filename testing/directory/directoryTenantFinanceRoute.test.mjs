@@ -3,7 +3,13 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const server=readFileSync('base44/functions/tenantSpondFinance/entry.ts','utf8');
 const client=readFileSync('src/pages/FinanceSummary.jsx','utf8');
-const matcher=readFileSync('base44/functions/spondIntegrationWorking/financeMatch.mjs','utf8');
+const matcher=readFileSync('base44/functions/tenantSpondFinance/financeMatch.mjs','utf8');
+const referenceMatcher=readFileSync('base44/functions/spondIntegrationWorking/financeMatch.mjs','utf8');
+test('finance helper is bundled locally and matches the verified reference',()=>{
+ assert.equal(matcher,referenceMatcher);
+ assert.match(server,/from '\.\/financeMatch\.mjs'/);
+ assert.equal((server.match(/function occurrenceStartInWindow\(/g)||[]).length,1);
+});
 test('tenant Finance previews and syncs only through dedicated backend',()=>{
  assert.match(client,/functions\.invoke\('tenantSpondFinance',\{ action:'preview'/);
  assert.match(client,/functions\.invoke\('tenantSpondFinance',\{ action:'sync'/);
