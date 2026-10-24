@@ -10,9 +10,16 @@ function containsGenericAdmin(value){
  return Object.values(value).some(containsGenericAdmin);
 }
 test('all Directory schemas are inventoried and parseable',()=>{assert.equal(configs.length,17);for(const {name,schema} of configs){assert.ok(schema.name,name);assert.ok(schema.rls,name);}});
-test('record direct-entity generic-admin exposure as a blocking issue (not a passing security assertion)',()=>{
+test('none of the Directory entities expose direct generic-admin access',()=>{
  const exposed=configs.filter(({schema})=>containsGenericAdmin(schema.rls)).map(({name})=>name);
- assert.equal(exposed.length,17,'Update audit when migration changes direct-entity RLS');
+ assert.deepEqual(exposed,[]);
+});
+test('all Directory writes are service-only; non-owner reads fail closed',()=>{
+ for(const {schema,name} of configs){
+  for(const op of ['create','update','delete'])assert.equal(schema.rls[op],false,`${name}:${op}`);
+  if(name==='DirectoryListingAccess')assert.deepEqual(schema.rls.read,{'data.user_id':'{{user.id}}'});
+  else assert.equal(schema.rls.read,false,`${name}:read`);
+ }
 });
 test('Directory audit records do not grant updates',()=>{
  const schema=configs.find(row=>row.schema.name==='DirectoryListingAudit')?.schema;
