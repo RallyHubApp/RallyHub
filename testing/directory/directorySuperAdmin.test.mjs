@@ -54,3 +54,10 @@ test('backend allowlist is exactly two distinct immutable verified accounts',()=
  assert.equal(authorisedDirectorySuperAdmin({id:'6a0de66260b54416bd777a3f',role:'admin'}),false);
  assert.equal(authorisedDirectorySuperAdmin({id:DIRECTORY_SUPERADMIN_USER_IDS[0],role:'user'}),false);
 });
+
+test('Directory artwork staging never uses generic platform-admin bypass',()=>{
+ const source=readFileSync('base44/functions/directoryLogoIngest/entry.ts','utf8');
+ assert.match(source,/!serviceAuthenticated && !authorisedDirectorySuperAdmin\(user\)/);
+ assert.doesNotMatch(source,/user\.role !== 'admin'/);
+ assert.match(source,/DirectoryListingAccess\.filter/);
+});

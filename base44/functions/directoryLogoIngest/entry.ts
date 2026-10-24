@@ -1,3 +1,4 @@
+import { authorisedDirectorySuperAdmin } from '../../shared/directorySuperAdmin.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
 import { seedDirectorySlugs } from './seedDirectorySlugs.ts';
 
@@ -77,7 +78,7 @@ Deno.serve(async req => {
       return Response.json({error:'Valid listing slug, approval reference and expected SHA-256 required'}, {status:400});
     // A valid service credential may stage approved checksummed artwork only.
     // Directory owners and other users still require their existing listing access.
-    if (!serviceAuthenticated && user.role !== 'admin') {
+    if (!serviceAuthenticated && !authorisedDirectorySuperAdmin(user)) {
       const rows = await b.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:slug,user_id:user.id,status:'active'},'-granted_at',5);
       if (!rows?.length) return Response.json({error:'Directory editor permission required'}, {status:403});
     }
