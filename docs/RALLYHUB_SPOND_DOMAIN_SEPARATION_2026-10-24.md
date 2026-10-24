@@ -9,7 +9,7 @@
 - Neither ordinary public event registration nor guest participation creates tenant membership. Guest-to-member conversion uses the separate approved membership and payment journey.
 
 ## Remaining separation work (not completed)
-- Tenant Finance Spond preview/sync still invokes `spondIntegrationWorking` actions named `directory_finance_preview` and `directory_finance_sync`. These must be extracted into independent tenant-scoped backend commands with tenant membership/finance privileges, while preserving identical calculation semantics and tested Spond event matching.
+- Tenant Finance Spond preview/sync now calls a separate `tenantSpondFinance` backend, with authenticated tenant/club scoping, bound-group validation before external login, and preserved pure matching/payment algorithms. The old `directory_finance_preview` and `directory_finance_sync` handlers still exist in `spondIntegrationWorking` for compatibility; they must be retired only after the independent route is deployed and authenticated acceptance tests pass. No production API calls were run.
 - Existing Spond identity and guest session code still uses a legacy Directory Spond connection fallback. Migrate historical club bindings and verify invitation results before removing the fallback.
 - The Directory organiser's Spond connection retains its own listing-editor permissions. The generic-admin exception in `spondIntegrationWorking.directoryAccessAllowed` still needs tightening as part of the secure route split.
 - Do not modify, disconnect, duplicate or migrate production Spond credentials, groups or finance records without independent operational tests and rollback.
@@ -23,3 +23,6 @@
 
 ## Test evidence
 `testing/directory/directoryFinanceIsolation.test.mjs` and `directoryGuestSpondBoundary.test.mjs` cover source boundaries, not live Spond API responses. Broader member/guest gate currently fails on the pre-existing experienced-guest previous-sports assertion; this must be investigated separately, not claimed as fixed.
+
+## Regression update
+The existing member/guest test gate failed because two source-string assertions were stale: experienced guests now reset previous-sport fields using a conditional object spread, and beginner venue guidance now includes Clarecastle and Shannon. The test assertions were updated to match inspected behaviour; no production guest form was changed. Afterward the member/guest booking gate passed. Tenant finance route source-contract checks and Directory tests passed; live Spond API/tenant-authenticated acceptance is still pending.
