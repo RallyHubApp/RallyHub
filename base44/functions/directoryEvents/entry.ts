@@ -50,6 +50,18 @@ async function getListing(base44:any, listingSlug:string) {
   };
 }
 
+/** Read-only host lookup. Listing events may be viewed without creating a tenant. */
+async function findExistingHostIdentity(base44:any, listing:any) {
+  const slug = clean(listing.slug, 160);
+  const clubs = await base44.asServiceRole.entities.Club.filter({ slug, status:'active' }, '-updated_date', 20);
+  let club = clubs?.[0] || null;
+  // Preserve legacy Directory technical hosts, but never provision anything on a read.
+  if (!club) return {club:null,tenant:null};
+  const tenants = await base44.asServiceRole.entities.Tenant.filter({ id:club.tenant_id }, '-updated_date', 2);
+  const tenant = tenants?.[0] || null;
+  return {club,tenant};
+}
+
 async function ensureHostIdentity(base44:any, listing:any) {
   const slug = clean(listing.slug, 160);
   const clubRows = await base44.asServiceRole.entities.Club.filter({ slug, status:'active' }, '-updated_date', 20);
@@ -144,11 +156,14 @@ Deno.serve(async (req) => {
     if (!listingSlug) return Response.json({ error:'Directory listing is required.' }, { status:400 });
     const access = await requireDirectoryAccess(base44, user, listingSlug);
     const listing = await getListing(base44, listingSlug);
-    const {club, tenant} = await ensureHostIdentity(base44, listing);
-
+    // Reading the Directory event calendar must never create sporting identities.
+    // Only the explicit save path can provision a technical sporting host.
     if (action === 'list') {
+      const {club,tenant} = await findExistingHostIdentity(base44, listing);
       const [events, venues, profileRows] = await Promise.all([
-        base44.asServiceRole.entities.Tournament.filter({ tenant_id:tenant.id, host_club_id:club.id, status:{$ne:'Archived'} }, 'start_date', 200),
+        club && tenant
+          ? base44.asServiceRole.entities.Tournament.filter({ tenant_id:tenant.id, host_club_id:club.id, status:{$ne:'Archived'} }, 'start_date', 200)
+          : Promise.resolve([]),
         getDirectoryVenues(base44, listing),
         base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug:listing.slug, status:'active' }, '-updated_at', 5),
       ]);
@@ -163,6 +178,13 @@ Deno.serve(async (req) => {
       const incoming = eventPayload(body);
       if (!incoming.name || !incoming.start_date) return Response.json({ error:'Event name and start date are required.' }, { status:400 });
       const eventId = clean(body.eventId, 180);
+      // Editing an existing event cannot implicitly provision a different host.
+      // New sporting-backed events retain legacy host creation until a separate
+      // Directory-owned registration/promotion workflow has been implemented.
+      const {club,tenant} = eventId
+        ? await findExistingHostIdentity(base44, listing)
+        : await ensureHostIdentity(base44, listing);
+      if (!club || !tenant) return Response.json({error:'An existing sporting event host is required for edits.'},{status:409});
       let existing:any = null;
       if (eventId) {
         existing = (await base44.asServiceRole.entities.Tournament.filter({ id:eventId, tenant_id:tenant.id, host_club_id:club.id }, '-updated_date', 2))?.[0];
@@ -214,6 +236,8 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'delete') {
+      const {club,tenant} = await findExistingHostIdentity(base44, listing);
+      if (!club || !tenant) return Response.json({ error:'Event not found.' }, { status:404 });
       const eventId = clean(body.eventId, 180);
       const event = (await base44.asServiceRole.entities.Tournament.filter({ id:eventId, tenant_id:tenant.id, host_club_id:club.id }, '-updated_date', 2))?.[0];
       if (!event) return Response.json({ error:'Event not found.' }, { status:404 });
