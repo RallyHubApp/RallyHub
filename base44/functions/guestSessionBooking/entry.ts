@@ -340,18 +340,25 @@ async function directBoundMemberSessions(base44:any,club:any,person:any,membersh
 }
 
 async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,membership:any){
-  const connections=await base44.asServiceRole.entities.DirectorySpondConnection.filter({listing_slug:club.slug,status:'active'},'-last_synced_at',10);
-  const connection=connections?.[0];
-  if(!connection?.spond_group_id)return {status:'not_configured',sessions:[]};
+  // The club's own bindings take precedence over Directory-owned Spond settings.
+  // Preserve a read-only fallback for legacy clubs until their bindings are migrated.
+  const clubBindings=await base44.asServiceRole.entities.SpondSessionBinding.filter({tenant_id:club.tenant_id,club_id:club.id,listing_slug:club.slug,active:true},'directory_session_key',100);
+  const boundGroup=(clubBindings||[]).find((row:any)=>row.spond_group_id)?.spond_group_id || '';
+  let spondGroupId=String(boundGroup);
+  if(!spondGroupId){
+    const legacy=await base44.asServiceRole.entities.DirectorySpondConnection.filter({listing_slug:club.slug,status:'active'},'-last_synced_at',1);
+    spondGroupId=String(legacy?.[0]?.spond_group_id||'');
+  }
+  if(!spondGroupId)return {status:'not_configured',sessions:[]};
   const identities=await base44.asServiceRole.entities.SpondIdentity.filter({tenant_id:club.tenant_id,club_id:club.id,match_status:'matched'},'-last_verified_at',100);
   const explicitIds=(identities||[]).filter((row:any)=>String(row.member_id||'')===String(membership?.id||'')).map((row:any)=>clean(row.spond_member_id,180)).filter(Boolean);
   try{
     const accessToken=await spondLoginFromSecrets();
     if(!accessToken)return {status:'credentials_unavailable',sessions:[]};
     let group:any=null;
-    try{group=await spondRequest(`/groups/${connection.spond_group_id}`,accessToken)}catch{
+    try{group=await spondRequest(`/groups/${spondGroupId}`,accessToken)}catch{
       const groups=await spondRequest('/groups',accessToken);
-      group=(Array.isArray(groups)?groups:[]).find((row:any)=>String(row.id)===String(connection.spond_group_id));
+      group=(Array.isArray(groups)?groups:[]).find((row:any)=>String(row.id)===String(spondGroupId));
     }
     if(!group)return {status:'group_unavailable',sessions:[]};
     const memberId=matchSpondMemberId(group,person,explicitIds)||'';
@@ -364,7 +371,7 @@ async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,mem
     const now=new Date(),maxStart=new Date(now.getTime()+60*24*60*60*1000);
     // Include future scheduled occurrences because Clare's recurring Spond sessions can be configured
     // before their push invitation is sent. Eligibility still has to pass the event/subgroup invite test below.
-    const params=new URLSearchParams({groupId:String(connection.spond_group_id),minStartTimestamp:now.toISOString(),maxStartTimestamp:maxStart.toISOString(),max:'300',scheduled:'true',includeComments:'false',includeHidden:'false',addProfileInfo:'true'});
+    const params=new URLSearchParams({groupId:String(spondGroupId),minStartTimestamp:now.toISOString(),maxStartTimestamp:maxStart.toISOString(),max:'300',scheduled:'true',includeComments:'false',includeHidden:'false',addProfileInfo:'true'});
     const raw=await spondRequest(`/sponds?${params.toString()}`,accessToken);
     const candidates=(Array.isArray(raw)?raw:[]).filter((event:any)=>!directBound.boundEventIds.has(String(event?.id||''))).map((event:any)=>{
       const loc=event?.location||{};
@@ -398,7 +405,7 @@ async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,mem
     }
     const sessions=hydrated.filter(({event}:any)=>memberIsInvitedToSpondEvent(event,person,memberId,memberSubgroups)).map(({event,match}:any)=>{
       const eventMemberId=spondEventMemberId(event,person,memberId);
-      if(eventMemberId)persistResolvedSpondIdentity(base44,club,membership,person,eventMemberId,String(connection.spond_group_id)).catch(()=>{});
+      if(eventMemberId)persistResolvedSpondIdentity(base44,club,membership,person,eventMemberId,String(spondGroupId)).catch(()=>{});
       const status=spondResponseStatus(event,eventMemberId);
       if(['declined','waiting','waitinglist','waitlist'].includes(status))return null;
       const {startRaw,start,cfg}=match;
