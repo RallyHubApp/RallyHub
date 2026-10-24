@@ -28,9 +28,24 @@ export default function AdminPanel() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const canAccessAdmin = user?.role === 'admin';
+  // Tenant administration and Directory administration are independent capabilities.
+  const directoryTabNames = ['directory', 'directory-contacts', 'directory-players', 'directory-analytics'];
+  const { data: directoryCapability } = useQuery({
+    queryKey: ['directory-admin-capability', user?.id],
+    queryFn: async () => {
+      const result = await base44.functions.invoke('directoryAdminAccess', {});
+      return result.data?.authorised === true;
+    },
+    enabled: canAccessAdmin && !!user?.id,
+    staleTime: 0,
+    retry: false,
+  });
+  const canAccessDirectoryAdmin = canAccessAdmin && directoryCapability === true;
+
   const allowedAdminTabs = ['linking', 'preview', 'announcements', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'feedback', 'control-library', 'dupr', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
-  const activeAdminTab = requestedTab === 'approvals' ? 'linking' : allowedAdminTabs.includes(requestedTab) ? requestedTab : 'linking';
+  const rawAdminTab = requestedTab === 'approvals' ? 'linking' : allowedAdminTabs.includes(requestedTab) ? requestedTab : 'linking';
+  const activeAdminTab = directoryTabNames.includes(rawAdminTab) && !canAccessDirectoryAdmin ? 'linking' : rawAdminTab;
   const directoryFocus = searchParams.get('focus');
   const queryClient = useQueryClient();
 
@@ -341,7 +356,7 @@ export default function AdminPanel() {
       if (res.data?.error) throw new Error(res.data.error);
       return { claims: res.data?.claims || [], accesses: res.data?.accesses || [], listingRequests: res.data?.listingRequests || [], listingRecords: res.data?.listingRecords || [], listingProfiles: res.data?.listingProfiles || [], invitations: res.data?.invitations || [] }; 
     },
-    enabled: canAccessAdmin,
+    enabled: canAccessDirectoryAdmin,
     staleTime: 0,
     retry: false,
     refetchOnMount: 'always',
@@ -355,7 +370,7 @@ export default function AdminPanel() {
       if (res.data?.error) throw new Error(res.data.error);
       return res.data || { counts: {}, subscribers: [] };
     },
-    enabled: canAccessAdmin && activeAdminTab === 'directory-players'
+    enabled: canAccessDirectoryAdmin && activeAdminTab === 'directory-players'
   });
 
   const { data: clubFeedbackRows = [] } = useQuery({
@@ -1717,6 +1732,7 @@ Brian`;
           <TabsTrigger value="announcements" className="text-xs gap-1.5">
             <Megaphone className="w-3.5 h-3.5" /> Announcements
           </TabsTrigger>
+          {canAccessDirectoryAdmin && (<>
           <TabsTrigger value="directory" className="text-xs gap-1.5" onClick={() => {
             if (activeAdminTab !== 'directory' || pendingDirectoryActionCount <= 0) return;
             const target = document.querySelector('[data-directory-action="pending-claim"][data-has-pending="true"]')
@@ -1737,6 +1753,7 @@ Brian`;
           <TabsTrigger value="directory-analytics" className="text-xs gap-1.5">
             <Eye className="w-3.5 h-3.5" /> Directory Analytics
           </TabsTrigger>
+          </>)}
           <TabsTrigger value="feedback" className="text-xs gap-1.5">
             <MessageCircle className="w-3.5 h-3.5" /> Feedback
             {clubFeedbackRows.filter(row => row.status === 'new').length > 0 && (
