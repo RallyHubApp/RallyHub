@@ -11,3 +11,8 @@ A safe migration requires both actual immutable Base44 User IDs for Brian and Co
 **Scope of next security package:** (1) verify Base44's supported immutable-ID RLS condition contract, (2) inventory direct client calls, (3) select least-privilege policy for each schema, (4) implement in code and test direct reads/writes as both approved and unapproved admin, owner, guest and anonymous actors, (5) validate `DirectoryListingAccess` row ownership and audit integrity, (6) only then authorise any production schema deployment.
 
 No live records or schema deployments were changed during this audit.
+
+## Release automation
+- `npm run test:directory` runs focused Directory tests; a passing unit-test result does **not** imply security acceptance.
+- `npm run gate:directory-security` is deliberately **failing** while generic-admin RLS remains and approved identity IDs are not independently verified. Release automation must require this gate and authenticated negative tests to pass.
+- Base44 API security verification currently prompts for new device authentication and could not be completed from the existing sandbox session; no account IDs or backend secrets were changed.

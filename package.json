@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "node scripts/generateSeoSitemap.mjs && vite build && node scripts/prerenderSeoPages.mjs",
     "lint": "eslint . --quiet",
+    "test:directory": "node --test testing/directory/*.test.mjs",
+    "gate:directory-security": "node testing/directory/directorySecurityAcceptance.mjs",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
     "test:tournival-comms": "node scripts/tournivalCommunicationsGate.mjs",
