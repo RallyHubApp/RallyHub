@@ -1,4 +1,4 @@
-import {directoryEmailHash} from './directoryAudience.mjs';
+import {directoryEmailHash} from './directoryAudience.ts';
 /** Generate a non-sending delivery plan. No provider calls, tenant records, or live mail. */
 export async function directoryDeliveryPlan(campaign,audience,now=new Date()) {
  const issues=[];
