@@ -33,6 +33,9 @@ export function verifyCourtIntegrity(matches, courts) {
  * No result is ever synthesised. A blocked fixture is skipped in favour of
  * a later eligible one, and matches already playing are untouched.
  */
+/** @param {any[]} matches
+ * @param {{courts?:number,unavailable?:number[],restUntil?:Record<string,number>,at?:number,paused?:boolean}} [options]
+ */
 export function scheduleTournivalCourts(matches, {
   courts, unavailable = [], restUntil = {}, at = Date.now(), paused = false,
 } = {}) {

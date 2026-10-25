@@ -78,7 +78,7 @@ export async function trackSiteEvent(eventName,details={}){
   try{base44.functions.invoke('siteAnalytics',payload).catch(()=>{})}catch{}
   if(window.gtag&&gaMeasurementId){
     const gaDetails={...details,page_path:window.location.pathname,page_title:document.title};
-    delete gaDetails.metadata;
+    delete /** @type {any} */ (gaDetails).metadata;
     window.gtag('event',eventName,gaDetails);
   }
 }

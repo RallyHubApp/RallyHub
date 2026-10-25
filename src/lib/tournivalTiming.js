@@ -2,6 +2,7 @@
  * Pure Tournival operational forecast. Never mutates match durations, draws,
  * participant eligibility or sporting state.
  */
+/** @param {{matches?:any[],courts?:number,minutesPerMatch?:number,changeoverMinutes?:number,venueEndAt?:string,now?:number,actualStartedAt?:string,paused?:boolean}} [options] */
 export function forecastTournivalProgress({
  matches = [], courts = 1, minutesPerMatch = 10,
  changeoverMinutes = 3, venueEndAt, now = Date.now(),

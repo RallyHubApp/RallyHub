@@ -8,6 +8,7 @@ declare global {
     __rallyhubAudioContext?: AudioContext;
     __rallyhubUtterance?: SpeechSynthesisUtterance | null;
     __rallyhubPaState?: {
+      analyser?: AnalyserNode;
       active: boolean;
       ctx: AudioContext;
       stream: MediaStream;
