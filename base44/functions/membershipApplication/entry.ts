@@ -681,6 +681,52 @@ Deno.serve(async(req)=>{
         return Response.json({success:true,magicInviteUrl,expiresAt:invite.expires_at,emailSent,boundTo:{email:invite.intended_email||'',mobile:invite.intended_mobile||''}});
       }
 
+      if(action==='admin_edit_approved_request'){
+        const requestId=clean(body.requestId,120);
+        const request=await first(base44,'ClubAccessRequest',{id:requestId,tenant_id:tenantId,club_id:clubId,request_type:'membership_application'});
+        if(!request)return Response.json({error:'Membership request not found.'},{status:404});
+        if(!['approved','pending_approval'].includes(request.status))return Response.json({error:'Only pending or approved applications without completed membership may be edited.'},{status:409});
+        const email=emailKey(body.email);
+        const fullName=clean(body.fullName||request.full_name,160);
+        const mobile=clean(body.mobile??request.mobile,80);
+        if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return Response.json({error:'Enter a valid email address.'},{status:400});
+        if(fullName.split(/\s+/).length<2||phoneDigits(mobile).length<8)return Response.json({error:'Enter the full name and a valid mobile number.'},{status:400});
+        const restriction=await clubRestrictionCheck(base44,tenantId,clubId,{fullName,email,mobile});
+        if(restriction!=='clear')return clubRestrictionResponse(restriction);
+        const converted=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId,source_reference:request.id},'-submitted_at',5);
+        if((converted||[]).length)return Response.json({error:'Membership processing has already started; edit the membership record instead.'},{status:409});
+        let payload:any;
+        try{payload=JSON.parse(request.payload_json||'{}')}catch{return Response.json({error:'Original applicant details cannot be safely updated.'},{status:409})}
+        if(!payload||payload.applicationType!=='new')return Response.json({error:'Original application details are incomplete.'},{status:409});
+        const changed=email!==emailKey(request.email)||mobile!==String(request.mobile||'')||fullName!==request.full_name;
+        if(!changed)return Response.json({success:true,unchanged:true});
+        // Invalidate all prior private links before updating the identity they protect.
+        const invitations=await base44.asServiceRole.entities.AccessInviteToken.filter({tenant_id:tenantId,club_id:clubId,purpose:'membership_application',access_request_id:request.id},'-created_at',100);
+        for(const invite of invitations||[]){if(invite.status==='active')await base44.asServiceRole.entities.AccessInviteToken.update(invite.id,{status:'revoked',notes:clean((invite.notes||'')+' | Revoked after admin identity correction',900)});}
+        payload={...payload,fullName,email,mobile};
+        const now=new Date().toISOString();
+        await base44.asServiceRole.entities.ClubAccessRequest.update(request.id,{full_name:fullName,email,mobile,payload_json:JSON.stringify(payload),invite_token_id:'',notes:clean((request.notes||'')+' | Contact details corrected by administrator '+user.id+' on '+now,900)});
+        console.info('Membership applicant details corrected',{requestId:request.id,administrator:user.id,at:now});
+        return Response.json({success:true,requiresNewInvite:request.status==='approved'});
+      }
+      if(action==='admin_resend_approved_invite'){
+        const requestId=clean(body.requestId,120);
+        const request=await first(base44,'ClubAccessRequest',{id:requestId,tenant_id:tenantId,club_id:clubId,request_type:'membership_application'});
+        if(!request||request.status!=='approved')return Response.json({error:'Approved membership request not found.'},{status:404});
+        const processed=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId,source_reference:request.id},'-submitted_at',5);
+        if((processed||[]).length)return Response.json({error:'Membership has started; use the payment follow-up controls.'},{status:409});
+        const restriction=await clubRestrictionCheck(base44,tenantId,clubId,{fullName:request.full_name,email:request.email,mobile:request.mobile});
+        if(restriction!=='clear')return clubRestrictionResponse(restriction);
+        const previous=await base44.asServiceRole.entities.AccessInviteToken.filter({tenant_id:tenantId,club_id:clubId,purpose:'membership_application',access_request_id:request.id},'-created_at',100);
+        for(const token of previous||[]){if(token.status==='active')await base44.asServiceRole.entities.AccessInviteToken.update(token.id,{status:'revoked',notes:clean((token.notes||'')+' | Superseded by new invite',900)});}
+        const invite=await createMembershipInvite(base44,config,user,request.email,request.full_name,request.id,request.mobile||'');
+        await base44.asServiceRole.entities.ClubAccessRequest.update(request.id,{invite_token_id:invite.id});
+        const magicInviteUrl=`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`;
+        let emailSent=false;
+        try{await sendMembershipInviteEmail(base44,config,club,request.email,request.full_name,magicInviteUrl,true,request.mobile||'');emailSent=true}catch(e:any){console.error('membership approved invite resend failed',e?.message||e)}
+        return Response.json({success:true,emailSent,magicInviteUrl,recipientEmail:request.email});
+      }
+
       if(action==='admin_approve_request'){
         const requestId=clean(body.requestId,120);
         const request=await first(base44,'ClubAccessRequest',{id:requestId,tenant_id:tenantId,club_id:clubId,request_type:'membership_application'});
