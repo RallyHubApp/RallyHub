@@ -117,6 +117,8 @@ export default function MembershipConsole() {
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [applicationBusyId, setApplicationBusyId] = useState('');
+  const [editApplicant,setEditApplicant]=useState(null);
+  const [editApplicantForm,setEditApplicantForm]=useState({fullName:'',email:'',mobile:''});
   const [venueHostDrafts,setVenueHostDrafts]=useState({});
   const [venueHostBusy,setVenueHostBusy]=useState('');
   const [communicationPreview, setCommunicationPreview] = useState(null);
@@ -952,6 +954,33 @@ export default function MembershipConsole() {
     }
   };
 
+  const openApplicantEditor=request=>{
+    setEditApplicant(request);
+    setEditApplicantForm({fullName:request.fullName||'',email:request.email||'',mobile:request.mobile||''});
+  };
+  const saveApplicantEditor=async()=>{
+    if(!editApplicant)return;
+    setApplicationBusyId('edit-'+editApplicant.id);
+    try{
+      const response=await base44.functions.invoke('membershipApplication',{action:'admin_edit_approved_request',requestId:editApplicant.id,...editApplicantForm});
+      if(response.data?.error)throw new Error(response.data.error);
+      await queryClient.invalidateQueries({queryKey:['membership-applications']});
+      setEditApplicant(null);
+      toast.success(response.data?.requiresNewInvite?'Details corrected. Old invitation revoked; use Resend private link.':'Applicant details updated');
+    }catch(error){toast.error(error?.response?.data?.error||error?.message||'Could not update applicant details')}
+    finally{setApplicationBusyId('')}
+  };
+  const resendApprovedInvite=async request=>{
+    setApplicationBusyId('resend-'+request.id);
+    try{
+      const response=await base44.functions.invoke('membershipApplication',{action:'admin_resend_approved_invite',requestId:request.id});
+      if(response.data?.error)throw new Error(response.data.error);
+      toast[response.data?.emailSent?'success':'warning'](response.data?.emailSent?'Private membership link sent to '+response.data.recipientEmail:'New private link created but email delivery was not confirmed');
+      await queryClient.invalidateQueries({queryKey:['membership-applications']});
+    }catch(error){toast.error(error?.response?.data?.error||error?.message||'Could not resend private link')}
+    finally{setApplicationBusyId('')}
+  };
+
   const prepareApprovedFollowUp = async request => {
     setApplicationBusyId('followup-' + request.id);
     try {
@@ -1182,6 +1211,12 @@ export default function MembershipConsole() {
                 <div className="rounded-lg border bg-background/40 p-3"><p className="text-[10px] uppercase text-muted-foreground">Renewals</p><p className="mt-1 text-xl font-black">{applicationData.counts?.renewals || 0}</p></div>
               </div>
 
+              {editApplicant&&<div className="mb-5 rounded-xl border border-primary/40 p-4 space-y-3" role="region" aria-label="Edit membership applicant">
+                <h3 className="font-bold">Edit applicant — {editApplicant.fullName}</h3>
+                <p className="text-xs text-muted-foreground">Correct applicant details before membership completion. Changing contact details revokes the previous private invitation. Send a fresh link after saving.</p>
+                <div className="grid gap-3 sm:grid-cols-3">{[['fullName','Full name'],['email','Email address'],['mobile','Mobile number']].map(([key,title])=><label key={key} className="space-y-1"><span className="text-sm font-medium">{title}</span><Input type={key==='email'?'email':'text'} value={editApplicantForm[key]||''} onChange={e=>setEditApplicantForm(previous=>({...previous,[key]:e.target.value}))}/></label>)}</div>
+                <div className="flex gap-2"><Button disabled={!!applicationBusyId} onClick={saveApplicantEditor}>Save changes</Button><Button variant="outline" disabled={!!applicationBusyId} onClick={()=>setEditApplicant(null)}>Cancel</Button></div>
+              </div>}
               {(applicationData.pendingApprovals || []).length > 0 ? <div className="mb-5 space-y-2">
                 <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-bold">Awaiting club approval</p><p className="text-xs text-muted-foreground">No payment has been taken. Approving creates a private link bound to that applicant’s email and mobile number where available.</p></div><Badge variant="outline">{applicationData.pendingApprovals.length}</Badge></div>
                 {(applicationData.pendingApprovals || []).map(request => {
@@ -1195,7 +1230,7 @@ export default function MembershipConsole() {
                       </div>
                       <div className="flex flex-wrap gap-2 xl:justify-end">
                         <Button size="sm" onClick={() => approveMembershipRequest(request)} disabled={approvalBusy}><CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />Approve & create private link</Button>
-                        <Button size="sm" variant="outline" onClick={() => rejectMembershipRequest(request)} disabled={approvalBusy}><X className="w-3.5 h-3.5 mr-1.5" />Decline</Button>
+                        <Button size="sm" variant="outline" onClick={()=>openApplicantEditor(request)} disabled={approvalBusy}>Edit details</Button><Button size="sm" variant="outline" onClick={() => rejectMembershipRequest(request)} disabled={approvalBusy}><X className="w-3.5 h-3.5 mr-1.5" />Decline</Button>
                       </div>
                     </div>
                   </div>;
@@ -1209,7 +1244,7 @@ export default function MembershipConsole() {
                   <p className="mt-1 text-xs text-muted-foreground">{request.email}{request.mobile?' · '+request.mobile:''}{request.primaryVenue?' · Joining: '+request.primaryVenue:''}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Approved {request.approvedAt?new Date(request.approvedAt).toLocaleString('en-IE'):'—'} · Membership application not completed; payment not recorded</p>
                   <div className="flex flex-wrap gap-2 mt-3">
-                    <Button size="sm" variant="outline" disabled={!!applicationBusyId} onClick={()=>prepareApprovedFollowUp(request)}>
+                    <Button size="sm" variant="outline" disabled={!!applicationBusyId} onClick={()=>openApplicantEditor(request)}>Edit details</Button><Button size="sm" variant="outline" disabled={!!applicationBusyId} onClick={()=>resendApprovedInvite(request)}>Resend private link</Button><Button size="sm" variant="outline" disabled={!!applicationBusyId} onClick={()=>prepareApprovedFollowUp(request)}>
                       <MessageCircle className="w-3.5 h-3.5 mr-1.5"/> {applicationBusyId==='followup-'+request.id?'Preparing…':'Create payment link / WhatsApp'}
                     </Button>
                   </div>
