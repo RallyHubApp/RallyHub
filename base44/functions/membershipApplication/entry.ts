@@ -7,6 +7,10 @@ import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { membershipPaidTemplate } from './membershipPaidTemplate.ts';
 import { membershipComms, membershipBasicHtml } from './membershipComms.ts';
 
+const CLARE_JOINING_VENUES=['ennistymon','shannon','corofin','clarecastle'];
+const CLARE_VENUE_POLICY_VERSION='2026-10-v1';
+function isClareVenuePolicy(club:any){return String(club?.name||'').trim().toLowerCase()==='clare pickleball'}
+function validJoiningVenue(venue:any,ack:any){return CLARE_JOINING_VENUES.includes(String(venue||''))&&ack===true}
 function clean(v:any,max=500){return String(v??'').trim().replace(/\s+/g,' ').slice(0,max)}
 function raw(v:any,max=20000){return String(v??'').trim().slice(0,max)}
 function emailKey(v:any){return clean(v,240).toLowerCase()}
@@ -275,20 +279,22 @@ async function sendPaidConfirmation(base44:any,config:any,club:any,app:any,force
   const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:config.tenant_id,clubId:config.club_id};
   const hello=firstName(app.full_name);
   const fee=money(app.membership_fee,app.currency||config.currency||'EUR');
+  const venueNote=isClareVenuePolicy(club)&&app.primary_venue?`\nPrimary joining venue: ${app.primary_venue}. Clare Pickleball members may attend eligible sessions at other venues, subject to booking and capacity. Ennis is full; membership does not automatically grant Ennis access or waiting-list priority.\n`:'';
+  const venueHtml=venueNote?`<p style="font-size:14px;line-height:1.6;color:#374151;">Primary joining venue: <strong>${escapeHtml(app.primary_venue)}</strong>. Other eligible Clare Pickleball sessions remain available subject to booking and capacity. Ennis is full and access is not automatic.</p>`:'';
   const textBody=`Hi ${hello},
 
 Your ${club.name} membership for ${app.membership_season} is confirmed.
 
 Payment received: ${fee}
 Membership reference: ${app.confirmation_code}
-
+${venueNote}
 Thank you for being part of ${club.name}.
 
 ${signoffText(config,club)}`;
   const htmlBody=emailShell({club,headline:`Membership confirmed, ${hello}`,preheader:`${club.name} membership confirmed`,content:`
 <p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">Your membership for <strong>${escapeHtml(app.membership_season)}</strong> is now confirmed.</p>
 <div style="margin:0 0 20px;padding:16px;border-radius:14px;background:#eef8f1;border:1px solid #b9e2c4;"><div style="font-size:15px;font-weight:800;color:#23452d;">Payment received · ${escapeHtml(fee)}</div><div style="margin-top:5px;font-size:13px;color:#3f6348;">Membership reference: ${escapeHtml(app.confirmation_code)}</div></div>
-<p style="margin:0;font-size:15px;line-height:1.65;color:#374151;">Thank you for being part of ${escapeHtml(club.name)}.</p>${signoffHtml(config,club)}`});
+${venueHtml}<p style="margin:0;font-size:15px;line-height:1.65;color:#374151;">Thank you for being part of ${escapeHtml(club.name)}.</p>${signoffHtml(config,club)}`});
   try{
     const content=await membershipPaidTemplate(base44,config,club,app,{subject:`${club.name} membership confirmed · ${app.membership_season}`,textBody,htmlBody});
     await sendWithConfiguredEmailTransport(base44,scope,{to:app.email,...content});
@@ -357,6 +363,7 @@ async function convertApprovedRequestToPayment(base44:any,config:any,club:any,re
   let payload:any;
   try{payload=JSON.parse(request.payload_json||'')}catch{throw new Error('Original membership submission is unavailable. Do not recreate the applicant form.')}
   if(payload.applicationType!=='new'||emailKey(payload.email)!==emailKey(request.email)||clean(payload.fullName)!==clean(request.full_name))throw new Error('Original submitted details do not match the approved request.');
+  if(isClareVenuePolicy(club)&&!validJoiningVenue(payload.primaryVenue,payload.venueAcknowledged))throw new Error('Approved request does not contain a valid venue acknowledgement.');
   if(!payload.fullPostalAddress||!payload.postalCode||!payload.dateOfBirth||!payload.emergencyContactName||phoneDigits(payload.emergencyMobile).length<8)throw new Error('Original membership form is incomplete. Review required.');
   const docs=await legalDocs(base44,config);
   const consentTypes:any=[['privacy',docs.privacy],['liability_waiver',docs.waiver],['code_of_conduct',docs.code],['health_declaration',docs.health],['membership_terms',docs.terms]];
@@ -392,7 +399,7 @@ async function convertApprovedRequestToPayment(base44:any,config:any,club:any,re
       tenant_id:config.tenant_id,club_id:config.club_id,person_id:person.id,
       membership_season:config.season_label,membership_type:'new',membership_status:'pending_payment',
       relationship_type:'member',join_date:request.submitted_at.slice(0,10),expiry_date:config.active_until||undefined,
-      membership_fee:Number(config.membership_fee),payment_status:'pending',source_system:'rallyhub_membership_application',
+      membership_fee:Number(config.membership_fee),payment_status:'pending',primary_venue:payload.primaryVenue||undefined,source_system:'rallyhub_membership_application',
       last_synced_at:new Date().toISOString()
     });
   }
@@ -406,6 +413,7 @@ async function convertApprovedRequestToPayment(base44:any,config:any,club:any,re
       mobile:payload.mobile,date_of_birth:payload.dateOfBirth,emergency_contact_name:payload.emergencyContactName,
       emergency_contact_relationship:payload.emergencyContactRelationship||'',emergency_mobile:payload.emergencyMobile,
       emergency_contact_raw:payload.emergencyContactName+' ('+(payload.emergencyContactRelationship||'')+') – '+payload.emergencyMobile,
+      primary_venue:payload.primaryVenue||'',venue_acknowledged:payload.venueAcknowledged===true,venue_acknowledgement_version:payload.venueAcknowledgementVersion||'',
       changed_fields:payload.changedFields||[],data_review_confirmed:payload.dataReviewConfirmed===true,
       payment_status:'not_started',submitted_at:request.submitted_at,approved_at:request.approved_at,
       follow_up_status:'payment_due',source_system:'rallyhub_membership_application'
@@ -500,7 +508,7 @@ async function requireClubManager(base44:any){
   return {user,tenantId,clubId};
 }
 function safeApplication(app:any,paymentUrl=''){
-  return {id:app.id,publicToken:app.public_token||'',applicationType:app.application_type,status:app.status,paymentStatus:app.payment_status,confirmationCode:app.confirmation_code,fullName:app.full_name,seasonLabel:app.membership_season,membershipFee:Number(app.membership_fee||0),currency:app.currency||'EUR',paymentUrl};
+  return {id:app.id,publicToken:app.public_token||'',applicationType:app.application_type,status:app.status,paymentStatus:app.payment_status,confirmationCode:app.confirmation_code,fullName:app.full_name,seasonLabel:app.membership_season,membershipFee:Number(app.membership_fee||0),currency:app.currency||'EUR',paymentUrl,primaryVenue:app.primary_venue||''};
 }
 async function hadFailedMembershipPayment(base44:any,config:any,app:any){
   if(app.payment_status==='failed')return true;
@@ -601,7 +609,7 @@ Deno.serve(async(req)=>{
           const paymentUrl=paymentUrls.get(app.id)||'';
           rows.push({
             id:app.id,applicationType:app.application_type,status:app.status,paymentStatus:app.payment_status,
-            fullName:app.full_name,email:app.email,mobile:app.mobile,seasonLabel:app.membership_season,
+            fullName:app.full_name,email:app.email,mobile:app.mobile,primaryVenue:app.primary_venue||'',seasonLabel:app.membership_season,
             membershipFee:Number(app.membership_fee||0),currency:app.currency||config.currency||'EUR',
             confirmationCode:app.confirmation_code,submittedAt:app.submitted_at||app.created_date,paidAt:app.paid_at||'',
             reminderCount:Number(app.reminder_count||0),lastReminderAt:app.last_reminder_at||'',followUpStatus:app.follow_up_status||'none',
@@ -609,10 +617,10 @@ Deno.serve(async(req)=>{
           });
         }
         const accessRequests=await base44.asServiceRole.entities.ClubAccessRequest.filter({tenant_id:tenantId,club_id:clubId,request_type:'membership_application'},'-submitted_at',200);
-        const pendingApprovals=(accessRequests||[]).filter((r:any)=>r.status==='pending_approval').map((r:any)=>({id:r.id,fullName:r.full_name,email:r.email,mobile:r.mobile||'',dateOfBirth:r.date_of_birth||'',submittedAt:r.submitted_at||r.created_date,notes:r.notes||''}));
+        const pendingApprovals=(accessRequests||[]).filter((r:any)=>r.status==='pending_approval').map((r:any)=>({id:r.id,fullName:r.full_name,email:r.email,mobile:r.mobile||'',dateOfBirth:r.date_of_birth||'',submittedAt:r.submitted_at||r.created_date,notes:r.notes||'',primaryVenue:(()=>{try{return JSON.parse(r.payload_json||'{}').primaryVenue||''}catch{return ''}})()}));
         const approvedInvitations=(accessRequests||[]).filter((r:any)=>r.status==='approved'&&!rows.some((a:any)=>emailKey(a.email)===emailKey(r.email))).map((r:any)=>({
           id:r.id,fullName:r.full_name,email:r.email,mobile:r.mobile||'',submittedAt:r.submitted_at||r.created_date,
-          approvedAt:r.approved_at||'',status:'approved',paymentStatus:'not_started'
+          approvedAt:r.approved_at||'',primaryVenue:(()=>{try{return JSON.parse(r.payload_json||'{}').primaryVenue||''}catch{return ''}})(),status:'approved',paymentStatus:'not_started'
         }));
         const counts={
           total:rows.length+approvedInvitations.length,
@@ -867,6 +875,9 @@ Deno.serve(async(req)=>{
     if(applicationType==='new'&&config.allow_new===false)return Response.json({error:'New membership applications are not open right now.'},{status:409});
     if(applicationType==='renewal'&&config.allow_renewal===false)return Response.json({error:'Renewals are not open right now.'},{status:409});
 
+    const primaryVenue=applicationType==='new'&&isClareVenuePolicy(club)?clean(body.primaryVenue,40).toLowerCase():'';
+    const venueAcknowledged=body.venueAcknowledged===true;
+    if(applicationType==='new'&&isClareVenuePolicy(club)&&!validJoiningVenue(primaryVenue,venueAcknowledged))return Response.json({error:'Select an available joining venue and acknowledge the venue access conditions. Ennis is full.'},{status:400});
     const fullName=clean(body.fullName,160);
     const fullPostalAddress=raw(body.fullPostalAddress,1200);
     const postalCode=clean(body.postalCode,40);
@@ -916,7 +927,7 @@ Deno.serve(async(req)=>{
         if(existingRequests?.[0]){
           return Response.json({success:true,pendingApproval:true,requestId:existingRequests[0].id,message:'Your membership request is already awaiting Clare Pickleball approval. No payment has been taken.'});
         }
-        const payload={applicationType,fullName,fullPostalAddress,postalCode,email,mobile,dateOfBirth:dob,emergencyContactName:emergencyName,emergencyContactRelationship:emergencyRelationship,emergencyMobile,changedFields:Array.isArray(body.changedFields)?body.changedFields:[],dataReviewConfirmed:body.dataReviewConfirmed===true,consents:submittedConsents};
+        const payload={applicationType,fullName,fullPostalAddress,postalCode,email,mobile,dateOfBirth:dob,emergencyContactName:emergencyName,emergencyContactRelationship:emergencyRelationship,emergencyMobile,changedFields:Array.isArray(body.changedFields)?body.changedFields:[],dataReviewConfirmed:body.dataReviewConfirmed===true,consents:submittedConsents,primaryVenue,venueAcknowledged,venueAcknowledgementVersion:CLARE_VENUE_POLICY_VERSION};
         const request=await base44.asServiceRole.entities.ClubAccessRequest.create({
           tenant_id:config.tenant_id,club_id:config.club_id,request_type:'membership_application',status:'pending_approval',source:'public_link',membership_config_id:config.id,
           full_name:fullName,email,mobile,date_of_birth:dob,payload_json:JSON.stringify(payload),submitted_at:new Date().toISOString(),
@@ -973,7 +984,7 @@ Deno.serve(async(req)=>{
         join_date:previousMembership?.join_date||new Date().toISOString().slice(0,10),
         renewal_date:applicationType==='renewal'?new Date().toISOString().slice(0,10):undefined,
         expiry_date:config.active_until||undefined,membership_fee:Number(config.membership_fee||0),
-        payment_status:config.payment_required===false?'not_required':'pending',
+        primary_venue:primaryVenue||undefined,payment_status:config.payment_required===false?'not_required':'pending',
         previous_member_ids:previousMembership?.member_id?[previousMembership.member_id]:[],
         source_system:'rallyhub_membership_application',last_synced_at:new Date().toISOString()
       });
@@ -996,6 +1007,7 @@ Deno.serve(async(req)=>{
       full_name:fullName,full_postal_address:fullPostalAddress,postal_code:postalCode,email,mobile,date_of_birth:dob,
       emergency_contact_name:emergencyName,emergency_contact_relationship:emergencyRelationship,emergency_mobile:emergencyMobile,
       emergency_contact_raw:personPatch.emergency_contact_raw,changed_fields:changedFields,data_review_confirmed:applicationType==='renewal'?true:body.dataReviewConfirmed===true,
+      primary_venue:primaryVenue||undefined,venue_acknowledged:venueAcknowledged,venue_acknowledgement_version:primaryVenue?CLARE_VENUE_POLICY_VERSION:undefined,
       payment_status:config.payment_required===false?'not_required':'not_started',submitted_at:new Date().toISOString(),
       follow_up_status:config.payment_required===false?'complete':'payment_due',source_system:'rallyhub_membership_application'
     };

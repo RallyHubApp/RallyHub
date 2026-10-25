@@ -166,6 +166,16 @@
     },
     "source_reference": {
       "type": "string"
+    },
+    "primary_venue": {
+      "type": "string",
+      "description": "Applicant primary joining venue; does not restrict permitted cross-venue sessions"
+    },
+    "venue_acknowledged": {
+      "type": "boolean"
+    },
+    "venue_acknowledgement_version": {
+      "type": "string"
     }
   },
   "required": [

@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
+import {CLARE_JOINING_VENUES,CLARE_VENUE_ACKNOWLEDGEMENT,validateClareJoiningVenue} from '@/lib/membershipVenuePolicy.mjs';
 
 const EMPTY_FORM = {
   fullName:'', fullPostalAddress:'', postalCode:'', email:'', mobile:'', dateOfBirth:'',
-  emergencyContactName:'', emergencyContactRelationship:'', emergencyMobile:''
+  emergencyContactName:'', emergencyContactRelationship:'', emergencyMobile:'', primaryVenue:'', venueAcknowledged:false
 };
 
 function money(value,currency='EUR'){
@@ -118,7 +119,8 @@ export default function PublicMembershipApplication() {
             setForm({ ...EMPTY_FORM,
               fullName:prefill.fullName||'',fullPostalAddress:prefill.fullPostalAddress||'',postalCode:prefill.postalCode||'',
               email:prefill.email||res.data?.inviteEmail||'',mobile:prefill.mobile||res.data?.inviteMobile||'',dateOfBirth:prefill.dateOfBirth||'',
-              emergencyContactName:prefill.emergencyContactName||'',emergencyContactRelationship:prefill.emergencyContactRelationship||'',emergencyMobile:prefill.emergencyMobile||''
+              emergencyContactName:prefill.emergencyContactName||'',emergencyContactRelationship:prefill.emergencyContactRelationship||'',emergencyMobile:prefill.emergencyMobile||'',
+              primaryVenue:prefill.primaryVenue||'',venueAcknowledged:prefill.venueAcknowledged===true
             });
             if (prefill.consents) setConsents(prev=>({...prev,...prefill.consents}));
           } else if (res.data?.inviteEmail || res.data?.inviteMobile) {
@@ -209,6 +211,10 @@ export default function PublicMembershipApplication() {
       if (!Number.isFinite(birth.getTime()) || now.getTime() < eligible.getTime()) return `${club?.name||'This club'} currently requires applicants to be ${config.minimumAge} or over.`;
     }
     if (!form.emergencyContactName.trim() || form.emergencyMobile.replace(/\D/g,'').length < 8) return 'Please provide an emergency contact name and mobile number.';
+    if (applicationType === 'new' && club.name?.trim().toLowerCase() === 'clare pickleball') {
+      const venueError=validateClareJoiningVenue(form.primaryVenue,form.venueAcknowledged);
+      if(venueError)return venueError;
+    }
     if (applicationType === 'renewal' && !reviewConfirmed) return 'Please confirm that you have reviewed all of your details.';
     return '';
   };
@@ -327,6 +333,7 @@ export default function PublicMembershipApplication() {
                 <div><Label>Email address</Label><Input type="email" className="mt-1" value={form.email} onChange={e=>updateField('email',e.target.value)} autoComplete="email" />{inviteApproved&&inviteEmail&&<p className={`mt-1.5 text-xs ${inviteMatchesContact?'text-muted-foreground':'font-semibold text-amber-600'}`}>Authorised email: {inviteEmail}</p>}</div>
                 <div><Label>Mobile number</Label><Input className="mt-1" value={form.mobile} onChange={e=>updateField('mobile',e.target.value)} autoComplete="tel" />{inviteApproved&&inviteMobile&&<p className={`mt-1.5 text-xs ${inviteMatchesContact?'text-muted-foreground':'font-semibold text-amber-600'}`}>Authorised mobile/WhatsApp: {inviteMobile}</p>}</div>
                 {inviteApproved&&!inviteMatchesContact&&<div className="sm:col-span-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs font-semibold text-amber-700">This private invitation is authorised by the email or mobile/WhatsApp number it was issued to. If neither detail matches, your application will go to Clare Pickleball for approval and no payment will be taken.</div>}
+                {applicationType==='new'&&club.name?.trim().toLowerCase()==='clare pickleball'&&<div className="sm:col-span-2 space-y-3 rounded-xl border border-border p-4"><Label htmlFor="primaryVenue">Which Clare Pickleball venue are you applying through? *</Label><select id="primaryVenue" className="w-full rounded-md border border-input bg-background px-3 py-3 text-sm" value={form.primaryVenue} onChange={e=>updateField('primaryVenue',e.target.value)}><option value="">Select your primary venue</option>{CLARE_JOINING_VENUES.map(venue=><option key={venue} value={venue}>{venue==='clarecastle'?'Clarecastle':venue[0].toUpperCase()+venue.slice(1)}</option>)}</select><p className="text-xs text-muted-foreground">Ennis is full and operates a separate waiting list. Joining another venue does not automatically grant access to Ennis.</p><label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={form.venueAcknowledged===true} onChange={e=>updateField('venueAcknowledged',e.target.checked)}/><span>{CLARE_VENUE_ACKNOWLEDGEMENT}</span></label></div>}
                 <div><Label>Emergency contact name</Label><Input className="mt-1" value={form.emergencyContactName} onChange={e=>updateField('emergencyContactName',e.target.value)} /></div>
                 <div><Label>Relationship to you</Label><Input className="mt-1" value={form.emergencyContactRelationship} onChange={e=>updateField('emergencyContactRelationship',e.target.value)} placeholder="e.g. spouse, parent, friend" /></div>
                 <div className="sm:col-span-2"><Label>Emergency contact mobile</Label><Input className="mt-1" value={form.emergencyMobile} onChange={e=>updateField('emergencyMobile',e.target.value)} /></div>

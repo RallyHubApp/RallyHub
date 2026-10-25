@@ -123,6 +123,10 @@
       "items": {
         "type": "string"
       }
+    },
+    "primary_venue": {
+      "type": "string",
+      "description": "Applicant primary joining venue; does not restrict permitted cross-venue sessions"
     }
   },
   "required": [

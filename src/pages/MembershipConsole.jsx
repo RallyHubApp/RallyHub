@@ -1161,7 +1161,7 @@ export default function MembershipConsole() {
                     <div className="flex flex-col xl:flex-row xl:items-center gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{request.fullName}</p><Badge variant="outline">Awaiting approval</Badge></div>
-                        <p className="mt-1 text-xs text-muted-foreground break-words">{request.email}{request.mobile ? ` · ${request.mobile}` : ''}</p>
+                        <p className="mt-1 text-xs text-muted-foreground break-words">{request.email}{request.mobile ? ` · ${request.mobile}` : ''}{request.primaryVenue ? ` · Joining: ${request.primaryVenue}` : ''}</p>
                         <p className="mt-1 text-[11px] text-muted-foreground">Submitted {request.submittedAt ? new Date(request.submittedAt).toLocaleString('en-IE') : 'recently'} · No payment taken</p>
                       </div>
                       <div className="flex flex-wrap gap-2 xl:justify-end">
@@ -1205,7 +1205,7 @@ export default function MembershipConsole() {
                             <Badge variant={paid ? 'default' : 'outline'}>{paymentFailed ? 'Payment failed — action needed' : status === 'not_required' ? 'No payment required' : label(application.paymentStatus)}</Badge>
                             {application.followUpStatus && application.followUpStatus !== 'none' ? <Badge variant="outline">{label(application.followUpStatus)}</Badge> : null}
                           </div>
-                          <p className="mt-1 text-xs text-muted-foreground break-words">{application.email} · {application.mobile || 'No mobile'} · Ref {application.confirmationCode}</p>
+                          <p className="mt-1 text-xs text-muted-foreground break-words">{application.email} · {application.mobile || 'No mobile'} · {application.primaryVenue ? `Joining: ${application.primaryVenue} · ` : ''}Ref {application.confirmationCode}</p>
                           <p className="mt-1 text-[11px] text-muted-foreground">{application.submittedAt ? new Date(application.submittedAt).toLocaleString() : ''}{application.reminderCount ? ` · ${application.reminderCount} reminder${application.reminderCount === 1 ? '' : 's'} sent` : ''}</p>
                         </div>
                         <div className="flex flex-wrap gap-2 xl:justify-end">
