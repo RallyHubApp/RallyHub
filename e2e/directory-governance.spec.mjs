@@ -10,6 +10,7 @@ async function mockGovernance(page,{authorised=true}={}){
   if(path.includes('/public-settings/'))return reply({id:APP_ID,public_settings:{}});
   if(path.endsWith('/entities/User/me')||path.endsWith('/users/me')||path.endsWith('/auth/me'))return reply({id:authorised?'6a0b5afd3f4b9681265a1398':'unrelated-admin-id',role:'admin',email:'test@example.test',full_name:'Directory test admin',approval_status:'approved'});
   if(path.includes('/analytics/'))return reply({});
+  if(path.includes('/entities/'))return reply([]);
   const marker=`/api/apps/${APP_ID}/functions/`;
   if(path.includes(marker)){
    const name=path.split(marker)[1].split('/')[0];let body={};try{body=route.request().postDataJSON()||{}}catch{}

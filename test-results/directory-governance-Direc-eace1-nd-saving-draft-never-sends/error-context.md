@@ -7,22 +7,26 @@
 # Test info
 
 - Name: directory-governance.spec.mjs >> Directory super-admin campaign UI is separate, and saving draft never sends
-- Location: e2e/directory-governance.spec.mjs:34:1
+- Location: e2e/directory-governance.spec.mjs:35:1
 
 # Error details
 
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('Directory campaigns & consent')
+Locator: getByText('Directory governance & portability')
 Expected: visible
-Timeout: 12000ms
+Timeout: 3000ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('Directory campaigns & consent') with timeout 12000ms
-  - waiting for getByText('Directory campaigns & consent')
+  - Expect "toBeVisible" getByText('Directory governance & portability') with timeout 3000ms
+  - waiting for getByText('Directory governance & portability')
 
+```
+
+```yaml
+- text: RH
 ```
 
 # Test source
@@ -40,50 +44,51 @@ Call log:
   10 |   if(path.includes('/public-settings/'))return reply({id:APP_ID,public_settings:{}});
   11 |   if(path.endsWith('/entities/User/me')||path.endsWith('/users/me')||path.endsWith('/auth/me'))return reply({id:authorised?'6a0b5afd3f4b9681265a1398':'unrelated-admin-id',role:'admin',email:'test@example.test',full_name:'Directory test admin',approval_status:'approved'});
   12 |   if(path.includes('/analytics/'))return reply({});
-  13 |   const marker=`/api/apps/${APP_ID}/functions/`;
-  14 |   if(path.includes(marker)){
-  15 |    const name=path.split(marker)[1].split('/')[0];let body={};try{body=route.request().postDataJSON()||{}}catch{}
-  16 |    if(name==='securityContext')return reply({success:true,context:{}});
-  17 |    if(name==='directoryAdminAccess')return reply({authorised});
-  18 |    if(name==='directoryGovernance'){
-  19 |     calls++;
-  20 |     if(!authorised)return reply({error:'Directory super-admin access required'},403);
-  21 |     if(body.action==='admin_overview')return reply(base);
-  22 |     if(body.action==='admin_save_draft')return reply({success:true,campaign:{id:'campaign_00000001',name:body.name,purpose:body.purpose,channel:'email',status:'draft'}});
-  23 |     return reply({error:'Unsupported test action'},400);
-  24 |    }
-  25 |    if(name==='directoryClaim')return reply({success:true,pendingAdminCount:0});
-  26 |    if(name==='directoryPlayerNetwork')return reply({success:true,subscribers:[],counts:{total:0}});
-  27 |    if(name==='directoryEnquiryAdmin')return reply({success:true,enquiries:[],contactActions:[]});
-  28 |    return reply({success:true});
-  29 |   }
-  30 |   return reply({success:true});
-  31 |  });
-  32 |  return ()=>{console.log('GOV_REQUESTS',seen.slice(0,30));return calls;};
-  33 | }
-  34 | test('Directory super-admin campaign UI is separate, and saving draft never sends',async({page})=>{
-  35 |  const count=await mockGovernance(page);
-  36 |  const errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('GOV_JS_ERROR',e.message)});
-  37 |  await page.goto('/app/admin?tab=directory-campaigns'); await page.waitForTimeout(3000);count();
-> 38 |  await expect(page.getByText('Directory campaigns & consent')).toBeVisible({timeout:12000});
-     |                                                                ^ Error: expect(locator).toBeVisible() failed
-  39 |  await expect(page.getByText('Campaign drafts and approvals')).toBeVisible();
-  40 |  await page.getByLabel('Campaign name').fill('Autumn Directory updates');
-  41 |  await page.getByLabel('Email subject').fill('Autumn pickleball events');
-  42 |  await page.getByLabel('Plain-text email content').fill('Here are the upcoming pickleball events in your area.');
-  43 |  await page.getByRole('button',{name:'Save draft'}).click();
-  44 |  await expect(page.getByRole('button',{name:'Preview eligible audience'})).toBeEnabled();
-  45 |  await page.goto('/app/admin?tab=directory-governance');
-  46 |  await expect(page.getByText('Directory governance & portability')).toBeVisible();
-  47 |  await expect(page.getByText('Standalone Directory export')).toBeVisible();
-  48 |  expect(count()).toBeGreaterThanOrEqual(2);
-  49 |  expect(errors).toEqual([]);
-  50 | });
-  51 | test('unrelated admin cannot enter protected Directory governance',async({page})=>{
-  52 |  const count=await mockGovernance(page,{authorised:false});
-  53 |  await page.goto('/app/admin?tab=directory-governance');
-  54 |  await expect(page.getByText('Directory governance & portability')).toHaveCount(0,{timeout:12000});
-  55 |  expect(count()).toBe(0);
-  56 | });
-  57 | 
+  13 |   if(path.includes('/entities/'))return reply([]);
+  14 |   const marker=`/api/apps/${APP_ID}/functions/`;
+  15 |   if(path.includes(marker)){
+  16 |    const name=path.split(marker)[1].split('/')[0];let body={};try{body=route.request().postDataJSON()||{}}catch{}
+  17 |    if(name==='securityContext')return reply({success:true,context:{}});
+  18 |    if(name==='directoryAdminAccess')return reply({authorised});
+  19 |    if(name==='directoryGovernance'){
+  20 |     calls++;
+  21 |     if(!authorised)return reply({error:'Directory super-admin access required'},403);
+  22 |     if(body.action==='admin_overview')return reply(base);
+  23 |     if(body.action==='admin_save_draft')return reply({success:true,campaign:{id:'campaign_00000001',name:body.name,purpose:body.purpose,channel:'email',status:'draft'}});
+  24 |     return reply({error:'Unsupported test action'},400);
+  25 |    }
+  26 |    if(name==='directoryClaim')return reply({success:true,pendingAdminCount:0});
+  27 |    if(name==='directoryPlayerNetwork')return reply({success:true,subscribers:[],counts:{total:0}});
+  28 |    if(name==='directoryEnquiryAdmin')return reply({success:true,enquiries:[],contactActions:[]});
+  29 |    return reply({success:true});
+  30 |   }
+  31 |   return reply({success:true});
+  32 |  });
+  33 |  return ()=>{console.log('GOV_REQUESTS',seen.slice(0,30));return calls;};
+  34 | }
+  35 | test('Directory super-admin campaign UI is separate, and saving draft never sends',async({page})=>{
+  36 |  const count=await mockGovernance(page);
+  37 |  const errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('GOV_JS_ERROR',e.message)});
+  38 |  await page.goto('/app/admin?tab=directory-campaigns'); await page.waitForTimeout(3000);count();
+  39 |  await expect(page.getByText('Directory campaigns & consent')).toBeVisible({timeout:12000});
+  40 |  await expect(page.getByText('Campaign drafts and approvals')).toBeVisible();
+  41 |  await page.getByLabel('Campaign name').fill('Autumn Directory updates');
+  42 |  await page.getByLabel('Email subject').fill('Autumn pickleball events');
+  43 |  await page.getByLabel('Plain-text email content').fill('Here are the upcoming pickleball events in your area.');
+  44 |  await page.getByRole('button',{name:'Save draft'}).click();
+  45 |  await expect(page.getByRole('button',{name:'Preview eligible audience'})).toBeEnabled();
+  46 |  await page.goto('/app/admin?tab=directory-governance');
+> 47 |  await expect(page.getByText('Directory governance & portability')).toBeVisible();
+     |                                                                     ^ Error: expect(locator).toBeVisible() failed
+  48 |  await expect(page.getByText('Standalone Directory export')).toBeVisible();
+  49 |  expect(count()).toBeGreaterThanOrEqual(2);
+  50 |  expect(errors).toEqual([]);
+  51 | });
+  52 | test('unrelated admin cannot enter protected Directory governance',async({page})=>{
+  53 |  const count=await mockGovernance(page,{authorised:false});
+  54 |  await page.goto('/app/admin?tab=directory-governance');
+  55 |  await expect(page.getByText('Directory governance & portability')).toHaveCount(0,{timeout:12000});
+  56 |  expect(count()).toBe(0);
+  57 | });
+  58 | 
 ```
