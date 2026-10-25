@@ -2,7 +2,12 @@
 const lower = v => String(v ?? '').trim().toLowerCase();
 const validEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lower(v));
 export function directoryEmailKey(value) { return lower(value); }
-export function directoryAudience(subscribers = [], suppressions = [], filter = {}, now = new Date()) {
+export async function directoryEmailHash(value) {
+  const bytes = new TextEncoder().encode(lower(value));
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2,'0')).join('');
+}
+export async function directoryAudience(subscribers = [], suppressions = [], filter = {}, now = new Date()) {
   const topic = lower(filter.topic), county = lower(filter.county), clubSlug = lower(filter.clubSlug);
   const maxAgeMonths = Number.isInteger(filter.maxAgeMonths) && filter.maxAgeMonths > 0 && filter.maxAgeMonths <= 60 ? filter.maxAgeMonths : 24;
   const consentCutoff = new Date(now);
@@ -17,7 +22,7 @@ export function directoryAudience(subscribers = [], suppressions = [], filter = 
     if (!validEmail(address)) {counts.noEmail++; continue;}
     const consentAt = Date.parse(person.consent_at || '');
     if (!person.consent_version || !Number.isFinite(consentAt) || consentAt > now.getTime() || consentAt < consentCutoff.getTime()) {counts.expiredConsent++; continue;}
-    if (suppress.has(address)) {counts.suppressed++; continue;}
+    if (suppress.has(await directoryEmailHash(address))) {counts.suppressed++; continue;}
     const topics = Array.isArray(person.topics) ? person.topics.map(lower) : [];
     if ((topic && !topics.includes(topic)) || (county && lower(person.county) !== county) || (clubSlug && lower(person.club_slug) !== clubSlug)) {counts.outsideSegment++; continue;}
     if (seen.has(address)) {counts.duplicate++; continue;}
