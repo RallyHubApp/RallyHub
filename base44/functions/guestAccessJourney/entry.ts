@@ -393,6 +393,43 @@ Deno.serve(async(req)=>{
       })});
     }
 
+    if(action==='admin_edit_request'){
+      const id=clean(body.requestId,100);
+      const row=(await base44.asServiceRole.entities.GuestBookingRequest.filter({id,tenant_id:tenantId,club_id:clubId},'-submitted_at',5))?.[0];
+      if(!row)return Response.json({error:'Guest request not found.'},{status:404});
+      if(!['pending_approval','approved'].includes(row.status))return Response.json({error:'Only pending or approved guest requests can be edited.'},{status:409});
+      const fields=body.fields||{};
+      const allowed=['fullName','email','mobile','homeClub','duprId','sportingBackgroundNote'];
+      if(Object.keys(fields).some(key=>!allowed.includes(key)))return Response.json({error:'Unsupported guest detail field.'},{status:400});
+      const fullName=clean(fields.fullName??row.full_name,120);
+      const email=emailKey(fields.email??row.email);
+      const mobile=clean(fields.mobile??row.mobile,50);
+      if(fullName.split(/\s+/).length<2)return Response.json({error:'Enter the guest full name.'},{status:400});
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return Response.json({error:'Enter a valid email address.'},{status:400});
+      if(mobileKey(mobile).length<8)return Response.json({error:'Enter a valid mobile number.'},{status:400});
+      const restriction=await clubRestrictionCheck(base44,tenantId,clubId,{fullName,email,mobile});
+      if(restriction!=='clear')return clubRestrictionResponse(restriction);
+      const identityChanged=email!==emailKey(row.email)||mobile!==row.mobile||fullName!==row.full_name;
+      if(row.status==='approved'&&identityChanged){
+        const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({tenant_id:tenantId,club_id:clubId,session_link_id:row.approved_session_link_id},'-registered_at',100);
+        if((bookings||[]).some((b:any)=>emailKey(b.email||'')===emailKey(row.email)||mobileKey(b.mobile||'')===mobileKey(row.mobile))){
+          return Response.json({error:'This guest has already completed a booking. Edit the booking record through the attendee workflow instead.'},{status:409});
+        }
+        const invites=await base44.asServiceRole.entities.AccessInviteToken.filter({tenant_id:tenantId,club_id:clubId,purpose:'guest_booking',access_request_id:row.id},'-created_at',100);
+        for(const invite of invites||[]){
+          if(invite.status==='active')await base44.asServiceRole.entities.AccessInviteToken.update(invite.id,{status:'revoked',revoked_at:new Date().toISOString(),notes:clean((invite.notes||'')+' · Revoked after guest identity correction',950)});
+        }
+      }
+      const changes:any={};
+      const updated={full_name:fullName,email,mobile,home_club:clean(fields.homeClub??row.home_club,180),dupr_id:clean(fields.duprId??row.dupr_id,100),sporting_background_note:clean(fields.sportingBackgroundNote??row.sporting_background_note,900)};
+      for(const [key,value] of Object.entries(updated))if(String(row[key]||'')!==value)changes[key]={from:String(row[key]||''),to:value};
+      if(!Object.keys(changes).length)return Response.json({success:true,unchanged:true});
+      const audit={at:new Date().toISOString(),by:user.id,fields:Object.keys(changes)};
+      await base44.asServiceRole.entities.GuestBookingRequest.update(row.id,{...updated,admin_notes:clean((row.admin_notes||'')+' | Admin edit '+JSON.stringify(audit),1900)});
+      console.info('Guest request edited',{requestId:row.id,adminUserId:user.id,fields:Object.keys(changes),identityChanged});
+      return Response.json({success:true,identityChanged,requiresResend:row.status==='approved'&&identityChanged});
+    }
+
     if(action==='admin_private_link'){
       const id=clean(body.requestId,100);
       const sendEmail=body.sendEmail===true;
@@ -405,7 +442,7 @@ Deno.serve(async(req)=>{
       if(!sessionLink)return Response.json({error:'The approved session link is unavailable.'},{status:404});
       const currentInvites=await base44.asServiceRole.entities.AccessInviteToken.filter({tenant_id:tenantId,club_id:clubId,purpose:'guest_booking',access_request_id:row.id},'-created_at',20);
       const now=new Date();
-      let invite=(currentInvites||[]).find((i:any)=>i.status==='active'&&(!i.expires_at||Date.parse(i.expires_at)>now.getTime()));
+      let invite=(currentInvites||[]).find((i:any)=>i.status==='active'&&emailKey(i.intended_email||'')===emailKey(row.email)&&mobileKey(i.intended_mobile||'')===mobileKey(row.mobile)&&(!i.expires_at||Date.parse(i.expires_at)>now.getTime()));
       if(!invite){
         invite=await base44.asServiceRole.entities.AccessInviteToken.create({tenant_id:tenantId,club_id:clubId,purpose:'guest_booking',token:inviteToken(),status:'active',session_link_id:sessionLink.id,access_request_id:row.id,intended_email:row.email,intended_mobile:row.mobile||'',intended_name:row.full_name,expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),created_by_user_id:user.id,created_at:now.toISOString(),notes:`Replacement private invite for approved guest request ${row.id}`});
       }
