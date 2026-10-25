@@ -196,15 +196,16 @@ Received: true
   47 |  await expect(page.getByText('Directory governance & portability')).toBeVisible();
   48 |  await expect(page.getByText('Standalone Directory export')).toBeVisible();
   49 |  expect(count().governanceCalls).toBeGreaterThanOrEqual(2);
-> 50 |  expect(count().requests.some(path=>path.includes('/functions/membershipRecord')||path.includes('/entities/ClubRelationship')||path.endsWith('/entities/Player'))).toBe(false);
+  50 |  console.log('TENANT_ROUTE_READS',count().requests.filter(path=>path.includes('/functions/membershipRecord')||path.includes('/entities/ClubRelationship')||path.endsWith('/entities/Player')));
+> 51 |  expect(count().requests.some(path=>path.includes('/functions/membershipRecord')||path.includes('/entities/ClubRelationship')||path.endsWith('/entities/Player'))).toBe(false);
      |                                                                                                                                                                    ^ Error: expect(received).toBe(expected) // Object.is equality
-  51 |  expect(errors).toEqual([]);
-  52 | });
-  53 | test('unrelated admin cannot enter protected Directory governance',async({page})=>{
-  54 |  const count=await mockGovernance(page,{authorised:false});
-  55 |  await page.goto('/app/admin?tab=directory-governance');
-  56 |  await expect(page.getByText('Directory governance & portability')).toHaveCount(0,{timeout:12000});
-  57 |  expect(count().governanceCalls).toBe(0);
-  58 | });
-  59 | 
+  52 |  expect(errors).toEqual([]);
+  53 | });
+  54 | test('unrelated admin cannot enter protected Directory governance',async({page})=>{
+  55 |  const count=await mockGovernance(page,{authorised:false});
+  56 |  await page.goto('/app/admin?tab=directory-governance');
+  57 |  await expect(page.getByText('Directory governance & portability')).toHaveCount(0,{timeout:12000});
+  58 |  expect(count().governanceCalls).toBe(0);
+  59 | });
+  60 | 
 ```

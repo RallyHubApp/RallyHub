@@ -7,7 +7,11 @@ export const DIRECTORY_DEPENDENCIES = Object.freeze([
   {name:'GA4 / Search Console',replacement:'optional read-only analytics adapter',state:'reconnect'},
   {name:'Spond',replacement:'optional provider connector',state:'reconnect'},
 ]);
-const unsafeField=(key)=>/(^|_)(token|secret|password|api_key|private_key|access_key|client_secret)(_|$)/i.test(key);
+const unsafeField=(key)=>{
+  const words=String(key).replace(/([a-z0-9])([A-Z])/g,'$1_$2').replace(/[-\s]+/g,'_').toLowerCase().split('_').filter(Boolean);
+  return words.some(word=>['token','secret','password','credential','authorization','authkey'].includes(word)) ||
+    ['api_key','private_key','access_key','client_secret','refresh_token','unsubscribe_token'].some(term=>words.join('_').includes(term));
+};
 export function redactDirectoryCredentials(value) {
   if(Array.isArray(value))return value.map(redactDirectoryCredentials);
   if(value && typeof value==='object')return Object.fromEntries(Object.entries(value).filter(([key])=>!unsafeField(key)).map(([key,entry])=>[key,redactDirectoryCredentials(entry)]));

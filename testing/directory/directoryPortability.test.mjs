@@ -27,3 +27,12 @@ test('CLI extraction rehearsal consumes fixture without database writes',()=>{
  const file='/tmp/rallyhub-directory-rehearsal-fixture.json';
  try{writeFileSync(file,JSON.stringify(archive));const out=execFileSync('node',['scripts/directoryExportRehearsal.mjs',file],{encoding:'utf8'});assert.match(out,/"valid": true/);assert.match(out,/"productionWrites": 0/);}finally{try{unlinkSync(file)}catch{}}
 });
+
+test('camelCase and nested credential values are removed, not merely snake_case names',()=>{
+ const archive=packageDirectoryArchive({DirectoryContactEnquiry:[row('enquiry-1',{accessToken:'secret-1',clientSecret:'secret-2',apiKey:'secret-3',nested:{refreshToken:'secret-4',authorization:'secret-5'},name:'kept'})]});
+ const snapshot=JSON.stringify(archive);
+ assert.doesNotMatch(snapshot,/secret-[1-5]/);
+ assert.equal(archive.entities.DirectoryContactEnquiry[0].name,'kept');
+ const bad=structuredClone(archive);bad.entities.DirectoryContactEnquiry[0].apiKey='leak';
+ assert.equal(inspectDirectoryArchive(bad).valid,false);
+});
