@@ -17,6 +17,7 @@ import GlassCard from '@/components/shared/GlassCard';
 import { useAuth } from '@/lib/AuthContext';
 import MemberPortalPreview from '@/components/admin/MemberPortalPreview';
 import DirectoryAnalyticsDashboard from '@/components/admin/DirectoryAnalyticsDashboard';
+import DirectoryEnquiryFollowupEditor from '@/components/admin/DirectoryEnquiryFollowupEditor';
 import CoachesReview from '@/components/admin/CoachesReview';
 import DirectoryCategoryManager from '@/components/admin/DirectoryCategoryManager';
 import AnnouncementSettingsPanel from '@/components/admin/AnnouncementSettingsPanel';
@@ -1817,11 +1818,11 @@ Brian`;
               {directoryInboxError && <p role="alert" className="rounded-lg border border-destructive p-3 text-sm text-destructive">Directory enquiry inbox could not load. Retry above; no records have been altered.</p>}
               {directoryInboxLoading && <p className="text-sm text-muted-foreground">Loading Directory enquiries…</p>}
               {!directoryInboxError && !directoryInboxLoading && <>
-                <p className="text-xs text-muted-foreground">Showing {filteredDirectoryEnquiryRows.length} of {directoryEnquiryRows.length} recent enquiries (latest 500). Messages are visible only to verified Directory super-admins.</p>
+                <p className="text-xs text-muted-foreground">Showing {filteredDirectoryEnquiryRows.length} of {directoryEnquiryRows.length} recent enquiries (latest 500). Messages and internal follow-ups are visible only to verified Directory super-admins.</p>
                 <div className="max-h-[40rem] space-y-2 overflow-y-auto">
                   {filteredDirectoryEnquiryRows.map(row=><details key={row.id} className="rounded-lg border border-border p-3">
                     <summary className="cursor-pointer text-sm font-semibold">{row.senderName||row.senderEmail||'Unnamed sender'} · {row.listingName||row.listingSlug} <Badge variant="outline" className="ml-2">{row.status==='sent'?'Forwarded':row.status==='failed'?'Forwarding failed':'Awaiting verification'}</Badge></summary>
-                    <div className="mt-3 space-y-2 text-sm"><p><strong>Sender:</strong> {row.senderName||'Not supplied'} · {row.senderEmail||'No email supplied'}</p><p><strong>Received:</strong> {row.createdAt ? new Date(row.createdAt).toLocaleString('en-IE') : 'Unknown'} · <strong>Listing:</strong> {row.listingName||row.listingSlug}</p><p className="whitespace-pre-wrap rounded-md bg-secondary/50 p-3">{row.message||'No message saved'}</p><p className="text-xs text-muted-foreground">Source: {row.sourcePath||'Not recorded'} · Delivery: {row.status||'unknown'}{row.deliveryProvider?` (${row.deliveryProvider})`:''}</p><p className="text-xs text-muted-foreground">Contacting this sender is a separate action; no automatic email is sent from this inbox.</p></div>
+                    <div className="mt-3 space-y-2 text-sm"><p><strong>Sender:</strong> {row.senderName||'Not supplied'} · {row.senderEmail||'No email supplied'}</p><p><strong>Received:</strong> {row.createdAt ? new Date(row.createdAt).toLocaleString('en-IE') : 'Unknown'} · <strong>Listing:</strong> {row.listingName||row.listingSlug}</p><p className="whitespace-pre-wrap rounded-md bg-secondary/50 p-3">{row.message||'No message saved'}</p><p className="text-xs text-muted-foreground">Source: {row.sourcePath||'Not recorded'} · Delivery: {row.status||'unknown'}{row.deliveryProvider?` (${row.deliveryProvider})`:''}</p><p className="text-xs text-muted-foreground">Contacting this sender is a separate action; no automatic email is sent from this inbox.</p><DirectoryEnquiryFollowupEditor enquiry={row} onSaved={refreshDirectoryInbox}/></div>
                   </details>)}
                   {!filteredDirectoryEnquiryRows.length && <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No matching Directory enquiries in the latest 500 records.</p>}
                 </div>
