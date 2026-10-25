@@ -135,12 +135,12 @@ export default function DirectoryHelp() {
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
-              {[
+              {(/** @type {[import('lucide-react').LucideIcon,string,React.ReactNode][]} */ ([
                 [ShieldCheck, 'Claim safely', 'Use the invitation or request access. Directory access is verified separately from RallyHub Club.'],
                 [CheckCircle2, 'Check basics', 'Confirm the description, public contact and main venue.'],
                 [CalendarDays, 'Check sessions', 'Add or duplicate regular sessions. RallyHub sorts them into weekly order.'],
                 [Upload, 'Enhance later', <>Logo, social links, prices and extra venues are optional enhancements. <strong className="text-foreground">Using Spond?</strong> Connect your club’s Spond account to scan upcoming events and import regular venues and session times.</>],
-              ].map(([Icon,title,copy]) => (
+              ])).map(([Icon,title,copy]) => (
                 <div key={title} className="rounded-xl border border-border bg-background/35 p-4">
                   <Icon className="w-5 h-5 text-primary" />
                   <h2 className="font-bold mt-3">{title}</h2>

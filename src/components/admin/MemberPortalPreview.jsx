@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import ProfileAvatarUpload from '@/components/profile/ProfileAvatarUpload';
 import { toast } from 'sonner';
 
+/** @type {[string,import('lucide-react').LucideIcon,string][]} */
 const sections = [
   ['home', Home, 'Home'],
   ['play', CalendarDays, 'Play'],

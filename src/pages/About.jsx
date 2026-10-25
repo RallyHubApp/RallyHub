@@ -10,6 +10,7 @@ const CARD='/assets/about/';
 const APPROVED_MASTER='/assets/about-locked/about-master-approved.png?v=20260921-locked';
 const APPROVED_HERO='/assets/about/about-hero-approved.png?v=20260922-finalcrop';
 
+/** @type {[import('lucide-react').LucideIcon,string,string,string][]} */
 const cards=[
  [MapPin,'Directory & Discovery','Find clubs, venues, sessions and events across Ireland.',CARD+'card-directory.webp'],
  [Users,'Club Management','Membership, profiles, communications and more.',CARD+'card-club.webp'],
@@ -53,7 +54,7 @@ export default function About(){
   </div></section>
 
   <section className="mx-auto max-w-[1024px] px-4 py-[14px] sm:px-[29px]"><div className="grid grid-cols-2 gap-x-3 gap-y-4 rounded-[8px] bg-[#eff8fb] px-4 py-4 sm:grid-cols-4 sm:gap-0 sm:px-[55px] sm:py-[13px]">
-   {[[Users,'155+','Members (and growing)'],[MapPin,'5','Club locations in Clare'],[CalendarDays,'Weekly','Club sessions'],[Users,'A growing','Irish community']].map(([I,a,b],i)=><div key={b} className={"flex min-w-0 items-center gap-2 px-1 py-[3px] sm:gap-[13px] sm:px-[17px] "+(i<3?'sm:border-r sm:border-[#c7dbe3]':'')}><I className="h-6 w-6 shrink-0 text-[#0b5793] sm:h-7 sm:w-7"/><div className="min-w-0"><div className="text-[16px] font-black leading-tight sm:text-[20px] sm:leading-none">{a}</div><div className="mt-[3px] text-[8px] leading-tight sm:mt-[4px] sm:whitespace-nowrap sm:text-[9px]">{b}</div></div></div>)}
+   {(/** @type {[import('lucide-react').LucideIcon,string,string][]} */ ([[Users,'155+','Members (and growing)'],[MapPin,'5','Club locations in Clare'],[CalendarDays,'Weekly','Club sessions'],[Users,'A growing','Irish community']])).map(([I,a,b],i)=><div key={b} className={"flex min-w-0 items-center gap-2 px-1 py-[3px] sm:gap-[13px] sm:px-[17px] "+(i<3?'sm:border-r sm:border-[#c7dbe3]':'')}><I className="h-6 w-6 shrink-0 text-[#0b5793] sm:h-7 sm:w-7"/><div className="min-w-0"><div className="text-[16px] font-black leading-tight sm:text-[20px] sm:leading-none">{a}</div><div className="mt-[3px] text-[8px] leading-tight sm:mt-[4px] sm:whitespace-nowrap sm:text-[9px]">{b}</div></div></div>)}
   </div></section>
 
   <section className="mx-auto grid max-w-[1024px] gap-[28px] px-[30px] pb-[19px] md:grid-cols-[47%_53%]">

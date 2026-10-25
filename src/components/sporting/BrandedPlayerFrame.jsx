@@ -1,6 +1,7 @@
 import React from 'react';
 import {CalendarDays,ClipboardList,Grid2X2,Trophy,MapPin} from 'lucide-react';
 import RallyHubPublicBrand from '@/components/branding/RallyHubPublicBrand';
+/** @type {[string,string,import('lucide-react').LucideIcon][]} */
 const tabs=[['registration','My Event',CalendarDays],['fixtures','Fixtures',ClipboardList],['live','Live',Grid2X2],['knockout','Knockout',Trophy],['results','Results',Trophy],['venue','Venue',MapPin]];
 const stages=['registration','fixtures','live','knockout','results'];
 export default function BrandedPlayerFrame({event,stage,activeTab,onTab,children}){

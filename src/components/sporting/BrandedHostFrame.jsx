@@ -5,6 +5,7 @@ import { BookOpen, Grid2X2, Menu, Play, Users, ChartNoAxesColumn, LogOut, Shield
 const CLARE_TENANT='6a9b7790bc4a8d299938bda9';
 const CLARE_LOGO='https://rallyhub.ie/email-templates/clare-interclub/clare-logo-transparent.png';
 const RALLYHUB_REVERSE_LOGO='https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/85b0612d8_rallyhub-1fa08c810cc2f349fd52.png';
+/** @type {[string,string,import('lucide-react').LucideIcon][]} */
 const actions=[['run','Run',Play],['players','Players',Users],['courts','Courts',Grid2X2],['scores','Scores',ChartNoAxesColumn],['more','More',Menu],['guide','Guide',BookOpen]];
 
 export default function BrandedHostFrame({tenantId,title,subtitle,roundNote,hostName,activeTab,onTab,onSignOut,communicationsUrl,children}){
