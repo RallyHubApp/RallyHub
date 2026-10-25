@@ -1747,7 +1747,7 @@ Brian`;
           <GlassCard className="min-h-[112px] p-3 sm:p-4"><p className="text-2xl sm:text-3xl font-black text-green-500">{directoryPlayerNetwork.counts?.whatsapp || 0}</p><p className="mt-1 text-xs sm:text-sm font-semibold">WhatsApp opt-ins</p><p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">Available for mobile updates</p></GlassCard>
           <GlassCard className="min-h-[112px] p-3 sm:p-4"><p className="text-2xl sm:text-3xl font-black text-amber-500">{directoryPlayerNetwork.counts?.counties || 0}</p><p className="mt-1 text-xs sm:text-sm font-semibold">Counties represented</p><p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">National reach</p></GlassCard>
         </div>
-      ) : activeAdminTab === 'directory-contacts' || activeAdminTab === 'directory-crm' || activeAdminTab === 'directory-analytics' ? null : (
+      ) : directoryContext ? null : (
         <GlassCard role="button" tabIndex={0} onClick={() => { window.location.href='/app/membership'; }} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.location.href='/app/membership'; } }} className="cursor-pointer hover:border-primary/40 hover:bg-primary/5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
