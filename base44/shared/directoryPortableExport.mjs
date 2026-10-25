@@ -38,6 +38,13 @@ export function inspectDirectoryArchive(archive) {
       for(const key of Object.keys(row||{}))if(unsafeField(key))issues.push(`Unsafe credential field: ${entity}.${key}`);
     }
   }
+  const campaigns=new Set((entities.DirectoryCampaign||[]).map(row=>String(row.id)));
+  const subscriberIds=new Set((entities.DirectoryPlayerSubscriber||[]).map(row=>String(row.id)));
+  for(const attempt of entities.DirectoryDeliveryAttempt||[]){
+    if(!campaigns.has(String(attempt.campaign_id)))issues.push(`Orphaned delivery campaign: ${attempt.id}`);
+    if(!subscriberIds.has(String(attempt.subscriber_id)))issues.push(`Orphaned delivery subscriber: ${attempt.id}`);
+    if(attempt.status==='delivered'&&!attempt.provider_message_id)issues.push(`Unverified delivered state: ${attempt.id}`);
+  }
   const enqs=new Set((entities.DirectoryContactEnquiry||[]).map(row=>String(row.id)));
   for(const row of entities.DirectoryEnquiryFollowup||[])if(row.enquiry_id&&!enqs.has(String(row.enquiry_id)))issues.push(`Orphaned follow-up: ${row.id}`);
   const subscribers=new Set((entities.DirectoryPlayerSubscriber||[]).map(row=>String(row.id)));

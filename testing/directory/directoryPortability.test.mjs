@@ -36,3 +36,12 @@ test('camelCase and nested credential values are removed, not merely snake_case 
  const bad=structuredClone(archive);bad.entities.DirectoryContactEnquiry[0].apiKey='leak';
  assert.equal(inspectDirectoryArchive(bad).valid,false);
 });
+
+test('portable delivery attempts require existing campaign, subscriber and verifiable delivery receipt',()=>{
+ const valid=packageDirectoryArchive({DirectoryCampaign:[row('campaign-1')],DirectoryPlayerSubscriber:[row('subscriber-1')],DirectoryDeliveryAttempt:[row('delivery-1',{campaign_id:'campaign-1',subscriber_id:'subscriber-1',status:'prepared',recipient_hash:'hashed'})]});
+ assert.equal(inspectDirectoryArchive(valid).valid,true);
+ valid.entities.DirectoryDeliveryAttempt[0].status='delivered';
+ assert.ok(inspectDirectoryArchive(valid).issues.some(x=>x.startsWith('Unverified delivered state')));
+ valid.entities.DirectoryDeliveryAttempt[0].status='prepared';valid.entities.DirectoryDeliveryAttempt[0].subscriber_id='missing';
+ assert.ok(inspectDirectoryArchive(valid).issues.some(x=>x.startsWith('Orphaned delivery subscriber')));
+});

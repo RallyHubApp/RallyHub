@@ -5,6 +5,7 @@ import ts from 'typescript';
 import {readFileSync} from 'node:fs';
 import {packageDirectoryArchive,inspectDirectoryArchive} from '../../base44/shared/directoryPortableExport.mjs';
 import {directoryAudience,directoryEmailHash,directoryEmailKey} from '../../base44/shared/directoryAudience.mjs';
+import {directoryDeliveryPlan} from '../../base44/shared/directoryDelivery.mjs';
 
 const SUPER_IDS=['6a0b5afd3f4b9681265a1398','6a01dc00702b7dd2a2978c29'];
 const guards=user=>!!user&&user.role==='admin'&&SUPER_IDS.includes(user.id);
@@ -21,7 +22,7 @@ function environment(user,fixtures={}) {
   })});
   const base44={auth:{me:async()=>user},asServiceRole:{entities}};
   let handler;
-  const context={Deno:{serve(fn){handler=fn;}},createClientFromRequest:()=>base44,authorisedDirectorySuperAdmin:guards,directoryAudience,directoryEmailHash,directoryEmailKey,packageDirectoryArchive,inspectDirectoryArchive,rallyHubEmailShell:({title,content})=>`<html><title>${title}</title>${content}</html>`,Response,console,Date,JSON,Set,Map,Object,Array,String,Number,RegExp,crypto:globalThis.crypto};
+  const context={Deno:{serve(fn){handler=fn;}},createClientFromRequest:()=>base44,authorisedDirectorySuperAdmin:guards,directoryAudience,directoryEmailHash,directoryEmailKey,directoryDeliveryPlan,packageDirectoryArchive,inspectDirectoryArchive,rallyHubEmailShell:({title,content})=>`<html><title>${title}</title>${content}</html>`,Response,console,Date,JSON,Set,Map,Object,Array,String,Number,RegExp,crypto:globalThis.crypto};
   vm.runInNewContext(js,context,{filename:'directoryGovernance.ts'});
   return {async act(action,payload={}){const response=await handler(new Request('https://sandbox.invalid/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})}));return {status:response.status,body:await response.json()};},writes,reads,db};
 }
@@ -63,4 +64,14 @@ test('export manifest/snapshot includes all Directory tables, paginates and excl
  const disallowed=await e.act('admin_export_snapshot');assert.equal(disallowed.status,400);
  const download=await e.act('admin_export_snapshot',{confirmExport:'EXPORT DIRECTORY'});assert.equal(download.status,200,JSON.stringify(download.body).slice(0,280));assert.equal(download.body.archive.entities.DirectoryPlayerSubscriber.length,260);assert.ok(!JSON.stringify(download.body.archive).includes('private'));assert.equal(download.body.inspection.valid,true);
  const cursors=e.reads.filter(([n,op])=>n==='DirectoryPlayerSubscriber'&&op==='list');assert.ok(cursors.length>=4,'cursor should progress on each export and manifest');
+});
+
+test('delivery preflight and repeated preparation are audited, idempotent sequentially and do not send',async()=>{
+ const e=environment({id:SUPER_IDS[0],role:'admin'},{DirectoryCampaign:[{...demoCampaign,status:'approved',sender_email:'rallyhubapp@gmail.com'}],DirectoryPlayerSubscriber:[person]});
+ const preflight=await e.act('admin_delivery_preflight',{campaignId:'campaign123'});
+ assert.equal(preflight.status,200,JSON.stringify(preflight.body));assert.equal(preflight.body.preflight.preparedCount,1);assert.equal(preflight.body.preflight.externalSendEnabled,false);
+ const denied=await e.act('admin_prepare_delivery',{campaignId:'campaign123'});assert.equal(denied.status,400);assert.equal(e.db.DirectoryDeliveryAttempt,undefined);
+ const first=await e.act('admin_prepare_delivery',{campaignId:'campaign123',confirmPrepare:'PREPARE ONLY'});assert.equal(first.status,200,JSON.stringify(first.body));assert.equal(first.body.newlyPrepared,1);assert.equal(e.db.DirectoryDeliveryAttempt[0].status,'prepared');assert.equal(e.db.DirectoryDeliveryAttempt[0].attempt_count,0);
+ const repeat=await e.act('admin_prepare_delivery',{campaignId:'campaign123',confirmPrepare:'PREPARE ONLY'});assert.equal(repeat.status,200);assert.equal(repeat.body.newlyPrepared,0);assert.equal(repeat.body.alreadyPrepared,1);
+ assert.ok(e.writes.every(([name])=>name==='DirectoryDeliveryAttempt'||name==='DirectoryGovernanceAudit'));
 });
