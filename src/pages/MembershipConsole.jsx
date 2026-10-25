@@ -117,6 +117,8 @@ export default function MembershipConsole() {
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [applicationBusyId, setApplicationBusyId] = useState('');
+  const [venueHostDrafts,setVenueHostDrafts]=useState({});
+  const [venueHostBusy,setVenueHostBusy]=useState('');
   const [communicationPreview, setCommunicationPreview] = useState(null);
   const [approvedFollowUp, setApprovedFollowUp] = useState(null);
   const [previewChannel, setPreviewChannel] = useState('email');
@@ -152,6 +154,25 @@ export default function MembershipConsole() {
   const [qualification, setQualification] = useState({ title: '', sportId: '', verificationStatus: 'unverified', level: '', governingBody: '', awardDate: '', expiryDate: '', notes: '' });
 
   const membershipRead = (name, payload) => Promise.race([base44.functions.invoke(name, payload), new Promise((_, reject) => setTimeout(() => reject(new Error(`${name} did not respond within 15 seconds`)), 15000))]);
+
+  const {data:venueHostConfig={venues:[]}}=useQuery({
+    queryKey:['membership-venue-hosts',user?.active_tenant_id,user?.active_club_id],
+    queryFn:async()=>{const res=await membershipRead('membershipApplication',{action:'admin_venue_hosts_get'});if(res.data?.error)throw new Error(res.data.error);return res.data||{venues:[]}},
+    enabled:canManage&&!!user?.active_club_id,refetchOnWindowFocus:false
+  });
+  const saveVenueHosts=async(venue)=>{
+    const existing=(venueHostConfig.venues||[]).find(row=>row.venue_key===venue);
+    const value=venueHostDrafts[venue]??(existing?.host_emails||[]).join(', ');
+    const emails=value.split(/[,;\n]+/).map(s=>s.trim()).filter(Boolean);
+    setVenueHostBusy(venue);
+    try{
+      const res=await membershipRead('membershipApplication',{action:'admin_venue_hosts_set',venue,emails});
+      if(res.data?.error)throw new Error(res.data.error);
+      await queryClient.invalidateQueries({queryKey:['membership-venue-hosts']});
+      toast.success(label(venue)+' host recipients saved');
+    }catch(err){toast.error(err?.response?.data?.error||err?.message||'Unable to save host recipients')}
+    finally{setVenueHostBusy('')}
+  };
 
   const { data: meta = {}, isLoading: metaLoading, isError: metaError, refetch: retryMeta } = useQuery({
     queryKey: ['membership-console-meta', user?.active_tenant_id, user?.active_club_id],
@@ -1144,6 +1165,14 @@ export default function MembershipConsole() {
             </div>
 
             <div className="p-4">
+              {canManage&&applicationData.config?.club?.name?.trim().toLowerCase()==='clare pickleball'&&<div className="mb-5 rounded-xl border border-border p-4 space-y-3">
+                <h3 className="font-bold">New member — venue host notifications</h3>
+                <p className="text-xs text-muted-foreground">Set the email addresses for the venue hosts. Two different hosts are required for Ennistymon (7 p.m. and 8 p.m.). Notifications go only after activation; unconfigured venues are flagged instead of sending to an assumed address.</p>
+                <div className="grid gap-3 sm:grid-cols-2">{['ennistymon','shannon','corofin','clarecastle'].map(venue=>{
+                  const saved=(venueHostConfig.venues||[]).find(row=>row.venue_key===venue);
+                  return <div key={venue} className="space-y-2"><Label>{label(venue)} host email{venue==='ennistymon'?'s (both sessions)':''}</Label><Input aria-label={label(venue)+' host emails'} placeholder={venue==='ennistymon'?'host7@example.ie, host8@example.ie':'host@example.ie'} value={venueHostDrafts[venue]??(saved?.host_emails||[]).join(', ')} onChange={e=>setVenueHostDrafts(x=>({...x,[venue]:e.target.value}))}/><Button size="sm" variant="outline" disabled={!!venueHostBusy} onClick={()=>saveVenueHosts(venue)}>Save {label(venue)} hosts</Button></div>
+                })}</div>
+              </div>}
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2.5 mb-4">
                 <div className="rounded-lg border bg-background/40 p-3"><p className="text-[10px] uppercase text-muted-foreground">Applications</p><p className="mt-1 text-xl font-black">{applicationData.counts?.total || 0}</p></div>
                 <div className="rounded-lg border bg-background/40 p-3"><p className="text-[10px] uppercase text-muted-foreground">Awaiting approval</p><p className="mt-1 text-xl font-black text-blue-600">{applicationData.counts?.awaitingApproval || 0}</p></div>
@@ -1177,7 +1206,7 @@ export default function MembershipConsole() {
                 <div className="flex items-center justify-between"><p className="text-sm font-bold">Approved — awaiting membership completion</p><Badge variant="outline">{applicationData.approvedInvitations.length}</Badge></div>
                 {(applicationData.approvedInvitations||[]).map(request=><div key={request.id} className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 sm:p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2"><strong>{request.fullName}</strong><Badge variant="outline">Approved · membership not completed</Badge></div>
-                  <p className="mt-1 text-xs text-muted-foreground">{request.email}{request.mobile?' · '+request.mobile:''}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{request.email}{request.mobile?' · '+request.mobile:''}{request.primaryVenue?' · Joining: '+request.primaryVenue:''}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Approved {request.approvedAt?new Date(request.approvedAt).toLocaleString('en-IE'):'—'} · Membership application not completed; payment not recorded</p>
                   <div className="flex flex-wrap gap-2 mt-3">
                     <Button size="sm" variant="outline" disabled={!!applicationBusyId} onClick={()=>prepareApprovedFollowUp(request)}>
@@ -1205,7 +1234,7 @@ export default function MembershipConsole() {
                             <Badge variant={paid ? 'default' : 'outline'}>{paymentFailed ? 'Payment failed — action needed' : status === 'not_required' ? 'No payment required' : label(application.paymentStatus)}</Badge>
                             {application.followUpStatus && application.followUpStatus !== 'none' ? <Badge variant="outline">{label(application.followUpStatus)}</Badge> : null}
                           </div>
-                          <p className="mt-1 text-xs text-muted-foreground break-words">{application.email} · {application.mobile || 'No mobile'} · {application.primaryVenue ? `Joining: ${application.primaryVenue} · ` : ''}Ref {application.confirmationCode}</p>
+                          <p className="mt-1 text-xs text-muted-foreground break-words">{application.email} · {application.mobile || 'No mobile'} · {application.primaryVenue ? `Joining: ${application.primaryVenue} · ` : ''}Ref {application.confirmationCode}{application.primaryVenue&&application.paymentStatus==='paid'?` · Host notification: ${application.hostNotificationStatus||'not_started'}`:''}</p>
                           <p className="mt-1 text-[11px] text-muted-foreground">{application.submittedAt ? new Date(application.submittedAt).toLocaleString() : ''}{application.reminderCount ? ` · ${application.reminderCount} reminder${application.reminderCount === 1 ? '' : 's'} sent` : ''}</p>
                         </div>
                         <div className="flex flex-wrap gap-2 xl:justify-end">
@@ -1214,6 +1243,7 @@ export default function MembershipConsole() {
                           {waiting && !noResponse ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_send_reminder','email')} disabled={busy}><Mail className="w-3.5 h-3.5 mr-1.5" />Send email</Button> : null}
                           {waiting && !noResponse ? <Button size="sm" variant="outline" onClick={() => previewApplicationReminder(application,'whatsapp')} disabled={busy}><MessageCircle className="w-3.5 h-3.5 mr-1.5" />WhatsApp</Button> : null}
                           {waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_verify_payment')} disabled={busy}><RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${busy ? 'animate-spin' : ''}`} />Verify</Button> : null}
+                          {paid&&application.applicationType==='new'&&application.primaryVenue&&application.hostNotificationStatus!=='sent'?<Button size="sm" variant="outline" disabled={busy} onClick={async()=>{try{const r=await membershipRead('membershipApplication',{action:'admin_retry_host_notification',applicationId:application.id});if(r.data?.error)throw new Error(r.data.error);toast.info('Host notification: '+(r.data?.status||'unknown'));queryClient.invalidateQueries({queryKey:['membership-applications']});}catch(e){toast.error(e?.response?.data?.error||e.message)}}}>Retry host notice</Button>:null}
                           {paid ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_resend_confirmation')} disabled={busy}><Mail className="w-3.5 h-3.5 mr-1.5" />Resend confirmation</Button> : null}
                           {waiting && application.followUpStatus !== 'no_response' ? <Button size="sm" variant="ghost" onClick={() => runApplicationAction(application,'admin_mark_no_response')} disabled={busy}>No response</Button> : null}
                         </div>

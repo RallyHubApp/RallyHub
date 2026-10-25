@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { membershipPaidTemplate } from './membershipPaidTemplate.ts';
+import { notifyJoiningVenueHosts } from '../membershipApplication/venueHostNotifications.ts';
 import { safelyQueueTournivalNotice } from './tournivalNoticeBridge.ts';
 
 function clean(v:any,max=500){return String(v??'').trim().slice(0,max)}
@@ -120,7 +121,7 @@ function membershipEmailShell({club,headline,preheader,content}:any){
 }
 
 async function sendMembershipPaidEmail(base44:any,config:any,club:any,application:any){
-  if(!application?.email||String(application.admin_notes||'').includes('paid-confirmation-sent'))return application;
+  if(!application?.email||String(application.admin_notes||'').includes('paid-confirmation-sent'))return await notifyJoiningVenueHosts(base44,config,club,application,{sendWithConfiguredEmailTransport,emailShell:membershipEmailShell,escapeHtml,emailKey});
   const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:application.tenant_id,clubId:application.club_id};
   const hello=firstName(application.full_name);
   const fee=money(application.membership_fee,application.currency||config?.currency||'EUR');
@@ -132,7 +133,7 @@ Your ${club.name} membership for ${application.membership_season} is confirmed.
 
 Payment received: ${fee}
 Membership reference: ${application.confirmation_code}
-
+${application.primary_venue?`\nPrimary joining venue: ${application.primary_venue}. Other eligible Clare Pickleball sessions are available subject to booking and capacity. Ennis is full and access is not automatic.\n`:''}
 Thank you for being part of ${club.name}.
 
 ${signatoryName}${signatoryTitle?`\n${signatoryTitle}`:''}
@@ -142,17 +143,18 @@ Powered by RallyHub`;
   const htmlBody=membershipEmailShell({club,headline:`Membership confirmed, ${hello}`,preheader:`${club.name} membership confirmed`,content:`
 <p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">Your membership for <strong>${escapeHtml(application.membership_season)}</strong> is now confirmed.</p>
 <div style="margin:0 0 20px;padding:16px;border-radius:14px;background:#eef8f1;border:1px solid #b9e2c4;"><div style="font-size:15px;font-weight:800;color:#23452d;">Payment received · ${escapeHtml(fee)}</div><div style="margin-top:5px;font-size:13px;color:#3f6348;">Membership reference: ${escapeHtml(application.confirmation_code)}</div></div>
-<p style="margin:0;font-size:15px;line-height:1.65;color:#374151;">Thank you for being part of ${escapeHtml(club.name)}.</p>
+${application.primary_venue?`<p>Primary joining venue: <strong>${escapeHtml(application.primary_venue)}</strong>. Other eligible Clare Pickleball sessions remain available subject to booking and capacity. Ennis is full and access is not automatic.</p>`:''}<p style="margin:0;font-size:15px;line-height:1.65;color:#374151;">Thank you for being part of ${escapeHtml(club.name)}.</p>
 <p style="margin:24px 0 0;font-size:15px;line-height:1.5;"><strong>${escapeHtml(signatoryName)}</strong>${signatoryTitle?`<br>${escapeHtml(signatoryTitle)}`:''}<br>${escapeHtml(club.name)}</p>`});
   try{
     const content=await membershipPaidTemplate(base44,config,club,application,{subject:`${club.name} membership confirmed · ${application.membership_season}`,textBody,htmlBody});
     await sendWithConfiguredEmailTransport(base44,scope,{to:application.email,...content});
-    return await base44.asServiceRole.entities.MembershipApplication.update(application.id,{
+    application=await base44.asServiceRole.entities.MembershipApplication.update(application.id,{
       admin_notes:`${clean(application.admin_notes,1200)} paid-confirmation-sent`.trim(),follow_up_status:'complete'
     });
+    return await notifyJoiningVenueHosts(base44,config,club,application,{sendWithConfiguredEmailTransport,emailShell:membershipEmailShell,escapeHtml,emailKey});
   }catch(e){
     console.error('membership webhook confirmation email failed',(e as any)?.message||e);
-    return application;
+    return await notifyJoiningVenueHosts(base44,config,club,application,{sendWithConfiguredEmailTransport,emailShell:membershipEmailShell,escapeHtml,emailKey}).catch(()=>application);
   }
 }
 

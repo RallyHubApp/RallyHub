@@ -5,6 +5,7 @@ function clubRestrictionResponse(v:string){return Response.json({error:v==='deny
 import { createCheckout, retrievePayment, providerConfigured, type ProviderAccount } from './payments.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { membershipPaidTemplate } from './membershipPaidTemplate.ts';
+import { notifyJoiningVenueHosts as sendVenueHostNotifications } from './venueHostNotifications.ts';
 import { membershipComms, membershipBasicHtml } from './membershipComms.ts';
 
 const CLARE_JOINING_VENUES=['ennistymon','shannon','corofin','clarecastle'];
@@ -274,8 +275,12 @@ ${button}
   }
   return app;
 }
+
+const notifyJoiningVenueHosts=(base44:any,config:any,club:any,app:any)=>sendVenueHostNotifications(base44,config,club,app,{sendWithConfiguredEmailTransport,emailShell,escapeHtml,emailKey});
+
 async function sendPaidConfirmation(base44:any,config:any,club:any,app:any,force=false){
-  if(!app.email||(!force&&app.status==='approved'&&app.follow_up_status==='complete'&&app.paid_at&&app.admin_notes?.includes('paid-confirmation-sent')))return app;
+  // Host notices must still be reconciled when a member confirmation was already sent.
+  if(!app.email||(!force&&app.status==='approved'&&app.follow_up_status==='complete'&&app.paid_at&&app.admin_notes?.includes('paid-confirmation-sent')))return await notifyJoiningVenueHosts(base44,config,club,app);
   const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:config.tenant_id,clubId:config.club_id};
   const hello=firstName(app.full_name);
   const fee=money(app.membership_fee,app.currency||config.currency||'EUR');
@@ -299,8 +304,9 @@ ${venueHtml}<p style="margin:0;font-size:15px;line-height:1.65;color:#374151;">T
     const content=await membershipPaidTemplate(base44,config,club,app,{subject:`${club.name} membership confirmed · ${app.membership_season}`,textBody,htmlBody});
     await sendWithConfiguredEmailTransport(base44,scope,{to:app.email,...content});
     const note=`${clean(app.admin_notes,1200)} paid-confirmation-sent`.trim();
-    return await base44.asServiceRole.entities.MembershipApplication.update(app.id,{admin_notes:note,follow_up_status:'complete'});
-  }catch(e:any){console.error('membership paid confirmation failed',e?.message||e);return app}
+    app=await base44.asServiceRole.entities.MembershipApplication.update(app.id,{admin_notes:note,follow_up_status:'complete'});
+    return await notifyJoiningVenueHosts(base44,config,club,app);
+  }catch(e:any){console.error('membership paid confirmation failed',e?.message||e);return await notifyJoiningVenueHosts(base44,config,club,app).catch(()=>app)}
 }
 
 async function recordConsents(base44:any,config:any,docs:any,person:any,app:any,consents:any){
@@ -402,6 +408,9 @@ async function convertApprovedRequestToPayment(base44:any,config:any,club:any,re
       membership_fee:Number(config.membership_fee),payment_status:'pending',primary_venue:payload.primaryVenue||undefined,source_system:'rallyhub_membership_application',
       last_synced_at:new Date().toISOString()
     });
+  }
+  if(membership?.primary_venue!==payload.primaryVenue){
+    membership=await base44.asServiceRole.entities.ClubMembership.update(membership.id,{primary_venue:payload.primaryVenue});
   }
   if(!app){
     app=await base44.asServiceRole.entities.MembershipApplication.create({
@@ -583,6 +592,29 @@ Deno.serve(async(req)=>{
         const rendered=await membershipPaidTemplate(base44,config,club,sample,{subject:'',textBody:'',htmlBody:''});
         return Response.json({success:true,...rendered,previewSource:'approved_template'});
       }
+      if(action==='admin_venue_hosts_get'){
+        const rows=await base44.asServiceRole.entities.MembershipVenueHostConfig.filter({tenant_id:tenantId,club_id:clubId},'-updated_at',50);
+        return Response.json({success:true,venues:rows||[]});
+      }
+      if(action==='admin_venue_hosts_set'){
+        if(!isClareVenuePolicy(club))return Response.json({error:'Venue host configuration is unavailable for this club.'},{status:403});
+        const venue=clean(body.venue,40).toLowerCase();
+        if(!CLARE_JOINING_VENUES.includes(venue))return Response.json({error:'Invalid joining venue'},{status:400});
+        const emails=[...new Set((Array.isArray(body.emails)?body.emails:[]).map((x:any)=>emailKey(x)).filter(Boolean))];
+        if(emails.some((x:string)=>!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x))||emails.length>5)return Response.json({error:'Enter valid host email addresses (maximum five)'},{status:400});
+        if(venue==='ennistymon'&&emails.length!==2)return Response.json({error:'Ennistymon requires both session host addresses.'},{status:400});
+        if(venue!=='ennistymon'&&emails.length!==1)return Response.json({error:'This venue requires one host email address.'},{status:400});
+        const existing=await base44.asServiceRole.entities.MembershipVenueHostConfig.filter({tenant_id:tenantId,club_id:clubId,venue_key:venue},'-updated_at',10);
+        const patch={tenant_id:tenantId,club_id:clubId,venue_key:venue,active:true,host_emails:emails,updated_by_user_id:user.id,updated_at:new Date().toISOString()};
+        const saved=existing?.[0]?await base44.asServiceRole.entities.MembershipVenueHostConfig.update(existing[0].id,patch):await base44.asServiceRole.entities.MembershipVenueHostConfig.create(patch);
+        return Response.json({success:true,venue:saved});
+      }
+      if(action==='admin_retry_host_notification'){
+        const app=await first(base44,'MembershipApplication',{id:clean(body.applicationId,120),tenant_id:tenantId,club_id:clubId});
+        if(!app||app.application_type!=='new'||!['paid','not_required'].includes(app.payment_status))return Response.json({error:'Active new-member application not found'},{status:404});
+        const result=await notifyJoiningVenueHosts(base44,config,club,app);
+        return Response.json({success:true,status:result.host_notification_status||'not_applicable'});
+      }
       if(action==='admin_count'){
         const apps=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',300);
         const liveApps=(apps||[]).filter((app:any)=>app.status!=='withdrawn'&&!String(app.source_system||'').includes('membership_qa'));
@@ -613,7 +645,7 @@ Deno.serve(async(req)=>{
             membershipFee:Number(app.membership_fee||0),currency:app.currency||config.currency||'EUR',
             confirmationCode:app.confirmation_code,submittedAt:app.submitted_at||app.created_date,paidAt:app.paid_at||'',
             reminderCount:Number(app.reminder_count||0),lastReminderAt:app.last_reminder_at||'',followUpStatus:app.follow_up_status||'none',
-            paymentUrl,clubMembershipId:app.club_membership_id||'',personId:app.person_id||''
+            paymentUrl,clubMembershipId:app.club_membership_id||'',personId:app.person_id||'',hostNotificationStatus:app.host_notification_status||'not_started',hostNotifiedEmails:app.host_notified_emails||[]
           });
         }
         const accessRequests=await base44.asServiceRole.entities.ClubAccessRequest.filter({tenant_id:tenantId,club_id:clubId,request_type:'membership_application'},'-submitted_at',200);

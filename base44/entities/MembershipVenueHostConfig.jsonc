@@ -1,0 +1,33 @@
+{
+  "name": "MembershipVenueHostConfig",
+  "type": "object",
+  "rls": {"read": {"user_condition": {"role": "admin"}}, "create": {"user_condition": {"role": "admin"}}, "update": {"user_condition": {"role": "admin"}}, "delete": {"user_condition": {"role": "admin"}}},
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "venue_key": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "host_emails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "updated_by_user_id": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

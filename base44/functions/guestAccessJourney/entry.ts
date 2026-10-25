@@ -373,21 +373,23 @@ Deno.serve(async(req)=>{
     }
 
     if(action==='admin_list'){
-      const [requests,directory,sessionLinks,invites,bookings]=await Promise.all([
+      const [requests,directory,sessionLinks,invites,bookings,membershipApps]=await Promise.all([
         base44.asServiceRole.entities.GuestBookingRequest.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',200),
         loadDirectory(base44,club.slug),
         base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId},'-created_at',300),
         base44.asServiceRole.entities.AccessInviteToken.filter({tenant_id:tenantId,club_id:clubId,purpose:'guest_booking'},'-created_at',500),
         base44.asServiceRole.entities.GuestSessionBooking.filter({tenant_id:tenantId,club_id:clubId},'-registered_at',500),
+        base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',300),
       ]);
       const options=publicOptions(directory,await loadConfig(base44,tenantId,clubId));
       const nowMs=Date.now();
+      const activeVenueByEmail=new Map((membershipApps||[]).filter((a:any)=>['paid','not_required'].includes(a.payment_status)&&a.primary_venue&&a.email).map((a:any)=>[emailKey(a.email),a.primary_venue]));
       return Response.json({success:true,requests:(requests||[]).map((r:any)=>{
         const s=options.sessions.find((x:any)=>x.id===r.preferred_session_key);
         const link=(sessionLinks||[]).find((x:any)=>String(x.id)===String(r.approved_session_link_id||''));
         const booking=(bookings||[]).find((b:any)=>String(b.session_link_id)===String(r.approved_session_link_id||'')&&(emailKey(b.email||'')===emailKey(r.email||'')||mobileKey(b.mobile||'')===mobileKey(r.mobile||'')));
         const invite=(invites||[]).find((i:any)=>String(i.access_request_id||'')===String(r.id)&&i.status==='active'&&(!i.expires_at||Date.parse(i.expires_at)>nowMs));
-        return {id:r.id,status:r.status,fullName:r.full_name,email:r.email,mobile:r.mobile,experienceLevel:r.experience_level,previousSports:r.previous_sports||[],sportingBackgroundNote:r.sporting_background_note||'',healthDeclarationApplies:r.health_declaration_applies===true,medicalNote:r.medical_note||'',duprId:r.dupr_id||'',homeClub:r.home_club||'',sessionId:r.preferred_session_key,venueName:link?.venue_name||s?.venueName||r.preferred_venue_key,day:link?.weekday||s?.day||'',start:link?.start_time||s?.start||'',end:link?.end_time||s?.end||'',nextDate:s?nextDateForDay(s.day,s.start,s.end):'',submittedAt:r.submitted_at,approvedAt:r.approved_at||'',approvedSessionLinkId:r.approved_session_link_id||'',approvedSessionDate:link?.session_date||'',privateInviteUrl:invite&&link?`https://rallyhub.ie/book/${encodeURIComponent(link.token)}?invite=${encodeURIComponent(invite.token)}`:'',inviteExpiresAt:invite?.expires_at||'',bookingId:booking?.id||'',bookingStatus:booking?.booking_status||'',paymentStatus:booking?.payment_status||'',amount:booking?.amount??link?.fee_amount??null,paymentMethod:booking?.payment_method||link?.payment_method||'',sumupCheckoutUrl:booking?.sumup_checkout_url||''};
+        return {id:r.id,status:r.status,fullName:r.full_name,email:r.email,mobile:r.mobile,experienceLevel:r.experience_level,previousSports:r.previous_sports||[],sportingBackgroundNote:r.sporting_background_note||'',healthDeclarationApplies:r.health_declaration_applies===true,medicalNote:r.medical_note||'',duprId:r.dupr_id||'',homeClub:r.home_club||'',sessionId:r.preferred_session_key,venueName:link?.venue_name||s?.venueName||r.preferred_venue_key,memberPrimaryVenue:activeVenueByEmail.get(emailKey(r.email||''))||'',day:link?.weekday||s?.day||'',start:link?.start_time||s?.start||'',end:link?.end_time||s?.end||'',nextDate:s?nextDateForDay(s.day,s.start,s.end):'',submittedAt:r.submitted_at,approvedAt:r.approved_at||'',approvedSessionLinkId:r.approved_session_link_id||'',approvedSessionDate:link?.session_date||'',privateInviteUrl:invite&&link?`https://rallyhub.ie/book/${encodeURIComponent(link.token)}?invite=${encodeURIComponent(invite.token)}`:'',inviteExpiresAt:invite?.expires_at||'',bookingId:booking?.id||'',bookingStatus:booking?.booking_status||'',paymentStatus:booking?.payment_status||'',amount:booking?.amount??link?.fee_amount??null,paymentMethod:booking?.payment_method||link?.payment_method||'',sumupCheckoutUrl:booking?.sumup_checkout_url||''};
       })});
     }
 

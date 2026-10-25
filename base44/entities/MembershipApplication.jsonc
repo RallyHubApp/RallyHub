@@ -176,6 +176,19 @@
     },
     "venue_acknowledgement_version": {
       "type": "string"
+    },
+    "host_notification_status": {
+      "type": "string"
+    },
+    "host_notified_emails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "host_notification_last_at": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
