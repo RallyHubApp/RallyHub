@@ -213,7 +213,7 @@ export default function AdminPanel() {
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
     queryFn: () => base44.entities.Player.list('-created_date', 200),
-    enabled: canAccessAdmin
+    enabled: canAccessAdmin && !directoryContext
   });
 
   const { data: canonicalMembershipSummary = null, isLoading: canonicalMembershipLoading, isError: canonicalMembershipError } = useQuery({
@@ -235,7 +235,7 @@ export default function AdminPanel() {
       club_id: user?.active_club_id,
       relationship_type: 'member'
     }, '-updated_date', 500),
-    enabled: canAccessAdmin && !!user?.active_tenant_id && !!user?.active_club_id
+    enabled: canAccessAdmin && !directoryContext && !!user?.active_tenant_id && !!user?.active_club_id
   });
 
   const { data: membershipRows = [], isLoading: membershipRowsLoading } = useQuery({

@@ -2,10 +2,10 @@ import {test,expect} from '@playwright/test';
 const APP_ID='6a01dc00702b7dd2a2978c28';
 const base={success:true,campaigns:[],links:[],suppressionCounts:{active:0,total:0},limits:{campaigns:250,links:250,suppressions:500}};
 async function mockGovernance(page,{authorised=true}={}){
- let calls=0;let seen=[];
+ let calls=0;
  await page.addInitScript(()=>localStorage.setItem('base44_access_token','directory-governance-fixture-token'));
  await page.route('**/api/apps/**',async route=>{
-  const url=new URL(route.request().url()),path=url.pathname;seen.push(path);
+  const url=new URL(route.request().url()),path=url.pathname;
   const reply=(body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
   if(path.includes('/public-settings/'))return reply({id:APP_ID,public_settings:{}});
   if(path.endsWith('/entities/User/me')||path.endsWith('/users/me')||path.endsWith('/auth/me'))return reply({id:authorised?'6a0b5afd3f4b9681265a1398':'unrelated-admin-id',role:'admin',email:'test@example.test',full_name:'Directory test admin',approval_status:'approved'});
@@ -30,13 +30,12 @@ async function mockGovernance(page,{authorised=true}={}){
   }
   return reply({success:true});
  });
- return ()=>{console.log('GOV_REQUESTS',seen.slice(0,30));return calls;};
+ return ()=>calls;
 }
 test('Directory super-admin campaign UI is separate, and saving draft never sends',async({page})=>{
  const count=await mockGovernance(page);
- const errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('GOV_JS_ERROR',e.message)});
- await page.goto('/app/admin?tab=directory-campaigns'); await page.waitForTimeout(3000);console.log('GOV_BODY',page.url(),(await page.locator('body').innerText()).slice(0,2200));count();
- await page.waitForTimeout(2200);console.log('GOV_BODY',JSON.stringify((await page.locator('body').innerText()).slice(0,2200)));console.log('GOV_ERR',JSON.stringify(errors));
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('/app/admin?tab=directory-campaigns');
  await expect(page.getByText('Directory campaigns & consent')).toBeVisible({timeout:12000});
  await expect(page.getByText('Campaign drafts and approvals')).toBeVisible();
  await page.getByLabel('Campaign name').fill('Autumn Directory updates');
@@ -47,12 +46,13 @@ test('Directory super-admin campaign UI is separate, and saving draft never send
  await page.goto('/app/admin?tab=directory-governance');
  await expect(page.getByText('Directory governance & portability')).toBeVisible();
  await expect(page.getByText('Standalone Directory export')).toBeVisible();
- expect(count()).toBeGreaterThanOrEqual(2);
+ expect(count().governanceCalls).toBeGreaterThanOrEqual(2);
+ expect(count().requests.some(path=>path.includes('/functions/membershipRecord')||path.includes('/entities/ClubRelationship')||path.endsWith('/entities/Player'))).toBe(false);
  expect(errors).toEqual([]);
 });
 test('unrelated admin cannot enter protected Directory governance',async({page})=>{
  const count=await mockGovernance(page,{authorised:false});
  await page.goto('/app/admin?tab=directory-governance');
  await expect(page.getByText('Directory governance & portability')).toHaveCount(0,{timeout:12000});
- expect(count()).toBe(0);
+ expect(count().governanceCalls).toBe(0);
 });
