@@ -9,13 +9,11 @@ const inbox = backend.slice(backend.indexOf("if (action === 'admin_inbox')"),bac
 const save = backend.slice(backend.indexOf("if (action === 'admin_set_followup')"),backend.indexOf("if (action === 'admin_preview'"));
 
 test('both inbox read and follow-up write fail closed before touching private records',()=>{
-  for(const block of [inbox, save]){
-    assert.match(backend,/base44\.auth\.me\(\)\.catch\(\(\) => null\)/);
-    const guard=backend.indexOf('directorySuperAdmin(user)');
-    const entityRead=block.indexOf('base44.asServiceRole.entities.');
-    assert.ok(guard>=0 && entityRead>guard,'service-role data access must follow superadmin verification');
-    assert.match(backend,/Directory super-admin access required\./);
-  }
+  assert.match(backend,/base44\.auth\.me\(\)\.catch\(\(\) => null\)/);
+  assert.match(backend,/Directory super-admin access required\./);
+  const authGate=backend.indexOf('if (!directorySuperAdmin(user))');
+  const firstRead=backend.indexOf('base44.asServiceRole.entities.');
+  assert.ok(authGate>=0 && firstRead>authGate,'service-role data access must follow superadmin verification');
   assert.doesNotMatch(inbox,/GuestBooking|ClubMembership|SpondSessionBinding|asServiceRole\.entities\.User/);
   assert.doesNotMatch(save,/GuestBooking|ClubMembership|SpondSessionBinding|asServiceRole\.entities\.User/);
 });
