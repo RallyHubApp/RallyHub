@@ -8,6 +8,6 @@ export function nextWorkflowAction({workflow,state,now=new Date()}){
 }
 /** @param {{workflow:any,scenario?:Record<string,any>,max?:number}} args */
 export function simulateWorkflow({workflow,scenario={},max=100}){
- let state={step_index:0,step_started_at:"2026-01-01T09:00:00Z",...scenario},now=new Date(state.step_started_at);const timeline=[];
+ let state=/** @type {Record<string,any>} */ ({step_index:0,step_started_at:'2026-01-01T09:00:00Z',...scenario}),now=new Date(state.step_started_at);const timeline=[];
  for(let i=0;i<max;i++){const a=nextWorkflowAction({workflow,state,now});timeline.push({step:state.step_index,at:now.toISOString(),...a});if(a.type==="exit")break;if(a.type==="wait"){now=new Date(a.until)}state.step_index++;state.step_started_at=now.toISOString();if(scenario.goal_after_step===state.step_index)state.goal_achieved=true}return timeline;
 }

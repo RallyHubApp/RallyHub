@@ -1,5 +1,5 @@
 import {resolveAudience,dedupeContacts} from "./audience.js";import {resolvePermission} from "./consent.js";import {preflight} from "./deliverability.js";import {renderEmail} from "./renderer.js";import {simulateWorkflow} from "./workflow.js";
-export function simulateCampaign({campaign,people,consents=[],suppressions=[],template,brandKit,workflow}){
+export function simulateCampaign({campaign,people,consents=[],suppressions=[],template,brandKit,workflow=undefined}){
  const resolved=resolveAudience({people,definition:campaign.audience_definition||{}}),deduped=dedupeContacts(resolved),blocked=new Set(suppressions.map(s=>s.person_id||s.email));
  const recipients=deduped.people.map(p=>{const permission=resolvePermission({purpose:campaign.purpose,channel:"email",records:consents.filter(c=>c.person_id===p.person_id),suppressed:blocked.has(p.person_id)||blocked.has(p.email)});return{...p,eligibility_status:permission.allowed?"eligible":"suppressed",eligibility_reason:permission.reason}});
  const eligible=recipients.filter(r=>r.eligibility_status==="eligible"),rendered=renderEmail({brandKit,...template,data:campaign.sample_data||{}});

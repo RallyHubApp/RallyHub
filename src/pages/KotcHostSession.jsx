@@ -41,7 +41,7 @@ export default function KotcHostSession(){
     if(key==='guide'){window.scrollTo({top:0,behavior:'smooth'});return;}
     if(key==='run'){window.scrollTo({top:0,behavior:'smooth'});return;}
     if(key==='players'){setRosterOpenRequest(n=>n+1);return;}
-    if(key==='more'&&!document.querySelector('[data-testid="kotc-session-menu-panel"]'))document.querySelector('[data-testid="kotc-session-menu"]')?.click();
+    if(key==='more'&&!document.querySelector('[data-testid="kotc-session-menu-panel"]'))(/** @type {HTMLElement|null} */ (document.querySelector('[data-testid="kotc-session-menu"]')))?.click();
     setTimeout(()=>{const target=(tabSelectors[key]||[]).map(s=>document.querySelector(s)).find(Boolean);if(target)target.scrollIntoView({behavior:'smooth',block:'start'});},100);
   };
   const communicationsUrl=user?.role==='admin'?`/app/communications?scope=tenant&source=kotc&sourceId=${encodeURIComponent(session.id)}&template=kotc_results&returnTo=${encodeURIComponent(`/kotc-host/${session.id}`)}&label=${encodeURIComponent(session.name||'KOTC')}`:null;
