@@ -1,4 +1,4 @@
 {
   "name": "directoryGovernance",
-  "entry": "base44/functions/directoryGovernance/entry.ts"
+  "entry": "entry.ts"
 }
