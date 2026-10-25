@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { membershipPaidTemplate } from './membershipPaidTemplate.ts';
-import { notifyJoiningVenueHosts } from '../membershipApplication/venueHostNotifications.ts';
+import { notifyJoiningVenueHosts } from './venueHostNotifications.ts';
 import { safelyQueueTournivalNotice } from './tournivalNoticeBridge.ts';
 
 function clean(v:any,max=500){return String(v??'').trim().slice(0,max)}
