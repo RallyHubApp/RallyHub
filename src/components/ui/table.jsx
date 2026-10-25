@@ -2,43 +2,38 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-/** @type {React.ForwardRefExoticComponent<React.ComponentPropsWithRef<'table'>>} */
-const Table = React.forwardRef(({ className, ...props }, ref) => (
+const Table = React.forwardRef(/** @type {React.ForwardRefRenderFunction<HTMLTableElement, React.ComponentPropsWithoutRef<'table'>>} */ (({ className, ...props }, ref) => (
   <div className="relative w-full overflow-auto">
     <table
       ref={ref}
       className={cn("w-full caption-bottom text-sm", className)}
       {...props} />
   </div>
-))
+)))
 Table.displayName = "Table"
 
-/** @type {React.ForwardRefExoticComponent<React.ComponentPropsWithRef<'thead'>>} */
-const TableHeader = React.forwardRef(({ className, ...props }, ref) => (
+const TableHeader = React.forwardRef(/** @type {React.ForwardRefRenderFunction<HTMLTableSectionElement, React.ComponentPropsWithoutRef<'thead'>>} */ (({ className, ...props }, ref) => (
   <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
-))
+)))
 TableHeader.displayName = "TableHeader"
 
-/** @type {React.ForwardRefExoticComponent<React.ComponentPropsWithRef<'tbody'>>} */
-const TableBody = React.forwardRef(({ className, ...props }, ref) => (
+const TableBody = React.forwardRef(/** @type {React.ForwardRefRenderFunction<HTMLTableSectionElement, React.ComponentPropsWithoutRef<'tbody'>>} */ (({ className, ...props }, ref) => (
   <tbody
     ref={ref}
     className={cn("[&_tr:last-child]:border-0", className)}
     {...props} />
-))
+)))
 TableBody.displayName = "TableBody"
 
-/** @type {React.ForwardRefExoticComponent<React.ComponentPropsWithRef<'tfoot'>>} */
-const TableFooter = React.forwardRef(({ className, ...props }, ref) => (
+const TableFooter = React.forwardRef(/** @type {React.ForwardRefRenderFunction<HTMLTableSectionElement, React.ComponentPropsWithoutRef<'tfoot'>>} */ (({ className, ...props }, ref) => (
   <tfoot
     ref={ref}
     className={cn("border-t bg-muted/50 font-medium [&>tr]:last:border-b-0", className)}
     {...props} />
-))
+)))
 TableFooter.displayName = "TableFooter"
 
-/** @type {React.ForwardRefExoticComponent<React.ComponentPropsWithRef<'tr'>>} */
-const TableRow = React.forwardRef(({ className, ...props }, ref) => (
+const TableRow = React.forwardRef(/** @type {React.ForwardRefRenderFunction<HTMLTableRowElement, React.ComponentPropsWithoutRef<'tr'>>} */ (({ className, ...props }, ref) => (
   <tr
     ref={ref}
     className={cn(
@@ -46,11 +41,10 @@ const TableRow = React.forwardRef(({ className, ...props }, ref) => (
       className
     )}
     {...props} />
-))
+)))
 TableRow.displayName = "TableRow"
 
-/** @type {React.ForwardRefExoticComponent<React.ComponentPropsWithRef<'th'>>} */
-const TableHead = React.forwardRef(({ className, ...props }, ref) => (
+const TableHead = React.forwardRef(/** @type {React.ForwardRefRenderFunction<HTMLTableCellElement, React.ComponentPropsWithoutRef<'th'>>} */ (({ className, ...props }, ref) => (
   <th
     ref={ref}
     className={cn(
@@ -58,11 +52,10 @@ const TableHead = React.forwardRef(({ className, ...props }, ref) => (
       className
     )}
     {...props} />
-))
+)))
 TableHead.displayName = "TableHead"
 
-/** @type {React.ForwardRefExoticComponent<React.ComponentPropsWithRef<'td'>>} */
-const TableCell = React.forwardRef(({ className, ...props }, ref) => (
+const TableCell = React.forwardRef(/** @type {React.ForwardRefRenderFunction<HTMLTableCellElement, React.ComponentPropsWithoutRef<'td'>>} */ (({ className, ...props }, ref) => (
   <td
     ref={ref}
     className={cn(
@@ -70,16 +63,15 @@ const TableCell = React.forwardRef(({ className, ...props }, ref) => (
       className
     )}
     {...props} />
-))
+)))
 TableCell.displayName = "TableCell"
 
-/** @type {React.ForwardRefExoticComponent<React.ComponentPropsWithRef<'caption'>>} */
-const TableCaption = React.forwardRef(({ className, ...props }, ref) => (
+const TableCaption = React.forwardRef(/** @type {React.ForwardRefRenderFunction<HTMLElement, React.ComponentPropsWithoutRef<'caption'>>} */ (({ className, ...props }, ref) => (
   <caption
     ref={ref}
     className={cn("mt-4 text-sm text-muted-foreground", className)}
     {...props} />
-))
+)))
 TableCaption.displayName = "TableCaption"
 
 export {
