@@ -2,10 +2,10 @@ import {test,expect} from '@playwright/test';
 const APP_ID='6a01dc00702b7dd2a2978c28';
 const base={success:true,campaigns:[],links:[],suppressionCounts:{active:0,total:0},limits:{campaigns:250,links:250,suppressions:500}};
 async function mockGovernance(page,{authorised=true}={}){
- let calls=0;
+ let calls=0;let seen=[];
  await page.addInitScript(()=>localStorage.setItem('base44_access_token','directory-governance-fixture-token'));
  await page.route('**/api/apps/**',async route=>{
-  const url=new URL(route.request().url()),path=url.pathname;
+  const url=new URL(route.request().url()),path=url.pathname;seen.push(path);
   const reply=(body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
   if(path.includes('/public-settings/'))return reply({id:APP_ID,public_settings:{}});
   if(path.endsWith('/entities/User/me')||path.endsWith('/users/me')||path.endsWith('/auth/me'))return reply({id:authorised?'6a0b5afd3f4b9681265a1398':'unrelated-admin-id',role:'admin',email:'test@example.test',full_name:'Directory test admin',approval_status:'approved'});
@@ -29,13 +29,13 @@ async function mockGovernance(page,{authorised=true}={}){
   }
   return reply({success:true});
  });
- return ()=>calls;
+ return ()=>{console.log('GOV_REQUESTS',seen.slice(0,30));return calls;};
 }
 test('Directory super-admin campaign UI is separate, and saving draft never sends',async({page})=>{
  const count=await mockGovernance(page);
- const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('GOV_PAGEERROR',e.message,e.stack?.slice(0,450))});
  page.on('request',req=>{if(req.url().includes('/api/'))console.log('GOV_REQ',req.method(),req.url().slice(-130));});page.on('console',msg=>{if(msg.type()==='error')console.log('GOV_CONSOLE',msg.text().slice(0,240));});
- await page.goto('/app/admin?tab=directory-campaigns'); console.log('GOV_DEBUG',page.url(),(await page.locator('body').innerText()).slice(0,450));
+ await page.goto('/app/admin?tab=directory-campaigns'); await page.waitForTimeout(3000); console.log('GOV_DEBUG',page.url(),(await page.locator('body').innerText()).slice(0,450));count();
  await page.waitForTimeout(2500); console.log('DEBUG_CRM_PAGE',page.url(),(await page.locator('body').innerText()).slice(0,420));
  await expect(page.getByText('Directory campaigns & consent')).toBeVisible({timeout:12000});
  await expect(page.getByText('Campaign drafts and approvals')).toBeVisible();

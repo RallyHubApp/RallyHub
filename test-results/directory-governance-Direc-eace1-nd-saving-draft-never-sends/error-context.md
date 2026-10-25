@@ -32,10 +32,10 @@ Call log:
   2  | const APP_ID='6a01dc00702b7dd2a2978c28';
   3  | const base={success:true,campaigns:[],links:[],suppressionCounts:{active:0,total:0},limits:{campaigns:250,links:250,suppressions:500}};
   4  | async function mockGovernance(page,{authorised=true}={}){
-  5  |  let calls=0;
+  5  |  let calls=0;let seen=[];
   6  |  await page.addInitScript(()=>localStorage.setItem('base44_access_token','directory-governance-fixture-token'));
   7  |  await page.route('**/api/apps/**',async route=>{
-  8  |   const url=new URL(route.request().url()),path=url.pathname;
+  8  |   const url=new URL(route.request().url()),path=url.pathname;seen.push(path);
   9  |   const reply=(body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
   10 |   if(path.includes('/public-settings/'))return reply({id:APP_ID,public_settings:{}});
   11 |   if(path.endsWith('/entities/User/me')||path.endsWith('/users/me')||path.endsWith('/auth/me'))return reply({id:authorised?'6a0b5afd3f4b9681265a1398':'unrelated-admin-id',role:'admin',email:'test@example.test',full_name:'Directory test admin',approval_status:'approved'});
@@ -59,13 +59,13 @@ Call log:
   29 |   }
   30 |   return reply({success:true});
   31 |  });
-  32 |  return ()=>calls;
+  32 |  return ()=>{console.log('GOV_REQUESTS',seen.slice(0,30));return calls;};
   33 | }
   34 | test('Directory super-admin campaign UI is separate, and saving draft never sends',async({page})=>{
   35 |  const count=await mockGovernance(page);
-  36 |  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  36 |  const errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('GOV_PAGEERROR',e.message,e.stack?.slice(0,450))});
   37 |  page.on('request',req=>{if(req.url().includes('/api/'))console.log('GOV_REQ',req.method(),req.url().slice(-130));});page.on('console',msg=>{if(msg.type()==='error')console.log('GOV_CONSOLE',msg.text().slice(0,240));});
-  38 |  await page.goto('/app/admin?tab=directory-campaigns'); console.log('GOV_DEBUG',page.url(),(await page.locator('body').innerText()).slice(0,450));
+  38 |  await page.goto('/app/admin?tab=directory-campaigns'); await page.waitForTimeout(3000); console.log('GOV_DEBUG',page.url(),(await page.locator('body').innerText()).slice(0,450));count();
   39 |  await page.waitForTimeout(2500); console.log('DEBUG_CRM_PAGE',page.url(),(await page.locator('body').innerText()).slice(0,420));
 > 40 |  await expect(page.getByText('Directory campaigns & consent')).toBeVisible({timeout:12000});
      |                                                                ^ Error: expect(locator).toBeVisible() failed
