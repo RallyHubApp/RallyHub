@@ -1,4 +1,5 @@
 import CoachProfile from '@/components/directory/CoachProfile';
+import PageNotFound from '@/lib/PageNotFound';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
@@ -156,7 +157,7 @@ export default function PublicClubProfile() {
   if (loadingListing && !baseClub) {
     return <div className="min-h-screen bg-background text-foreground"><PublicDirectoryHeader /><main className="container mx-auto px-4 py-10"><div className="glass rounded-2xl p-6">Loading club listing…</div></main></div>;
   }
-  if (!baseClub) return <Navigate to="/directory" replace />;
+  if (!baseClub) return <PageNotFound />;
   const protectedContact = contactProtection === 'protected-v1';
   const club = publicProfile ? {
     ...baseClub,
@@ -176,13 +177,13 @@ export default function PublicClubProfile() {
   };
 
   const listingType = club.listingType || 'club';
-  if (listingType === 'coach') return <div className="min-h-screen bg-background text-foreground"><PublicDirectoryHeader/><main className="mx-auto max-w-5xl px-4 py-8"><CoachProfile coach={club} preview={previewMode}/></main><PublicCopyrightFooter maxWidthClass="max-w-5xl"/></div>;
+  if (listingType === 'coach') return <div className="min-h-screen bg-background text-foreground"><Seo title={`${club.name} | Pickleball Coach | RallyHub`} description={String(club.description||'').trim()||`Find ${club.name}, pickleball coach on the RallyHub Directory.`} path={`/directory/${club.slug}`} /><PublicDirectoryHeader/><main className="mx-auto max-w-5xl px-4 py-8"><CoachProfile coach={club} preview={previewMode}/></main><PublicCopyrightFooter maxWidthClass="max-w-5xl"/></div>;
   if (listingType !== 'club') {
     const listingDescription = String(club.description || '').trim() || `${club.name} is listed in the RallyHub Pickleball Directory.`;
     const listingUrl = `${SITE_URL}/directory/${club.slug}`;
     const listingLabel = club.listingCategoryLabel || 'Pickleball listing';
     return <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Seo title={`${club.name} | RallyHub Directory`} description={listingDescription} path={`/directory/${club.slug}`} />
+      <Seo title={`${club.name} | RallyHub Directory`} description={listingDescription} path={`/directory/${club.slug}`} robots={previewMode?'noindex,nofollow':'index,follow'} />
       <PublicDirectoryHeader />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-7 sm:px-6 lg:px-8">
         <Link to="/directory" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"><ArrowLeft className="h-4 w-4"/>Back to Directory</Link>

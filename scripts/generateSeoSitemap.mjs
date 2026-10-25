@@ -28,7 +28,7 @@ const dynamicClubs=Object.entries(publicState)
     ...state.base,...(state.profile||{}),slug,
     venues:Array.isArray(state.profile?.venues)?state.profile.venues:(state.base.venues||[]),
   }));
-const publicClubs=[...baseClubs,...dynamicClubs];
+const publicClubs=[...baseClubs,...dynamicClubs].filter(listing=>listing.status!=='archived'&&listing.status!=='rejected'&&listing.visibility!=='private');
 const unique=values=>[...new Set(values.filter(Boolean))];
 const countySlug=county=>String(county||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 const enc=value=>encodeURIComponent(String(value||''));
@@ -41,7 +41,6 @@ const venueUrls=clubListings.flatMap(club=>(club.venues||[]).filter(v=>v?.id).ma
 const urls=unique([
   `${site}/`,
   `${site}/directory`,
-  `${site}/directory/add`,
   `${site}/directory/story`,
   `${site}/directory/help`,
   `${site}/directory/quick-start`,
@@ -62,5 +61,7 @@ fs.mkdirSync(path.join(root,'public'),{recursive:true});
 // Serve identical, public-only discovery paths for both conventional sitemap URLs.
 // The legacy Base44 sitemap included sign-in, dashboard and admin URLs; replace it.
 fs.writeFileSync(path.join(root,'public/directory-sitemap.xml'),xml);
+// The old /sitemap.xml previously advertised private login/admin pages. Keep one canonical public inventory.
+fs.writeFileSync(path.join(root,'public/sitemap.xml'),xml);
 fs.writeFileSync(path.join(root,'public/sitemap.xml'),xml);
 console.log(`SEO sitemap generated: ${urls.length} URLs (${publicClubs.length} public listings, ${listedCounties.length} counties, ${venueUrls.length} venues; ${dynamicClubs.length} dynamic listings).`);

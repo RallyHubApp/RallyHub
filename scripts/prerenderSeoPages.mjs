@@ -30,6 +30,10 @@ const directoryClubs=[
       sessions:Array.isArray(state.profile?.sessions)?state.profile.sessions:(state.base.sessions||[]),
     })),
 ];
+const publicClubs=directoryClubs.filter(listing=>(listing.listingType||listing.listing_type||'club')==='club');
+const enc=value=>encodeURIComponent(String(value||''));
+const providerType=listing=>String(listing.listingType||listing.listing_type||'club').toLowerCase();
+const providerLabel=listing=>({coach:'Pickleball coach',equipment:'Pickleball equipment supplier',supplier:'Pickleball supplier',holiday:'Pickleball holiday provider',event_organiser:'Pickleball event organiser',event:'Pickleball event organiser'})[providerType(listing)]||'Pickleball directory provider';
 const countySlug=county=>String(county||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 const esc=value=>String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const json=value=>JSON.stringify(value).replace(/</g,'\\u003c');
@@ -76,11 +80,11 @@ function inject(route,{title,description,body,schema=[]}){
   fs.writeFileSync(target,html);
 }
 
-const counties=[...new Set(directoryClubs.map(c=>c.county).filter(Boolean))].sort();
+const counties=[...new Set(publicClubs.map(c=>c.county).filter(Boolean))].sort();
 const directorySchema={
   '@context':'https://schema.org','@type':'CollectionPage',name:'RallyHub Irish Pickleball Club Directory',url:`${site}/directory`,
   description:`Find pickleball clubs, venues and weekly sessions across Ireland on RallyHub.`,
-  mainEntity:{'@type':'ItemList',numberOfItems:directoryClubs.length,itemListElement:directoryClubs.map((club,index)=>({'@type':'ListItem',position:index+1,name:club.name,url:`${site}/directory/${club.slug}`}))}
+  mainEntity:{'@type':'ItemList',numberOfItems:publicListings.length,itemListElement:publicListings.map((club,index)=>({'@type':'ListItem',position:index+1,name:club.name,url:`${site}/directory/${club.slug}`}))}
 };
 const websiteSchema={
   '@context':'https://schema.org','@type':'WebSite',name:'RallyHub',url:site,inLanguage:'en-IE',
@@ -89,13 +93,13 @@ const websiteSchema={
 
 inject('/directory',{
   title:'Pickleball Clubs in Ireland | RallyHub Club Directory',
-  description:`Find ${directoryClubs.length} pickleball club listings, venues and weekly sessions across Ireland. Search by county, club, venue and playing day on RallyHub.`,
+  description:`Find ${publicClubs.length} pickleball club listings, venues and weekly sessions across Ireland. Search by county, club, venue and playing day on RallyHub.`,
   schema:[websiteSchema,directorySchema],
-  body:`<h1>Pickleball clubs and places to play in Ireland</h1><p>RallyHub is an all-Ireland pickleball directory covering clubs, venues and weekly playing sessions. Browse by county or open a club listing for current playing information.</p><h2>Browse pickleball by county</h2><ul>${counties.map(c=>`<li><a href="/pickleball-clubs/${countySlug(c)}">Pickleball clubs in ${esc(c)}</a></li>`).join('')}</ul><h2>Irish pickleball clubs</h2><ul>${directoryClubs.map(c=>`<li><a href="/directory/${encodeURIComponent(c.slug)}">${esc(c.name)}</a> — County ${esc(c.county)}</li>`).join('')}</ul>`
+  body:`<h1>Pickleball clubs and places to play in Ireland</h1><p>RallyHub is an all-Ireland pickleball directory covering clubs, venues and weekly playing sessions. Browse by county or open a club listing for current playing information.</p><h2>Browse pickleball by county</h2><ul>${counties.map(c=>`<li><a href="/pickleball-clubs/${countySlug(c)}">Pickleball clubs in ${esc(c)}</a></li>`).join('')}</ul><h2>Irish pickleball clubs</h2><ul>${publicListings.map(c=>`<li><a href="/directory/${encodeURIComponent(c.slug)}">${esc(c.name)}</a> — County ${esc(c.county)}</li>`).join('')}</ul>`
 });
 
 for(const county of counties){
-  const clubs=directoryClubs.filter(c=>c.county===county);
+  const clubs=publicClubs.filter(c=>c.county===county);
   const venues=clubs.flatMap(c=>(c.venues||[]).map(v=>({club:c,venue:v})));
   const sessions=clubs.reduce((sum,c)=>sum+(c.sessions?.length||0),0);
   const description=`Find ${clubs.length} pickleball club${clubs.length===1?'':'s'} and ${venues.length} venue${venues.length===1?'':'s'} in County ${county}. View weekly sessions, maps and club contact details on RallyHub.`;
@@ -109,7 +113,35 @@ for(const county of counties){
   });
 }
 
-for(const club of directoryClubs){
+for(const club of publicListings){
+  if(club.listingType && club.listingType!=='club'){
+    const label=({coach:'Pickleball coach',equipment:'Pickleball equipment supplier',supplier:'Pickleball supplier',holiday:'Pickleball holiday provider',events:'Pickleball event organiser'})[club.listingType]||'Pickleball provider';
+    const loc=[club.town,club.county].filter(Boolean).join(', ');
+    const detail=String(club.description||'').trim();
+    const description=detail||`Explore ${club.name}, ${label.toLowerCase()}${loc?` serving ${loc}`:''}, in the RallyHub Irish Pickleball Directory.`;
+    const title=`${club.name} | ${label} | RallyHub`;
+    const schema={'@context':'https://schema.org','@type':club.listingType==='coach'?'Person':'Organization',name:club.name,url:`${site}/directory/${encodeURIComponent(club.slug)}`,description, ...(loc?{areaServed:loc}:{}), ...(club.listingType==='coach'?{jobTitle:'Pickleball coach'}:{})};
+    inject(`/directory/${club.slug}`,{
+      title,description,schema:[schema],
+      body:`<nav><a href="/directory">Irish Pickleball Directory</a></nav><article><h1>${esc(club.name)}</h1><p>${esc(label)}${loc?` — ${esc(loc)}`:''}</p><p>${esc(description)}</p>${club.listingType==='coach'&&club.qualifications?`<h2>Coaching qualifications</h2><p>${esc(Array.isArray(club.qualifications)?club.qualifications.join(', '):club.qualifications)}</p>`:''}</article>`
+    });
+    continue;
+  }
+  const type=providerType(club);
+  if(type!=='club'){
+    const label=providerLabel(club);
+    const location=[club.town,club.county].filter(Boolean).join(', ');
+    const overview=String(club.description||'').trim();
+    const description=overview&&overview.length>=60?overview:`Find information about ${club.name}, a ${label.toLowerCase()}${location?' in '+location:''}, on the RallyHub Directory.`;
+    const schema={'@context':'https://schema.org','@type':type==='coach'?'Person':'Organization',name:club.name,url:`${site}/directory/${enc(club.slug)}`,description,
+      ...(type==='coach'?{jobTitle:'Pickleball coach'}:{description}),
+      ...(location?{areaServed:{'@type':'Place',name:location}}:{})};
+    inject(`/directory/${club.slug}`,{
+      title:`${club.name} | ${label} | RallyHub`,description,schema:[schema],
+      body:`<nav><a href="/directory">Irish Pickleball Directory</a></nav><h1>${esc(club.name)}</h1><p><strong>${esc(label)}</strong>${location?' — '+esc(location):''}</p><p>${esc(description)}</p>${club.coachingServices?`<h2>Services</h2><p>${esc(Array.isArray(club.coachingServices)?club.coachingServices.join(', '):club.coachingServices)}</p>`:''}<p><a href="/directory/${enc(club.slug)}">View this ${esc(label.toLowerCase())} on RallyHub</a></p>`
+    });
+    continue;
+  }
   const clubDescription=`${club.name} pickleball club in County ${club.county}. Find ${club.venues?.length||0} venue${club.venues?.length===1?'':'s'}${club.sessions?.length?`, ${club.sessions.length} weekly session${club.sessions.length===1?'':'s'}`:''}, maps, playing times and contact information on RallyHub.`;
   const clubSchema={
     '@context':'https://schema.org','@type':'SportsOrganization',name:club.name,url:`${site}/directory/${club.slug}`,sport:'Pickleball',description:club.description||clubDescription,
@@ -162,4 +194,4 @@ for (const [route,title,description,heading,body] of publicSupportPages) {
   });
 }
 
-console.log(`Pre-rendered SEO HTML for ${directoryClubs.length} clubs, ${counties.length} counties and ${directoryClubs.reduce((n,c)=>n+(c.venues?.length||0),0)} venues.`);
+console.log(`Pre-rendered SEO HTML for ${publicClubs.length} clubs and ${directoryClubs.length-publicClubs.length} other providers, ${counties.length} counties and ${publicClubs.reduce((n,c)=>n+(c.venues?.length||0),0)} venues.`);
