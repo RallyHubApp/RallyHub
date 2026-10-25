@@ -5,7 +5,7 @@
       "@/*": [
         "./src/*"
       ],
-      "string_decoder/": [
+      "string_decoder": [
         "./src/types/string-decoder-compat.d.ts"
       ]
     },

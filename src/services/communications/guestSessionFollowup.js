@@ -1,7 +1,7 @@
 // Draft-only preparation: no email transport is invoked by this module.
 export const FOLLOWUP_TEMPLATE_ID = "guest_session_followup";
 export const FOLLOWUP_CC_NAMES = Object.freeze(["John McLoughlin","Bróna McBreen","Liz Daly","Jenny Martin","Mary Fahey"]);
-/** @param {{bookings?:any[],attendance?:Record<string,string>,selectedIds?:string[],ccNames?:string[],contacts?:any[],template?:{id:string,status:string,subject:string,plainText?:string}}} [options] */
+/** @param {{bookings?:any[],attendance?:Record<string,string>,selectedIds?:string[],ccNames?:string[],contacts?:any[],template?:{id:string,status:string,subject?:string,plainText?:string}}} [options] */
 export function prepareGuestFollowup({bookings=[],attendance={},selectedIds=[],ccNames=[],contacts=[],template}={}){
   if(!template || template.id!==FOLLOWUP_TEMPLATE_ID || template.status!=="draft") throw new Error("Pending-approval follow-up template required.");
   const allowed=new Set(FOLLOWUP_CC_NAMES);
