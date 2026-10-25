@@ -3,6 +3,7 @@ const APP_ID='6a01dc00702b7dd2a2978c28';
 const base={success:true,campaigns:[],links:[],suppressionCounts:{active:0,total:0},limits:{campaigns:250,links:250,suppressions:500}};
 async function mockGovernance(page,{authorised=true}={}){
  let calls=0;
+ await page.addInitScript(()=>localStorage.setItem('base44_access_token','directory-governance-fixture-token'));
  await page.route('**/api/apps/**',async route=>{
   const url=new URL(route.request().url()),path=url.pathname;
   const reply=(body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
