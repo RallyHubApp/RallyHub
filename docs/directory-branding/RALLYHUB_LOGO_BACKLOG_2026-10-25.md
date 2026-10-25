@@ -1,6 +1,6 @@
 # RallyHub Directory logo backlog — 25 October 2026
 
-**Live feed verified HTTP 200.** 82 static + 40 non-overlapping dynamic = **122** unique public listings. **80** effective logo/coach-photo URLs (not proof of render), **7** hidden by explicit null profile, **35** missing: **42** requiring attention. **27/32 counties** represented; missing Derry, Fermanagh, Roscommon, Tipperary, Tyrone.
+**Live feed verified HTTP 200.** 82 static + 40 non-overlapping dynamic = **122** unique public listings. **80** effective logo/coach-photo URLs (not proof of render), **7** hidden by explicit null profile, **35** missing: **42** requiring attention. **27/32 counties with club listings**, while **28/32 counties have at least one listing of any category** (Derry is represented by a coach). No listing in Fermanagh, Roscommon, Tipperary or Tyrone.
 
 Ten unresolved cases reviewed in Facebook → Instagram → official website order. Social imagery was not claimed verified unless actual bytes were fetched.
 

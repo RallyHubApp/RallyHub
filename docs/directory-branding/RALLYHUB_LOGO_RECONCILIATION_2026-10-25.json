@@ -23,7 +23,18 @@
       "Tipperary",
       "Tyrone"
     ],
-    "urlPresenceIsNotImageRenderProof": true
+    "urlPresenceIsNotImageRenderProof": true,
+    "countiesAllCategories": 28,
+    "countiesWithClubListings": 27,
+    "absentCountiesAllCategories": [
+      "Fermanagh",
+      "Roscommon",
+      "Tipperary",
+      "Tyrone"
+    ],
+    "countyOnlyNonClubCategory": [
+      "Derry (coach recorded as Londonderry / Derry)"
+    ]
   },
   "entries": [
     {
