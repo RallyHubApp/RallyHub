@@ -1,0 +1,22 @@
+{
+  "name": "DirectoryDeliveryAttempt",
+  "type": "object",
+  "properties": {
+    "campaign_id": {"type":"string","maxLength":160},
+    "subscriber_id": {"type":"string","maxLength":160},
+    "recipient_hash": {"type":"string","maxLength":64},
+    "idempotency_key": {"type":"string","maxLength":64},
+    "status": {"type":"string","enum":["prepared","provider_accepted","delivered","failed","bounced","suppressed","cancelled"]},
+    "consent_version_snapshot": {"type":"string","maxLength":160},
+    "purpose_snapshot": {"type":"string","maxLength":70},
+    "provider": {"type":"string","maxLength":70},
+    "provider_message_id": {"type":"string","maxLength":220},
+    "attempt_count": {"type":"integer","minimum":0},
+    "failure_reason": {"type":"string","maxLength":500},
+    "created_by_user_id": {"type":"string","maxLength":160},
+    "created_at": {"type":"string","format":"date-time"},
+    "updated_at": {"type":"string","format":"date-time"}
+  },
+  "required": ["campaign_id","subscriber_id","recipient_hash","idempotency_key","status","consent_version_snapshot","purpose_snapshot","created_by_user_id","created_at"],
+  "rls": {"create":false,"read":false,"update":false,"delete":false}
+}

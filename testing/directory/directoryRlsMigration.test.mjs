@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {readdirSync,readFileSync} from 'node:fs';
 import {planDirectorySchemaRls} from '../../base44/shared/directoryRlsMigration.ts';
 const schemas=readdirSync('base44/entities').filter(f=>/^Directory.*\.jsonc$/.test(f)).map(f=>JSON.parse(readFileSync('base44/entities/'+f,'utf8')));
-test('migration covers all 22 Directory schemas without changing properties or required fields',()=>{
- assert.equal(schemas.length,22);
+test('migration covers all 23 Directory schemas without changing properties or required fields',()=>{
+ assert.equal(schemas.length,23);
  for(const original of schemas){
   const migrated=planDirectorySchemaRls(original);
   assert.deepEqual(migrated.properties,original.properties);

@@ -3,13 +3,14 @@ import { authorisedDirectorySuperAdmin } from '../../shared/directorySuperAdmin.
 import { rallyHubEmailShell } from '../../shared/rallyHubPlatformEmail.ts';
 import { packageDirectoryArchive, inspectDirectoryArchive } from '../../shared/directoryPortableExport.mjs';
 import { directoryAudience, directoryEmailHash, directoryEmailKey } from '../../shared/directoryAudience.mjs';
+import { directoryDeliveryPlan } from '../../shared/directoryDelivery.mjs';
 
 // Directory-only administration. No tenant entity writes, email sends or social API calls.
 const VERSION = 'directory-phase1-v1';
 const DIRECTORY_ENTITIES = Object.freeze([
   'DirectoryAnalyticsEvent','DirectoryCampaign','DirectoryCategory','DirectoryClaim',
   'DirectoryClaimInvitation','DirectoryContactAction','DirectoryContactEndpoint',
-  'DirectoryContactEnquiry','DirectoryContactRollout','DirectoryEnquiryFollowup',
+  'DirectoryContactEnquiry','DirectoryContactRollout','DirectoryDeliveryAttempt','DirectoryEnquiryFollowup',
   'DirectoryGovernanceAudit','DirectoryIdentityLink','DirectoryListingAccess',
   'DirectoryListingAudit','DirectoryListingProfile','DirectoryListingRecord',
   'DirectoryListingRequest','DirectoryPlayerSubscriber','DirectorySettings',
@@ -95,6 +96,29 @@ Deno.serve(async(req) => {
       const saved=await directory.DirectoryCampaign.update(campaign.id,{status:'approved',approved_by_user_id:user.id,approved_at:new Date().toISOString()});
       await audit(base44,user,'campaign_approve','campaign',campaign.id,'succeeded',{eligibleCount:seg.eligibleCount});
       return result({success:true,campaign:campaignView(saved),preview,message:'Draft approved for content only. Sending remains disabled.'});
+    }
+    if(action==='admin_delivery_preflight'||action==='admin_prepare_delivery') {
+      const campaignId=text(body.campaignId,140);
+      if(!validId(campaignId))return result({error:'Valid Directory campaign required'},400);
+      const records=await directory.DirectoryCampaign.filter({id:campaignId},'-created_at',1);
+      const campaign=records?.[0];if(!campaign)return result({error:'Campaign not found'},404);
+      const [people,suppressions]=await Promise.all([allDirectoryRows(base44,'DirectoryPlayerSubscriber'),allDirectoryRows(base44,'DirectorySuppression')]);
+      const audience=await directoryAudience(people,suppressions,{county:campaign.county,clubSlug:campaign.club_slug,topic:campaign.topic,maxAgeMonths:24});
+      const plan=await directoryDeliveryPlan(campaign,audience);
+      const publicPlan={eligibleCount:plan.eligibleCount,preparedCount:plan.preparedCount,issues:plan.issues,externalSendEnabled:false,providerAcceptanceConfirmed:false,deliveryConfirmed:false,requiresLiveConsentRecheck:true};
+      if(action==='admin_delivery_preflight')return result({success:true,preflight:publicPlan});
+      if(plan.issues.length)return result({error:'Directory delivery preflight failed',preflight:publicPlan},409);
+      if(body.confirmPrepare!=='PREPARE ONLY')return result({error:'Explicit preparation-only confirmation required'},400);
+      await audit(base44,user,'delivery_prepare','campaign',campaignId,'attempted',{count:plan.entries.length});
+      let newlyPrepared=0,alreadyPrepared=0;
+      for(const entry of plan.entries){
+        const prior=await directory.DirectoryDeliveryAttempt.filter({idempotency_key:entry.idempotency_key},'-created_at',1);
+        if(prior?.[0]){alreadyPrepared++;continue;}
+        await directory.DirectoryDeliveryAttempt.create({...entry,created_by_user_id:user.id,updated_at:entry.created_at});
+        newlyPrepared++;
+      }
+      await audit(base44,user,'delivery_prepare','campaign',campaignId,'succeeded',{newlyPrepared,alreadyPrepared});
+      return result({success:true,preflight:publicPlan,newlyPrepared,alreadyPrepared,message:'Prepared records only. No external delivery was triggered.'});
     }
     if(action==='admin_suppress_email') {
       if(!validEmail(body.email))return result({error:'Valid email required'},400);

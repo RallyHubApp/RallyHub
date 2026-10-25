@@ -9,7 +9,7 @@ function containsGenericAdmin(value){
  if (value.user_condition?.role === 'admin') return true;
  return Object.values(value).some(containsGenericAdmin);
 }
-test('all Directory schemas are inventoried and parseable',()=>{assert.equal(configs.length,22);for(const {name,schema} of configs){assert.ok(schema.name,name);assert.ok(schema.rls,name);}});
+test('all Directory schemas are inventoried and parseable',()=>{assert.equal(configs.length,23);for(const {name,schema} of configs){assert.ok(schema.name,name);assert.ok(schema.rls,name);}});
 test('none of the Directory entities expose direct generic-admin access',()=>{
  const exposed=configs.filter(({schema})=>containsGenericAdmin(schema.rls)).map(({name})=>name);
  assert.deepEqual(exposed,[]);
