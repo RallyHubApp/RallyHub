@@ -379,7 +379,7 @@ export default function AdminPanel() {
   const { data: directoryInbox = { enquiries: [], contactActions: [] }, isLoading: directoryInboxLoading, isError: directoryInboxError, refetch: refreshDirectoryInbox } = useQuery({
     queryKey: ['directory-crm-inbox'],
     queryFn: async () => {
-      const res = await base44.functions.invoke('directoryContactAction', { action:'admin_inbox' });
+      const res = await base44.functions.invoke('directoryEnquiryAdmin', { action:'admin_inbox' });
       if (res.data?.error || res.data?.success !== true) throw new Error(res.data?.error || 'Unable to load Directory enquiries');
       return res.data;
     },

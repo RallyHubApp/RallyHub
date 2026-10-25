@@ -14,7 +14,7 @@ export default function DirectoryEnquiryFollowupEditor({ enquiry, onSaved }) {
     setSaving(true);
     setError('');
     try {
-      const res = await base44.functions.invoke('directoryContactAction', {
+      const res = await base44.functions.invoke('directoryEnquiryAdmin', {
         action: 'admin_set_followup', enquiryId: enquiry.id, status, internalNote: note,
       });
       if (res.data?.success !== true) throw new Error(res.data?.error || 'Could not save follow-up');
