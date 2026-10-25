@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-const backend = readFileSync('base44/functions/directoryContactAction/entry.ts', 'utf8');
+const backend = readFileSync('base44/functions/directoryEnquiryAdmin/entry.ts', 'utf8');
 const admin = readFileSync('src/pages/AdminPanel.jsx', 'utf8');
 const editor = readFileSync('src/components/admin/DirectoryEnquiryFollowupEditor.jsx', 'utf8');
 const schema = JSON.parse(readFileSync('base44/entities/DirectoryEnquiryFollowup.jsonc', 'utf8'));
@@ -10,11 +10,11 @@ const save = backend.slice(backend.indexOf("if (action === 'admin_set_followup')
 
 test('both inbox read and follow-up write fail closed before touching private records',()=>{
   for(const block of [inbox, save]){
-    assert.match(block,/base44\.auth\.me\(\)\.catch\(\(\) => null\)/);
-    const guard=block.indexOf('authorisedDirectorySuperAdmin(user)');
+    assert.match(backend,/base44\.auth\.me\(\)\.catch\(\(\) => null\)/);
+    const guard=backend.indexOf('directorySuperAdmin(user)');
     const entityRead=block.indexOf('base44.asServiceRole.entities.');
     assert.ok(guard>=0 && entityRead>guard,'service-role data access must follow superadmin verification');
-    assert.match(block,/status required\.|super-admin access required\./);
+    assert.match(backend,/Directory super-admin access required\./);
   }
   assert.doesNotMatch(inbox,/GuestBooking|ClubMembership|SpondSessionBinding|asServiceRole\.entities\.User/);
   assert.doesNotMatch(save,/GuestBooking|ClubMembership|SpondSessionBinding|asServiceRole\.entities\.User/);
@@ -42,6 +42,8 @@ test('Directory CRM displays enquiry messages and status, with explicit save onl
   assert.match(admin,/Enquiries · Directory inbox/);
   assert.match(admin,/Contact activity/);
   assert.match(editor,/action: 'admin_set_followup'/);
+  assert.match(editor,/functions\.invoke\('directoryEnquiryAdmin'/);
+  assert.match(admin,/functions\.invoke\('directoryEnquiryAdmin', \{ action:'admin_inbox'/);
   assert.match(editor,/onClick=\{save\}/);
   assert.doesNotMatch(editor,/useEffect\(|sendEmail\(|mailto:/);
 });
