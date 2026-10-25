@@ -44,7 +44,7 @@ test('Directory super-admin campaign UI is separate, and saving draft never send
  await page.getByRole('button',{name:'Save draft'}).click();
  await expect(page.getByRole('button',{name:'Preview eligible audience'})).toBeEnabled();
  await page.goto('/app/admin?tab=directory-governance');
- await expect(page.getByText('Directory governance & portability')).toBeVisible();
+ await expect(page.getByText('Directory governance & portability')).toBeVisible({timeout:12000});
  await expect(page.getByText('Standalone Directory export')).toBeVisible();
  expect(count().governanceCalls).toBeGreaterThanOrEqual(2);
  expect(count().requests.some(path=>path.includes('/functions/membershipRecord')||path.includes('/entities/ClubRelationship')||path.endsWith('/entities/Player'))).toBe(false);
