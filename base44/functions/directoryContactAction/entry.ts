@@ -320,6 +320,33 @@ Deno.serve(async (req) => {
     const action = clean(body.action || 'public_card', 80);
     const listingSlug = clean(body.listingSlug, 180);
 
+    // The Directory inbox is service-role read-only and restricted to the two
+    // immutable Directory super-admin identities. Never expose raw enquiries via entity RLS.
+    if (action === 'admin_inbox') {
+      const user = await base44.auth.me().catch(() => null);
+      if (!authorisedDirectorySuperAdmin(user)) return responseJson({ error:'Directory super-admin access required.' }, 403);
+      const [enquiries, contactActions] = await Promise.all([
+        base44.asServiceRole.entities.DirectoryContactEnquiry.list('-sent_at', 500),
+        base44.asServiceRole.entities.DirectoryContactAction.list('-created_at', 500),
+      ]);
+      const rows = (enquiries || []).map((item:any) => ({
+        id:String(item.id || ''), kind:'enquiry', listingSlug:clean(item.listing_slug,180),
+        listingName:clean(item.listing_name,240), senderName:clean(item.sender_name,160),
+        senderEmail:clean(item.sender_email,240), message:clean(item.message,2000),
+        sourcePath:clean(item.source_path,500), channel:'email',
+        status:clean(item.delivery_status,40), deliveryProvider:clean(item.delivery_provider,80),
+        createdAt:item.sent_at || item.created_date || '',
+      }));
+      const actions = (contactActions || []).map((item:any) => ({
+        id:String(item.id || ''),kind:'contact_action',listingSlug:clean(item.listing_slug,180),
+        listingName:clean(item.listing_name,240),channel:clean(item.channel,40),
+        actionType:clean(item.action_type,40),status:clean(item.status,40),
+        sourceSurface:clean(item.source_surface,120),createdAt:item.created_at || item.created_date || '',
+      }));
+      return responseJson({success:true,enquiries:rows,contactActions:actions,
+        limits:{enquiries:500,contactActions:500},
+        note:'Latest 500 records per source; contact action is not necessarily a submitted enquiry.'});
+    }
     if (action === 'admin_preview' || action === 'admin_test_resolve' || action === 'admin_set_rollout') {
       const user = await base44.auth.me();
       if (!authorisedDirectorySuperAdmin(user)) return responseJson({ error:'Admin access required' }, 403);

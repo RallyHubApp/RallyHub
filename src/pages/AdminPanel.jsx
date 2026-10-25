@@ -375,6 +375,17 @@ export default function AdminPanel() {
     enabled: canAccessDirectoryAdmin && ['directory-command', 'directory-crm', 'directory-players'].includes(activeAdminTab)
   });
 
+  const { data: directoryInbox = { enquiries: [], contactActions: [] }, isLoading: directoryInboxLoading, isError: directoryInboxError, refetch: refreshDirectoryInbox } = useQuery({
+    queryKey: ['directory-crm-inbox'],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('directoryContactAction', { action:'admin_inbox' });
+      if (res.data?.error || res.data?.success !== true) throw new Error(res.data?.error || 'Unable to load Directory enquiries');
+      return res.data;
+    },
+    enabled: canAccessDirectoryAdmin && ['directory-crm','directory-command'].includes(activeAdminTab),
+    retry: false,
+  });
+
   const { data: clubFeedbackRows = [] } = useQuery({
     queryKey: ['club-feedback-admin'],
     queryFn: async () => {
@@ -1552,6 +1563,11 @@ Brian`;
     ...directoryPlayerRows.map(row => ({key:`subscriber:${row.id}`,name:row.fullName||row.firstName,email:row.email,mobile:row.mobile,detail:[row.clubName,row.county].filter(Boolean).join(' · '),type:'Player Network',source:'directory-players',consent:row.status==='active' ? [row.emailOptIn&&'Email opted in',row.whatsappOptIn&&'WhatsApp opted in'].filter(Boolean).join(' · ')||'No active marketing opt-in' : 'Unsubscribed'}))
   ];
   const filteredDirectoryCrmRows = directoryCrmRows.filter(row=>[row.name,row.email,row.mobile,row.detail,row.type].join(' ').toLowerCase().includes(directoryCrmSearch.trim().toLowerCase()));
+  const directoryEnquiryRows = directoryInbox.enquiries || [];
+  const directoryContactActionRows = directoryInbox.contactActions || [];
+  const filteredDirectoryEnquiryRows = directoryEnquiryRows.filter(row=>[row.senderName,row.senderEmail,row.listingName,row.listingSlug,row.message,row.status].join(' ').toLowerCase().includes(directoryCrmSearch.trim().toLowerCase()));
+  const filteredDirectoryContactActionRows = directoryContactActionRows.filter(row=>[row.listingName,row.listingSlug,row.channel,row.status,row.sourceSurface].join(' ').toLowerCase().includes(directoryCrmSearch.trim().toLowerCase()));
+
 
 
   const downloadDirectoryPlayerCsv = () => {
@@ -1774,7 +1790,7 @@ Brian`;
                 ['Directory Analytics','directory-analytics','Traffic and engagement reporting'],
               ].map(([label,tab,description])=><button type="button" key={tab} onClick={()=>setSearchParams({tab})} className="rounded-xl border border-border bg-background/40 p-4 text-left hover:border-primary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"><strong className="block">{label}</strong><span className="mt-1 block text-xs text-muted-foreground">{description}</span></button>)}
             </div>
-            <p className="text-xs text-muted-foreground">Directory enquiries are captured separately; a combined admin enquiry inbox is still pending. No consent or person records are automatically shared with tenants.</p>
+            <p className="text-xs text-muted-foreground">The People & CRM workspace integrates Directory enquiries and contact actions. No tenant guest/member records or consent are shared automatically.</p>
           </div>
         </TabsContent>
         <TabsContent value="directory-crm" className="mt-4">
@@ -1784,9 +1800,9 @@ Brian`;
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-lg border p-3"><strong className="text-2xl">{directoryContactRows.length}</strong><p className="text-xs text-muted-foreground">Verified owners / editors</p></div>
               <div className="rounded-lg border p-3"><strong className="text-2xl">{directoryPlayerRows.length}</strong><p className="text-xs text-muted-foreground">Player subscriptions (including unsubscribed)</p></div>
-              <div className="rounded-lg border p-3"><strong className="text-2xl">—</strong><p className="text-xs text-muted-foreground">Enquiries · inbox integration pending</p></div>
+              <div className="rounded-lg border p-3"><strong className="text-2xl">{directoryInboxError ? 'Unavailable' : directoryInboxLoading ? '…' : directoryEnquiryRows.length}</strong><p className="text-xs text-muted-foreground">Recent Directory enquiries</p></div>
             </div>
-            <Input value={directoryCrmSearch} onChange={event=>setDirectoryCrmSearch(event.target.value)} placeholder="Search Directory people by name, contact or club" aria-label="Search Directory CRM" />
+            <Input value={directoryCrmSearch} onChange={event=>setDirectoryCrmSearch(event.target.value)} placeholder="Search Directory people, enquiries, contact actions or listings" aria-label="Search Directory CRM" />
             <p className="text-xs text-muted-foreground">Showing {filteredDirectoryCrmRows.length} source records · no tenant guests or members included.</p>
             <div className="max-h-[32rem] space-y-2 overflow-y-auto">
               {filteredDirectoryCrmRows.map(row=><div key={row.key} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3">
@@ -1795,7 +1811,25 @@ Brian`;
               </div>)}
               {!filteredDirectoryCrmRows.length && <p className="p-5 text-center text-sm text-muted-foreground">No Directory records match this search.</p>}
             </div>
-            <div className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">Enquiries and interaction history are stored separately. A consolidated enquiry inbox has not yet been implemented; this view does not imply that enquiries are already searchable here.</div>
+            <section className="space-y-3" aria-label="Directory enquiry inbox">
+              <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-lg font-bold">Enquiries · Directory inbox</h3><Button type="button" variant="outline" size="sm" onClick={()=>refreshDirectoryInbox()} disabled={directoryInboxLoading}><RefreshCw className="mr-1 h-4 w-4"/> Refresh inbox</Button></div>
+              <p className="text-xs text-muted-foreground">Private enquiries submitted through Directory contact forms. Delivery status is the forwarding outcome, not a reply or resolution status. These records belong only to the Directory.</p>
+              {directoryInboxError && <p role="alert" className="rounded-lg border border-destructive p-3 text-sm text-destructive">Directory enquiry inbox could not load. Retry above; no records have been altered.</p>}
+              {directoryInboxLoading && <p className="text-sm text-muted-foreground">Loading Directory enquiries…</p>}
+              {!directoryInboxError && !directoryInboxLoading && <>
+                <p className="text-xs text-muted-foreground">Showing {filteredDirectoryEnquiryRows.length} of {directoryEnquiryRows.length} recent enquiries (latest 500). Messages are visible only to verified Directory super-admins.</p>
+                <div className="max-h-[40rem] space-y-2 overflow-y-auto">
+                  {filteredDirectoryEnquiryRows.map(row=><details key={row.id} className="rounded-lg border border-border p-3">
+                    <summary className="cursor-pointer text-sm font-semibold">{row.senderName||row.senderEmail||'Unnamed sender'} · {row.listingName||row.listingSlug} <Badge variant="outline" className="ml-2">{row.status==='sent'?'Forwarded':row.status==='failed'?'Forwarding failed':'Awaiting verification'}</Badge></summary>
+                    <div className="mt-3 space-y-2 text-sm"><p><strong>Sender:</strong> {row.senderName||'Not supplied'} · {row.senderEmail||'No email supplied'}</p><p><strong>Received:</strong> {row.createdAt ? new Date(row.createdAt).toLocaleString('en-IE') : 'Unknown'} · <strong>Listing:</strong> {row.listingName||row.listingSlug}</p><p className="whitespace-pre-wrap rounded-md bg-secondary/50 p-3">{row.message||'No message saved'}</p><p className="text-xs text-muted-foreground">Source: {row.sourcePath||'Not recorded'} · Delivery: {row.status||'unknown'}{row.deliveryProvider?` (${row.deliveryProvider})`:''}</p><p className="text-xs text-muted-foreground">Contacting this sender is a separate action; no automatic email is sent from this inbox.</p></div>
+                  </details>)}
+                  {!filteredDirectoryEnquiryRows.length && <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No matching Directory enquiries in the latest 500 records.</p>}
+                </div>
+              </>}
+            </section>
+            <section className="space-y-2" aria-label="Directory contact action history"><h3 className="text-lg font-bold">Contact activity</h3><p className="text-xs text-muted-foreground">Recent call, WhatsApp and email contact actions. An initiated action does not prove a message was sent or received.</p>
+              {!directoryInboxError && !directoryInboxLoading && <><p className="text-xs text-muted-foreground">Showing {filteredDirectoryContactActionRows.length} of {directoryContactActionRows.length} recent actions (latest 500).</p><div className="max-h-72 space-y-1 overflow-y-auto">{filteredDirectoryContactActionRows.map(row=><div key={row.id} className="flex flex-wrap justify-between gap-2 rounded-md border p-2 text-xs"><span>{row.listingName||row.listingSlug} · {row.channel} · {row.actionType}</span><span className="text-muted-foreground">{row.status} · {row.createdAt?new Date(row.createdAt).toLocaleString('en-IE'):''}</span></div>)}</div></>}
+            </section>
           </div>
         </TabsContent>
         {/* ── MEMBER PREVIEW TAB ── */}
