@@ -12,7 +12,7 @@ const guards=user=>!!user&&user.role==='admin'&&SUPER_IDS.includes(user.id);
 const src=readFileSync('base44/functions/directoryGovernance/entry.ts','utf8');
 const js=ts.transpileModule(src,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText.replace(/^import .*?;\s*$/gm,'');
 function environment(user,fixtures={}) {
-  const db=structuredClone(fixtures),writes=[],reads=[];
+  const db=structuredClone(fixtures),writes=[],reads=[],sent=[];
   let seq=0;
   const entities=new Proxy({}, {get:(_target,name)=>({
     async list(...args){reads.push([name,'list',...args]);let rows=db[name]||[];const opt=args[0];if(typeof opt==='object'&&opt!==null){const limit=opt.limit||100;const start=opt.cursor?Number(opt.cursor):0;return {items:rows.slice(start,start+limit),has_more:start+limit<rows.length,next_cursor:start+limit<rows.length?String(start+limit):null};}return rows.slice(0,args[1]||5000);},
@@ -22,9 +22,9 @@ function environment(user,fixtures={}) {
   })});
   const base44={auth:{me:async()=>user},asServiceRole:{entities}};
   let handler;
-  const context={Deno:{serve(fn){handler=fn;}},createClientFromRequest:()=>base44,authorisedDirectorySuperAdmin:guards,directoryAudience,directoryEmailHash,directoryEmailKey,directoryDeliveryPlan,packageDirectoryArchive,inspectDirectoryArchive,rallyHubEmailShell:({title,content})=>`<html><title>${title}</title>${content}</html>`,Response,console,Date,JSON,Set,Map,Object,Array,String,Number,RegExp,crypto:globalThis.crypto};
+  const context={Deno:{serve(fn){handler=fn;}},createClientFromRequest:()=>base44,authorisedDirectorySuperAdmin:guards,directoryAudience,directoryEmailHash,directoryEmailKey,directoryDeliveryPlan,packageDirectoryArchive,inspectDirectoryArchive,rallyHubEmailShell:({title,content})=>`<html><title>${title}</title>${content}</html>`,escapeHtml:v=>String(v).replaceAll('<','&lt;'),requireConfiguredEmailTransport:async()=>({sender_email:'rallyhubapp@gmail.com',provider:'gmail_connector'}),sendWithConfiguredEmailTransport:async(_base,_scope,msg)=>{sent.push(msg);return {provider:'gmail_connector',payload:{id:'mock-provider-id'}}},Response,console,Date,JSON,Set,Map,Object,Array,String,Number,RegExp,crypto:globalThis.crypto};
   vm.runInNewContext(js,context,{filename:'directoryGovernance.ts'});
-  return {async act(action,payload={}){const response=await handler(new Request('https://sandbox.invalid/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})}));return {status:response.status,body:await response.json()};},writes,reads,db};
+  return {async act(action,payload={}){const response=await handler(new Request('https://sandbox.invalid/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})}));return {status:response.status,body:await response.json()};},writes,reads,db,sent};
 }
 const demoCampaign={id:'campaign123',name:'Clare event',purpose:'tournaments_events',channel:'email',status:'draft',subject:'Event tonight',body_text:'This is an example message for an event.'};
 const person={id:'subscriber123',email:'test@example.test',first_name:'Test',email_opt_in:true,status:'active',consent_at:'2026-10-25T12:00:00Z',consent_version:'v1',topics:['tournaments_events'],county:'Clare'};
@@ -74,4 +74,17 @@ test('delivery preflight and repeated preparation are audited, idempotent sequen
  const first=await e.act('admin_prepare_delivery',{campaignId:'campaign123',confirmPrepare:'PREPARE ONLY'});assert.equal(first.status,200,JSON.stringify(first.body));assert.equal(first.body.newlyPrepared,1);assert.equal(e.db.DirectoryDeliveryAttempt[0].status,'prepared');assert.equal(e.db.DirectoryDeliveryAttempt[0].attempt_count,0);
  const repeat=await e.act('admin_prepare_delivery',{campaignId:'campaign123',confirmPrepare:'PREPARE ONLY'});assert.equal(repeat.status,200);assert.equal(repeat.body.newlyPrepared,0);assert.equal(repeat.body.alreadyPrepared,1);
  assert.ok(e.writes.every(([name])=>name==='DirectoryDeliveryAttempt'||name==='DirectoryGovernanceAudit'));
+});
+
+test('campaign sending requires approval and explicit confirmation; no accidental sends',async()=>{
+ const active={...person,unsubscribe_token:'dp_0123456789abcdef0123456789abcdef'};
+ const e=environment({id:SUPER_IDS[0],role:'admin'},{DirectoryCampaign:[{...demoCampaign,status:'approved',sender_email:'rallyhubapp@gmail.com'}],DirectoryPlayerSubscriber:[active]});
+ const denied=await e.act('admin_send_campaign',{campaignId:'campaign123'});assert.equal(denied.status,400);assert.equal(e.sent.length,0);
+ const accepted=await e.act('admin_send_campaign',{campaignId:'campaign123',confirmSend:'SEND APPROVED CAMPAIGN'});assert.equal(accepted.status,200,JSON.stringify(accepted.body));assert.equal(accepted.body.accepted,1);assert.equal(e.sent.length,1);assert.match(e.sent[0].textBody,/player-updates\?token=/);assert.equal(e.db.DirectoryDeliveryAttempt[0].status,'provider_accepted');
+ const repeated=await e.act('admin_send_campaign',{campaignId:'campaign123',confirmSend:'SEND APPROVED CAMPAIGN'});assert.equal(repeated.body.accepted,0);assert.equal(repeated.body.skipped,1);assert.equal(e.sent.length,1);
+});
+test('suppressed subscribers never receive campaign mail even with explicit admin confirmation',async()=>{
+ const h=await directoryEmailHash(person.email);
+ const e=environment({id:SUPER_IDS[0],role:'admin'},{DirectoryCampaign:[{...demoCampaign,status:'approved',sender_email:'rallyhubapp@gmail.com'}],DirectoryPlayerSubscriber:[{...person,unsubscribe_token:'dp_0123456789abcdef0123456789abcdef'}],DirectorySuppression:[{email_hash:h,channel:'email',status:'active'}]});
+ const result=await e.act('admin_send_campaign',{campaignId:'campaign123',confirmSend:'SEND APPROVED CAMPAIGN'});assert.equal(result.status,409);assert.equal(e.sent.length,0);
 });
