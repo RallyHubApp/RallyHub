@@ -35,7 +35,7 @@ export function AppearanceSelector({ compact = false }) {
   );
 }
 
-export function AppearanceQuickButton({ showLabel = true, className }) {
+export function AppearanceQuickButton({ showLabel = true, className = '' }) {
   const { mode, cycleMode } = useAppearance();
   const active = OPTIONS.find(option => option.id === mode) || OPTIONS[0];
   const Icon = active.icon;

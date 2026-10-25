@@ -5,6 +5,7 @@ export function evaluateRule(person,rule){
  const expected=rule.value;
  switch(rule.op){case"eq":return value===expected;case"neq":return value!==expected;case"in":return Array.isArray(expected)&&expected.includes(value);case"contains":return Array.isArray(value)?value.includes(expected):String(value??"").toLowerCase().includes(String(expected??"").toLowerCase());case"exists":return rule.value?value!=null:value==null;default:throw new Error("COMM_AUDIENCE_OPERATOR_INVALID")}
 }
+/** @param {{people?:any[],definition?:{include?:any[],exclude?:any[],logic?:'AND'|'OR'}}} args */
 export function resolveAudience({people=[],definition={}}){
  const include=definition.include||[],exclude=definition.exclude||[];const logic=definition.logic==="OR"?"OR":"AND";
  return people.filter(p=>{const hits=include.map(r=>evaluateRule(p,r));const ok=!hits.length||(logic==="AND"?hits.every(Boolean):hits.some(Boolean));return ok&&!exclude.some(r=>evaluateRule(p,r))});

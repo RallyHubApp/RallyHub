@@ -98,7 +98,7 @@ export default function TenantEvents({directoryListingSlug=''}){
     directoryPrefillDone.current=true;
   },[directoryMode,directoryContext,editingId]);
 
-  const save=useMutation({mutationFn:async(/** @type {'draft'|'published'} */ mode)=>{
+  const save=useMutation({mutationFn:async(/** @type {'draft'|'publish'} */ mode)=>{
     if(!draft.name||!draft.date)throw new Error('Event name and start date are required.');
     if(!effectiveTenantId||!effectiveHostClubId)throw new Error('Choose the event host / organisation first.');
     if(mode!=='draft'&&!draft.member&&!draft.public)throw new Error('Choose at least one audience before publishing.');

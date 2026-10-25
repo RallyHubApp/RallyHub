@@ -254,6 +254,9 @@ export async function primeRallyHubHallSpeech(texts, { eventId = '' } = {}) {
   return true;
 }
 
+/** @param {string} text
+ * @param {{volume?: number,eventId?:string,voiceMode?:string,voices?:any[],engineMode?:string,fallback?:boolean,onStart?: (...args:any[])=>void,onEnd?: (...args:any[])=>void,onError?: (...args:any[])=>void,onEngine?: (engine:string)=>void}} [options]
+ */
 export async function speakRallyHubHall(text, {
   volume = 1,
   eventId = '',

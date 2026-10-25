@@ -25,7 +25,7 @@ const reportRows=(report,dimensionName,metricName)=>{
   return (report?.rows||[]).map(row=>({label:row.dimensionValues?.[dimensionIndex]?.value||'Unknown',value:Number(row.metricValues?.[metricIndex]?.value||0)}));
 };
 
-function Stat({label,value,note}){
+function Stat({label,value,note = ''}){
   return <div className="glass rounded-xl p-4 min-h-[112px]"><p className="text-xs font-semibold text-muted-foreground">{label}</p><p className="mt-2 text-2xl sm:text-3xl font-black text-foreground">{value}</p>{note&&<p className="mt-1 text-[11px] text-muted-foreground">{note}</p>}</div>;
 }
 

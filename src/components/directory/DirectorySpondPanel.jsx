@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const sessionKey = s => [s.day, s.start, s.end || '', s.level || '', s.venueId || ''].join('|');
 const normaliseClubName = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
 
-export default function DirectorySpondPanel({ listingSlug, clubName = '', onImport, onSave, saveBusy = false, hasUnsavedChanges = false, saved = false, existingSessions = [], mode = 'directory', onSelectSessions, title = 'Spond connection', description = '', scanFromDate = '', scanToDate = '', allowedPatternKeys = [] }) {
+export default function DirectorySpondPanel({ listingSlug, clubName = '', onImport, onSave, saveBusy = false, hasUnsavedChanges = false, saved = false, existingSessions = [], mode = 'directory', onSelectSessions = undefined, title = 'Spond connection', description = '', scanFromDate = '', scanToDate = '', allowedPatternKeys = [] }) {
   const { user } = useAuth();
   const [connection, setConnection] = useState(null);
   const [groups, setGroups] = useState([]);
@@ -73,11 +73,11 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
   }, [listingSlug, user?.role]);
 
   const invokeDirectory = async (action, extra = {}) => {
-    const payload = { action, listingSlug, ...extra };
+    const payload = { action, listingSlug, ...extra, spondToken: undefined };
     if (token) payload.spondToken = token;
     const res = await base44.functions.invoke('spondIntegrationWorking', payload);
     if (res.data?.error) {
-      const err = new Error(res.data.error);
+      const err = /** @type {Error & {status?:number}} */ (new Error(res.data.error));
       err.status = res.status;
       throw err;
     }

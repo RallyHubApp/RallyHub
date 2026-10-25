@@ -125,7 +125,7 @@ export default function MembershipConsole() {
   const [approvedFollowUp, setApprovedFollowUp] = useState(null);
   const [previewChannel, setPreviewChannel] = useState('email');
   const [editPerson, setEditPerson] = useState({});
-  const [editMembership, setEditMembership] = useState({});
+  const [editMembership, setEditMembership] = useState(/** @type {Record<string, string | number | boolean | null>} */ ({}));
   const [editSports, setEditSports] = useState([]);
   const [trainingOpen, setTrainingOpen] = useState(false);
   const [qualificationOpen, setQualificationOpen] = useState(false);

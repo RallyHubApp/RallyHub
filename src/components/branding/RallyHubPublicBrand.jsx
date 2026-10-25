@@ -25,8 +25,8 @@ function ClubChip({ club }) {
 }
 
 export default function RallyHubPublicBrand({
-  moduleName,
-  pageLabel,
+  moduleName = '',
+  pageLabel = '',
   club = null,
   clubs = [],
   align = 'center',
