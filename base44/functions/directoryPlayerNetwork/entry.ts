@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { authorisedDirectorySuperAdmin } from '../../shared/directorySuperAdmin.ts';
+import { directoryEmailHash } from '../../shared/directoryAudience.mjs';
 
 const CONSENT_VERSION='rallyhub-directory-player-updates-v1-2026-09';
 const LEGACY_TOPICS=['tournaments_events','coaching','club'];
@@ -21,6 +22,24 @@ function safe(row:any){return {
   emailOptIn:row.email_opt_in===true,whatsappOptIn:row.whatsapp_opt_in===true,topics:cleanTopics(row.topics).length?cleanTopics(row.topics):LEGACY_TOPICS,
   status:row.status||'active',consentAt:row.consent_at||'',createdAt:row.created_at||row.created_date||'',updatedAt:row.updated_at||row.updated_date||''
 }}
+
+// An email consent withdrawal must suppress future Directory campaigns even if a
+// duplicate subscription is later created. A fresh explicit opt-in may lift only
+// a suppression originating from the public preference journey, never an admin block.
+async function syncDirectoryEmailSuppression(base44:any, row:any, optedIn:boolean) {
+  if(!validEmail(row?.email))return;
+  const hash=await directoryEmailHash(row.email);
+  const active=await base44.asServiceRole.entities.DirectorySuppression.filter({email_hash:hash,channel:'email',status:'active'},'-created_at',25);
+  if(!optedIn){
+    if(active?.length)return;
+    await base44.asServiceRole.entities.DirectorySuppression.create({email_hash:hash,channel:'email',status:'active',reason:'public_unsubscribe',source:'preferences_link',created_by_user_id:'public_preference_holder',created_at:new Date().toISOString()});
+    return;
+  }
+  for(const entry of (active||[])){
+    if(entry.reason!=='public_unsubscribe'||entry.source!=='preferences_link')continue;
+    await base44.asServiceRole.entities.DirectorySuppression.update(entry.id,{status:'revoked',revoked_by_user_id:'explicit_resubscribe',revoked_at:new Date().toISOString()});
+  }
+}
 
 async function byToken(base44:any,rawToken:any){
   const t=clean(rawToken,100);
@@ -76,11 +95,13 @@ Deno.serve(async(req)=>{
       if((emailOptIn||whatsappOptIn)&&!topics.length)return Response.json({error:'Choose at least one type of pickleball update you want to receive.'},{status:400});
       const now=new Date().toISOString();
       const status=emailOptIn||whatsappOptIn?'active':'unsubscribed';
+      if(!emailOptIn)await syncDirectoryEmailSuppression(base44,row,false);
       const updated=await base44.asServiceRole.entities.DirectoryPlayerSubscriber.update(row.id,{
         email_opt_in:emailOptIn,whatsapp_opt_in:whatsappOptIn,topics,status,
         unsubscribed_at:status==='unsubscribed'?now:'',updated_at:now,
         consent_version:CONSENT_VERSION,consent_at:now,
       });
+      if(emailOptIn)await syncDirectoryEmailSuppression(base44,updated,true);
       return Response.json({success:true,subscriber:safe(updated),message:status==='unsubscribed'?'You have been unsubscribed from RallyHub player updates.':'Your RallyHub update preferences have been saved.'});
     }
 
@@ -127,6 +148,7 @@ Deno.serve(async(req)=>{
     }else{
       saved=await base44.asServiceRole.entities.DirectoryPlayerSubscriber.create({...data,unsubscribe_token:token(),created_at:now});
     }
+    if(emailOptIn)await syncDirectoryEmailSuppression(base44,saved,true);
     return Response.json({
       success:true,
       subscriber:safe(saved),
