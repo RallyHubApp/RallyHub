@@ -4,7 +4,7 @@ import { rallyHubEmailShell } from '../../shared/rallyHubPlatformEmail.ts';
 import { packageDirectoryArchive, inspectDirectoryArchive } from '../../shared/directoryPortableExport.mjs';
 import { directoryAudience, directoryEmailHash, directoryEmailKey } from '../../shared/directoryAudience.mjs';
 import { directoryDeliveryPlan } from '../../shared/directoryDelivery.mjs';
-import { sendWithConfiguredEmailTransport, requireConfiguredEmailTransport } from '../directoryClaim/emailRouter.ts';
+import { sendWithConfiguredEmailTransport, requireConfiguredEmailTransport } from '../../shared/directoryCampaignEmailRouter.ts';
 
 // Directory-only administration; sending requires explicit authorised per-campaign confirmation and fresh consent.
 const VERSION = 'directory-phase1-v1';
