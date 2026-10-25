@@ -1,6 +1,5 @@
 import Seo from '@/components/public/Seo';
 import { useLocation, Link } from 'react-router-dom';
-import Seo from '@/components/public/Seo';
 
 export default function PageNotFound() {
   const location = useLocation();
@@ -8,7 +7,6 @@ export default function PageNotFound() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-      <Seo title="Page not found | RallyHub" description="This page does not exist on RallyHub." path="/" robots="noindex,follow" />
       <Seo title="Page not found | RallyHub" description="The requested RallyHub page does not exist." path={location.pathname} robots="noindex,nofollow" />
       <div className="max-w-md w-full text-center space-y-6">
         <div className="space-y-2">
