@@ -71,3 +71,22 @@ test('link proposals cannot be made without independent evidence, and never muta
  assert.equal(h.rows.DirectoryIdentityLink.length,1);assert.equal(h.rows.DirectoryIdentityLink[0].status,'proposed');
  const revoked=await h.invoke('admin_revoke_identity_link',{linkId:proposed.data.linkId});assert.equal(revoked.status,200);assert.equal(revoked.data.status,'revoked');
 });
+test('export manifest and snapshot contain only Directory entities and redact credentials',async()=>{
+ const h=harness({id:ADMIN_ID,role:'admin'});
+ h.rows.DirectoryPlayerSubscriber.push(subscriber('subscriber_00000001','private@example.test',{unsubscribe_token:'secret_fixture_unsubscribe'}));
+ const manifest=await h.invoke('admin_export_manifest');assert.equal(manifest.status,200,JSON.stringify(manifest.data));
+ assert.equal(manifest.data.manifest.domain,'Directory');assert.ok(manifest.data.manifest.entityNames.includes('DirectoryPlayerSubscriber'));
+ assert.equal((await h.invoke('admin_export_snapshot')).status,400);
+ const snapshot=await h.invoke('admin_export_snapshot',{confirmExport:'EXPORT DIRECTORY'});
+ assert.equal(snapshot.status,200,JSON.stringify(snapshot.data));
+ assert.equal(snapshot.data.inspection.valid,true);
+ assert.equal(snapshot.data.archive.entities.DirectoryPlayerSubscriber[0].unsubscribe_token,undefined);
+ assert.equal(snapshot.data.archive.entities.DirectoryPlayerSubscriber[0].email,'private@example.test');
+ assert.ok(Object.keys(snapshot.data.archive.entities).every(name=>name.startsWith('Directory')));
+});
+test('export rejects synthetic dangling follow-up instead of silently calling archive complete',async()=>{
+ const h=harness({id:ADMIN_ID,role:'admin'});
+ h.rows.DirectoryEnquiryFollowup=[{id:'followup_00001',enquiry_id:'nonexistent_enquiry',status:'open'}];
+ const response=await h.invoke('admin_export_snapshot',{confirmExport:'EXPORT DIRECTORY'});
+ assert.equal(response.status,409);assert.match(response.data.error,/relationship reconciliation/);
+});
