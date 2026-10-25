@@ -42,7 +42,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
   const [playerPublishing,setPlayerPublishing]=useState(false);
   const useGalwayVenue=()=>{
     setPlayerVenue('St Joseph’s Doora Barefield GAA Sports Hall, Gurteen, Ennis, Co. Clare, V95 PD36');
-    setPlayerMap('https://maps.google.com/?q=V95+PD36');
+    setPlayerMapUrl('https://maps.google.com/?q=V95+PD36');
     setPlayerArrival('When you arrive at Gurteen, head towards the right-hand side of the car park, towards the astroturf. There is ample parking on both sides, so park anywhere you can find a space.\n\nAs you drive in and face the main building, the entrance we are using is the very last door at the far right-hand end of the building, beside the astroturf pitch. It looks like an emergency exit rather than a main entrance. The door will be open.');
   };
   const savePlayerPublishing=async()=>{

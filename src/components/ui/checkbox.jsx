@@ -4,8 +4,7 @@ import { Check } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-/** @type {React.ForwardRefExoticComponent<React.ComponentPropsWithRef<typeof CheckboxPrimitive.Root>>} */
-const Checkbox = React.forwardRef(({ className, ...props }, ref) => (
+const Checkbox = React.forwardRef(/** @type {React.ForwardRefRenderFunction<React.ElementRef<typeof CheckboxPrimitive.Root>, React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>>} */ (({ className, ...props }, ref) => (
   <CheckboxPrimitive.Root
     ref={ref}
     data-rally-control="checkbox"
@@ -18,7 +17,7 @@ const Checkbox = React.forwardRef(({ className, ...props }, ref) => (
       <Check className="h-4 w-4" />
     </CheckboxPrimitive.Indicator>
   </CheckboxPrimitive.Root>
-))
+)))
 Checkbox.displayName = CheckboxPrimitive.Root.displayName
 
 export { Checkbox }

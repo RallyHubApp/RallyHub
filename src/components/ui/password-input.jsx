@@ -3,6 +3,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
+/** @type {React.ForwardRefExoticComponent<React.ComponentPropsWithRef<'input'>>} */
 const PasswordInput = forwardRef(function PasswordInput({ className, ...props }, ref) {
   const [visible, setVisible] = useState(false);
 

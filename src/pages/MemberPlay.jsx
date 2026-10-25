@@ -175,9 +175,9 @@ export default function MemberPlay({ previewData = null }) {
       </div>
 
       <div className="grid grid-cols-3 gap-2 rounded-xl bg-secondary/40 p-1">
-        {[
+        {(/** @type {[string,import('lucide-react').LucideIcon,string][]} */ ([
           ['schedule', List, 'Schedule'], ['month', CalendarDays, 'Month'], ['map', MapIcon, 'Map']
-        ].map(([key, Icon, label]) => (
+        ])).map(([key, Icon, label]) => (
           <button key={key} onClick={() => setView(key)} className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-xs font-semibold transition-colors ${view === key ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground'}`}>
             <Icon className="w-4 h-4" />{label}
           </button>

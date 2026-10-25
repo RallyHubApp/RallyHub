@@ -40,6 +40,7 @@ export function normaliseBrandKit(kit={}){
     utilityFooter:kit.channel_overrides?.email?.utility_footer||{},
   };
 }
+/** @param {{brandKit:any,subjectTemplate:string,htmlTemplate:string,plainTextTemplate:string,data?:Record<string,any>}} args */
 export function renderEmail({brandKit,subjectTemplate,htmlTemplate,plainTextTemplate,data={}}){
   const brand=normaliseBrandKit(brandKit);
   const subject=mergeTemplate(subjectTemplate,data);

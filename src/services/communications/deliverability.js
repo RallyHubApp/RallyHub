@@ -1,3 +1,4 @@
+/** @param {{campaign:any,message:any,audience:any,domain?:{dmarc?:boolean,dkim?:boolean},metrics?:{hard_bounce_rate?:number,complaint_rate?:number},now?:Date}} args */
 export function preflight({campaign,message,audience,domain={},metrics={},now=new Date()}){
  const issues=[],warnings=[];if(!campaign?.purpose)issues.push("purpose_missing");if(!audience?.eligible_count)issues.push("no_eligible_recipients");
  if(message?.channel==="email"&&(!message.html_body||!message.plain_text_body))issues.push("dual_email_required");
