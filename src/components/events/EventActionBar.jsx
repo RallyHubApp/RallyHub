@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { toast } from 'sonner';
 import { downloadEventCalendar, eventPath, googleCalendarUrl, isWhatsAppRegistration, outlookCalendarUrl, registrationState } from '@/lib/event-utils';
 
-export default function EventActionBar({ event, compact = false, initiallySaved = false, onSavedChange }) {
+export default function EventActionBar({ event, compact = false, initiallySaved = false, onSavedChange = undefined }) {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [shareOpen,setShareOpen]=useState(false);

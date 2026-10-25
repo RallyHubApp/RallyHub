@@ -189,7 +189,7 @@ export default function PublicClubProfile() {
         <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_340px]">
           <section className="glass rounded-2xl p-5 sm:p-7">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-              <PublicDirectoryLogo logoUrl={normaliseDirectoryAssetUrl(club.logoUrl)} clubName={club.name} sizeClass="h-24 w-24" />
+              <PublicDirectoryLogo src={normaliseDirectoryAssetUrl(club.logoUrl)} name={club.name} imageClassName="h-24 w-24 object-contain" fallbackClassName="h-24 w-24" />
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-extrabold uppercase tracking-wider text-primary">{listingLabel}</p>
                 <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">{club.name}</h1>

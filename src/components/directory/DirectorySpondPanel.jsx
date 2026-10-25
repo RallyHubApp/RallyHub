@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const sessionKey = s => [s.day, s.start, s.end || '', s.level || '', s.venueId || ''].join('|');
 const normaliseClubName = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
 
-export default function DirectorySpondPanel({ listingSlug, clubName = '', onImport, onSave, saveBusy = false, hasUnsavedChanges = false, saved = false, existingSessions = [], mode = 'directory', onSelectSessions = undefined, title = 'Spond connection', description = '', scanFromDate = '', scanToDate = '', allowedPatternKeys = [] }) {
+export default function DirectorySpondPanel({ listingSlug, clubName = '', onImport = undefined, onSave = undefined, saveBusy = false, hasUnsavedChanges = false, saved = false, existingSessions = [], mode = 'directory', onSelectSessions = undefined, title = 'Spond connection', description = '', scanFromDate = '', scanToDate = '', allowedPatternKeys = [] }) {
   const { user } = useAuth();
   const [connection, setConnection] = useState(null);
   const [groups, setGroups] = useState([]);

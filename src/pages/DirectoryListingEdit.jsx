@@ -85,7 +85,7 @@ function VenuePinPicker({ venue, onPick }) {
   const latitude = Number(venue?.latitude);
   const longitude = Number(venue?.longitude);
   const hasPin = hasLat && hasLng && Number.isFinite(latitude) && Number.isFinite(longitude);
-  const center = hasPin ? [latitude, longitude] : [53.4, -7.7];
+  const center = /** @type {[number,number]} */ (hasPin ? [latitude, longitude] : [53.4, -7.7]);
   return (
     <div className="rounded-xl border border-border overflow-hidden bg-background/40">
       <div className="px-3 py-2 border-b border-border flex items-center justify-between gap-3">
@@ -237,7 +237,7 @@ export default function DirectoryListingEdit() {
   const [setupEvents, setSetupEvents] = useState([]);
   const [loadingSetupEvents, setLoadingSetupEvents] = useState(false);
   const [setupEventsLoadedFor, setSetupEventsLoadedFor] = useState('');
-  const [setupContext, setSetupContext] = useState({});
+  const [setupContext, setSetupContext] = useState(/** @type {any} */ ({}));
   const [identityChoice, setIdentityChoice] = useState('');
   const [identityCustom, setIdentityCustom] = useState('');
   const [autoSaveState, setAutoSaveState] = useState('');

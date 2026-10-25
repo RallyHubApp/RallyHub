@@ -145,7 +145,7 @@ function PlayerStatusControls({participants,onAction,onUndo,onAdd,onSearch,onSen
   </div>;
 }
 
-function ProposedRoundEditor({round,slots,participants,names,fixedPairs,onStart,onPairLock,onSaveDraft,onBackToSetup,saving,startError,playMinutes=8,liveEditing=false}){
+function ProposedRoundEditor({round,slots,participants,names,fixedPairs,onStart=undefined,onPairLock,onSaveDraft,onBackToSetup=undefined,saving,startError,playMinutes=8,liveEditing=false}){
   const ordered=useMemo(()=>[...slots].sort((a,b)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank)||String(a.team_side).localeCompare(String(b.team_side))||Number(a.slot_number)-Number(b.slot_number)),[slots]);
   const original=useMemo(()=>Object.fromEntries(ordered.map(s=>[s.id,String(s.participant_id)])),[ordered]);
   const [draft,setDraft]=useState(original);const [selected,setSelected]=useState(null);const [pairBusyKey,setPairBusyKey]=useState('');const [draftStatus,setDraftStatus]=useState(null);const [roundMinutes,setRoundMinutes]=useState(Math.min(60,Math.max(1,Number(playMinutes)||8)));

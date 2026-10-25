@@ -64,7 +64,7 @@ function FeaturedEvent({event,onRegister}){
 function EventMap({events}){
   const points=events.filter(e=>validMapPoint(e.event_latitude,e.event_longitude));
   if(!points.length)return <div className="rounded-2xl border border-[#dbe6e8] bg-white px-6 py-16 text-center"><MapPin className="mx-auto h-9 w-9 text-[#078e48]"/><h2 className="mt-3 text-lg font-black text-[#07184c]">Map locations are being added</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#52627d]">Events still appear in the complete list. When an organiser provides a mapped venue, it will appear here automatically.</p></div>;
-  const center=[Number(points[0].event_latitude),Number(points[0].event_longitude)];
+  const center=/** @type {[number,number]} */ ([Number(points[0].event_latitude),Number(points[0].event_longitude)]);
   return <div className="overflow-hidden rounded-2xl border border-[#dbe6e8] bg-white"><MapContainer center={center} zoom={7} scrollWheelZoom className="h-[620px] w-full"><TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>{points.map(event=><Marker key={event.id} position={[Number(event.event_latitude),Number(event.event_longitude)]}><Popup><div className="min-w-[210px]"><strong>{event.name}</strong><br/>{prettyEventDateRange(event)}<br/>{event.location||''}<br/><a href={eventPath(event)} className="font-bold text-[#078e48]">View event</a></div></Popup></Marker>)}</MapContainer></div>;
 }
 

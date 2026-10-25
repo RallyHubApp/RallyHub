@@ -16,7 +16,7 @@ import { trackSiteEvent } from '@/lib/site-analytics';
 import { DIRECTORY_CATEGORY_FALLBACK, loadDirectoryCategories } from '@/lib/directory-categories';
 import { base44 } from '@/api/base44Client';
 
-delete L.Icon.Default.prototype._getIconUrl;
+delete /** @type {any} */ (L.Icon.Default.prototype)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
@@ -345,7 +345,7 @@ export default function PublicDirectory() {
         title="Find Pickleball Clubs, Coaches, Holidays & More | RallyHub Directory"
         description={`Search ${effectiveClubs.length} pickleball listings including clubs, coaches, event organisers, holidays and suppliers. RallyHub supports listings across Ireland and beyond.`}
         path="/directory"
-        structuredData={directorySchema}
+        structuredData={[directorySchema]}
       />
 
       <div className="min-h-screen overflow-x-hidden bg-white text-[#07184c]">

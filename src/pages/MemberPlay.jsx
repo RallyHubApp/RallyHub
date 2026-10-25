@@ -157,7 +157,7 @@ export default function MemberPlay({ previewData = null }) {
   const directoryClub = play?.club?.slug ? getClub(play.club.slug) : null;
   const items = useMemo(() => (play?.items || []).map(item => enrichItem(item, directoryClub)), [play?.items, directoryClub]);
   const mapItems = items.filter(item => Number.isFinite(Number(item.latitude)) && Number.isFinite(Number(item.longitude)));
-  const mapCenter = mapItems.length ? [Number(mapItems[0].latitude), Number(mapItems[0].longitude)] : [53.35, -7.75];
+  const mapCenter = /** @type {[number,number]} */ (mapItems.length ? [Number(mapItems[0].latitude), Number(mapItems[0].longitude)] : [53.35, -7.75]);
 
   if (isLoading) return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">Loading your calendar…</div>;
   if (error) return <div className="glass rounded-xl p-6 text-sm text-destructive">{error.message || 'Could not load your calendar.'}</div>;
