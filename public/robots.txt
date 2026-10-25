@@ -20,4 +20,4 @@ Disallow: /app/
 Disallow: /admin
 Disallow: /login
 
-Sitemap: https://rallyhub.ie/directory-sitemap.xml
+Sitemap: https://rallyhub.ie/sitemap.xml

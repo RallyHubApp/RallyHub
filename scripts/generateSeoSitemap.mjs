@@ -33,8 +33,11 @@ const unique=values=>[...new Set(values.filter(Boolean))];
 const countySlug=county=>String(county||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 const enc=value=>encodeURIComponent(String(value||''));
 
-const listedCounties=unique(publicClubs.map(club=>club.county));
-const venueUrls=publicClubs.flatMap(club=>(club.venues||[]).filter(v=>v?.id).map(v=>`${site}/pickleball-venues/${enc(club.slug)}/${enc(v.id)}`));
+const publicListing = club => club && club.slug && club.name && !['archived','hidden','draft','rejected'].includes(String(club.status||'active').toLowerCase());
+const publicListings=publicClubs.filter(publicListing);
+const clubListings=publicListings.filter(item=>!item.listingType || item.listingType==='club');
+const listedCounties=unique(clubListings.map(club=>club.county));
+const venueUrls=clubListings.flatMap(club=>(club.venues||[]).filter(v=>v?.id).map(v=>`${site}/pickleball-venues/${enc(club.slug)}/${enc(v.id)}`));
 const urls=unique([
   `${site}/`,
   `${site}/directory`,
@@ -42,12 +45,11 @@ const urls=unique([
   `${site}/directory/story`,
   `${site}/directory/help`,
   `${site}/directory/quick-start`,
-  `${site}/directory/player-updates`,
   `${site}/events`,
   `${site}/about`,
   `${site}/contact`,
   ...listedCounties.map(county=>`${site}/pickleball-clubs/${countySlug(county)}`),
-  ...publicClubs.map(club=>`${site}/directory/${enc(club.slug)}`),
+  ...publicListings.map(item=>`${site}/directory/${enc(item.slug)}`),
   ...venueUrls,
 ]);
 
@@ -57,5 +59,8 @@ const xml=`<?xml version="1.0" encoding="UTF-8"?>\n`+
   `\n</urlset>\n`;
 
 fs.mkdirSync(path.join(root,'public'),{recursive:true});
+// Serve identical, public-only discovery paths for both conventional sitemap URLs.
+// The legacy Base44 sitemap included sign-in, dashboard and admin URLs; replace it.
 fs.writeFileSync(path.join(root,'public/directory-sitemap.xml'),xml);
+fs.writeFileSync(path.join(root,'public/sitemap.xml'),xml);
 console.log(`SEO sitemap generated: ${urls.length} URLs (${publicClubs.length} public listings, ${listedCounties.length} counties, ${venueUrls.length} venues; ${dynamicClubs.length} dynamic listings).`);
