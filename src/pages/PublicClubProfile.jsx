@@ -1,7 +1,7 @@
 import CoachProfile from '@/components/directory/CoachProfile';
 import PageNotFound from '@/lib/PageNotFound';
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 import { getClub } from '@/data/directorySeed';
