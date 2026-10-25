@@ -5,6 +5,7 @@ import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { importedContactEndpointFor } from './importedContactEndpoints.ts';
 import { NAME_OPTOUT_SLUGS, PHONE_OPTOUT_SLUGS, STATIC_LEGACY_HOLD_SLUGS, staticContactOverrideFor } from './staticContactOverrides.ts';
 
+// Directory CRM inbox/follow-up deployment marker: 2026-10-25.
 const FEATURE_KEY = 'protected-contact-actions-v1';
 const DEFAULT_DIRECTORY_KEY = 'protected-contact-default-directory';
 const CONFIG_CACHE_TTL_MS = 60 * 1000;
