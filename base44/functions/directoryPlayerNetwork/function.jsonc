@@ -1,0 +1,4 @@
+{
+  "name": "directoryPlayerNetwork",
+  "entry": "base44/functions/directoryPlayerNetwork/entry.ts"
+}
