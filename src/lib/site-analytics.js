@@ -1,9 +1,11 @@
 import { base44 } from '@/api/base44Client';
+import { parseDirectoryAttribution } from '../../base44/shared/directoryAttribution.mjs';
 
 const CONSENT_KEY='rallyhub.analytics.consent.v1';
 const VISITOR_KEY='rallyhub.analytics.visitor.v1';
 const FIRST_SEEN_KEY='rallyhub.analytics.firstSeen.v1';
 const SESSION_KEY='rallyhub.analytics.session.v1';
+const ATTRIBUTION_KEY='rallyhub.directory.attribution.v1';
 const CONSENT_VERSION='analytics-v1';
 let gaMeasurementId='';
 let gaLoading=null;
@@ -27,15 +29,19 @@ function visitorContext(){
 
 function trafficContext(){
   const params=new URLSearchParams(window.location.search);
-  const utmSource=params.get('utm_source');
-  const utmMedium=params.get('utm_medium');
+  let previous={};
+  try{previous=JSON.parse(sessionStorage.getItem(ATTRIBUTION_KEY)||'{}')}catch{}
+  const attribution=parseDirectoryAttribution(window.location.search,previous);
+  if(Object.keys(attribution).length)try{sessionStorage.setItem(ATTRIBUTION_KEY,JSON.stringify(attribution))}catch{}
+  const utmSource=attribution.utm_source;
+  const utmMedium=attribution.utm_medium;
   let referrerDomain='';
   try{referrerDomain=document.referrer?new URL(document.referrer).hostname:''}catch{}
   let trafficSource=utmSource ? `${utmSource}${utmMedium?` / ${utmMedium}`:''}` : referrerDomain || 'Direct / unknown';
   if(/google\./i.test(referrerDomain))trafficSource='Google organic';
   else if(/facebook\.com|fb\.com/i.test(referrerDomain))trafficSource='Facebook referral';
   else if(/instagram\.com/i.test(referrerDomain))trafficSource='Instagram referral';
-  return {referrerDomain,trafficSource};
+  return {referrerDomain,trafficSource,attribution};
 }
 
 export async function loadAnalyticsConfig(){
@@ -69,11 +75,12 @@ export async function loadGa4(measurementId){
 export async function trackSiteEvent(eventName,details={}){
   if(typeof window==='undefined'||analyticsConsent()!=='granted')return;
   const {visitorId,sessionId,isReturning}=visitorContext();
-  const {referrerDomain,trafficSource}=trafficContext();
+  const {referrerDomain,trafficSource,attribution}=trafficContext();
   const payload={
     action:'public_track',eventName,visitorId,sessionId,isReturning,
     path:window.location.pathname,pageTitle:document.title,referrerDomain,trafficSource,
-    consentVersion:CONSENT_VERSION,...details
+    consentVersion:CONSENT_VERSION,...details,
+    metadata:{...(details.metadata && typeof details.metadata==='object' && !Array.isArray(details.metadata)?details.metadata:{}),attribution},
   };
   try{base44.functions.invoke('siteAnalytics',payload).catch(()=>{})}catch{}
   if(window.gtag&&gaMeasurementId){
