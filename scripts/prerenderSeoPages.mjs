@@ -30,7 +30,8 @@ const directoryClubs=[
       sessions:Array.isArray(state.profile?.sessions)?state.profile.sessions:(state.base.sessions||[]),
     })),
 ];
-const publicClubs=directoryClubs.filter(listing=>(listing.listingType||listing.listing_type||'club')==='club');
+const publicListings=directoryClubs.filter(listing=>listing.status!=='archived'&&listing.status!=='rejected'&&listing.visibility!=='private');
+const publicClubs=publicListings.filter(listing=>(listing.listingType||listing.listing_type||'club')==='club');
 const enc=value=>encodeURIComponent(String(value||''));
 const providerType=listing=>String(listing.listingType||listing.listing_type||'club').toLowerCase();
 const providerLabel=listing=>({coach:'Pickleball coach',equipment:'Pickleball equipment supplier',supplier:'Pickleball supplier',holiday:'Pickleball holiday provider',event_organiser:'Pickleball event organiser',event:'Pickleball event organiser'})[providerType(listing)]||'Pickleball directory provider';
@@ -114,19 +115,6 @@ for(const county of counties){
 }
 
 for(const club of publicListings){
-  if(club.listingType && club.listingType!=='club'){
-    const label=({coach:'Pickleball coach',equipment:'Pickleball equipment supplier',supplier:'Pickleball supplier',holiday:'Pickleball holiday provider',events:'Pickleball event organiser'})[club.listingType]||'Pickleball provider';
-    const loc=[club.town,club.county].filter(Boolean).join(', ');
-    const detail=String(club.description||'').trim();
-    const description=detail||`Explore ${club.name}, ${label.toLowerCase()}${loc?` serving ${loc}`:''}, in the RallyHub Irish Pickleball Directory.`;
-    const title=`${club.name} | ${label} | RallyHub`;
-    const schema={'@context':'https://schema.org','@type':club.listingType==='coach'?'Person':'Organization',name:club.name,url:`${site}/directory/${encodeURIComponent(club.slug)}`,description, ...(loc?{areaServed:loc}:{}), ...(club.listingType==='coach'?{jobTitle:'Pickleball coach'}:{})};
-    inject(`/directory/${club.slug}`,{
-      title,description,schema:[schema],
-      body:`<nav><a href="/directory">Irish Pickleball Directory</a></nav><article><h1>${esc(club.name)}</h1><p>${esc(label)}${loc?` — ${esc(loc)}`:''}</p><p>${esc(description)}</p>${club.listingType==='coach'&&club.qualifications?`<h2>Coaching qualifications</h2><p>${esc(Array.isArray(club.qualifications)?club.qualifications.join(', '):club.qualifications)}</p>`:''}</article>`
-    });
-    continue;
-  }
   const type=providerType(club);
   if(type!=='club'){
     const label=providerLabel(club);
