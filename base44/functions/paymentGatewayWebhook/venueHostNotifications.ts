@@ -1,10 +1,11 @@
+import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
 // Shared member activation notices for application polling and payment webhook.
 const CLARE_JOINING_VENUES=['ennistymon','shannon','corofin','clarecastle'];
 function isClareVenuePolicy(club:any){return String(club?.name||'').trim().toLowerCase()==='clare pickleball'}
 // Venue hosts are explicitly configured by a club administrator. Never infer them from
 // a guest booking creator or public contact address, which may be an unrelated person.
 export async function notifyJoiningVenueHosts(base44:any,config:any,club:any,app:any,dependencies:any){
-  const {sendWithConfiguredEmailTransport,emailShell,escapeHtml,emailKey}=dependencies;
+  const {sendWithConfiguredEmailTransport,escapeHtml,emailKey}=dependencies;
   if(!isClareVenuePolicy(club)||app.application_type!=='new'||!CLARE_JOINING_VENUES.includes(app.primary_venue))return app;
   if(app.host_notification_status==='sent')return app;
   if(!['paid','not_required'].includes(String(app.payment_status||'')))return app;
@@ -15,15 +16,28 @@ export async function notifyJoiningVenueHosts(base44:any,config:any,club:any,app
   }
   // Persist each delivered address independently: retrying after a partial failure
   // must not resend to hosts who were already notified.
+  const templates=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:config.tenant_id,purpose:'membership_venue_host_activated'},'-updated_date',30);
+  const template=(templates||[]).find((t:any)=>t.status==='approved'&&(!t.club_id||t.club_id===config.club_id));
+  if(!template?.subject_template||!template?.plain_text_template||!template?.html_template||!template?.brand_kit_id){
+    return await base44.asServiceRole.entities.MembershipApplication.update(app.id,{host_notification_status:'template_missing'});
+  }
+  const kits=await base44.asServiceRole.entities.CommunicationBrandKit.filter({tenant_id:config.tenant_id},'-updated_date',40);
+  const brandKit=(kits||[]).find((k:any)=>k.id===template.brand_kit_id&&k.status==='active'&&(!k.club_id||k.club_id===config.club_id));
+  if(!brandKit)return await base44.asServiceRole.entities.MembershipApplication.update(app.id,{host_notification_status:'brand_kit_missing'});
+  const merge=(value:string,fields:Record<string,string>,html=false)=>String(value||'').replace(/{{\s*([A-Za-z_]+)\s*}}/g,(_match,key)=>html?escapeHtml(fields[key]??''):fields[key]??'');
   const sent=new Set(Array.isArray(app.host_notified_emails)?app.host_notified_emails.map(emailKey):[]);
   const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:config.tenant_id,clubId:config.club_id};
   let failed=false;
   for(const to of emails){
     if(sent.has(to))continue;
     const venue=app.primary_venue[0].toUpperCase()+app.primary_venue.slice(1);
-    const subject=`New Clare Pickleball member · ${venue}`;
-    const textBody=`A new Clare Pickleball member has joined your venue.\n\nMember: ${app.full_name}\nPrimary joining venue: ${venue}\nMembership: Active\n\nFor information only. No action required unless your session arrangements need updating.\n\nPowered by RallyHub`;
-    const htmlBody=emailShell({club,headline:'New member at your venue',preheader:venue+' · Member activated',content:`<p>A new Clare Pickleball member has joined your venue.</p><p><strong>Member:</strong> ${escapeHtml(app.full_name)}<br><strong>Primary joining venue:</strong> ${escapeHtml(venue)}<br><strong>Status:</strong> Active</p><p>For information only; no action required unless your session arrangements need updating.</p>`});
+    const fields={MEMBER_NAME:String(app.full_name||''),PRIMARY_VENUE:venue,MEMBERSHIP_STATUS:'Active',CLUB_NAME:String(club.name||'Clare Pickleball')};
+    const subject=merge(template.subject_template,fields);
+    const textBody=merge(template.plain_text_template,fields);
+    const bodyHtml=merge(template.html_template,fields,true);
+    const headerTitle=merge(template.channel_templates?.email?.header_title||'New member at your venue',fields);
+    const headerSubtitle=merge(template.channel_templates?.email?.header_subtitle||'',fields);
+    const htmlBody=renderBasicBrandedEmail(bodyHtml,brandKit,club,String(club.name||'Clare Pickleball'),headerTitle,headerSubtitle);
     try{
       await sendWithConfiguredEmailTransport(base44,scope,{to,subject,textBody,htmlBody});
       sent.add(to);
