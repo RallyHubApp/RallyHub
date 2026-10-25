@@ -64,27 +64,28 @@ Call log:
   34 | test('Directory super-admin campaign UI is separate, and saving draft never sends',async({page})=>{
   35 |  const count=await mockGovernance(page);
   36 |  const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  37 |  await page.goto('/app/admin?tab=directory-campaigns'); console.log('GOV_DEBUG',page.url(),(await page.locator('body').innerText()).slice(0,450));
-  38 |  await page.waitForTimeout(2500); console.log('DEBUG_CRM_PAGE',page.url(),(await page.locator('body').innerText()).slice(0,420));
-> 39 |  await expect(page.getByText('Directory campaigns & consent')).toBeVisible({timeout:12000});
+  37 |  page.on('request',req=>{if(req.url().includes('/api/'))console.log('GOV_REQ',req.method(),req.url().slice(-130));});page.on('console',msg=>{if(msg.type()==='error')console.log('GOV_CONSOLE',msg.text().slice(0,240));});
+  38 |  await page.goto('/app/admin?tab=directory-campaigns'); console.log('GOV_DEBUG',page.url(),(await page.locator('body').innerText()).slice(0,450));
+  39 |  await page.waitForTimeout(2500); console.log('DEBUG_CRM_PAGE',page.url(),(await page.locator('body').innerText()).slice(0,420));
+> 40 |  await expect(page.getByText('Directory campaigns & consent')).toBeVisible({timeout:12000});
      |                                                                ^ Error: expect(locator).toBeVisible() failed
-  40 |  await expect(page.getByText('Campaign drafts and approvals')).toBeVisible();
-  41 |  await page.getByLabel('Campaign name').fill('Autumn Directory updates');
-  42 |  await page.getByLabel('Email subject').fill('Autumn pickleball events');
-  43 |  await page.getByLabel('Plain-text email content').fill('Here are the upcoming pickleball events in your area.');
-  44 |  await page.getByRole('button',{name:'Save draft'}).click();
-  45 |  await expect(page.getByRole('button',{name:'Preview eligible audience'})).toBeEnabled();
-  46 |  await page.goto('/app/admin?tab=directory-governance');
-  47 |  await expect(page.getByText('Directory governance & portability')).toBeVisible();
-  48 |  await expect(page.getByText('Standalone Directory export')).toBeVisible();
-  49 |  expect(count()).toBeGreaterThanOrEqual(2);
-  50 |  expect(errors).toEqual([]);
-  51 | });
-  52 | test('unrelated admin cannot enter protected Directory governance',async({page})=>{
-  53 |  const count=await mockGovernance(page,{authorised:false});
-  54 |  await page.goto('/app/admin?tab=directory-governance');
-  55 |  await expect(page.getByText('Directory governance & portability')).toHaveCount(0,{timeout:12000});
-  56 |  expect(count()).toBe(0);
-  57 | });
-  58 | 
+  41 |  await expect(page.getByText('Campaign drafts and approvals')).toBeVisible();
+  42 |  await page.getByLabel('Campaign name').fill('Autumn Directory updates');
+  43 |  await page.getByLabel('Email subject').fill('Autumn pickleball events');
+  44 |  await page.getByLabel('Plain-text email content').fill('Here are the upcoming pickleball events in your area.');
+  45 |  await page.getByRole('button',{name:'Save draft'}).click();
+  46 |  await expect(page.getByRole('button',{name:'Preview eligible audience'})).toBeEnabled();
+  47 |  await page.goto('/app/admin?tab=directory-governance');
+  48 |  await expect(page.getByText('Directory governance & portability')).toBeVisible();
+  49 |  await expect(page.getByText('Standalone Directory export')).toBeVisible();
+  50 |  expect(count()).toBeGreaterThanOrEqual(2);
+  51 |  expect(errors).toEqual([]);
+  52 | });
+  53 | test('unrelated admin cannot enter protected Directory governance',async({page})=>{
+  54 |  const count=await mockGovernance(page,{authorised:false});
+  55 |  await page.goto('/app/admin?tab=directory-governance');
+  56 |  await expect(page.getByText('Directory governance & portability')).toHaveCount(0,{timeout:12000});
+  57 |  expect(count()).toBe(0);
+  58 | });
+  59 | 
 ```
