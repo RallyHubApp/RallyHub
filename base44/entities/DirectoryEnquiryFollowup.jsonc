@@ -1,0 +1,43 @@
+{
+  "name": "DirectoryEnquiryFollowup",
+  "type": "object",
+  "properties": {
+    "enquiry_id": {
+      "type": "string",
+      "maxLength": 140
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "in_progress",
+        "resolved"
+      ],
+      "default": "open"
+    },
+    "internal_note": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "updated_by_user_id": {
+      "type": "string",
+      "maxLength": 140
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "enquiry_id",
+    "status",
+    "updated_by_user_id",
+    "updated_at"
+  ],
+  "rls": {
+    "create": false,
+    "read": false,
+    "update": false,
+    "delete": false
+  }
+}
