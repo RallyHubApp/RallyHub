@@ -1,0 +1,82 @@
+{
+  "name": "DirectoryIdentityLink",
+  "type": "object",
+  "properties": {
+    "directory_person_kind": {
+      "type": "string",
+      "maxLength": 40,
+      "enum": [
+        "subscriber",
+        "listing_access"
+      ]
+    },
+    "directory_person_id": {
+      "type": "string",
+      "maxLength": 150
+    },
+    "tenant_id": {
+      "type": "string",
+      "maxLength": 150
+    },
+    "tenant_person_id": {
+      "type": "string",
+      "maxLength": 150
+    },
+    "purpose": {
+      "type": "string",
+      "maxLength": 240
+    },
+    "directory_consent_reference": {
+      "type": "string",
+      "maxLength": 240
+    },
+    "tenant_consent_reference": {
+      "type": "string",
+      "maxLength": 240
+    },
+    "source_provenance": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "status": {
+      "type": "string",
+      "maxLength": 24,
+      "enum": [
+        "proposed",
+        "revoked"
+      ]
+    },
+    "proposed_by_user_id": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "proposed_at": {
+      "type": "string",
+      "maxLength": 45
+    },
+    "revoked_by_user_id": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "revoked_at": {
+      "type": "string",
+      "maxLength": 45
+    }
+  },
+  "required": [
+    "directory_person_kind",
+    "directory_person_id",
+    "tenant_id",
+    "tenant_person_id",
+    "purpose",
+    "source_provenance",
+    "status",
+    "proposed_at"
+  ],
+  "rls": {
+    "create": false,
+    "read": false,
+    "update": false,
+    "delete": false
+  }
+}

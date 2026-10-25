@@ -1,0 +1,101 @@
+{
+  "name": "DirectoryCampaign",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "maxLength": 150
+    },
+    "purpose": {
+      "type": "string",
+      "maxLength": 48,
+      "enum": [
+        "tournaments_events",
+        "coaching",
+        "club_updates"
+      ]
+    },
+    "channel": {
+      "type": "string",
+      "maxLength": 20,
+      "enum": [
+        "email"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "maxLength": 22,
+      "enum": [
+        "draft",
+        "approved",
+        "archived"
+      ]
+    },
+    "subject": {
+      "type": "string",
+      "maxLength": 220
+    },
+    "body_text": {
+      "type": "string",
+      "maxLength": 12000
+    },
+    "county": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "club_slug": {
+      "type": "string",
+      "maxLength": 150
+    },
+    "topic": {
+      "type": "string",
+      "maxLength": 60
+    },
+    "utm_campaign": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "consent_source": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "sender_email": {
+      "type": "string",
+      "maxLength": 250
+    },
+    "created_by_user_id": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "approved_by_user_id": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "created_at": {
+      "type": "string",
+      "maxLength": 45
+    },
+    "approved_at": {
+      "type": "string",
+      "maxLength": 45
+    },
+    "updated_at": {
+      "type": "string",
+      "maxLength": 45
+    }
+  },
+  "required": [
+    "name",
+    "purpose",
+    "channel",
+    "status",
+    "created_by_user_id",
+    "created_at"
+  ],
+  "rls": {
+    "create": false,
+    "read": false,
+    "update": false,
+    "delete": false
+  }
+}

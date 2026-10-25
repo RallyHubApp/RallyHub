@@ -1,0 +1,63 @@
+{
+  "name": "DirectorySuppression",
+  "type": "object",
+  "properties": {
+    "email_hash": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "channel": {
+      "type": "string",
+      "maxLength": 30,
+      "enum": [
+        "email",
+        "whatsapp"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "maxLength": 20,
+      "enum": [
+        "active",
+        "revoked"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "maxLength": 110
+    },
+    "source": {
+      "type": "string",
+      "maxLength": 150
+    },
+    "created_by_user_id": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "created_at": {
+      "type": "string",
+      "maxLength": 45
+    },
+    "revoked_by_user_id": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "revoked_at": {
+      "type": "string",
+      "maxLength": 45
+    }
+  },
+  "required": [
+    "email_hash",
+    "channel",
+    "status",
+    "reason",
+    "created_at"
+  ],
+  "rls": {
+    "create": false,
+    "read": false,
+    "update": false,
+    "delete": false
+  }
+}

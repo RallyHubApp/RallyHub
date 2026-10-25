@@ -1,0 +1,52 @@
+{
+  "name": "DirectoryGovernanceAudit",
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "object_type": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "object_id": {
+      "type": "string",
+      "maxLength": 150
+    },
+    "actor_user_id": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "timestamp": {
+      "type": "string",
+      "maxLength": 45
+    },
+    "metadata_json": {
+      "type": "string",
+      "maxLength": 4000
+    },
+    "outcome": {
+      "type": "string",
+      "maxLength": 35,
+      "enum": [
+        "attempted",
+        "succeeded",
+        "failed"
+      ]
+    }
+  },
+  "required": [
+    "action",
+    "object_type",
+    "actor_user_id",
+    "timestamp",
+    "outcome"
+  ],
+  "rls": {
+    "create": false,
+    "read": false,
+    "update": false,
+    "delete": false
+  }
+}
