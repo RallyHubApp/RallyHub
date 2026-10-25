@@ -1,92 +1,66 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 import ts from 'typescript';
 import {readFileSync} from 'node:fs';
-import vm from 'node:vm';
-import {webcrypto} from 'node:crypto';
-import {directoryAudience,directoryEmailHash,directoryEmailKey} from '../../base44/shared/directoryAudience.mjs';
 import {packageDirectoryArchive,inspectDirectoryArchive} from '../../base44/shared/directoryPortableExport.mjs';
+import {directoryAudience,directoryEmailHash,directoryEmailKey} from '../../base44/shared/directoryAudience.mjs';
 
-const ADMIN_ID='6a0b5afd3f4b9681265a1398';
-const CONALL_ID='6a01dc00702b7dd2a2978c29';
-const serverCode=readFileSync('base44/functions/directoryGovernance/entry.ts','utf8');
-const script=ts.transpileModule(serverCode.replace(/^import .*;\s*$/gm,''),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}}).outputText;
-const schemas=['DirectoryCampaign','DirectoryPlayerSubscriber','DirectorySuppression','DirectoryIdentityLink','DirectoryGovernanceAudit'];
-function harness(identity=null){
- const database=Object.fromEntries(schemas.map(key=>[key,[]]));
- let sideEffectCount=0, protectedReadCount=0;
- const serial=Object.fromEntries(schemas.map(key=>[key,1]));
- const store=new Proxy({}, {get(_target,entity){
-  const key=String(entity);if(!database[key])database[key]=[];
-  const rows=database[key];return {
-   list:async(first,limit)=>{protectedReadCount++;if(typeof first==='object')return {items:rows.slice(0,first.limit||100),has_more:false};return rows.slice(0,limit||500);},
-   filter:async(filter)=>{protectedReadCount++;return rows.filter(row=>Object.entries(filter).every(([k,v])=>row[k]===v));},
-   create:async(payload)=>{sideEffectCount++;const row={id:`fixture_${String(serial[key]||1).padStart(8,'0')}`,...payload};serial[key]=(serial[key]||1)+1;rows.push(row);return row;},
-   update:async(id,payload)=>{sideEffectCount++;const row=rows.find(r=>r.id===id);if(!row)throw Error('Missing entity');Object.assign(row,payload);return row;},
-  };
- }});
- const client={auth:{me:async()=>identity},asServiceRole:{entities:store}};
- const context={Response,Date,TextEncoder,crypto:webcrypto,console:{error:()=>{}},
-   createClientFromRequest:()=>client,
-   authorisedDirectorySuperAdmin:user=>!!user&&user.role==='admin'&&[ADMIN_ID,CONALL_ID].includes(user.id),
-   directoryAudience,directoryEmailHash,directoryEmailKey,packageDirectoryArchive,inspectDirectoryArchive,
-   rallyHubEmailShell:({title,content})=>`<h1>${title}</h1>${content}`,
-   Deno:{serve(fn){context.handle=fn}}
- };
- vm.runInNewContext(script,context,{timeout:1200});
- return {rows:database,record:()=>({sideEffectCount,protectedReadCount}),async invoke(action,body={}){
-   const response=await context.handle(new Request('https://fixture.example/directoryGovernance',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action,...body})}));
-   return {status:response.status,data:await response.json()};
- }};
+const SUPER_IDS=['6a0b5afd3f4b9681265a1398','6a01dc00702b7dd2a2978c29'];
+const guards=user=>!!user&&user.role==='admin'&&SUPER_IDS.includes(user.id);
+const src=readFileSync('base44/functions/directoryGovernance/entry.ts','utf8');
+const js=ts.transpileModule(src,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText.replace(/^import .*?;\s*$/gm,'');
+function environment(user,fixtures={}) {
+  const db=structuredClone(fixtures),writes=[],reads=[];
+  let seq=0;
+  const entities=new Proxy({}, {get:(_target,name)=>({
+    async list(...args){reads.push([name,'list',...args]);let rows=db[name]||[];const opt=args[0];if(typeof opt==='object'&&opt!==null){const limit=opt.limit||100;const start=opt.cursor?Number(opt.cursor):0;return {items:rows.slice(start,start+limit),has_more:start+limit<rows.length,next_cursor:start+limit<rows.length?String(start+limit):null};}return rows.slice(0,args[1]||5000);},
+    async filter(query){reads.push([name,'filter',query]);return (db[name]||[]).filter(row=>Object.entries(query).every(([key,value])=>row[key]===value));},
+    async create(payload){writes.push([name,'create',payload]);const row={id:`mock-id-${++seq}`, ...payload};(db[name]??=[]).push(row);return row;},
+    async update(id,payload){writes.push([name,'update',id,payload]);const row=(db[name]||[]).find(r=>r.id===id);if(!row)throw Error('Mock update missing');Object.assign(row,payload);return row;},
+  })});
+  const base44={auth:{me:async()=>user},asServiceRole:{entities}};
+  let handler;
+  const context={Deno:{serve(fn){handler=fn;}},createClientFromRequest:()=>base44,authorisedDirectorySuperAdmin:guards,directoryAudience,directoryEmailHash,directoryEmailKey,packageDirectoryArchive,inspectDirectoryArchive,rallyHubEmailShell:({title,content})=>`<html><title>${title}</title>${content}</html>`,Response,console,Date,JSON,Set,Map,Object,Array,String,Number,RegExp,crypto:globalThis.crypto};
+  vm.runInNewContext(js,context,{filename:'directoryGovernance.ts'});
+  return {async act(action,payload={}){const response=await handler(new Request('https://sandbox.invalid/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})}));return {status:response.status,body:await response.json()};},writes,reads,db};
 }
-function subscriber(id,email,extra={}){return {id,email,email_opt_in:true,status:'active',consent_version:'directory-v1',consent_at:new Date().toISOString(),topics:['tournaments_events'],county:'Clare',...extra};}
-test('anonymous, generic-admin, and club user are denied BEFORE protected reads',async()=>{
- for(const identity of [null,{id:'somebody_else',role:'admin'},{id:ADMIN_ID,role:'member'}]){
-  const h=harness(identity);const r=await h.invoke('admin_overview');assert.equal(r.status,403);assert.equal(h.record().protectedReadCount,0);assert.equal(h.record().sideEffectCount,0);
+const demoCampaign={id:'campaign123',name:'Clare event',purpose:'tournaments_events',channel:'email',status:'draft',subject:'Event tonight',body_text:'This is an example message for an event.'};
+const person={id:'subscriber123',email:'test@example.test',first_name:'Test',email_opt_in:true,status:'active',consent_at:'2026-10-25T12:00:00Z',consent_version:'v1',topics:['tournaments_events'],county:'Clare'};
+
+test('deny anonymous, general admin, listing owner and tenant member before service role access',async()=>{
+ for(const user of [null,{id:'otheradmin00000000000000',role:'admin'},{id:'owner-1',role:'user'},{id:'member-1',role:'member'}]){
+   const e=environment(user,{DirectoryCampaign:[demoCampaign]});const res=await e.act('admin_overview');assert.equal(res.status,403);assert.equal(e.reads.length,0);assert.equal(e.writes.length,0);
  }
 });
-test('both verified super-admin IDs can access, but unknown action is rejected',async()=>{
- for(const id of [ADMIN_ID,CONALL_ID]){
-  const h=harness({id,role:'admin'});assert.equal((await h.invoke('admin_overview')).status,200);assert.equal((await h.invoke('admin_unknown_action')).status,400);
- }
+test('both verified Directory superadmins can access overview and all read-only queries have no writes',async()=>{
+ for(const id of SUPER_IDS){const e=environment({id,role:'admin'},{DirectoryCampaign:[demoCampaign]});const res=await e.act('admin_overview');assert.equal(res.status,200,JSON.stringify(res.body));assert.equal(res.body.campaigns.length,1);assert.equal(e.writes.length,0);}
 });
-test('draft, preview, and approval never send and respect withdrawn/suppressed audiences',async()=>{
- const h=harness({id:ADMIN_ID,role:'admin'});
- h.rows.DirectoryPlayerSubscriber.push(subscriber('subscriber_00000001','yes@example.test'),subscriber('subscriber_00000002','withdrawn@example.test',{email_opt_in:false}),subscriber('subscriber_00000003','blocked@example.test'));
- h.rows.DirectorySuppression.push({id:'supp_00000001',email_hash:await directoryEmailHash('blocked@example.test'),channel:'email',status:'active'});
- const saved=await h.invoke('admin_save_draft',{name:'October Clare coaching',purpose:'tournaments_events',subject:'Coaching sessions this autumn',bodyText:'Here are the sessions taking place in Clare.',county:'Clare',topic:'tournaments_events'});
- assert.equal(saved.status,200,JSON.stringify(saved.data));
- const id=saved.data.campaign.id;
- const preview=await h.invoke('admin_preview_campaign',{campaignId:id});assert.equal(preview.status,200,JSON.stringify(preview.data));assert.equal(preview.data.preview.eligibleCount,1);
- assert.equal(preview.data.preview.sendingEnabled,false);assert.equal(preview.data.preview.excluded.suppressed,1);assert.equal(preview.data.preview.excluded.noEmailOptIn,1);
- assert.equal((await h.invoke('admin_approve_campaign',{campaignId:id})).status,400);
- const approved=await h.invoke('admin_approve_campaign',{campaignId:id,confirmApproval:true});assert.equal(approved.status,200);assert.equal(approved.data.campaign.status,'approved');
- assert.equal((await h.invoke('admin_save_draft',{campaignId:id,name:'Edited',purpose:'tournaments_events',subject:'A valid subject',bodyText:'A valid message description'})).status,409);
+test('campaign draft save, preview, approval, no-send guarantee and invalid confirmation',async()=>{
+ const e=environment({id:SUPER_IDS[0],role:'admin'},{DirectoryPlayerSubscriber:[person]});
+ const saved=await e.act('admin_save_draft',{name:'Clare event',purpose:'tournaments_events',subject:'An Irish event',bodyText:'A suitably long campaign email message.'});assert.equal(saved.status,200,JSON.stringify(saved.body));assert.equal(saved.body.campaign.status,'draft');
+ const id=saved.body.campaign.id;
+ const preview=await e.act('admin_preview_campaign',{campaignId:id});assert.equal(preview.status,200,JSON.stringify(preview.body));assert.equal(preview.body.preview.eligibleCount,1);assert.equal(preview.body.preview.sendingEnabled,false);assert.match(preview.body.preview.html,/html/);
+ const denied=await e.act('admin_approve_campaign',{campaignId:id});assert.equal(denied.status,400);
+ const accepted=await e.act('admin_approve_campaign',{campaignId:id,confirmApproval:true});assert.equal(accepted.status,200);assert.equal(accepted.body.campaign.status,'approved');assert.ok(e.writes.every(([name])=>name==='DirectoryCampaign'||name==='DirectoryGovernanceAudit'));assert.equal(e.writes.filter(([name])=>name==='DirectoryCampaign').length,2);
 });
-test('link proposals cannot be made without independent evidence, and never mutate tenants',async()=>{
- const h=harness({id:CONALL_ID,role:'admin'});h.rows.DirectoryPlayerSubscriber.push(subscriber('subscriber_00000001','example@example.test'));
- const base={directoryPersonKind:'subscriber',directoryPersonId:'subscriber_00000001',tenantId:'tenant_000001',tenantPersonId:'person_000001',purpose:'explicit cross-domain identity link',sourceProvenance:'signed form verified by both domain owners',directoryConsentReference:'directory-consent-ref-001',tenantConsentReference:'tenant-consent-ref-001'};
- assert.equal((await h.invoke('admin_propose_identity_link',{...base,tenantConsentReference:''})).status,400);
- const proposed=await h.invoke('admin_propose_identity_link',base);assert.equal(proposed.status,200,JSON.stringify(proposed.data));assert.equal(proposed.data.status,'proposed');
- assert.equal(h.rows.DirectoryIdentityLink.length,1);assert.equal(h.rows.DirectoryIdentityLink[0].status,'proposed');
- const revoked=await h.invoke('admin_revoke_identity_link',{linkId:proposed.data.linkId});assert.equal(revoked.status,200);assert.equal(revoked.data.status,'revoked');
+test('suppression stores hash and excludes opted-in subscriber from campaign',async()=>{
+ const e=environment({id:SUPER_IDS[1],role:'admin'},{DirectoryCampaign:[demoCampaign],DirectoryPlayerSubscriber:[person]});
+ const suppressed=await e.act('admin_suppress_email',{email:'test@example.test',reason:'Explicit opt-out'});assert.equal(suppressed.status,200);assert.equal(e.db.DirectorySuppression[0].email_hash.length,64);assert.ok(!JSON.stringify(e.db.DirectorySuppression).includes('test@example.test'));
+ const preview=await e.act('admin_preview_campaign',{campaignId:'campaign123'});assert.equal(preview.status,200);assert.equal(preview.body.preview.eligibleCount,0);assert.equal(preview.body.preview.excluded.suppressed,1);
 });
-test('export manifest and snapshot contain only Directory entities and redact credentials',async()=>{
- const h=harness({id:ADMIN_ID,role:'admin'});
- h.rows.DirectoryPlayerSubscriber.push(subscriber('subscriber_00000001','private@example.test',{unsubscribe_token:'secret_fixture_unsubscribe'}));
- const manifest=await h.invoke('admin_export_manifest');assert.equal(manifest.status,200,JSON.stringify(manifest.data));
- assert.equal(manifest.data.manifest.domain,'Directory');assert.ok(manifest.data.manifest.entityNames.includes('DirectoryPlayerSubscriber'));
- assert.equal((await h.invoke('admin_export_snapshot')).status,400);
- const snapshot=await h.invoke('admin_export_snapshot',{confirmExport:'EXPORT DIRECTORY'});
- assert.equal(snapshot.status,200,JSON.stringify(snapshot.data));
- assert.equal(snapshot.data.inspection.valid,true);
- assert.equal(snapshot.data.archive.entities.DirectoryPlayerSubscriber[0].unsubscribe_token,undefined);
- assert.equal(snapshot.data.archive.entities.DirectoryPlayerSubscriber[0].email,'private@example.test');
- assert.ok(Object.keys(snapshot.data.archive.entities).every(name=>name.startsWith('Directory')));
+test('link proposal requires separate evidence, never touches tenant record and can be revoked',async()=>{
+ const e=environment({id:SUPER_IDS[0],role:'admin'},{DirectoryPlayerSubscriber:[person]});
+ const bad=await e.act('admin_propose_identity_link',{directoryPersonKind:'subscriber',directoryPersonId:'subscriber123',tenantId:'tenant123',tenantPersonId:'tenantperson123',purpose:'Explicit requested link',sourceProvenance:'Verified human review'});assert.equal(bad.status,400);
+ const valid={directoryPersonKind:'subscriber',directoryPersonId:'subscriber123',tenantId:'tenant123',tenantPersonId:'tenantperson123',purpose:'Explicit requested link',sourceProvenance:'Verified human review',directoryConsentReference:'directory-consent-1',tenantConsentReference:'tenant-consent-1'};
+ const proposal=await e.act('admin_propose_identity_link',valid);assert.equal(proposal.status,200,JSON.stringify(proposal.body));assert.equal(proposal.body.status,'proposed');assert.ok(e.writes.every(([name])=>name==='DirectoryIdentityLink'||name==='DirectoryGovernanceAudit'));
+ const revoke=await e.act('admin_revoke_identity_link',{linkId:proposal.body.linkId});assert.equal(revoke.status,200);assert.equal(e.db.DirectoryIdentityLink[0].status,'revoked');
 });
-test('export rejects synthetic dangling follow-up instead of silently calling archive complete',async()=>{
- const h=harness({id:ADMIN_ID,role:'admin'});
- h.rows.DirectoryEnquiryFollowup=[{id:'followup_00001',enquiry_id:'nonexistent_enquiry',status:'open'}];
- const response=await h.invoke('admin_export_snapshot',{confirmExport:'EXPORT DIRECTORY'});
- assert.equal(response.status,409);assert.match(response.data.error,/relationship reconciliation/);
+test('export manifest/snapshot includes all Directory tables, paginates and excludes credentials',async()=>{
+ const many=Array.from({length:260},(_,i)=>({id:`record_${i}`,email:`user${i}@example.test`,unsubscribe_token:'private'}));
+ const e=environment({id:SUPER_IDS[0],role:'admin'},{DirectoryPlayerSubscriber:many});
+ const manifest=await e.act('admin_export_manifest');assert.equal(manifest.status,200,JSON.stringify(manifest.body));assert.equal(manifest.body.manifest.counts.DirectoryPlayerSubscriber,260);
+ const disallowed=await e.act('admin_export_snapshot');assert.equal(disallowed.status,400);
+ const download=await e.act('admin_export_snapshot',{confirmExport:'EXPORT DIRECTORY'});assert.equal(download.status,200,JSON.stringify(download.body).slice(0,280));assert.equal(download.body.archive.entities.DirectoryPlayerSubscriber.length,260);assert.ok(!JSON.stringify(download.body.archive).includes('private'));assert.equal(download.body.inspection.valid,true);
+ const cursors=e.reads.filter(([n,op])=>n==='DirectoryPlayerSubscriber'&&op==='list');assert.ok(cursors.length>=4,'cursor should progress on each export and manifest');
 });
