@@ -4,8 +4,8 @@
 
 ## Verified implementation
 - Two independently verified immutable Base44 admin identities constitute the Directory super-admin backend allowlist. General platform-admin status alone does not grant Directory access.
-- All 17 `Directory*` entity schema files now deny direct SDK create/update/delete; all deny direct read except `DirectoryListingAccess`, which allows read only where `data.user_id == {{user.id}}`.
-- Read-only Base44 `list_entity_schemas` returned these exact RLS policies across all 17 entities, with no nonconforming schemas. This confirms schema readback, **not** session-level enforcement or deployment/publish status.
+- The original 17 `Directory*` entity schemas deny direct SDK create/update/delete; all deny direct read except `DirectoryListingAccess`, which allows read only where `data.user_id == {{user.id}}`.
+- Read-only Base44 `list_entity_schemas` previously returned these exact RLS policies across the original 17 entities, with no nonconforming schemas. This confirms schema readback, **not** session-level enforcement or deployment/publish status.
 - Backend service-role functions check their own Directory ownership or super-admin permissions; the Directory UI uses a server-side capability probe. Directory artwork staging also uses the restricted Directory super-admin guard or a separately verified staging service token.
 - `npm run gate:directory-security` now passes as a **source-level prerequisite**; `npm run test:directory` passes. Neither substitutes for signed-in negative-role acceptance.
 
@@ -23,3 +23,9 @@
 - `testing/directory/directorySecurityAcceptance.mjs`: source release gate.
 
 **Production records, emails, external Spond access and frontend publication were not modified by this verification task.**
+
+## 25 October 2026 — Directory enquiry inbox extension (sandbox only)
+- New local `DirectoryEnquiryFollowup` schema is the 18th Directory entity; its direct CRUD RLS denies all actors. It has **not** been pushed to Base44; do not claim platform schema readback for it.
+- `directoryContactAction` adds two Directory-superadmin-only service routes: `admin_inbox` and `admin_set_followup`. This backend has **not** been deployed for this change.
+- `AdminPanel` People & CRM now displays enquiry content, delivery transport status, contact-action logs, and editable follow-up status/internal notes. Updated frontend is **not published**.
+- Source-level tests and build are prerequisites only; logged-in Brian/Conall and negative-role testing, entity push/readback, browser smoke, extraction rehearsal and go-live acceptance remain pending.
