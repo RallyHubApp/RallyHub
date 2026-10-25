@@ -138,7 +138,8 @@ Deno.serve(async(req) => {
       const summary={accepted:0,failed:0,skipped:0,results:[] as any[]};
       for(const item of plan.entries){
         const prior=await directory.DirectoryDeliveryAttempt.filter({idempotency_key:item.idempotency_key},'-created_at',1);
-        if(prior?.[0]){summary.skipped++;summary.results.push({subscriberId:item.subscriber_id,status:'already_attempted'});continue;}
+        const prepared=prior?.[0] && prior[0].status==='prepared' && Number(prior[0].attempt_count||0)===0 ? prior[0] : null;
+        if(prior?.[0]&&!prepared){summary.skipped++;summary.results.push({subscriberId:item.subscriber_id,status:'already_attempted'});continue;}
         const person=audience.eligible.find((x:any)=>x.subscriberId===item.subscriber_id);
         // Recipient must still exist with live consent and a usable personal unsubscribe token.
         const source=people.find((x:any)=>x.id===item.subscriber_id);
@@ -153,7 +154,7 @@ Deno.serve(async(req) => {
         }
         // Record the attempt BEFORE reaching the external provider to avoid duplicate sends on sequential retries.
         const now=new Date().toISOString();
-        const attempt=await directory.DirectoryDeliveryAttempt.create({...item,status:'prepared',created_by_user_id:user.id,attempt_count:1,updated_at:now});
+        const attempt=prepared ? await directory.DirectoryDeliveryAttempt.update(prepared.id,{attempt_count:1,updated_at:now}) : await directory.DirectoryDeliveryAttempt.create({...item,status:'prepared',created_by_user_id:user.id,attempt_count:1,updated_at:now});
         const preferencesUrl=`https://rallyhub.ie/directory/player-updates?token=${encodeURIComponent(source.unsubscribe_token)}`;
         const plainText=`${campaign.body_text}\n\nManage your RallyHub Directory email preferences: ${preferencesUrl}`;
         const html=rallyHubEmailShell({title:campaign.subject,content:`<div style=\"white-space:pre-line;line-height:1.6\">${escapeHtml(campaign.body_text)}</div><p style=\"font-size:13px\"><a href=\"${escapeHtml(preferencesUrl)}\">Update preferences or unsubscribe</a></p>`,footerNote:'RallyHub Directory'});
