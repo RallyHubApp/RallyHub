@@ -62,6 +62,21 @@ Deno.serve(async(req) => {
     const body=await req.json().catch(()=>({}));
     const action=text(body.action,70);
     const directory=base44.asServiceRole.entities;
+    if(action==='admin_coach_roster') {
+      const [listings,endpoints,accesses]=await Promise.all([
+        directory.DirectoryListingRecord.filter({listing_type:'coach',status:'active'},'-created_date',100),
+        directory.DirectoryContactEndpoint.filter({status:'active'},'-updated_at',250),
+        directory.DirectoryListingAccess.filter({status:'active'},'-created_date',250),
+      ]);
+      const roster=(listings||[]).map((listing:any)=>{
+        const contact=(endpoints||[]).find((row:any)=>row.listing_slug===listing.slug && row.email && row.allow_email!==false);
+        return {slug:listing.slug,name:listing.name,contactName:contact?.contact_name||listing.name,
+          email:contact?.email||'',sourceNote:contact?.contact_role||'No email destination recorded',
+          alreadyClaimed:(accesses||[]).some((row:any)=>row.listing_slug===listing.slug),
+          destinationVerified:false};
+      }).sort((a:any,b:any)=>a.name.localeCompare(b.name));
+      return result({success:true,coaches:roster,verificationRequired:true});
+    }
     if(action==='admin_overview') {
       const [campaigns,links,suppressions]=await Promise.all([
         directory.DirectoryCampaign.list('-updated_at',250),
