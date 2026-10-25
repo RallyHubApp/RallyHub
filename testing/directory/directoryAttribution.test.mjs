@@ -15,5 +15,6 @@ test('site analytics preserves consent gate and scopes metadata to Directory eve
  assert.match(source,/metadata:\{\.\.\.\(details\.metadata/);
  assert.match(source,/attribution\},/);
  assert.match(source,/const ATTRIBUTION_KEY=/);
+ assert.match(source,/if\(!utmSource&&\/google/);
  assert.doesNotMatch(source,/localStorage\.setItem\(ATTRIBUTION_KEY/);
 });

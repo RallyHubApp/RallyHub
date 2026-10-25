@@ -38,9 +38,9 @@ function trafficContext(){
   let referrerDomain='';
   try{referrerDomain=document.referrer?new URL(document.referrer).hostname:''}catch{}
   let trafficSource=utmSource ? `${utmSource}${utmMedium?` / ${utmMedium}`:''}` : referrerDomain || 'Direct / unknown';
-  if(/google\./i.test(referrerDomain))trafficSource='Google organic';
-  else if(/facebook\.com|fb\.com/i.test(referrerDomain))trafficSource='Facebook referral';
-  else if(/instagram\.com/i.test(referrerDomain))trafficSource='Instagram referral';
+  if(!utmSource&&/google\./i.test(referrerDomain))trafficSource='Google organic';
+  else if(!utmSource&&/facebook\.com|fb\.com/i.test(referrerDomain))trafficSource='Facebook referral';
+  else if(!utmSource&&/instagram\.com/i.test(referrerDomain))trafficSource='Instagram referral';
   return {referrerDomain,trafficSource,attribution};
 }
 
