@@ -4,6 +4,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "string_decoder/": [
+        "./src/types/string-decoder-compat.d.ts"
       ]
     },
     "jsx": "react-jsx",

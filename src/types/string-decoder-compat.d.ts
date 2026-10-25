@@ -1,4 +1,2 @@
-/** Legacy `string_decoder` package shares the Node standard module's public interface. */
-declare module 'string_decoder' {
-  export { StringDecoder } from 'node:string_decoder';
-}
+/** The CommonJS package `string_decoder/` implements Node's StringDecoder. */
+export {StringDecoder} from 'node:string_decoder';
