@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.57';
 import { authorisedDirectorySuperAdmin } from '../../shared/directorySuperAdmin.ts';
 import { rallyHubEmailShell } from '../../shared/rallyHubPlatformEmail.ts';
+import { packageDirectoryArchive, inspectDirectoryArchive } from '../../shared/directoryPortableExport.mjs';
 import { directoryAudience, directoryEmailHash, directoryEmailKey } from '../../shared/directoryAudience.mjs';
 
 // Directory-only administration. No tenant entity writes, email sends or social API calls.
@@ -49,10 +50,6 @@ async function allDirectoryRows(base44:any, entityName:string, max=12000) {
   }
   throw new Error(`Directory export page limit exceeded for ${entityName}`);
 }
-// Never put bearer tokens, passwords, email transport credentials, or unsubscribe links in a portable JSON export.
-const unsafeField=(key:string)=>/(^|_)(token|secret|password|api_key|private_key|access_key|client_secret)(_|$)/i.test(key);
-const scrub=(value:any):any=>Array.isArray(value)?value.map(scrub):value&&typeof value==='object'?
-  Object.fromEntries(Object.entries(value).filter(([key])=>!unsafeField(key)).map(([key,item])=>[key,scrub(item)])):value;
 
 Deno.serve(async(req) => {
   try {
@@ -135,18 +132,26 @@ Deno.serve(async(req) => {
     if(action==='admin_export_manifest'||action==='admin_export_snapshot') {
       const snapshot=action==='admin_export_snapshot';
       if(snapshot && body.confirmExport!=='EXPORT DIRECTORY')return result({error:'Explicit export confirmation required'},400);
-      const entities:any={};const counts:any={};const excludedFields=['token','secret','password','api_key','private_key','access_key','client_secret'];
-      for(const name of DIRECTORY_ENTITIES){const rows=await allDirectoryRows(base44,name);counts[name]=rows.length;if(snapshot)entities[name]=rows.map(scrub);}
-      const manifest={version:VERSION,generatedAt:new Date().toISOString(),domain:'Directory',counts,entityNames:[...DIRECTORY_ENTITIES],relationships:[['DirectoryListingRecord','DirectoryListingAccess','listing_slug'],['DirectoryContactEnquiry','DirectoryEnquiryFollowup','enquiry_id'],['DirectoryPlayerSubscriber','DirectoryIdentityLink','directory_person_id']],adapters:['Base44 authentication','Base44 entity storage','Platform email transport','Site analytics/GA4 optional','Spond optional'],redactedCredentialFields:excludedFields,identityPolicy:'No automatic cross-domain profile, role or consent sync',completeAcrossEntityPages:true};
+      const entities:any={};const counts:any={};
+      for(const name of DIRECTORY_ENTITIES){const rows=await allDirectoryRows(base44,name);counts[name]=rows.length;if(snapshot)entities[name]=rows;}
+      const manifest={...packageDirectoryArchive(Object.fromEntries(DIRECTORY_ENTITIES.map(name=>[name,[]]))).manifest,version:VERSION,generatedAt:new Date().toISOString(),counts,entityNames:[...DIRECTORY_ENTITIES],completeAcrossEntityPages:true};
       if(!snapshot)return result({success:true,manifest,downloadRequiresExplicitConfirmation:true});
       await audit(base44,user,'directory_export','export',VERSION,'attempted',{recordCounts:counts});
-      // Include the audit of this export attempt; never claim proof of restore.
+      // Preserve the export attempt in the archive, without exposing credentials.
       entities.DirectoryGovernanceAudit=await allDirectoryRows(base44,'DirectoryGovernanceAudit');
-      entities.DirectoryGovernanceAudit=entities.DirectoryGovernanceAudit.map(scrub);
-      const archive={manifest,entities};
+      let archive=packageDirectoryArchive(entities,manifest.generatedAt);
+      archive.manifest.version=VERSION;
+      let inspection=inspectDirectoryArchive(archive);
+      if(!inspection.valid)return result({error:'Directory relationship reconciliation failed',issues:inspection.issues.slice(0,30)},409);
       if(JSON.stringify(archive).length>6_000_000)return result({error:'Export exceeds response size cap; use approved streamed export route',manifest},413);
-      await audit(base44,user,'directory_export','export',VERSION,'succeeded',{recordCounts:counts});
-      return result({success:true,archive});
+      await audit(base44,user,'directory_export_prepared','export',VERSION,'succeeded',{recordCounts:counts});
+      entities.DirectoryGovernanceAudit=await allDirectoryRows(base44,'DirectoryGovernanceAudit');
+      archive=packageDirectoryArchive(entities,manifest.generatedAt);
+      archive.manifest.version=VERSION;
+      inspection=inspectDirectoryArchive(archive);
+      if(!inspection.valid)return result({error:'Export reconciliation changed during preparation',issues:inspection.issues.slice(0,30)},409);
+      if(JSON.stringify(archive).length>6_000_000)return result({error:'Export exceeds response size cap; use approved streamed export route',manifest},413);
+      return result({success:true,archive,inspection});
     }
     return result({error:'Unsupported Directory governance action'},400);
   }catch(error){console.error('directoryGovernance error',error);return result({error:'Directory governance operation unavailable. Check server audit logs.'},500);}
