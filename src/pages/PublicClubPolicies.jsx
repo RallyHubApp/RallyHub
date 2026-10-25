@@ -69,7 +69,7 @@ export default function PublicClubPolicies(){
     <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-6 sm:py-10">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link to={`/directory/${slug}`} className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4"/>Back to club page</Link>
-        {data&&<Button variant="outline" className="gap-2" onClick={()=>{document.querySelectorAll('details[data-policy-document]').forEach(node=>{node.open=true});window.setTimeout(()=>window.print(),60)}}><Printer className="w-4 h-4"/>Print / Save PDF</Button>}
+        {data&&<Button variant="outline" className="gap-2" onClick={()=>{document.querySelectorAll('details[data-policy-document]').forEach(node=>{(/** @type {HTMLDetailsElement} */ (node)).open=true});window.setTimeout(()=>window.print(),60)}}><Printer className="w-4 h-4"/>Print / Save PDF</Button>}
       </div>
 
       {error&&!data?<div className="mt-6 rounded-2xl border border-destructive/30 bg-destructive/10 p-6"><h1 className="text-xl font-black">Policy library unavailable</h1><p className="mt-2 text-sm text-muted-foreground">{error}</p></div>:<>

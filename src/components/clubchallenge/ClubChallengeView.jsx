@@ -111,7 +111,7 @@ async function invokeBase44Safely(name, payload, { retries = 5 } = {}) {
     try {
       const response = await base44.functions.invoke(name, payload);
       if (response?.data?.error && isBase44RateLimitError(response)) {
-        const pressureError = new Error(String(response.data.error));
+        const pressureError = /** @type {Error & {response?: any}} */ (new Error(String(response.data.error)));
         pressureError.response = { status:Number(response?.status || 429), data:response.data, headers:response?.headers || {} };
         throw pressureError;
       }

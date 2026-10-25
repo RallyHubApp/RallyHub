@@ -65,7 +65,7 @@ async function loadPublicDisplayWithBackoff(token){
   for(let attempt=0;;attempt+=1){
     try{
       const response=await base44.functions.invoke('getPublicClubChallengeDisplay',{token});
-      if(response?.data?.error&&isPublicBase44Pressure(response)){const error=new Error(response.data.error);error.response={status:429,data:response.data};throw error;}
+      if(response?.data?.error&&isPublicBase44Pressure(response)){const error=/** @type {Error & {response?: any}} */ (new Error(response.data.error));error.response={status:429,data:response.data};throw error;}
       return response;
     }catch(error){
       if(attempt>=3||!isPublicBase44Pressure(error)) throw error;
