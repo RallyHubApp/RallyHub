@@ -223,7 +223,7 @@ export default function AdminPanel() {
       if (res.data?.error || !res.data?.success) throw new Error(res.data?.error || 'Could not verify membership totals');
       return res.data.counts;
     },
-    enabled: canAccessAdmin && !!user?.active_tenant_id && !!user?.active_club_id,
+    enabled: canAccessAdmin && !directoryContext && !!user?.active_tenant_id && !!user?.active_club_id,
     refetchInterval: 60000,
     refetchOnWindowFocus: true
   });
