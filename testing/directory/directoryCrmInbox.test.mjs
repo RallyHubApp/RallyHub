@@ -35,10 +35,10 @@ test('follow-up endpoint validates enquiry, status and writes only Directory fol
   for(const action of ['create','read','update','delete'])assert.equal(schema.rls[action],false);
 });
 test('Directory CRM displays enquiry messages and status, with explicit save only',()=>{
-  assert.match(admin,/enabled: canAccessDirectoryAdmin && \['directory-crm','directory-command'\]\.includes\(activeAdminTab\)/);
+  assert.match(admin,/enabled: canAccessDirectoryAdmin && directoryContext/);
   assert.match(admin,/DirectoryEnquiryFollowupEditor enquiry=\{row\}/);
   assert.match(admin,/Enquiries · Directory inbox/);
-  assert.match(admin,/Contact activity/);
+  assert.match(admin,/Contact clicks \(delivery not confirmed\)/);
   assert.match(editor,/action: 'admin_set_followup'/);
   assert.match(editor,/functions\.invoke\('directoryEnquiryAdmin'/);
   assert.match(admin,/functions\.invoke\('directoryEnquiryAdmin', \{ action:'admin_inbox'/);
