@@ -46,6 +46,7 @@ export default function AdminPanel() {
 
   const allowedAdminTabs = ['linking', 'preview', 'announcements', 'directory-command', 'directory-crm', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'directory-campaigns', 'directory-governance', 'feedback', 'control-library', 'dupr', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
+  const requestedDirectoryWorkspace = directoryTabNames.includes(requestedTab);
   const rawAdminTab = requestedTab === 'approvals' ? 'linking' : allowedAdminTabs.includes(requestedTab) ? requestedTab : 'linking';
   const activeAdminTab = directoryTabNames.includes(rawAdminTab) && !canAccessDirectoryAdmin ? 'linking' : rawAdminTab;
   const directoryContext = directoryTabNames.includes(activeAdminTab);
@@ -213,7 +214,7 @@ export default function AdminPanel() {
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
     queryFn: () => base44.entities.Player.list('-created_date', 200),
-    enabled: canAccessAdmin && !directoryContext
+    enabled: canAccessAdmin && !directoryContext && !requestedDirectoryWorkspace
   });
 
   const { data: canonicalMembershipSummary = null, isLoading: canonicalMembershipLoading, isError: canonicalMembershipError } = useQuery({
@@ -223,7 +224,7 @@ export default function AdminPanel() {
       if (res.data?.error || !res.data?.success) throw new Error(res.data?.error || 'Could not verify membership totals');
       return res.data.counts;
     },
-    enabled: canAccessAdmin && !directoryContext && !!user?.active_tenant_id && !!user?.active_club_id,
+    enabled: canAccessAdmin && !directoryContext && !requestedDirectoryWorkspace && !!user?.active_tenant_id && !!user?.active_club_id,
     refetchInterval: 60000,
     refetchOnWindowFocus: true
   });
@@ -235,7 +236,7 @@ export default function AdminPanel() {
       club_id: user?.active_club_id,
       relationship_type: 'member'
     }, '-updated_date', 500),
-    enabled: canAccessAdmin && !directoryContext && !!user?.active_tenant_id && !!user?.active_club_id
+    enabled: canAccessAdmin && !directoryContext && !requestedDirectoryWorkspace && !!user?.active_tenant_id && !!user?.active_club_id
   });
 
   const { data: membershipRows = [], isLoading: membershipRowsLoading } = useQuery({
