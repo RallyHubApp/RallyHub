@@ -35,8 +35,8 @@ async function mockGovernance(page,{authorised=true}={}){
 test('Directory super-admin campaign UI is separate, and saving draft never sends',async({page})=>{
  const count=await mockGovernance(page);
  const errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('GOV_JS_ERROR',e.message)});
- await page.goto('/app/admin?tab=directory-campaigns'); await page.waitForTimeout(3000);console.log('GOV_BODY',page.url(),(await page.locator('body').innerText()).slice(0,800));count();
- await page.waitForTimeout(2200);console.log('GOV_BODY',JSON.stringify((await page.locator('body').innerText()).slice(0,800)));console.log('GOV_ERR',JSON.stringify(errors));
+ await page.goto('/app/admin?tab=directory-campaigns'); await page.waitForTimeout(3000);console.log('GOV_BODY',page.url(),(await page.locator('body').innerText()).slice(0,2200));count();
+ await page.waitForTimeout(2200);console.log('GOV_BODY',JSON.stringify((await page.locator('body').innerText()).slice(0,2200)));console.log('GOV_ERR',JSON.stringify(errors));
  await expect(page.getByText('Directory campaigns & consent')).toBeVisible({timeout:12000});
  await expect(page.getByText('Campaign drafts and approvals')).toBeVisible();
  await page.getByLabel('Campaign name').fill('Autumn Directory updates');
