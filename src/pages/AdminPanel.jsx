@@ -49,6 +49,12 @@ export default function AdminPanel() {
   const activeAdminTab = directoryTabNames.includes(rawAdminTab) && !canAccessDirectoryAdmin ? 'linking' : rawAdminTab;
   const directoryContext = directoryTabNames.includes(activeAdminTab);
   const directoryFocus = searchParams.get('focus');
+  useEffect(() => {
+    if (activeAdminTab !== 'directory-crm' || directoryFocus !== 'enquiries') return;
+    const timer = window.setTimeout(() => document.getElementById('directory-enquiries-inbox')?.scrollIntoView({ behavior:'smooth',block:'start' }), 130);
+    return () => window.clearTimeout(timer);
+  }, [activeAdminTab,directoryFocus]);
+
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -383,7 +389,9 @@ export default function AdminPanel() {
       if (res.data?.error || res.data?.success !== true) throw new Error(res.data?.error || 'Unable to load Directory enquiries');
       return res.data;
     },
-    enabled: canAccessDirectoryAdmin && ['directory-crm','directory-command'].includes(activeAdminTab),
+    enabled: canAccessDirectoryAdmin && directoryContext,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
     retry: false,
   });
 
@@ -1566,6 +1574,8 @@ Brian`;
   const filteredDirectoryCrmRows = directoryCrmRows.filter(row=>[row.name,row.email,row.mobile,row.detail,row.type].join(' ').toLowerCase().includes(directoryCrmSearch.trim().toLowerCase()));
   const directoryEnquiryRows = directoryInbox.enquiries || [];
   const directoryContactActionRows = directoryInbox.contactActions || [];
+  const outstandingDirectoryEnquiryCount = directoryEnquiryRows.filter(row => row.followupStatus !== 'resolved').length;
+
   const filteredDirectoryEnquiryRows = directoryEnquiryRows.filter(row=>[row.senderName,row.senderEmail,row.listingName,row.listingSlug,row.message,row.status].join(' ').toLowerCase().includes(directoryCrmSearch.trim().toLowerCase()));
   const filteredDirectoryContactActionRows = directoryContactActionRows.filter(row=>[row.listingName,row.listingSlug,row.channel,row.status,row.sourceSurface].join(' ').toLowerCase().includes(directoryCrmSearch.trim().toLowerCase()));
 
@@ -1690,6 +1700,11 @@ Brian`;
         <span className="text-xs text-muted-foreground sm:ml-auto">{directoryContext?'Directory-only data and controls':'Platform and tenant operations'}</span>
       </div>
 
+      {directoryContext && <button type="button" onClick={() => setSearchParams({tab:'directory-crm',focus:'enquiries'})} className={`flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border p-4 text-left transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-500 ${outstandingDirectoryEnquiryCount > 0 ? 'border-amber-500/70 bg-amber-500/10' : 'border-border bg-secondary/30'}`} aria-label="Open Directory enquiries inbox">
+        <div><p className="font-bold text-foreground">Directory enquiries requiring follow-up</p><p className="text-xs text-muted-foreground">{directoryInboxError ? 'Enquiry status unavailable — open inbox to retry' : directoryInboxLoading ? 'Checking Directory enquiries…' : outstandingDirectoryEnquiryCount ? 'Open and in-progress enquiries · open inbox' : 'No outstanding enquiries'}</p></div>
+        <span className={`rounded-full px-3 py-1 text-lg font-bold tabular-nums ${outstandingDirectoryEnquiryCount > 0 ? 'bg-amber-400 text-black' : 'bg-secondary text-foreground'}`}>{directoryInboxError ? '!' : directoryInboxLoading ? '…' : outstandingDirectoryEnquiryCount}</span>
+      </button>}
+
       {/* Context-specific dashboard summary */}
       {['directory', 'directory-command'].includes(activeAdminTab) ? (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5 sm:gap-3">
@@ -1758,7 +1773,7 @@ Brian`;
         <TabsList className="bg-secondary flex-wrap h-auto gap-1" aria-label={directoryContext ? 'Directory Command Centre navigation' : 'RallyHub administration navigation'}>
           {directoryContext ? (<>
             <TabsTrigger value="directory-command" className="text-xs gap-1.5"><BookOpen className="w-3.5 h-3.5" /> Overview</TabsTrigger>
-            <TabsTrigger value="directory-crm" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> People & CRM</TabsTrigger>
+            <TabsTrigger value="directory-crm" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> People & CRM {outstandingDirectoryEnquiryCount > 0 && <span className="rounded-full bg-amber-400 px-1.5 text-[10px] font-bold text-black" aria-label={`${outstandingDirectoryEnquiryCount} outstanding enquiries`}>{outstandingDirectoryEnquiryCount}</span>}</TabsTrigger>
             <TabsTrigger value="directory" className="text-xs gap-1.5"><UserCheck className="w-3.5 h-3.5" /> Listings & Claims {pendingDirectoryActionCount > 0 && <span className="rounded-full bg-amber-400 px-1.5 text-[10px] text-black">{pendingDirectoryActionCount}</span>}</TabsTrigger>
             <TabsTrigger value="directory-contacts" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Owners & Editors</TabsTrigger>
             <TabsTrigger value="directory-players" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Player Network</TabsTrigger>
@@ -1784,7 +1799,7 @@ Brian`;
             <p className="text-sm text-muted-foreground">A separate business domain. Only verified Directory super-administrators can use this workspace; club guests, members and matches remain in RallyHub / Clare Pickleball Admin.</p>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {[
-                ['People & CRM','directory-crm','Owners, editors and national player subscribers'],
+                ['People & CRM','directory-crm',`${outstandingDirectoryEnquiryCount} outstanding enquiries · Owners, editors and players`],
                 ['Listings & Claims','directory','Listing verification, invitations, coaches and categories'],
                 ['Owners & Editors','directory-contacts','Verified Directory contacts and permissions'],
                 ['Player Network','directory-players','National opt-in register and consent'],
@@ -1812,8 +1827,8 @@ Brian`;
               </div>)}
               {!filteredDirectoryCrmRows.length && <p className="p-5 text-center text-sm text-muted-foreground">No Directory records match this search.</p>}
             </div>
-            <section className="space-y-3" aria-label="Directory enquiry inbox">
-              <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-lg font-bold">Enquiries · Directory inbox</h3><Button type="button" variant="outline" size="sm" onClick={()=>refreshDirectoryInbox()} disabled={directoryInboxLoading}><RefreshCw className="mr-1 h-4 w-4"/> Refresh inbox</Button></div>
+            <section id="directory-enquiries-inbox" className="space-y-3 scroll-mt-24" aria-label="Directory enquiry inbox">
+              <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-lg font-bold">Enquiries · Directory inbox {outstandingDirectoryEnquiryCount > 0 && <span className="ml-2 rounded-full bg-amber-400 px-2 py-0.5 text-sm text-black">{outstandingDirectoryEnquiryCount} outstanding</span>}</h3><Button type="button" variant="outline" size="sm" onClick={()=>refreshDirectoryInbox()} disabled={directoryInboxLoading}><RefreshCw className="mr-1 h-4 w-4"/> Refresh inbox</Button></div>
               <p className="text-xs text-muted-foreground">Private enquiries submitted through Directory contact forms. Delivery status is the forwarding outcome, not a reply or resolution status. These records belong only to the Directory.</p>
               {directoryInboxError && <p role="alert" className="rounded-lg border border-destructive p-3 text-sm text-destructive">Directory enquiry inbox could not load. Retry above; no records have been altered.</p>}
               {directoryInboxLoading && <p className="text-sm text-muted-foreground">Loading Directory enquiries…</p>}
