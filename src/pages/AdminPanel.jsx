@@ -18,6 +18,7 @@ import { useAuth } from '@/lib/AuthContext';
 import MemberPortalPreview from '@/components/admin/MemberPortalPreview';
 import DirectoryAnalyticsDashboard from '@/components/admin/DirectoryAnalyticsDashboard';
 import DirectoryEnquiryFollowupEditor from '@/components/admin/DirectoryEnquiryFollowupEditor';
+import DirectoryGovernancePanel from '@/components/admin/DirectoryGovernancePanel';
 import CoachesReview from '@/components/admin/CoachesReview';
 import DirectoryCategoryManager from '@/components/admin/DirectoryCategoryManager';
 import AnnouncementSettingsPanel from '@/components/admin/AnnouncementSettingsPanel';
@@ -30,7 +31,7 @@ export default function AdminPanel() {
   const [searchParams, setSearchParams] = useSearchParams();
   const canAccessAdmin = user?.role === 'admin';
   // Tenant administration and Directory administration are independent capabilities.
-  const directoryTabNames = ['directory-command', 'directory-crm', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics'];
+  const directoryTabNames = ['directory-command', 'directory-crm', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'directory-campaigns', 'directory-governance'];
   const { data: directoryCapability } = useQuery({
     queryKey: ['directory-admin-capability', user?.id],
     queryFn: async () => {
@@ -43,7 +44,7 @@ export default function AdminPanel() {
   });
   const canAccessDirectoryAdmin = canAccessAdmin && directoryCapability === true;
 
-  const allowedAdminTabs = ['linking', 'preview', 'announcements', 'directory-command', 'directory-crm', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'feedback', 'control-library', 'dupr', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
+  const allowedAdminTabs = ['linking', 'preview', 'announcements', 'directory-command', 'directory-crm', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'directory-campaigns', 'directory-governance', 'feedback', 'control-library', 'dupr', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
   const rawAdminTab = requestedTab === 'approvals' ? 'linking' : allowedAdminTabs.includes(requestedTab) ? requestedTab : 'linking';
   const activeAdminTab = directoryTabNames.includes(rawAdminTab) && !canAccessDirectoryAdmin ? 'linking' : rawAdminTab;
@@ -1778,6 +1779,8 @@ Brian`;
             <TabsTrigger value="directory-contacts" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Owners & Editors</TabsTrigger>
             <TabsTrigger value="directory-players" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Player Network</TabsTrigger>
             <TabsTrigger value="directory-analytics" className="text-xs gap-1.5"><Eye className="w-3.5 h-3.5" /> Analytics</TabsTrigger>
+            <TabsTrigger value="directory-campaigns" className="text-xs gap-1.5"><Megaphone className="w-3.5 h-3.5" /> Campaigns & Consent</TabsTrigger>
+            <TabsTrigger value="directory-governance" className="text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Governance & Export</TabsTrigger>
           </>) : (<>
             <TabsTrigger value="preview" className="text-xs gap-1.5"><Eye className="w-3.5 h-3.5" /> Member Preview</TabsTrigger>
             <TabsTrigger value="announcements" className="text-xs gap-1.5"><Megaphone className="w-3.5 h-3.5" /> Announcements</TabsTrigger>
@@ -1793,6 +1796,8 @@ Brian`;
           </>)}
         </TabsList>
 
+        <TabsContent value="directory-campaigns" className="mt-4"><DirectoryGovernancePanel mode="campaigns" /></TabsContent>
+        <TabsContent value="directory-governance" className="mt-4"><DirectoryGovernancePanel mode="governance" /></TabsContent>
         <TabsContent value="directory-command" className="mt-4">
           <div className="glass rounded-xl p-5 space-y-4">
             <h2 className="text-xl font-bold">Directory Command Centre</h2>
@@ -1804,6 +1809,8 @@ Brian`;
                 ['Owners & Editors','directory-contacts','Verified Directory contacts and permissions'],
                 ['Player Network','directory-players','National opt-in register and consent'],
                 ['Directory Analytics','directory-analytics','Traffic and engagement reporting'],
+                ['Campaigns & Consent','directory-campaigns','Directory-only drafts, segmentation and suppression'],
+                ['Governance & Export','directory-governance','Identity links, domain portability and audit'],
               ].map(([label,tab,description])=><button type="button" key={tab} onClick={()=>setSearchParams({tab})} className="rounded-xl border border-border bg-background/40 p-4 text-left hover:border-primary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"><strong className="block">{label}</strong><span className="mt-1 block text-xs text-muted-foreground">{description}</span></button>)}
             </div>
             <p className="text-xs text-muted-foreground">The People & CRM workspace integrates Directory enquiries and contact actions. No tenant guest/member records or consent are shared automatically.</p>

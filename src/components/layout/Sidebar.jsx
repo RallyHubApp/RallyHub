@@ -33,7 +33,7 @@ export default function Sidebar({ isOpen, onToggle }) {
   const isMemberExperience = !!user?.id && user?.role !== 'admin' && user?.active_club_role !== 'club_admin';
   const isSuperAdmin = role === 'super_admin';
   const currentAdminTab = new URLSearchParams(location.search).get('tab');
-  const directoryWorkspaceTabs = new Set(['directory-command','directory-crm','directory','directory-contacts','directory-players','directory-analytics']);
+  const directoryWorkspaceTabs = new Set(['directory-command','directory-crm','directory','directory-contacts','directory-players','directory-analytics','directory-campaigns','directory-governance']);
   const inDirectoryWorkspace = location.pathname === '/app/admin' && directoryWorkspaceTabs.has(currentAdminTab);
   const { data: memberMessageUnread = 0 } = useMemberMessageUnread();
   const memberNavItems = [
@@ -72,6 +72,8 @@ export default function Sidebar({ isOpen, onToggle }) {
     { path:'/app/admin?tab=directory-contacts', label:'Owners & Editors', icon:Users, section:'DIRECTORY COMMAND CENTRE' },
     { path:'/app/admin?tab=directory-players', label:'Player Network', icon:Users, section:'DIRECTORY COMMAND CENTRE' },
     { path:'/app/admin?tab=directory-analytics', label:'Directory Analytics', icon:BarChart3, section:'DIRECTORY COMMAND CENTRE' },
+    { path:'/app/admin?tab=directory-campaigns', label:'Campaigns & Consent', icon:Megaphone, section:'DIRECTORY COMMAND CENTRE' },
+    { path:'/app/admin?tab=directory-governance', label:'Governance & Export', icon:Shield, section:'DIRECTORY COMMAND CENTRE' },
   ];
   const mainNavItems = inDirectoryWorkspace && isSuperAdmin ? directoryWorkspaceNavItems : isMemberExperience ? memberNavItems : isSuperAdmin ? superAdminNavItems : [
     navItems[0],
