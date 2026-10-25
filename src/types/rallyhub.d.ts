@@ -2,6 +2,8 @@ export {};
 
 declare global {
   interface Window {
+    dataLayer?: IArguments[];
+    gtag?: (...args: any[]) => void;
     webkitAudioContext?: typeof AudioContext;
     __rallyhubAudioContext?: AudioContext;
     __rallyhubUtterance?: SpeechSynthesisUtterance | null;

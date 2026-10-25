@@ -184,7 +184,7 @@ async function getAmplifiedSpeechBuffer(text, eventId = '') {
   const ctx = await unlockRallyHubAudio();
   if (!ctx) throw new Error('RallyHub audio is not available in this browser.');
   if (Date.now() < amplifiedSpeechBackoffUntil) {
-    const error = new Error('Amplified hall speech is temporarily cooling down; browser voice will be used.');
+    const error = /** @type {Error & {code?: string}} */ (new Error('Amplified hall speech is temporarily cooling down; browser voice will be used.'));
     error.code = 'TTS_BACKOFF';
     throw error;
   }
@@ -196,7 +196,7 @@ async function getAmplifiedSpeechBuffer(text, eventId = '') {
     // request failed, all queued pre-warms immediately use browser fallback
     // instead of forming a Base44 burst.
     if (Date.now() < amplifiedSpeechBackoffUntil) {
-      const error = new Error('Amplified hall speech is temporarily cooling down; browser voice will be used.');
+      const error = /** @type {Error & {code?: string}} */ (new Error('Amplified hall speech is temporarily cooling down; browser voice will be used.'));
       error.code = 'TTS_BACKOFF';
       throw error;
     }
@@ -206,7 +206,7 @@ async function getAmplifiedSpeechBuffer(text, eventId = '') {
     });
     const payload = response?.data || {};
     if (!payload?.audio_base64) {
-      const error = new Error(payload?.error || 'Amplified hall speech was not returned.');
+      const error = /** @type {Error & {code?: string}} */ (new Error(payload?.error || 'Amplified hall speech was not returned.')); 
       error.code = payload?.code || 'TTS_UNAVAILABLE';
       throw error;
     }

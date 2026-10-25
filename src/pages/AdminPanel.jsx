@@ -634,7 +634,7 @@ export default function AdminPanel() {
       // Reflect the confirmed backend result immediately so the admin never has to refresh
       // to discover whether the key press worked. The normal refetch then reconciles the
       // complete Directory state (access records, listing verification and invitations).
-      queryClient.setQueryData(['directory-verification'], current => current ? ({
+      queryClient.setQueryData(['directory-verification'], (/** @type {any} */ current) => current ? ({
         ...current,
         claims: (current.claims || []).map(claim => claim.id === claimId ? { ...claim, status: decision } : claim),
       }) : current);
@@ -659,7 +659,7 @@ export default function AdminPanel() {
     try {
       const res = await base44.functions.invoke('directoryClaim', { action: 'review_new', requestId, decision });
       if (res.data?.error) throw new Error(res.data.error);
-      queryClient.setQueryData(['directory-verification'], current => current ? ({
+      queryClient.setQueryData(['directory-verification'], (/** @type {any} */ current) => current ? ({
         ...current,
         listingRequests: (current.listingRequests || []).map(request => request.id === requestId ? { ...request, status: decision } : request),
       }) : current);
@@ -1451,7 +1451,7 @@ Brian`;
       });
       if (res.data?.error) throw new Error(res.data.error);
       if (res.data?.claim) {
-        queryClient.setQueryData(['directory-verification'], current => {
+        queryClient.setQueryData(['directory-verification'], (/** @type {any} */ current) => {
           if (!current) return current;
           return {
             ...current,
