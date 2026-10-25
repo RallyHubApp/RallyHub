@@ -25,6 +25,7 @@ function CampaignsAndConsent({overview, refresh}) {
   const [error,setError] = useState('');
   const [sendReport,setSendReport] = useState(null);
   const [coachInvite,setCoachInvite] = useState({listingSlug:'',contactName:'',contactEmail:''});
+  const {data:coachRoster,isLoading:coachesLoading,refetch:refreshCoaches}=useQuery({queryKey:['directory-coach-invitations'],queryFn:()=>callDirectory('admin_coach_roster'),retry:false});
   const [suppressionEmail,setSuppressionEmail] = useState('');
   const [suppressionReason,setSuppressionReason] = useState('Consent withdrawal');
   const change = (key,value) => {setForm(p=>({...p,[key]:value}));setPreview(null);setDeliveryPreflight(null);};
@@ -43,7 +44,7 @@ function CampaignsAndConsent({overview, refresh}) {
     setSendReport(data);toast.success(`${data.accepted} accepted by mail provider, ${data.failed} failed, ${data.skipped} skipped`);
   });
   const sendCoachInvite=()=>perform('coach-invite',async()=>{
-    if(!coachInvite.listingSlug||!coachInvite.contactName||!coachInvite.contactEmail)throw Error('Select a listing, coach name and verified email');
+    if(!coachInvite.listingSlug||!coachInvite.contactName||!coachInvite.contactEmail)throw Error('Select a coach listing and its supplied email address');
     if(!window.confirm(`Send a real secure Directory guided claim invitation to ${coachInvite.contactName} <${coachInvite.contactEmail}> for listing ${coachInvite.listingSlug} from RallyHub?`))return;
     const response=await base44.functions.invoke('directoryClaim',{action:'send_claim_invite',...coachInvite});
     if(!response?.data?.success||response?.data?.sent!==true)throw Error(response?.data?.error||'Coach invitation was not accepted by mail transport');
@@ -72,7 +73,10 @@ function CampaignsAndConsent({overview, refresh}) {
       </section>
     </div>
     <section className="rounded-xl border p-4 space-y-3"><h3 className="font-bold">Coach guided-journey invitations</h3><p className="text-sm text-muted-foreground">Use the existing verified Directory claim workflow for each of the 14 coaches. It sends an individual, secure, single-use link from RallyHub, without adding coaches to a marketing mailing list. The link expires after 72 hours.</p>
-      <div className="grid gap-3 sm:grid-cols-3"><Field label="Coach Directory listing slug" value={coachInvite.listingSlug} onChange={v=>setCoachInvite(p=>({...p,listingSlug:v}))} placeholder="coach-listing-slug"/><Field label="Coach's verified full name" value={coachInvite.contactName} onChange={v=>setCoachInvite(p=>({...p,contactName:v}))}/><Field label="Coach's verified email" type="email" value={coachInvite.contactEmail} onChange={v=>setCoachInvite(p=>({...p,contactEmail:v}))}/></div><Button type="button" onClick={sendCoachInvite} disabled={!coachInvite.listingSlug||!coachInvite.contactName||!coachInvite.contactEmail||!!busy}>Send secure guided invitation</Button>
+      <label className="block space-y-1 text-xs font-semibold">Select one of the 14 approved coach listings<select className="w-full rounded-md border bg-background p-2 text-sm" value={coachInvite.listingSlug} onChange={e=>{const coach=(coachRoster?.coaches||[]).find(c=>c.slug===e.target.value);setCoachInvite(coach?{listingSlug:coach.slug,contactName:coach.contactName||coach.name,contactEmail:coach.email}:{listingSlug:'',contactName:'',contactEmail:''});}}><option value="">Select a coach</option>{(coachRoster?.coaches||[]).map(coach=><option key={coach.slug} value={coach.slug}>{coach.name}{coach.alreadyClaimed?' — already claimed':''}</option>)}</select></label>
+      <p className="text-xs text-muted-foreground">{coachesLoading?'Loading coaches…':`${coachRoster?.coaches?.length||0} coach listings. Email destinations supplied and confirmed by RallyHub owner. Review each invitation before sending.`} <button type="button" className="underline" onClick={()=>refreshCoaches()}>Refresh list</button></p>
+      {coachInvite.listingSlug && (coachRoster?.coaches||[]).find(c=>c.slug===coachInvite.listingSlug)?.alreadyClaimed && <p role="alert" className="text-sm text-destructive">This listing has already been claimed. Do not send another owner invitation.</p>}
+      <div className="grid gap-3 sm:grid-cols-3"><Field label="Coach Directory listing slug" value={coachInvite.listingSlug} onChange={v=>setCoachInvite(p=>({...p,listingSlug:v}))} placeholder="coach-listing-slug"/><Field label="Coach's verified full name" value={coachInvite.contactName} onChange={v=>setCoachInvite(p=>({...p,contactName:v}))}/><Field label="Coach's verified email" type="email" value={coachInvite.contactEmail} onChange={v=>setCoachInvite(p=>({...p,contactEmail:v}))}/></div><Button type="button" onClick={sendCoachInvite} disabled={!coachInvite.listingSlug||!coachInvite.contactName||!coachInvite.contactEmail||!!busy||(coachRoster?.coaches||[]).some(c=>c.slug===coachInvite.listingSlug&&c.alreadyClaimed)}>Send secure guided invitation</Button>
     </section>
     <section className="rounded-xl border p-4 space-y-3"><h3 className="font-bold">Directory suppression register</h3><p className="text-sm text-muted-foreground">{overview?.suppressionCounts?.active??'—'} active suppression(s). Email addresses are hashed before they are stored in the protected Directory suppression entity.</p>
       <div className="grid gap-3 sm:grid-cols-2"><Field label="Email to suppress" type="email" value={suppressionEmail} onChange={setSuppressionEmail}/><Field label="Reason" value={suppressionReason} onChange={setSuppressionReason}/></div>
