@@ -2,7 +2,7 @@
 
 **Date:** 25 October 2026  
 **Scope:** Phase 1 Master Specification v1.0, Directory independently governed; two verified superadmin IDs; separate from tenant/multi-sport engine.  
-**Current decision:** SANDBOX IMPLEMENTATION AND AUTOMATED CHECKS PASS; PRODUCTION PHASE 1 SIGN-OFF IS WITHHELD PENDING RELEASE AND REAL-SYSTEM EVIDENCE.
+**Current decision:** SANDBOX IMPLEMENTATION AND SELECTED AUTOMATED CHECKS PASS; PRODUCTION PHASE 1 SIGN-OFF IS WITHHELD PENDING PUBLICATION AND REAL-SYSTEM ACCEPTANCE EVIDENCE.
 
 ## Implemented in sandbox
 1. Technical repairs: corrected the original 491 TypeScript errors; typecheck now exits 0 without suppressing all application checks. Added missing React/Leaflet/Node type declarations and corrected several real bad references. Browser regression discovered and repaired a missing `Megaphone` import that otherwise caused an authenticated white screen. New Directory views no longer show Clare Pickleball's membership KPI.
@@ -18,7 +18,7 @@
 - `npm run gate:directory-security` — PASS (source gate, not live signed-in role verification).
 - `npm run build` — PASS.
 - Focused ESLint — PASS.
-- Playwright selection: `e2e/directory-governance.spec.mjs`, `directory-auth-header`, `directory-dual-mode`, `directory-search-map` — 10/10 PASS after repairing the Sidebar missing import. These tests use synthetic/mocked sessions for protected paths.
+- Playwright selection: `e2e/directory-governance.spec.mjs`, `directory-auth-header`, `directory-dual-mode`, `directory-dual-mode-mobile`, `directory-search-map` — **11/11 PASS**, including initial-load isolation asserting that tenant Player, ClubRelationship and membershipRecord are not read by the tested Directory governance routes. These tests use synthetic/mocked sessions for protected paths.
 - `node scripts/kotcAccessArchitectureGate.mjs` — PASS (140 checks).
 - `node scripts/memberGuestBookingGate.mjs` — PASS.
 - `node scripts/clubChallengeGate1.mjs` — PASS.
@@ -34,3 +34,11 @@
 
 ## Safety guarantees
 No customer emails, tenant record mutations or social publishing were initiated by these validation checks. The new four schemas are confirmed in the connected Base44 app, and the `directoryGovernance` endpoint returns anonymous HTTP 403; the actor/path responsible and backend source parity are unverified. The new governance frontend is confirmed absent from the live AdminPanel chunk. The assistant must not claim production remained entirely unchanged or that the new backend was deployed. Campaign send remains disabled; identity link is proposal-only; archive is read-only and redacts bearer/secret credentials. A test environment signed in via mocked sessions cannot demonstrate a live account has been granted or denied permission.
+
+## Final verification notes (25 Oct 2026)
+- Full `npm run typecheck`, `npm run build`, `npm run test:directory` (**87/87**), `npm run gate:directory-security`, targeted ESLint, KOTC architecture gate, guest booking gate and Club Challenge gate: **PASS**.
+- The selected 11 Playwright tests: **11/11 PASS** (local dev server, mocked protected sessions; not real production identity acceptance).
+- Communications core, delivery, domain, activation, renderer and visual email protocol safety gates: **PASS**; none sent email.
+- Source and browser fixes verified: Directory tabs no longer show Clare Pickleball membership summary, and the tested Directory governance routes do not launch initial tenant Player/ClubRelationship/membershipRecord reads.
+- Server unit harness: anonymous, arbitrary admin and member denied **before protected reads**; both verified superadmin fixture IDs accepted; campaigns/approval remain no-send; export redaction and relationship failure tested. These are simulated credentials and records, not live account tests.
+- **Not final Phase 1 sign-off:** authenticated Brian/Conall and negative-role tests against actual live service and direct entity RLS; verified campaign delivery/consent/opt-out/delivery receipts with approved test recipients; GA4/Search Console value reconciliation; real Directory extraction, backup and independent restore; selected social provider operations, mobile/performance/accessibility and end-to-end review.
