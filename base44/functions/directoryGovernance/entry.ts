@@ -73,9 +73,9 @@ Deno.serve(async(req) => {
         return {slug:listing.slug,name:listing.name,contactName:contact?.contact_name||listing.name,
           email:contact?.email||'',sourceNote:contact?.contact_role||'No email destination recorded',
           alreadyClaimed:(accesses||[]).some((row:any)=>row.listing_slug===listing.slug),
-          destinationVerified:false};
+          destinationVerified:!!contact?.email,verificationBasis:contact?.email?'Owner-confirmed supplied address':'Missing contact email'};
       }).sort((a:any,b:any)=>a.name.localeCompare(b.name));
-      return result({success:true,coaches:roster,verificationRequired:true});
+      return result({success:true,coaches:roster,verificationRequired:false});
     }
     if(action==='admin_overview') {
       const [campaigns,links,suppressions]=await Promise.all([
