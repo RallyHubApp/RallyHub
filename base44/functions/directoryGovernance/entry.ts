@@ -1,5 +1,6 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.57';
 import { authorisedDirectorySuperAdmin } from '../../shared/directorySuperAdmin.ts';
+import { rallyHubEmailShell } from '../../shared/rallyHubPlatformEmail.ts';
 import { directoryAudience, directoryEmailHash, directoryEmailKey } from '../../shared/directoryAudience.mjs';
 
 // Directory-only administration. No tenant entity writes, email sends or social API calls.
@@ -15,6 +16,7 @@ const DIRECTORY_ENTITIES = Object.freeze([
 ]);
 const text = (v:any,n=255) => String(v ?? '').trim().slice(0,n);
 const result = (body:any, status=200) => Response.json(body,{status,headers:{'Cache-Control':'no-store, private, max-age=0','X-Content-Type-Options':'nosniff'}});
+const escapeHtml = (value:any) => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'} as any)[char]);
 const validEmail = (v:any) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(directoryEmailKey(v));
 const validId = (v:any) => /^[A-Za-z0-9_-]{8,160}$/.test(text(v,160));
 const validRef = (v:any) => /^[A-Za-z0-9_.:\/-]{6,240}$/.test(text(v,240));
@@ -87,7 +89,8 @@ Deno.serve(async(req) => {
       const rows=await directory.DirectoryCampaign.filter({id},'-created_date',1);const campaign=rows?.[0];if(!campaign)return result({error:'Campaign not found'},404);
       const [people,suppressions]=await Promise.all([allDirectoryRows(base44,'DirectoryPlayerSubscriber'),allDirectoryRows(base44,'DirectorySuppression')]);
       const seg=await directoryAudience(people,suppressions,{county:campaign.county,clubSlug:campaign.club_slug,topic:campaign.topic,maxAgeMonths:24});
-      const preview={eligibleCount:seg.eligibleCount,excluded:seg.excluded,policy:seg.policy,consentSource:'DirectoryPlayerSubscriber',sender:'rallyhubapp@gmail.com',sendingEnabled:false};
+      const brandedPreview=rallyHubEmailShell({title:campaign.subject,content:`<div style="white-space:pre-line;line-height:1.6">${escapeHtml(campaign.body_text || '')}</div>`,footerNote:'RallyHub Directory'});
+      const preview={eligibleCount:seg.eligibleCount,excluded:seg.excluded,policy:seg.policy,consentSource:'DirectoryPlayerSubscriber',sender:'rallyhubapp@gmail.com',sendingEnabled:false,html:brandedPreview,plainText:campaign.body_text||''};
       if(action==='admin_preview_campaign')return result({success:true,preview,campaign:campaignView(campaign)});
       if(campaign.status!=='draft')return result({error:'Only drafts can be approved'},409);
       if(!body.confirmApproval)return result({error:'Explicit template approval required'},400);
