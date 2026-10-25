@@ -12,11 +12,10 @@
 # Error details
 
 ```
-Error: expect(received).toBeGreaterThanOrEqual(expected)
+Error: expect(received).toBe(expected) // Object.is equality
 
-Matcher error: received value must be a number or bigint
-
-Received has value: undefined
+Expected: false
+Received: true
 ```
 
 # Page snapshot
@@ -152,10 +151,10 @@ Received has value: undefined
   2  | const APP_ID='6a01dc00702b7dd2a2978c28';
   3  | const base={success:true,campaigns:[],links:[],suppressionCounts:{active:0,total:0},limits:{campaigns:250,links:250,suppressions:500}};
   4  | async function mockGovernance(page,{authorised=true}={}){
-  5  |  let calls=0;
+  5  |  let calls=0;const observed=[];
   6  |  await page.addInitScript(()=>localStorage.setItem('base44_access_token','directory-governance-fixture-token'));
   7  |  await page.route('**/api/apps/**',async route=>{
-  8  |   const url=new URL(route.request().url()),path=url.pathname;
+  8  |   const url=new URL(route.request().url()),path=url.pathname;observed.push(path);
   9  |   const reply=(body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
   10 |   if(path.includes('/public-settings/'))return reply({id:APP_ID,public_settings:{}});
   11 |   if(path.endsWith('/entities/User/me')||path.endsWith('/users/me')||path.endsWith('/auth/me'))return reply({id:authorised?'6a0b5afd3f4b9681265a1398':'unrelated-admin-id',role:'admin',email:'test@example.test',full_name:'Directory test admin',approval_status:'approved'});
@@ -180,7 +179,7 @@ Received has value: undefined
   30 |   }
   31 |   return reply({success:true});
   32 |  });
-  33 |  return ()=>calls;
+  33 |  return ()=>({governanceCalls:calls,requests:[...observed]});
   34 | }
   35 | test('Directory super-admin campaign UI is separate, and saving draft never sends',async({page})=>{
   36 |  const count=await mockGovernance(page);
@@ -196,9 +195,9 @@ Received has value: undefined
   46 |  await page.goto('/app/admin?tab=directory-governance');
   47 |  await expect(page.getByText('Directory governance & portability')).toBeVisible();
   48 |  await expect(page.getByText('Standalone Directory export')).toBeVisible();
-> 49 |  expect(count().governanceCalls).toBeGreaterThanOrEqual(2);
-     |                                  ^ Error: expect(received).toBeGreaterThanOrEqual(expected)
-  50 |  expect(count().requests.some(path=>path.includes('/functions/membershipRecord')||path.includes('/entities/ClubRelationship')||path.endsWith('/entities/Player'))).toBe(false);
+  49 |  expect(count().governanceCalls).toBeGreaterThanOrEqual(2);
+> 50 |  expect(count().requests.some(path=>path.includes('/functions/membershipRecord')||path.includes('/entities/ClubRelationship')||path.endsWith('/entities/Player'))).toBe(false);
+     |                                                                                                                                                                    ^ Error: expect(received).toBe(expected) // Object.is equality
   51 |  expect(errors).toEqual([]);
   52 | });
   53 | test('unrelated admin cannot enter protected Directory governance',async({page})=>{
