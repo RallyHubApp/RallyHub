@@ -4,8 +4,9 @@ import { rallyHubEmailShell } from '../../shared/rallyHubPlatformEmail.ts';
 import { packageDirectoryArchive, inspectDirectoryArchive } from '../../shared/directoryPortableExport.mjs';
 import { directoryAudience, directoryEmailHash, directoryEmailKey } from '../../shared/directoryAudience.mjs';
 import { directoryDeliveryPlan } from '../../shared/directoryDelivery.mjs';
+import { sendWithConfiguredEmailTransport, requireConfiguredEmailTransport } from '../directoryClaim/emailRouter.ts';
 
-// Directory-only administration. No tenant entity writes, email sends or social API calls.
+// Directory-only administration; sending requires explicit authorised per-campaign confirmation and fresh consent.
 const VERSION = 'directory-phase1-v1';
 const DIRECTORY_ENTITIES = Object.freeze([
   'DirectoryAnalyticsEvent','DirectoryCampaign','DirectoryCategory','DirectoryClaim',
@@ -119,6 +120,55 @@ Deno.serve(async(req) => {
       }
       await audit(base44,user,'delivery_prepare','campaign',campaignId,'succeeded',{newlyPrepared,alreadyPrepared});
       return result({success:true,preflight:publicPlan,newlyPrepared,alreadyPrepared,message:'Prepared records only. No external delivery was triggered.'});
+    }
+    if(action==='admin_send_campaign') {
+      const campaignId=text(body.campaignId,140);
+      if(!validId(campaignId)||body.confirmSend!=='SEND APPROVED CAMPAIGN')return result({error:'Explicit approved-campaign send confirmation required'},400);
+      const campaignRows=await directory.DirectoryCampaign.filter({id:campaignId},'-created_date',1);
+      const campaign=campaignRows?.[0];if(!campaign)return result({error:'Campaign not found'},404);
+      // No club/tenant audience is ever imported here. Consent and suppressions are refreshed on this request.
+      const [people,suppressions]=await Promise.all([allDirectoryRows(base44,'DirectoryPlayerSubscriber'),allDirectoryRows(base44,'DirectorySuppression')]);
+      const audience=await directoryAudience(people,suppressions,{county:campaign.county,clubSlug:campaign.club_slug,topic:campaign.topic,maxAgeMonths:24});
+      const plan=await directoryDeliveryPlan(campaign,audience);
+      if(plan.issues.length)return result({error:'Campaign cannot send',issues:plan.issues},409);
+      if(plan.entries.length>14)return result({error:'Send batches are limited to 14 people; refine the audience and retry'},409);
+      const transport=await requireConfiguredEmailTransport(base44,{scopeType:'platform',purpose:'directory'});
+      if(transport.sender_email!=='rallyhubapp@gmail.com')return result({error:'Sender mismatch for RallyHub Directory'},409);
+      await audit(base44,user,'campaign_send','campaign',campaignId,'attempted',{recipients:plan.entries.length});
+      const summary={accepted:0,failed:0,skipped:0,results:[] as any[]};
+      for(const item of plan.entries){
+        const prior=await directory.DirectoryDeliveryAttempt.filter({idempotency_key:item.idempotency_key},'-created_at',1);
+        if(prior?.[0]){summary.skipped++;summary.results.push({subscriberId:item.subscriber_id,status:'already_attempted'});continue;}
+        const person=audience.eligible.find((x:any)=>x.subscriberId===item.subscriber_id);
+        // Recipient must still exist with live consent and a usable personal unsubscribe token.
+        const source=people.find((x:any)=>x.id===item.subscriber_id);
+        if(!person||!source?.unsubscribe_token||!/^dp_[a-f0-9]{32}$/i.test(source.unsubscribe_token)){
+          summary.skipped++;summary.results.push({subscriberId:item.subscriber_id,status:'missing_preferences_link'});continue;
+        }
+        const latest=await directory.DirectoryPlayerSubscriber.filter({id:item.subscriber_id},'-updated_at',1);
+        const refreshed=latest?.[0];
+        const currentSuppression=await directory.DirectorySuppression.filter({email_hash:item.recipient_hash,channel:'email',status:'active'},'-created_at',5);
+        if(!refreshed||refreshed.status!=='active'||refreshed.email_opt_in!==true||directoryEmailKey(refreshed.email)!==person.email||currentSuppression?.length){
+          summary.skipped++;summary.results.push({subscriberId:item.subscriber_id,status:'no_current_consent'});continue;
+        }
+        // Record the attempt BEFORE reaching the external provider to avoid duplicate sends on sequential retries.
+        const now=new Date().toISOString();
+        const attempt=await directory.DirectoryDeliveryAttempt.create({...item,status:'prepared',created_by_user_id:user.id,attempt_count:1,updated_at:now});
+        const preferencesUrl=`https://rallyhub.ie/directory/player-updates?token=${encodeURIComponent(source.unsubscribe_token)}`;
+        const plainText=`${campaign.body_text}\n\nManage your RallyHub Directory email preferences: ${preferencesUrl}`;
+        const html=rallyHubEmailShell({title:campaign.subject,content:`<div style=\"white-space:pre-line;line-height:1.6\">${escapeHtml(campaign.body_text)}</div><p style=\"font-size:13px\"><a href=\"${escapeHtml(preferencesUrl)}\">Update preferences or unsubscribe</a></p>`,footerNote:'RallyHub Directory'});
+        try {
+          const delivered=await sendWithConfiguredEmailTransport(base44,{scopeType:'platform',purpose:'directory'},{to:person.email,subject:campaign.subject,textBody:plainText,htmlBody:html,senderName:'RallyHub Directory'});
+          const providerId=text(delivered?.payload?.id||delivered?.payload?.messageId||'',220);
+          await directory.DirectoryDeliveryAttempt.update(attempt.id,{status:'provider_accepted',provider:delivered.provider||transport.provider,provider_message_id:providerId,updated_at:new Date().toISOString()});
+          summary.accepted++;summary.results.push({subscriberId:item.subscriber_id,status:'provider_accepted'});
+        }catch(error){
+          await directory.DirectoryDeliveryAttempt.update(attempt.id,{status:'failed',failure_reason:text(error?.message||'Provider rejected request',450),updated_at:new Date().toISOString()});
+          summary.failed++;summary.results.push({subscriberId:item.subscriber_id,status:'failed'});
+        }
+      }
+      await audit(base44,user,'campaign_send','campaign',campaignId,'succeeded',{accepted:summary.accepted,failed:summary.failed,skipped:summary.skipped});
+      return result({success:true,...summary,note:'Provider accepted means submitted to mail provider, not recipient inbox delivery. Already attempted recipients are not resent automatically.'});
     }
     if(action==='admin_suppress_email') {
       if(!validEmail(body.email))return result({error:'Valid email required'},400);
