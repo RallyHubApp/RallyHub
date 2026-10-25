@@ -22,7 +22,7 @@ import DirectorySpondPanel from '@/components/directory/DirectorySpondPanel';
 import DirectoryAccessPanel from '@/components/directory/DirectoryAccessPanel';
 import RallyHubClubPreviewLock from '@/components/directory/RallyHubClubPreviewLock';
 import ClubFeedbackPanel from '@/components/directory/ClubFeedbackPanel';
-import { buildDirectorySetupProgress, DIRECTORY_SETUP_BLUEPRINTS, setupStepLabel } from '@/lib/directory-guided-setup';
+import { buildDirectorySetupProgress, DIRECTORY_SETUP_BLUEPRINTS } from '@/lib/directory-guided-setup';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const emptyVenue = index => ({
