@@ -56,3 +56,13 @@ test('unrelated admin cannot enter protected Directory governance',async({page})
  await expect(page.getByText('Directory governance & portability')).toHaveCount(0,{timeout:12000});
  expect(count().governanceCalls).toBe(0);
 });
+test('Directory governance renders on mobile without club membership leakage',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await mockGovernance(page);
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('/app/admin?tab=directory-governance');
+ await expect(page.getByText('Directory governance & portability')).toBeVisible({timeout:14000});
+ await expect(page.getByRole('heading',{name:'Standalone Directory export'})).toBeVisible();
+ await expect(page.getByText('Clare Pickleball · Current members')).toHaveCount(0);
+ expect(errors).toEqual([]);
+});
