@@ -63,5 +63,4 @@ fs.mkdirSync(path.join(root,'public'),{recursive:true});
 fs.writeFileSync(path.join(root,'public/directory-sitemap.xml'),xml);
 // The old /sitemap.xml previously advertised private login/admin pages. Keep one canonical public inventory.
 fs.writeFileSync(path.join(root,'public/sitemap.xml'),xml);
-fs.writeFileSync(path.join(root,'public/sitemap.xml'),xml);
 console.log(`SEO sitemap generated: ${urls.length} URLs (${publicClubs.length} public listings, ${listedCounties.length} counties, ${venueUrls.length} venues; ${dynamicClubs.length} dynamic listings).`);

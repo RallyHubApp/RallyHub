@@ -235,6 +235,7 @@ export default function AddDirectoryClub() {
         title="Add or Update a Pickleball Listing | RallyHub Ireland Directory"
         description="Add or update a RallyHub pickleball listing. Clubs and places to play remain the primary Directory experience, with coaching, events, holidays, equipment and other approved listings available too."
         path="/directory/add"
+        robots="noindex,follow"
       />
       <div className="min-h-screen bg-background text-foreground">
       <PublicDirectoryHeader />
