@@ -7,7 +7,7 @@ import {base44} from "@/api/base44Client";
 import {simulateCampaign} from "@/services/communications/simulator.js";
 import TournivalAudiencePanel from "@/components/communications/TournivalAudiencePanel.jsx";
 import TournivalTemplateManager from "@/components/communications/TournivalTemplateManager.jsx";
-import {LEGACY_APPROVED_TEMPLATES,legacyTemplateModules} from "@/services/communications/legacyApprovedTemplates.js";
+import {LEGACY_APPROVED_TEMPLATES} from "@/services/communications/legacyApprovedTemplates.js";
 import {COMMUNICATION_PRESENTATION_STANDARDS,COMMUNICATIONS_CENTRE_RENDERING_PRINCIPLES} from "@/services/communications/presentationStandards.js";
 import {WorkflowPanel as WorkflowManager,PollPanel as PollManager,AudiencePanel,DeliveryPanel,ConsentPanel,AnalyticsPanel,SettingsPanel,BrandKitManager} from "@/components/communications/OperatorPanels.jsx";
 const tabs=["Overview","Compose","WhatsApp","Audiences","Templates & Brand","Workflows","Polls & Feedback","Delivery","Consent","Analytics","Settings"];
