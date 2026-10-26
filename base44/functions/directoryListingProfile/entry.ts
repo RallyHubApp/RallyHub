@@ -4,7 +4,7 @@ import { geocodeDirectoryVenues } from './geocode.ts';
 import { publicDirectoryFallbackSnapshot } from './publicFallbackSnapshot.ts';
 import { protectedDirectoryList, protectedDirectoryState } from './protectedContract.ts';
 import { rallyHubEmailShellUsingTemplate } from '../../shared/rallyHubPlatformEmail.ts';
-import { sendWithConfiguredEmailTransport } from '../directoryClaim/emailRouter.ts';
+import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 
 const clean = (value:any, max=500) => String(value ?? '').trim().slice(0, max);
 const isRateLimit = (error:any) => /rate limit|too many requests|\b429\b|temporar(?:y|ily) busy/i.test(String(error?.message || error || ''));
