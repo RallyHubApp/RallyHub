@@ -14,15 +14,15 @@
 ```
 Error: expect(locator).toHaveValue(expected) failed
 
-Locator: getByText('Supplier email address').locator('..').locator('input')
+Locator: getByText('Supplier email address', { exact: true }).locator('..').locator('input')
 Expected: "supplier@example.test"
-Error: strict mode violation: getByText('Supplier email address').locator('..').locator('input') resolved to 2 elements:
+Error: strict mode violation: getByText('Supplier email address', { exact: true }).locator('..').locator('input') resolved to 2 elements:
     1) <input value="" type="email" data-dynamic-content="true" data-source-location="src/pages/DirectoryListingEdit.jsx:1346:187" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"/> aka locator('input[type="email"]')
     2) <input class="mt-1" type="checkbox" data-dynamic-content="true" data-source-location="src/pages/DirectoryListingEdit.jsx:1347:133"/> aka getByRole('checkbox', { name: 'I confirm that this supplier email address is correct.' })
 
 Call log:
-  - Expect "toHaveValue" getByText('Supplier email address').locator('..').locator('input') with timeout 3000ms
-  - waiting for getByText('Supplier email address').locator('..').locator('input')
+  - Expect "toHaveValue" getByText('Supplier email address', { exact: true }).locator('..').locator('input') with timeout 3000ms
+  - waiting for getByText('Supplier email address', { exact: true }).locator('..').locator('input')
 
 ```
 
@@ -243,9 +243,9 @@ Call log:
   48 |  await expect(page.getByText('Your protected supplier contact')).toBeVisible();
   49 |  await expect(page.getByText('protected Contact Supplier')).toBeVisible();
   50 |  await expect(page.getByText('Use this mobile for WhatsApp')).toHaveCount(0);
-> 51 |  await expect(page.getByText('Supplier email address').locator('..').locator('input')).toHaveValue(privateContact.email);
-     |                                                                                        ^ Error: expect(locator).toHaveValue(expected) failed
-  52 |  await expect(page.getByText('Supplier mobile / telephone').locator('..').locator('input')).toHaveValue(privateContact.phone);
+> 51 |  await expect(page.getByText('Supplier email address',{exact:true}).locator('..').locator('input')).toHaveValue(privateContact.email);
+     |                                                                                                     ^ Error: expect(locator).toHaveValue(expected) failed
+  52 |  await expect(page.getByText('Supplier mobile / telephone',{exact:true}).locator('..').locator('input')).toHaveValue(privateContact.phone);
   53 |  await page.getByLabel('I confirm that this supplier email address is correct.').check();
   54 |  await page.getByLabel('I confirm that this supplier mobile / telephone number is correct.').check();
   55 |  await page.getByRole('button',{name:/Save & continue|Continue/}).last().click();

@@ -48,8 +48,8 @@ test('supplier guided journey: seeded details, logo stage, private contact confi
  await expect(page.getByText('Your protected supplier contact')).toBeVisible();
  await expect(page.getByText('protected Contact Supplier')).toBeVisible();
  await expect(page.getByText('Use this mobile for WhatsApp')).toHaveCount(0);
- await expect(page.getByText('Supplier email address').locator('..').locator('input')).toHaveValue(privateContact.email);
- await expect(page.getByText('Supplier mobile / telephone').locator('..').locator('input')).toHaveValue(privateContact.phone);
+ await expect(page.getByText('Supplier email address',{exact:true}).locator('..').locator('input')).toHaveValue(privateContact.email);
+ await expect(page.getByText('Supplier mobile / telephone',{exact:true}).locator('..').locator('input')).toHaveValue(privateContact.phone);
  await page.getByLabel('I confirm that this supplier email address is correct.').check();
  await page.getByLabel('I confirm that this supplier mobile / telephone number is correct.').check();
  await page.getByRole('button',{name:/Save & continue|Continue/}).last().click();
