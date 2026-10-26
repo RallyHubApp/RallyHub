@@ -506,7 +506,7 @@ export default function DirectoryListingEdit() {
     if (!String(form?.description || '').trim()) issues.push('Add a short public listing description.');
     if (!isValidEmail(form?.contact?.email)) issues.push('The listing contact email is not valid.');
     [
-      ['Website', form?.website], ['Facebook', form?.facebook], ['Instagram', form?.instagram], ['TikTok', form?.tiktok], ['Coach photograph', form?.photoUrl], ['LinkedIn', form?.linkedin],
+      ['Website', form?.website], ['Facebook', form?.facebook], ['Instagram', form?.instagram], ['TikTok', form?.tiktok], ['Shop', form?.shopUrl], ['Coach photograph', form?.photoUrl], ['LinkedIn', form?.linkedin],
       ['Joining link', form?.waitingListUrl], ['WhatsApp link', form?.contact?.whatsapp]
     ].forEach(([label, value]) => { if (!isValidUrl(value)) issues.push(`${label} must be a full http:// or https:// link.`); });
     if (clubListing) {
@@ -726,18 +726,18 @@ export default function DirectoryListingEdit() {
   };
 
   const editSavedPhotograph = async () => {
-    if (listingType !== 'coach' || !form?.photoUrl) return;
+    if (!['coach','equipment'].includes(listingType) || !(listingType === 'coach' ? form?.photoUrl : form?.logoUrl)) return;
     try {
       setError('');
       // Edit the saved rendered image without discarding it. When an original is needed
       // for a wider crop, the coach can still choose Replace photograph.
-      const originalUrl = form.photoSourceUrl || form.photoUrl;
+      const originalUrl = listingType === 'coach' ? (form.photoSourceUrl || form.photoUrl) : form.logoUrl;
       const response = await fetch(originalUrl, { mode: 'cors' });
       if (!response.ok) throw new Error('Image could not be loaded');
       const blob = await response.blob();
       const file = new File([blob], `${slug}-saved-photograph.webp`, {type:blob.type || 'image/webp'});
-      const draft = await prepareLogoDraft(file, { preserveFullImage:true });
-      const crop = form.photoSourceUrl ? form.photoCrop : null;
+      const draft = await prepareLogoDraft(file, { preserveFullImage:listingType==='coach' });
+      const crop = listingType === 'coach' && form.photoSourceUrl ? form.photoCrop : null;
       setLogoDraft({...draft,sourcePhotoUrl:originalUrl,zoom:crop?.zoom ?? 1,offsetX:crop?.offsetX ?? 0,offsetY:crop?.offsetY ?? 0});
     } catch {
       setError('This saved photograph cannot be reopened from its current image host. Choose Replace photograph to edit the original file again.');
@@ -1124,11 +1124,11 @@ export default function DirectoryListingEdit() {
                             {uploadingLogo ? 'Uploading…' : listingType === 'coach' ? (form.photoUrl ? 'Replace photograph' : 'Upload photograph') : form.logoUrl ? 'Replace logo' : 'Upload logo'}
                             <input type="file" accept="image/*" className="hidden" disabled={uploadingLogo} onChange={e => { chooseLogo(e.target.files?.[0]); e.target.value = ''; }} />
                           </label>
-                          {listingType === 'coach' && form.photoUrl && <Button type="button" variant="outline" onClick={editSavedPhotograph} disabled={uploadingLogo} data-testid="edit-saved-coach-photo">Adjust current photograph</Button>}
+                          {['coach','equipment'].includes(listingType) && (listingType==='coach' ? form.photoUrl : form.logoUrl) && <Button type="button" variant="outline" onClick={editSavedPhotograph} disabled={uploadingLogo} data-testid="edit-saved-coach-photo">{listingType==='coach'?'Adjust current photograph':'Adjust current logo'}</Button>}
                           {(listingType === 'coach' ? form.photoUrl : form.logoUrl) && <Button type="button" variant="outline" onClick={() => setField(listingType === 'coach' ? 'photoUrl' : 'logoUrl', '')}>{listingType === 'coach' ? 'Remove photograph' : 'Remove logo'}</Button>}
                         </div>
                         <p className="text-xs text-muted-foreground">{listingType === 'coach' ? 'JPG, PNG or WebP up to 5 MB. Upload a photograph, adjust its size and position, then apply it. Your photograph is public; your email and mobile number are not.' : 'JPG, PNG or WebP up to 5 MB. RallyHub automatically removes common transparent/white padding, centres the crest, then lets you resize and reposition it before upload.'}</p>
-                        {listingType !== 'coach' && <div className="mt-3 space-y-2 max-w-xl">
+                        {listingType !== 'coach' && listingType !== 'equipment' && <div className="mt-3 space-y-2 max-w-xl">
                           <Label htmlFor="directory-logo-https-url">{listingType === 'coach' ? 'Or use a photograph image URL (HTTPS)' : 'Or use a logo image URL (HTTPS)'}</Label>
                           <Input id="directory-logo-https-url" type="url" aria-label="Logo image HTTPS URL" placeholder="https://example.com/club-logo.png" value={(listingType === 'coach' ? form.photoUrl : form.logoUrl) || ''} onChange={e => setField(listingType === 'coach' ? 'photoUrl' : 'logoUrl', e.target.value.trim())} />
                           <p className="text-xs text-muted-foreground">Optional alternative to uploading an image. Paste a direct HTTPS image link, preview it above, then use Save changes to update this listing.</p>
@@ -1199,11 +1199,11 @@ export default function DirectoryListingEdit() {
                             {uploadingLogo ? 'Uploading…' : listingType === 'coach' ? (form.photoUrl ? 'Replace photograph' : 'Upload photograph') : form.logoUrl ? 'Replace logo' : 'Upload logo'}
                             <input type="file" accept="image/*" className="hidden" disabled={uploadingLogo} onChange={e => { chooseLogo(e.target.files?.[0]); e.target.value = ''; }} />
                           </label>
-                          {listingType === 'coach' && form.photoUrl && <Button type="button" variant="outline" onClick={editSavedPhotograph} disabled={uploadingLogo} data-testid="edit-saved-coach-photo">Adjust current photograph</Button>}
+                          {['coach','equipment'].includes(listingType) && (listingType==='coach' ? form.photoUrl : form.logoUrl) && <Button type="button" variant="outline" onClick={editSavedPhotograph} disabled={uploadingLogo} data-testid="edit-saved-coach-photo">{listingType==='coach'?'Adjust current photograph':'Adjust current logo'}</Button>}
                           {(listingType === 'coach' ? form.photoUrl : form.logoUrl) && <Button type="button" variant="outline" onClick={() => setField(listingType === 'coach' ? 'photoUrl' : 'logoUrl', '')}>{listingType === 'coach' ? 'Remove photograph' : 'Remove logo'}</Button>}
                         </div>
                         <p className="text-xs text-muted-foreground">{listingType === 'coach' ? 'JPG, PNG or WebP up to 5 MB. Upload a photograph, adjust its size and position, then apply it. Your photograph is public; your email and mobile number are not.' : 'JPG, PNG or WebP up to 5 MB. RallyHub automatically removes common transparent/white padding, centres the crest, then lets you resize and reposition it before upload.'}</p>
-                        {listingType !== 'coach' && <div className="mt-3 space-y-2 max-w-xl">
+                        {listingType !== 'coach' && listingType !== 'equipment' && <div className="mt-3 space-y-2 max-w-xl">
                           <Label htmlFor="directory-logo-https-url">{listingType === 'coach' ? 'Or use a photograph image URL (HTTPS)' : 'Or use a logo image URL (HTTPS)'}</Label>
                           <Input id="directory-logo-https-url" type="url" aria-label="Logo image HTTPS URL" placeholder="https://example.com/club-logo.png" value={(listingType === 'coach' ? form.photoUrl : form.logoUrl) || ''} onChange={e => setField(listingType === 'coach' ? 'photoUrl' : 'logoUrl', e.target.value.trim())} />
                           <p className="text-xs text-muted-foreground">Optional alternative to uploading an image. Paste a direct HTTPS image link, preview it above, then use Save changes to update this listing.</p>
@@ -1258,6 +1258,7 @@ export default function DirectoryListingEdit() {
                     )}
                   </div>
                   )}
+                  {listingType === 'coach' && (
                   <div className="space-y-2 sm:col-span-2">
                     <Label>{listingType === 'coach' ? 'Your coaching photograph' : isClubListing ? 'Club logo' : 'Logo / image'}</Label>
                     <div className="rounded-xl border border-border bg-background/30 p-4 flex flex-col sm:flex-row sm:items-center gap-4">
@@ -1269,11 +1270,11 @@ export default function DirectoryListingEdit() {
                             {uploadingLogo ? 'Uploading…' : listingType === 'coach' ? (form.photoUrl ? 'Replace photograph' : 'Upload photograph') : form.logoUrl ? 'Replace logo' : 'Upload logo'}
                             <input type="file" accept="image/*" className="hidden" disabled={uploadingLogo} onChange={e => { chooseLogo(e.target.files?.[0]); e.target.value = ''; }} />
                           </label>
-                          {listingType === 'coach' && form.photoUrl && <Button type="button" variant="outline" onClick={editSavedPhotograph} disabled={uploadingLogo} data-testid="edit-saved-coach-photo">Adjust current photograph</Button>}
+                          {['coach','equipment'].includes(listingType) && (listingType==='coach' ? form.photoUrl : form.logoUrl) && <Button type="button" variant="outline" onClick={editSavedPhotograph} disabled={uploadingLogo} data-testid="edit-saved-coach-photo">{listingType==='coach'?'Adjust current photograph':'Adjust current logo'}</Button>}
                           {(listingType === 'coach' ? form.photoUrl : form.logoUrl) && <Button type="button" variant="outline" onClick={() => setField(listingType === 'coach' ? 'photoUrl' : 'logoUrl', '')}>{listingType === 'coach' ? 'Remove photograph' : 'Remove logo'}</Button>}
                         </div>
                         <p className="text-xs text-muted-foreground">{listingType === 'coach' ? 'JPG, PNG or WebP up to 5 MB. Upload a photograph, adjust its size and position, then apply it. Your photograph is public; your email and mobile number are not.' : 'JPG, PNG or WebP up to 5 MB. RallyHub automatically removes common transparent/white padding, centres the crest, then lets you resize and reposition it before upload.'}</p>
-                        {listingType !== 'coach' && <div className="mt-3 space-y-2 max-w-xl">
+                        {listingType !== 'coach' && listingType !== 'equipment' && <div className="mt-3 space-y-2 max-w-xl">
                           <Label htmlFor="directory-logo-https-url">{listingType === 'coach' ? 'Or use a photograph image URL (HTTPS)' : 'Or use a logo image URL (HTTPS)'}</Label>
                           <Input id="directory-logo-https-url" type="url" aria-label="Logo image HTTPS URL" placeholder="https://example.com/club-logo.png" value={(listingType === 'coach' ? form.photoUrl : form.logoUrl) || ''} onChange={e => setField(listingType === 'coach' ? 'photoUrl' : 'logoUrl', e.target.value.trim())} />
                           <p className="text-xs text-muted-foreground">Optional alternative to uploading an image. Paste a direct HTTPS image link, preview it above, then use Save changes to update this listing.</p>
@@ -1333,6 +1334,7 @@ export default function DirectoryListingEdit() {
                       </div>
                     )}
                   </div>
+                  )}
               </section>}
 
               <section id="contact" style={{ display: guidedSectionVisible('contact') ? undefined : 'none' }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
