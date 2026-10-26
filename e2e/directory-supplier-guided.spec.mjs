@@ -34,13 +34,13 @@ test('supplier guided journey: seeded details, logo stage, private contact confi
  await expect(page.getByTestId('setup-step-photograph')).toContainText('business logo');
  await page.getByTestId('setup-step-basics').click();
  await expect(page.getByText('Products supplied (one category per line)')).toBeVisible();
- await expect(page.locator('#basics').getByRole('textbox',{name:'Business / listing name'})).toHaveValue('Celtic Pickleball');
+ await expect(page.locator('#basics').getByText('Business / listing name').locator('..').locator('input')).toHaveValue('Celtic Pickleball');
  await expect(page.locator('#basics').getByText('Shop / product catalogue link')).toBeVisible();
  await page.locator('#basics').getByText('Shop / product catalogue link').locator('..').locator('input').fill('https://example.test/catalogue');
  await page.getByRole('button',{name:'Back to checklist'}).click();
  await page.getByTestId('setup-step-photograph').click();
  await expect(page.getByRole('heading',{name:'Your business logo'})).toBeVisible();
- await expect(page.getByText('Upload logo')).toBeVisible();
+ await expect(page.getByText('Replace logo')).toBeVisible();
  await expect(page.getByText('Adjust current logo')).toBeVisible();
  await expect(page.getByText('Or use a logo image URL')).toHaveCount(0);
  await page.getByRole('button',{name:'Back to checklist'}).click();
