@@ -26,7 +26,7 @@ test('supplier profile supports products and shop, privately prefilled contacts 
  assert.match(publicPage,/Products supplied/);
 });
 test('supplier Comms catalogue contains three drafts and protected delivery links',()=>{
- for(const p of ['directory_claim_suppliers','directory_suppliers_access_approved','directory_suppliers_profile_completed'])assert.match(templates,new RegExp('"id": "'+p+'"'));
+ for(const p of ['directory_suppliers_invitation','directory_suppliers_access_approved','directory_suppliers_profile_completed'])assert.match(templates,new RegExp('"id": "'+p+'"'));
  assert.match(templates,/{{CLAIM_LINK}}/);
  assert.match(templates,/{{MANAGE_LINK}}/);
  assert.match(templates,/Contact Supplier enquiry form/);

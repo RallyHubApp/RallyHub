@@ -937,7 +937,7 @@ export default function DirectoryListingEdit() {
                 <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
                 <div className="flex flex-col gap-5 min-w-0">
                   <div className="min-w-0 w-full">
-                    <p className="text-xs uppercase tracking-wider text-primary font-semibold">{user?.role === 'admin' && !isClaimed ? 'Super Admin · Unclaimed listing' : access?.accessRole === 'owner' ? 'Primary Directory Owner' : 'Verified Directory Editor'}</p>
+                    <p className="text-xs uppercase tracking-wider text-primary font-semibold">{editorMode==='guided' && listingType==='equipment' ? 'Your supplier profile' : editorMode==='guided' && listingType==='coach' ? 'Your coaching profile' : user?.role === 'admin' && !isClaimed ? 'Super Admin · Unclaimed listing' : access?.accessRole === 'owner' ? 'Primary Directory Owner' : 'Verified Directory Editor'}</p>
                     <h1 className="text-3xl sm:text-4xl font-black mt-1 break-words">{form.name || baseClub.name}</h1>
                     <div className="flex flex-wrap gap-2 mt-3 text-xs text-muted-foreground">
                       {isClubListing ? <>
@@ -953,7 +953,7 @@ export default function DirectoryListingEdit() {
                   </div>
                   <div className="flex flex-wrap items-center gap-2 min-w-0 w-full [&_button]:max-w-full [&_button]:whitespace-normal">
                     <Button type="button" variant="outline" className="gap-2" onClick={viewPublicListing} disabled={saving}><ExternalLink className="w-4 h-4" /> View public listing</Button>
-                    {user?.role === 'admin' && <a href={`/app/communications?scope=platform&source=directory&sourceId=${encodeURIComponent(slug)}&template=directory_claim&returnTo=${encodeURIComponent(`/directory/${slug}/edit`)}&label=${encodeURIComponent(form?.name||baseClub?.name||'Directory listing')}`}><Button type="button" variant="outline">Open in Communications</Button></a>}
+                    {user?.role === 'admin' && <a href={`/app/communications?scope=platform&source=directory&sourceId=${encodeURIComponent(slug)}&template=${listingType==='equipment'?'directory_suppliers_invitation':'directory_claim'}&returnTo=${encodeURIComponent(`/directory/${slug}/edit`)}&label=${encodeURIComponent(form?.name||baseClub?.name||'Directory listing')}`}><Button type="button" variant="outline">Open in Communications</Button></a>}
                     {isClubListing && <Link to={`/directory/${slug}/events`}><Button type="button" variant="outline" className="gap-2" disabled={saving}><CalendarDays className="w-4 h-4" /> Manage events</Button></Link>}
                     {user?.role === 'admin' && !isClaimed && <>
                       {form?.contact?.phone && <Button type="button" className="gap-2" onClick={openWhatsAppClaimInvite} disabled={saving || inviting || dirty} title={dirty ? 'Save changes before opening WhatsApp' : undefined}>
