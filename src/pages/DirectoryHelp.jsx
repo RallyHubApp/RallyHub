@@ -17,31 +17,31 @@ const categoryGuides = [
 const faqs = [
   {
     q: 'Why did RallyHub create the Directory?',
-    a: 'The idea came from a real player problem: finding a club was only the first step, then came finding the right venue, session and contact person. RallyHub Directory brings those pieces together in one place and is being built as a practical contribution to the Irish pickleball community.'
+    a: 'RallyHub started as a practical, enjoyable project helping pickleball players find clubs and places to play. Feedback from players and club members encouraged a broader directory: clubs, coaches, events, suppliers, holidays and other useful pickleball services together in one place.'
   },
   {
     q: 'Is there a charge to be listed?',
-    a: 'No. There is no charge to use the RallyHub Directory or to claim and maintain your club listing. Your Directory listing is separate from RallyHub Club and does not commit you to a future paid product.'
+    a: 'There is currently no charge to claim and maintain a standard Directory listing. Directory access is separate from RallyHub Club and does not enrol you in paid club management services. Any separately priced offering should be clearly presented before you choose it.'
   },
   {
     q: 'Does claiming my listing give me RallyHub Club access?',
     a: 'No. RallyHub uses one account, but permissions are separate. Directory ownership or editing does not automatically give access to RallyHub Club, tournaments, players, matches, leaderboards, analytics or tenant administration. Those permissions require their own approval or onboarding.'
   },
   {
-    q: 'Can somebody from another club claim my listing?',
-    a: 'They can submit a claim request, but that does not give them editing access. RallyHub checks trusted contact details and secure one-time invitations as verification signals, and Directory access is granted only after the request is approved. Once a listing is already claimed, an unrelated user cannot take it over.'
+    q: 'Can somebody else claim my listing?',
+    a: 'Anyone may request access, but that does not itself grant editing permission. RallyHub checks trusted contact information and personal invitations, and access is granted only after review. An unrelated person cannot simply take over an existing claimed listing.'
   },
   {
     q: 'What happens when I receive a RallyHub claim invitation?',
     a: 'Open the secure invitation link. Sign in with your RallyHub account, or create one if this is your first time. RallyHub sends a six-digit code to verify a new account email. The trusted invitation is single-use and expires after 72 hours. If your verified email or mobile matches the invitation, RallyHub verifies that the secure link was issued to you and sends your Directory access request for review. The link itself does not grant club-management or Directory access.'
   },
   {
-    q: 'Can more than one person manage a club listing?',
-    a: 'Yes. A claimed listing has one Primary Owner and can have multiple Directory Editors. The Primary Owner can invite or remove editors by email or WhatsApp. Editors can update the public listing but cannot transfer ownership or manage other editors. Secure editor invitations are single-use, expire after 72 hours and are tied to the invited email address or mobile number.'
+    q: 'Can more than one person maintain a Directory listing?',
+    a: 'A verified Primary Owner may invite Directory Editors where supported. Editors maintain the listing but cannot transfer ownership or administer unrelated RallyHub services. Invitations are personal, single-use and time-limited.'
   },
   {
-    q: 'Do I have to complete every field?',
-    a: 'No. Start with the basics: check the club description, public contact, main venue and regular sessions. Your listing can be useful without prices, social links, extra venues or integrations. Optional details can be added later.'
+    q: 'Do I have to complete every field in my listing?',
+    a: 'No. Check the information already present, then correct the essentials for your category. Clubs should review venues and sessions; coaches their experience and services; suppliers their products and links; organisers their events; and holiday providers their destinations and booking details. Return later to add optional information.'
   },
   {
     q: 'How are sessions ordered?',
@@ -120,7 +120,7 @@ export default function DirectoryHelp() {
               <Link to="/directory/story" className="rounded-2xl border border-primary/20 bg-primary/5 p-5 hover:border-primary/40 transition-colors">
                 <Heart className="w-6 h-6 text-primary" />
                 <h2 className="font-black text-lg mt-3">1. Why the Directory exists</h2>
-                <p className="text-sm text-muted-foreground mt-1">Brian's story, why the Directory is free, what clubs gain and what RallyHub is - and is not - offering right now.</p>
+                <p className="text-sm text-muted-foreground mt-1">How a club-finding project grew into a broader pickleball Directory, and what RallyHub does today.</p>
                 <span className="inline-flex mt-4 text-sm font-semibold text-primary">Open Directory Explainer →</span>
               </Link>
               <Link to="/directory/quick-start" className="rounded-2xl border border-primary/20 bg-primary/5 p-5 hover:border-primary/40 transition-colors">
@@ -146,9 +146,9 @@ export default function DirectoryHelp() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
               {(/** @type {[import('lucide-react').LucideIcon,string,React.ReactNode][]} */ ([
                 [ShieldCheck, 'Claim safely', 'Use the invitation or request access. Directory access is verified separately from RallyHub Club.'],
-                [CheckCircle2, 'Check basics', 'Confirm the description, public contact and main venue.'],
-                [CalendarDays, 'Check sessions', 'Add or duplicate regular sessions. RallyHub sorts them into weekly order.'],
-                [Upload, 'Enhance later', <>Logo, social links, prices and extra venues are optional enhancements. <strong className="text-foreground">Using Spond?</strong> Connect your club’s Spond account to scan upcoming events and import regular venues and session times.</>],
+                [CheckCircle2, 'Check basics', 'Confirm your listing description and the details relevant to your category.'],
+                [CalendarDays, 'Check details', 'Clubs can review sessions; event organisers and holiday providers can review their events.'],
+                [Upload, 'Enhance later', 'Photos, logos, links and additional information can be added after the basics are correct.'],
               ])).map(([Icon,title,copy]) => (
                 <div key={title} className="rounded-xl border border-border bg-background/35 p-4">
                   <Icon className="w-5 h-5 text-primary" />
@@ -173,7 +173,7 @@ export default function DirectoryHelp() {
           </section>
 
           <section id="faqs" className="mt-6 glass rounded-2xl p-6 sm:p-8 scroll-mt-24">
-            <h2 className="text-2xl font-black">Frequently asked questions</h2>
+            <h2 className="text-2xl font-black">Frequently asked questions</h2><p className="mt-2 text-sm text-muted-foreground">General questions first, followed by club-specific details for venues, sessions and Spond.</p>
             <div className="mt-5 divide-y divide-border">
               {faqs.map(item => (
                 <details key={item.q} className="group py-4">

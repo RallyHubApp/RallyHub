@@ -183,12 +183,12 @@ export default function Landing() {
                   <div className="mt-5 flex max-w-[94%] flex-col gap-2.5 sm:mt-6 sm:max-w-none sm:flex-row">
                     <Link to="/directory">
                       <Button className="h-11 w-full rounded-lg bg-[#078f49] px-6 text-[13px] font-bold text-white shadow-[0_8px_18px_rgba(7,143,73,.2)] hover:bg-[#067c40] sm:w-auto">
-                        <Search className="mr-2 h-5 w-5"/> Find a Club or Session
+                        <Search className="mr-2 h-5 w-5"/> Explore the Directory
                       </Button>
                     </Link>
                     <Link to="/directory/add">
                       <Button variant="outline" className="h-11 w-full rounded-lg border-[#b9cbd3] bg-white/95 px-6 text-[13px] font-bold text-[#0a2152] hover:bg-white sm:w-auto">
-                        Create Your Club Listing
+                        Add Your Directory Listing
                       </Button>
                     </Link>
                   </div>
