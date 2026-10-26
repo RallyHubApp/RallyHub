@@ -35,10 +35,10 @@ const features = [
   },
   {
     icon: Users,
-    title: 'Manage Your Club',
-    description: 'Create and edit your club listing.',
+    title: 'Manage Your Listing',
+    description: 'Create, claim and update club, coach, event, supplier and holiday listings.',
     action: 'Get Started',
-    to: '/directory?manage=1',
+    to: '/directory',
   },
   {
     icon: BarChart3,
