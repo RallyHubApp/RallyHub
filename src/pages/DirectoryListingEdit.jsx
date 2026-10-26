@@ -1073,7 +1073,7 @@ export default function DirectoryListingEdit() {
                             <div className="relative h-48 w-48 overflow-hidden rounded-2xl border-2 border-border bg-white shadow-inner" data-testid="directory-logo-preview">
                               <img
                                 src={logoDraft.url}
-                                alt="Positioned club logo preview"
+                                alt={listingType === 'coach' ? 'Positioned coaching photograph preview' : 'Positioned club logo preview'}
                                 draggable="false"
                                 className="absolute max-w-none select-none pointer-events-none"
                                 style={{
@@ -1085,20 +1085,23 @@ export default function DirectoryListingEdit() {
                                 }}
                               />
                             </div>
-                            <p className="mt-2 max-w-48 text-xs text-muted-foreground">The white square matches how logos appear in the directory.</p>
+                            <p className="mt-2 max-w-48 text-xs text-muted-foreground">{listingType === 'coach' ? 'Your photograph will be cropped into this square, as shown.' : 'The white square matches how logos appear in the directory.'}</p>
                           </div>
                           <div className="flex-1 space-y-4">
                             <div>
                               <div className="flex items-center justify-between gap-3"><Label htmlFor="directory-logo-zoom">Size</Label><span className="text-xs text-muted-foreground">{Math.round(logoDraft.zoom * 100)}%</span></div>
                               <input id="directory-logo-zoom" aria-label="Logo size" type="range" min="0.7" max="2" step="0.02" value={logoDraft.zoom} onChange={e => setLogoDraft(prev => ({ ...prev, zoom: Number(e.target.value) }))} className="mt-2 w-full accent-primary" />
+                              {listingType === 'coach' && <div className="mt-2 flex gap-2"><Button type="button" variant="outline" className="min-w-20 border-2 border-primary text-foreground font-bold" onClick={() => setLogoDraft(prev => ({...prev, zoom:Math.max(0.7,Math.round((prev.zoom-0.1)*100)/100)}))}>− Smaller</Button><Button type="button" variant="outline" className="min-w-20 border-2 border-primary text-foreground font-bold" onClick={() => setLogoDraft(prev => ({...prev, zoom:Math.min(2,Math.round((prev.zoom+0.1)*100)/100)}))}>+ Larger</Button></div>}
                             </div>
                             <div>
                               <div className="flex items-center justify-between gap-3"><Label htmlFor="directory-logo-x">Move left / right</Label><span className="text-xs text-muted-foreground">{logoDraft.offsetX}</span></div>
                               <input id="directory-logo-x" aria-label="Logo horizontal position" type="range" min="-100" max="100" step="1" value={logoDraft.offsetX} onChange={e => setLogoDraft(prev => ({ ...prev, offsetX: Number(e.target.value) }))} className="mt-2 w-full accent-primary" />
+                              {listingType === 'coach' && <div className="mt-2 flex gap-2"><Button type="button" variant="outline" className="min-w-20 border-2 border-primary text-foreground font-bold" onClick={() => setLogoDraft(prev => ({...prev, offsetX:Math.max(-100,prev.offsetX-10)}))}>← Left</Button><Button type="button" variant="outline" className="min-w-20 border-2 border-primary text-foreground font-bold" onClick={() => setLogoDraft(prev => ({...prev, offsetX:Math.min(100,prev.offsetX+10)}))}>Right →</Button></div>}
                             </div>
                             <div>
                               <div className="flex items-center justify-between gap-3"><Label htmlFor="directory-logo-y">Move up / down</Label><span className="text-xs text-muted-foreground">{logoDraft.offsetY}</span></div>
                               <input id="directory-logo-y" aria-label="Logo vertical position" type="range" min="-100" max="100" step="1" value={logoDraft.offsetY} onChange={e => setLogoDraft(prev => ({ ...prev, offsetY: Number(e.target.value) }))} className="mt-2 w-full accent-primary" />
+                              {listingType === 'coach' && <div className="mt-2 flex gap-2"><Button type="button" variant="outline" className="min-w-20 border-2 border-primary text-foreground font-bold" onClick={() => setLogoDraft(prev => ({...prev, offsetY:Math.max(-100,prev.offsetY-10)}))}>↑ Up</Button><Button type="button" variant="outline" className="min-w-20 border-2 border-primary text-foreground font-bold" onClick={() => setLogoDraft(prev => ({...prev, offsetY:Math.min(100,prev.offsetY+10)}))}>Down ↓</Button></div>}
                             </div>
                             <div className="rounded-lg border border-border bg-background/50 p-3 text-xs text-muted-foreground">
                               {listingType === 'coach' ? 'Adjust the photograph size, then use the left/right and up/down controls to position your face within the square. The original proportions are preserved.' : 'Keep the whole crest visible where possible. Use Size and the position controls to fill the square cleanly. RallyHub preserves the logo proportions so it will not stretch or squash the crest.'}
