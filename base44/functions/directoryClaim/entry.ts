@@ -1321,6 +1321,35 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, request: publicRequest });
     }
 
+    if (action === 'accept_coach_invitation') {
+      // Direct, category-specific guided ownership: a verified signed-in email PLUS
+      // the single-use, unexpired secret is required. This never authorises tenant access.
+      const listingSlug = String(body.listingSlug || '').trim().slice(0,180);
+      const inviteToken = String(body.inviteToken || '').trim().slice(0,200);
+      if (!listingSlug || !inviteToken) return Response.json({error:'Secure coaching invitation required'},{status:400});
+      const listing = await resolveListing(base44,listingSlug);
+      if (!listing || !['coach','coaching'].includes(String(listing.listingType||'').toLowerCase())) return Response.json({error:'This invitation is not for a coaching profile'},{status:403});
+      const userEmail = normaliseEmail(user.email);
+      if (!userEmail) return Response.json({error:'Sign in using the email address that received your invitation'},{status:403});
+      const tokenHash=await hashInviteToken(inviteToken);
+      const matches=await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({listing_slug:listingSlug,token_hash:tokenHash});
+      const invitation=matches?.[0]||null;
+      if (!invitation || invitation.channel!=='email' || invitation.access_role!=='owner' || normaliseEmail(invitation.contact_email)!==userEmail) {
+        return Response.json({error:'This coaching invitation is not valid for your signed-in email'},{status:403});
+      }
+      const existing=await base44.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:listingSlug,user_id:user.id,status:'active'});
+      if (invitation.status==='used' && invitation.used_by_user_id===user.id && existing?.length) return Response.json({success:true,hasAccess:true,listingSlug,alreadyClaimed:true});
+      if (invitation.status!=='pending') return Response.json({error:'This coaching invitation has already been used or cancelled'},{status:403});
+      if (!invitation.expires_at || Date.parse(invitation.expires_at)<Date.now()) return Response.json({error:'This coaching invitation has expired. Please ask RallyHub for a new invitation.'},{status:403});
+      const otherOwners=await base44.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:listingSlug,status:'active'});
+      if ((otherOwners||[]).some((access:any)=>access.role==='owner'&&access.user_id!==user.id)) return Response.json({error:'This coaching profile already has a verified owner. Contact RallyHub.'},{status:409});
+      await grantAccess(base44,{listing,userId:user.id,role:'owner',grantedByUserId:invitation.created_by_user_id||null,notes:'Email-bound, one-time trusted coach invitation accepted; Directory scope only.'});
+      const now=new Date().toISOString();
+      await base44.asServiceRole.entities.DirectoryClaimInvitation.update(invitation.id,{status:'used',used_by_user_id:user.id,used_at:now});
+      await base44.asServiceRole.entities.DirectoryListingAudit.create({listing_slug:listingSlug,user_id:user.id,action:'coach_secure_invitation_accepted',occurred_at:now,after_json:JSON.stringify({invitationId:invitation.id,role:'owner',method:'email_token'})}).catch(()=>{});
+      return Response.json({success:true,hasAccess:true,listingSlug});
+    }
+
     if (action === 'status') {
       const listingSlug = String(body.listingSlug || '').trim();
       const listing = await resolveListing(base44, listingSlug);

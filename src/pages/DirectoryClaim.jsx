@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Clock3, LockKeyhole, ShieldCheck, UserCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -41,6 +41,8 @@ const requestErrorMessage = err =>
 export default function DirectoryClaim() {
   const { slug } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
+  const coachAcceptInFlight = useRef(false);
   const seedClub = getClub(slug);
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
   const [dynamicClub, setDynamicClub] = useState(null);
@@ -105,9 +107,22 @@ export default function DirectoryClaim() {
     let active = true;
     setLoadingStatus(true);
     base44.functions.invoke('directoryClaim', { action: 'status', listingSlug: club.slug, inviteToken })
-      .then(res => {
+      .then(async res => {
         if (!active) return;
         if (res.data?.error) throw new Error(res.data.error);
+        if (inviteToken && ['coach','coaching'].includes(String(res.data?.listing?.listingType||'').toLowerCase())) {
+          if (coachAcceptInFlight.current) return;
+          coachAcceptInFlight.current = true;
+          try {
+            const accepted = await base44.functions.invoke('directoryClaim',{action:'accept_coach_invitation',listingSlug:club.slug,inviteToken});
+            if (accepted.data?.error) throw new Error(accepted.data.error);
+            if (!accepted.data?.hasAccess) throw new Error('Directory coaching access was not confirmed.');
+            navigate(`/directory/${encodeURIComponent(club.slug)}/edit?guided=1`,{replace:true});
+          } catch (err) {
+            if(active) setError(err?.response?.data?.error||err.message||'Could not accept this coaching invitation.');
+          }
+          return;
+        }
         setStatus(res.data);
         if (res.data?.listing?.name) setDynamicClub(previous => ({...(previous||{}),slug:club.slug,name:res.data.listing.name,listingType:res.data.listing.listingType||(previous?.listingType||'other')}));
         const invitedName = res.data?.secureInvitation?.contactName || '';
@@ -130,6 +145,7 @@ export default function DirectoryClaim() {
 
   if (loadingClub && !club) return <div className="min-h-screen bg-background text-foreground"><PublicDirectoryHeader /><main className="container mx-auto px-4 py-10 max-w-4xl"><div className="glass rounded-2xl p-6">Loading club listing…</div></main></div>;
   if (!club) return <Navigate to="/directory" replace />;
+  if (inviteToken && (loadingStatus || error || (!status && isAuthenticated))) return <div className="min-h-screen bg-background text-foreground"><PublicDirectoryHeader/><main className="container mx-auto max-w-xl px-4 py-16"><div className="rounded-xl border bg-card p-6"><h1 className="text-xl font-bold">Opening your invited Directory profile</h1><p className="mt-3 text-sm">{error || 'Checking your secure invitation and preparing the guided profile…'}</p>{error&&<Link to={loginHref} className="mt-4 inline-block underline">Sign in with the invited email</Link>}</div></main></div>;
 
   const submitClaim = async (event) => {
     event.preventDefault();
