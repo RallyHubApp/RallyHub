@@ -4,7 +4,7 @@ test('supplier guided journey: seeded details, logo stage, private contact confi
  const user={id:'supplier-test',full_name:'Test Supplier Owner',email:'owner@sample.test',role:'admin',approval_status:'approved'};
  const base={slug:'test-supplier',listingType:'equipment',name:'Celtic Pickleball',description:'Pickleball paddles, balls, bags and accessories for players in Ireland.',logoUrl:'https://images.example.test/logo.png',website:'https://example.test',shopUrl:'https://example.test/shop',productCategories:['Paddles','Balls'],facebook:'https://facebook.com/testshop',instagram:'https://instagram.com/testshop',contact:{}};
  const privateContact={name:'Supplier Owner',email:'supplier@example.test',phone:'0851234567'};
- let profile=null, savedContact=null, saveCount=0,completeCount=0;
+ let profile=null, savedContact=null, saveCount=0,completeCount=0,logoUploads=0;
  await page.route('https://images.example.test/logo.png',route=>route.fulfill({status:200,contentType:'image/png',headers:{'Access-Control-Allow-Origin':'*'},body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg==','base64')}));
  await page.route('**/api/apps/**',route=>{
   const path=new URL(route.request().url()).pathname;
@@ -19,7 +19,8 @@ test('supplier guided journey: seeded details, logo stage, private contact confi
    if(name==='securityContext')return reply({success:true,context:null});
    if(name==='directoryClaim')return reply({success:true,hasAccess:true,listing:{verificationStatus:'verified'},accessRole:'owner'});
    if(name==='directoryEvents')return reply({success:true,events:[]});
-   if(name==='directoryListingProfile'){console.log('MOCK PROFILE ACTION',JSON.stringify(b).slice(0,230));
+   if(name==='secureCreditAction'){logoUploads++;return reply({success:true,file_url:`https://images.example.test/new-logo-${logoUploads}.webp`});}
+   if(name==='directoryListingProfile'){
     if(b.action==='private_get')return reply({success:true,profile:profile||base,base,visibility:'public',setup:{},privateContact});
     if(b.action==='save_supplier_private_contact'){savedContact=b;return reply({success:true,privateContact:b.contact})}
     if(b.action==='save'){saveCount++;profile={...b.profile,contact:{}};return reply({success:true,profile})}
@@ -43,6 +44,13 @@ test('supplier guided journey: seeded details, logo stage, private contact confi
  await expect(page.getByText('Replace logo')).toBeVisible();
  await expect(page.getByText('Adjust current logo')).toBeVisible();
  await expect(page.getByText('Or use a logo image URL')).toHaveCount(0);
+ await page.getByRole('button',{name:'Adjust current logo'}).click();
+ await expect(page.getByLabel('Logo size')).toBeVisible();
+ await expect(page.getByLabel('Logo horizontal position')).toBeVisible();
+ await page.getByLabel('Logo size').fill('1.2');
+ await page.getByTestId('directory-logo-apply').click();
+ await expect.poll(()=>logoUploads,{timeout:14000}).toBeGreaterThan(0);
+ await expect.poll(()=>profile?.logoUrl,{timeout:14000}).toBe('https://images.example.test/new-logo-1.webp');
  await page.getByRole('button',{name:'Back to checklist'}).click();
  await page.getByTestId('setup-step-contact').click();
  await expect(page.getByText('Your protected supplier contact')).toBeVisible();
