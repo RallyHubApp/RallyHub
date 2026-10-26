@@ -2,14 +2,14 @@ import React, {useState} from 'react';
 import {base44} from '@/api/base44Client';
 import {Button} from '@/components/ui/button';
 import CoachProfile from './CoachProfile';
-const fields=[['name','Name'],['photoUrl','Profile photograph URL'],['town','Town'],['county','County'],['description','Biography'],['qualifications','Qualifications and accreditations'],['coachingExperience','Coaching experience'],['coachingServices','Coaching services'],['areasServed','Areas served'],['website','Website (optional)'],['linkedin','LinkedIn (optional)'],['facebook','Facebook (optional)'],['instagram','Instagram (optional)']];
+const fields=[['name','Name'],['photoUrl','Profile photograph URL'],['town','Town'],['county','County'],['description','Biography'],['qualifications','Qualifications and accreditations'],['coachingExperience','Coaching experience'],['coachingServices','Coaching services'],['areasServed','Areas served'],['website','Website (optional)'],['linkedin','LinkedIn (optional)'],['facebook','Facebook (optional)'],['instagram','Instagram (optional)'],['tiktok','TikTok (optional)']];
 const arrays=new Set(['qualifications','coachingServices','areasServed']);
 export default function CoachEditor({initial,slug}){
  const [form,setForm]=useState(initial),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[show,setShow]=useState(false);
  const save=async e=>{
  e.preventDefault();if(busy)return;setBusy(true);setMessage('');
  try{
- for(const key of ['photoUrl','website','linkedin','facebook','instagram'])if(form[key]){const u=new URL(form[key]);if(!['https:','http:'].includes(u.protocol))throw Error('Use an HTTP or HTTPS URL for '+key);}
+ for(const key of ['photoUrl','website','linkedin','facebook','instagram','tiktok'])if(form[key]){const u=new URL(form[key]);if(!['https:','http:'].includes(u.protocol))throw Error('Use an HTTP or HTTPS URL for '+key);}
  const res=await base44.functions.invoke('directoryListingProfile',{action:'save',listingSlug:slug,profile:{...form,listingType:'coach',contact:{}},town:form.town,county:form.county});
  if(!res.data?.success)throw Error(res.data?.error||'Save was not confirmed');
  setMessage('Coach profile saved. Listing visibility has not changed.');

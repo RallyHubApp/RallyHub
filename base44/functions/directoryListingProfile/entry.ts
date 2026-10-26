@@ -351,6 +351,7 @@ function sanitiseProfile(input:any) {
     website: safeUrl(input?.website),
     facebook: safeUrl(input?.facebook),
     instagram: safeUrl(input?.instagram),
+    tiktok: safeUrl(input?.tiktok),
     waitingListUrl: safeUrl(input?.waitingListUrl),
     joiningCtaLabel: nullable(input?.joiningCtaLabel, 120),
     logoUrl: safeLogoUrl(input?.logoUrl),

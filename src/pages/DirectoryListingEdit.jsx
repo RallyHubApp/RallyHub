@@ -505,7 +505,7 @@ export default function DirectoryListingEdit() {
     if (!String(form?.description || '').trim()) issues.push('Add a short public listing description.');
     if (!isValidEmail(form?.contact?.email)) issues.push('The listing contact email is not valid.');
     [
-      ['Website', form?.website], ['Facebook', form?.facebook], ['Instagram', form?.instagram], ['Coach photograph', form?.photoUrl], ['LinkedIn', form?.linkedin],
+      ['Website', form?.website], ['Facebook', form?.facebook], ['Instagram', form?.instagram], ['TikTok', form?.tiktok], ['Coach photograph', form?.photoUrl], ['LinkedIn', form?.linkedin],
       ['Joining link', form?.waitingListUrl], ['WhatsApp link', form?.contact?.whatsapp]
     ].forEach(([label, value]) => { if (!isValidUrl(value)) issues.push(`${label} must be a full http:// or https:// link.`); });
     if (clubListing) {
@@ -1270,6 +1270,7 @@ export default function DirectoryListingEdit() {
                     <div className="space-y-2"><Label>Website <span className="text-muted-foreground font-normal">(optional)</span></Label><Input aria-label="Website" value={form.website || ''} onChange={e => setField('website', e.target.value)} placeholder="https://…" /></div>
                     <div className="space-y-2"><Label>Facebook <span className="text-muted-foreground font-normal">(optional)</span></Label><Input aria-label="Facebook" type="url" value={form.facebook || ''} onChange={e => setField('facebook', e.target.value)} placeholder="https://facebook.com/…" /></div>
                     <div className="space-y-2"><Label>Instagram <span className="text-muted-foreground font-normal">(optional)</span></Label><Input aria-label="Instagram" type="url" value={form.instagram || ''} onChange={e => setField('instagram', e.target.value)} placeholder="https://instagram.com/…" /></div>
+                    {listingType === 'coach' && <div className="space-y-2"><Label>TikTok <span className="text-muted-foreground font-normal">(optional)</span></Label><Input aria-label="TikTok" type="url" value={form.tiktok || ''} onChange={e => setField('tiktok', e.target.value)} placeholder="https://www.tiktok.com/@yourname" /></div>}
                   </>}
                 </div>
               </section>
