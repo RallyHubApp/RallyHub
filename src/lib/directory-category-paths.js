@@ -8,4 +8,4 @@ export const DIRECTORY_CATEGORY_PATHS = Object.freeze([
   {slug:'other', key:'other', title:'Other Pickleball Services', description:'Find other pickleball services and organisations on the RallyHub Directory.'},
 ]);
 export const directoryCategoryBySlug = slug => DIRECTORY_CATEGORY_PATHS.find(item=>item.slug===slug)||null;
-export const directoryCategoryPath = key => key==='all'?'/directory':`/directory/${DIRECTORY_CATEGORY_PATHS.find(item=>item.key===key)?.slug||'other'}`;
+export const directoryCategoryPath = key => key==='all'?'/directory':`/directory/category/${DIRECTORY_CATEGORY_PATHS.find(item=>item.key===key)?.slug||'other'}`;
