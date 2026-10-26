@@ -1,0 +1,252 @@
+{
+  "date": "2026-10-26",
+  "source": "Live Base44 directoryListingProfile public_list and current directorySeed.js, compared with 15 October approval ledgers",
+  "inventory": {
+    "static": 82,
+    "dynamicOnly": 40,
+    "total": 122,
+    "effectiveImageUrl": 80,
+    "hiddenByNullProfile": 7,
+    "missing": 35,
+    "attention": 42,
+    "countiesAllCategories": 28,
+    "countiesClubs": 27
+  },
+  "reviewed": 10,
+  "entries": [
+    {
+      "slug": "ballyfermot-pickleballers",
+      "name": "Ballyfermot Pickleballers",
+      "county": "Dublin",
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "facebook": "not independently verified",
+      "instagram": "not independently verified",
+      "website": "no verified club-owned logo",
+      "note": "No official logo source found in indexed Facebook/Instagram or website results.",
+      "status": "unresolved_no_verified_logo",
+      "sources": [],
+      "stagedReceipt": null,
+      "sha256": null,
+      "logoCandidate": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "belmayne-pickleball",
+      "name": "Belmayne Pickleball",
+      "county": "Dublin",
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "facebook": "not independently verified",
+      "instagram": "not independently verified",
+      "website": "no verified club-owned logo",
+      "note": "No verified official social artwork; unrelated area/facility branding excluded.",
+      "status": "unresolved_no_verified_logo",
+      "sources": [],
+      "stagedReceipt": null,
+      "sha256": null,
+      "logoCandidate": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "blessington-pickleball-club",
+      "name": "Blessington Pickleball Club",
+      "county": "Wicklow",
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "facebook": "not independently verified",
+      "instagram": "not independently verified",
+      "website": "no verified club-owned logo",
+      "note": "Listed in club source; no official image verified.",
+      "status": "unresolved_no_verified_logo",
+      "sources": [],
+      "stagedReceipt": null,
+      "sha256": null,
+      "logoCandidate": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "breffni-pickleball-club",
+      "name": "Breffni Pickleball Club",
+      "county": "Cavan",
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "facebook": "not independently verified",
+      "instagram": "not independently verified",
+      "website": "no verified club-owned logo",
+      "note": "Club independently mentioned by Irish Dinks; no official artwork.",
+      "status": "unresolved_no_verified_logo",
+      "sources": [
+        "https://www.irishdinks.com/"
+      ],
+      "stagedReceipt": null,
+      "sha256": null,
+      "logoCandidate": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "clonakilty-pickleball-club",
+      "name": "Clonakilty Pickleball Club",
+      "county": "Cork",
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "facebook": "not independently verified",
+      "instagram": "not independently verified",
+      "website": "no verified club-owned logo",
+      "note": "Clonakilty Tennis Club website mentions pickleball, but ownership of its logo is not established for this listing.",
+      "status": "unresolved_no_verified_logo",
+      "sources": [
+        "https://www.clonakiltytennisclub.com/"
+      ],
+      "stagedReceipt": null,
+      "sha256": null,
+      "logoCandidate": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "dublin-7-pickleball-club",
+      "name": "Dublin 7 Pickleball Club",
+      "county": "Dublin",
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "facebook": "not independently verified",
+      "instagram": "not independently verified",
+      "website": "no verified club-owned logo",
+      "note": "Independent directory confirms club, but not a club-owned logo.",
+      "status": "unresolved_no_verified_logo",
+      "sources": [
+        "https://www.thepickleballdirectory.co.uk/social-clubs/dublin-7-pickleball-club"
+      ],
+      "stagedReceipt": null,
+      "sha256": null,
+      "logoCandidate": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "edenderry-pickleball-club",
+      "name": "Edenderry Pickleball Club",
+      "county": "Offaly",
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "facebook": "not independently verified",
+      "instagram": "not independently verified",
+      "website": "no verified club-owned logo",
+      "note": "Offaly Sports Partnership grant confirms club, not logo.",
+      "status": "unresolved_no_verified_logo",
+      "sources": [
+        "https://www.offalysports.ie/news/sports-partnership-announces-grant-scheme-allocations-3"
+      ],
+      "stagedReceipt": null,
+      "sha256": null,
+      "logoCandidate": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "fenside-pickleball",
+      "name": "Fenside Pickleball",
+      "county": "Kilkenny",
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "facebook": "not independently verified",
+      "instagram": "not independently verified",
+      "website": "no verified club-owned logo",
+      "note": "No exact-match official image verified.",
+      "status": "unresolved_no_verified_logo",
+      "sources": [],
+      "stagedReceipt": null,
+      "sha256": null,
+      "logoCandidate": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "iveragh-pickleball-club",
+      "name": "Iveragh Pickleball Club",
+      "county": "Kerry",
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "facebook": "not independently verified",
+      "instagram": "not independently verified",
+      "website": "no verified club-owned logo",
+      "note": "Age & Opportunity grant confirms club, not logo.",
+      "status": "unresolved_no_verified_logo",
+      "sources": [
+        "https://ageandopportunity.ie/wp-content/uploads/2025/04/Active-National-Grant-Scheme-2025-Successful-Applicants.pdf"
+      ],
+      "stagedReceipt": null,
+      "sha256": null,
+      "logoCandidate": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "killeshandra-pickleball-club",
+      "name": "Killeshandra Pickleball Club",
+      "county": "Cavan",
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "facebook": "not independently verified",
+      "instagram": "not independently verified",
+      "website": "no verified club-owned logo",
+      "note": "Killeshandra community/GAA branding not substituted.",
+      "status": "unresolved_no_verified_logo",
+      "sources": [
+        "https://www.killeshandra.org/"
+      ],
+      "stagedReceipt": null,
+      "sha256": null,
+      "logoCandidate": null,
+      "productionPublished": false
+    }
+  ],
+  "carryover": {
+    "kingdomAnnascaul": "approved shared image retained",
+    "eastCork": "approved static image retained; different current profile image not overwritten",
+    "midleton": "legacy slug absent",
+    "coolmine": {
+      "receipt": "6adc5883f7bd0ef41a39aa03",
+      "sha256": "068d8267233f41b062bfb1a2cafb5cdfdf67e9ee6473c529f74aa13e6be616cf",
+      "http": 200
+    },
+    "irishDinks": {
+      "receipt": "6addb8519b2a7380fd49c563",
+      "sha256": "741bd4205cde3e595f5a5df5135118b9f215e0ad522de6961e365b56a6242937",
+      "http": 200
+    },
+    "bluestack": "approved; original JPG/PNG required for any replacement"
+  },
+  "newStaged": 0,
+  "newPublished": 0,
+  "productionRecordsChanged": 0,
+  "deployPerformed": false,
+  "backlogComplete": false,
+  "evidenceLimit": "No authenticated Facebook or Instagram imagery accessible for these ten; search-index absence is not proof of a genuine no-logo exception."
+}
