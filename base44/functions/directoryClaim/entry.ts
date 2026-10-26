@@ -380,6 +380,18 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
   // Coach invitations are composed ONLY from the owner-approved Communications Centre
   // body. Never fall back to the old hard-coded club copy if a template is missing.
   const coachInvite = !delegated && ['coach','coaching'].includes(String(listing?.listingType || listing?.listing_type || '').toLowerCase());
+  const categoryMap:any = {coach:'coaching',coaching:'coaching',equipment:'suppliers',supplier:'suppliers',suppliers:'suppliers',club:'clubs',holiday:'holidays',holidays:'holidays',events:'events',event:'events',organiser:'events'};
+  const directoryCategory = categoryMap[String(listing?.listingType || listing?.listing_type || 'club').toLowerCase()] || 'clubs';
+  const categoryInvitationPurpose = `directory_${directoryCategory}_invitation`;
+  let categoryInvitationTemplate:any = null;
+  if(!delegated && !coachInvite && directoryCategory !== 'clubs') {
+    const categoryRows = await base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose:categoryInvitationPurpose,status:'approved'},'-updated_date',5);
+    categoryInvitationTemplate=categoryRows?.[0];
+    if(!categoryInvitationTemplate)throw new Error(`Directory ${directoryCategory} invitation blocked: review and approve its category-specific template first.`);
+    const raw=String(categoryInvitationTemplate.plain_text_template || '');
+    for(const token of ['{{CONTACT_NAME}}','{{LISTING_NAME}}','{{CLAIM_LINK}}'])if(!raw.includes(token))throw new Error(`Directory ${directoryCategory} invitation missing ${token}`);
+  }
+
   let coachingTemplate:any = null;
   if(coachInvite){
     const rows=await base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose:'directory_claim_coaching',status:'approved'},'-updated_date',5);
@@ -393,16 +405,17 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
   const sharedStory = `Conall and I started RallyHub as a father-and-son project, originally to solve some of the practical things we needed for Clare Pickleball. It has grown from there, and the first public phase is the RallyHub Club Directory — helping players find clubs, venues and regular sessions around Ireland.`;
   const ownerBody = `Hi ${recipientName},\n\nI’m getting in touch because I’ve put together a free RallyHub Directory listing for ${listing.name} as part of a wider effort to improve information on pickleball clubs around Ireland, following David Molloy’s request for help updating the national club map.\n\n${sharedStory}\n\nI’ve already created the ${listing.name} listing, so most of the work is done. I’d simply like you to have a look, claim the listing and correct or add anything that needs updating.\n\nOnce verified, you’ll become the Primary Directory Owner for ${listing.name}, which means you can manage the club’s public Directory information directly.\n\nThe Directory listing is completely free. There is no subscription, no catch and no obligation to use any other RallyHub services.\n\nRallyHub is also developing other optional club tools around session management, King of the Court, tournaments and events, but those are separate from your free Directory listing.\n\nYour secure claim link:\n${claimUrl}\n\nThe link is personal to you, can only be used once and expires after 72 hours.\n\nIf you’d like to have a quick look at RallyHub first:\nAbout RallyHub: https://rallyhub.ie/about\n1-page Directory Explainer: https://rallyhub.ie/directory/story\n\nClub Guide & Help: https://rallyhub.ie/directory/help\nQuick Start Guide: https://rallyhub.ie/directory/quick-start\n\nThere is also a Feedback area inside RallyHub, and I’m always happy to hear suggestions about what would genuinely be useful to clubs.\n\nIf you have any difficulty claiming the listing, just WhatsApp or call me.\n\nYours in sport,\nBrian Moore\n087 810 0333\nrallyhubapp@gmail.com\nhttps://rallyhub.ie`;
   const editorBody = `Hi ${recipientName},\n\nYou’ve been invited as a Directory Editor for ${listing.name} on RallyHub. This gives you access to help maintain the club’s public Directory information only. It does not give access to RallyHub Club, tournaments, players or club administration.\n\nYour secure editor link:\n${claimUrl}\n\nThe link is personal to you, can only be used once and expires after 72 hours.\n\nAbout RallyHub: https://rallyhub.ie/about\nClub Guide & Help: https://rallyhub.ie/directory/help\n\nYours in sport,\nBrian Moore\n087 810 0333\nrallyhubapp@gmail.com\nhttps://rallyhub.ie`;
-  const subject = (coachInvite ? String(coachingTemplate.subject_template || '').trim().slice(0,180) : String(customSubject || '').trim().slice(0, 180)) || (delegated
+  const subject = (coachInvite ? String(coachingTemplate.subject_template || '').trim().slice(0,180) : categoryInvitationTemplate ? String(categoryInvitationTemplate.subject_template || '').replace(/{{\s*LISTING_NAME\s*}}/g,String(listing.name)).slice(0,180) : String(customSubject || '').trim().slice(0, 180)) || (delegated
     ? `An invitation to help manage ${listing.name} on the RallyHub Directory`
     : `Your free RallyHub Directory listing – ${listing.name}`);
   const coachingText=coachInvite ? String(coachingTemplate.plain_text_template).replace(/{{\s*CONTACT_NAME\s*}}/g,recipientName).replace(/{{\s*LISTING_NAME\s*}}/g,String(listing.name)).replace(/{{\s*CLAIM_LINK\s*}}/g,claimUrl) : '';
-  const textBody = normaliseDirectorySignatureText(coachInvite ? coachingText : String(customText || '').trim() || (delegated ? editorBody : ownerBody));
+  const categoryText=categoryInvitationTemplate ? String(categoryInvitationTemplate.plain_text_template).replace(/{{\s*CONTACT_NAME\s*}}/g,recipientName).replace(/{{\s*LISTING_NAME\s*}}/g,String(listing.name)).replace(/{{\s*CLAIM_LINK\s*}}/g,claimUrl) : '';
+  const textBody = normaliseDirectorySignatureText(coachInvite ? coachingText : categoryInvitationTemplate ? categoryText : String(customText || '').trim() || (delegated ? editorBody : ownerBody));
   const actionLabel = delegated ? 'Open your editor invitation' : 'Claim your free Directory listing';
   const inviteTitle = delegated
     ? `Directory Editor invitation · ${listing.name}`
     : `Your free Directory listing · ${listing.name}`;
-  const htmlBody = await rallyHubEmailShellUsingTemplate(base44,coachInvite?'directory_claim_coaching':delegated?'directory_claim_editor':'directory_claim',{
+  const htmlBody = await rallyHubEmailShellUsingTemplate(base44,coachInvite?'directory_claim_coaching':categoryInvitationTemplate?categoryInvitationPurpose:delegated?'directory_claim_editor':'directory_claim',{
     title: coachInvite ? `Your coaching profile · ${listing.name}` : inviteTitle,
     preheader: coachInvite ? `Your coaching profile is ready to claim and review.` : delegated
       ? `You have been invited to help manage ${listing.name} on the RallyHub Directory.`
@@ -414,7 +427,7 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
       </div>`,
     actionUrl: claimUrl,
     actionLabel,
-    allowTemplateBody:!coachInvite && !String(customText||'').trim(),
+    allowTemplateBody:!coachInvite && !categoryInvitationTemplate && !String(customText||'').trim(),
     templateVariables:{CONTACT_NAME:recipientName,LISTING_NAME:listing.name,CLAIM_LINK:claimUrl},
     requiredTemplateTokens:['CLAIM_LINK'],
     journeyCategory: String(listing?.listingType || listing?.listing_type || 'club'),
@@ -441,6 +454,24 @@ async function sendDirectoryWelcomeEmail(base44, { listing, recipientName = '', 
   const isClubListing = listingType === 'club';
   const manageUrl = `https://rallyhub.ie/directory/${encodeURIComponent(listingSlug)}/edit?guided=1`;
   const helpUrl = 'https://rallyhub.ie/directory/help';
+  const categoryMap:any = {coach:'coaching',coaching:'coaching',equipment:'suppliers',supplier:'suppliers',suppliers:'suppliers',club:'clubs',holiday:'holidays',holidays:'holidays',events:'events',event:'events',organiser:'events'};
+  const directoryCategory = categoryMap[listingType.toLowerCase()] || 'clubs';
+  if(directoryCategory !== 'clubs'){
+    const purpose=`directory_${directoryCategory}_access_approved`;
+    const templates=await base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose,status:'approved'},'-updated_date',5);
+    const template=templates?.[0];
+    if(!template)return {sent:0,pendingTemplate:true,error:`${directoryCategory} access-approved email awaiting Communications Centre approval`};
+    const values:any={CONTACT_NAME:firstName,LISTING_NAME:clubName,MANAGE_LINK:manageUrl};
+    const fill=(value:string)=>String(value||'').replace(/{{\s*(CONTACT_NAME|LISTING_NAME|MANAGE_LINK)\s*}}/g,(_,key)=>values[key]);
+    const categorySubject=fill(template.subject_template);
+    const categoryText=fill(template.plain_text_template);
+    if(!categorySubject||!categoryText||/{{\s*[A-Z_]+\s*}}/.test(categorySubject+categoryText))return {sent:0,error:'Approved category email has unresolved placeholders'};
+    const safeContent=categoryText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+    const categoryHtml=await rallyHubEmailShellUsingTemplate(base44,purpose,{title:`Welcome to the RallyHub ${directoryCategory} Directory`,preheader:`Your access to ${clubName} has been approved.`,content:`<p>${safeContent}</p>`,actionUrl:manageUrl,actionLabel:'Continue your guided profile',footerNote:'RallyHub Directory'});
+    await sendWithConfiguredEmailTransport(base44,{scopeType:'platform',purpose:'directory'},{to,subject:categorySubject,textBody:categoryText,htmlBody:categoryHtml});
+    await base44.asServiceRole.entities.AuditLog.create({tenant_id:'platform',user_id:'system',action:'directory_welcome_email_sent',entity_type:'DirectoryListing',entity_id:listingSlug.slice(0,220),scope_type:'DirectoryListing',scope_id:listingSlug.slice(0,220),after_state:JSON.stringify({recipient:to,listingSlug,purpose}),reason:'Category-specific RallyHub Directory access-approved email sent.'}).catch(()=>{});
+    return {sent:1,to,subject:categorySubject};
+  }
   const subject = `Welcome to RallyHub – your ${clubName} Directory listing is ready`;
   const textBody = isClubListing ? `Hi ${firstName},
 
