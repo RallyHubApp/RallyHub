@@ -27,7 +27,6 @@ export default function PublicDirectoryHeader() {
           <Link to="/" className="hover:text-[#078e48]">Home</Link>
           <Link to="/directory" className="hover:text-[#078e48]">Directory</Link>
           <Link to="/events" className="hover:text-[#078e48]">Events</Link>
-          <Link to="/directory/help" className="hover:text-[#078e48]">Club Guide</Link>
           <Link to="/about" className="hover:text-[#078e48]">About</Link>
         </nav>
 
@@ -75,7 +74,6 @@ export default function PublicDirectoryHeader() {
               ['Home','/'],
               ['Directory','/directory'],
               ['Events','/events'],
-              ['Club Guide','/directory/help'],
               ['About','/about'],
             ].map(([label,to]) => (
               <Link key={label} to={to} onClick={() => setMenuOpen(false)} className="flex items-center justify-between rounded-lg px-3 py-3 font-semibold text-[#0c2257] hover:bg-[#f4faf7]">
