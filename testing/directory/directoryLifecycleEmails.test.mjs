@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {createRequire} from 'node:module';
 const catalogue=readFileSync('src/services/communications/legacyApprovedTemplates.js','utf8');
 const invite=readFileSync('base44/functions/directoryClaim/entry.ts','utf8');
 const profile=readFileSync('base44/functions/directoryListingProfile/entry.ts','utf8');

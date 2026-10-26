@@ -313,7 +313,7 @@ export default function DirectoryListingEdit() {
     }
     if (guidedStep < guidedSections.length - 1) setGuidedStep(value => value + 1);
     else {
-      if (!isClubListing) {
+      {
         try {
           const finished = await base44.functions.invoke('directoryListingProfile', {action:'complete_guided_setup',listingSlug:slug});
           if (finished.data?.error) throw new Error(finished.data.error);
