@@ -22,7 +22,7 @@ const features = [
   {
     icon: Search,
     title: 'Explore the Directory',
-    description: 'Discover clubs, venues, sessions, coaches, equipment and pickleball holidays.',
+    description: 'Discover clubs, venues, sessions, events, coaches, equipment and pickleball holidays.',
     action: 'Search Directory',
     to: '/directory',
   },
