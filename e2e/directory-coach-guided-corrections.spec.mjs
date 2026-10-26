@@ -47,8 +47,8 @@ test('coach guided journey has independent photo editing, private contact prefil
  await expect(page.locator('#contact')).toBeVisible();
  await expect(page.getByText('Use this mobile for WhatsApp')).toHaveCount(0);
  await expect(page.getByText('Coach name (private contact)').locator('..').locator('input')).toHaveValue('Marie V. C. Moore');
- await expect(page.getByText('Coaching email address').locator('..').locator('input')).toHaveValue('coach@example.test');
- await expect(page.getByText('Coaching mobile number').locator('..').locator('input')).toHaveValue('0871234567');
+ await expect(page.getByText('Coaching email address',{exact:true}).locator('..').locator('input')).toHaveValue('coach@example.test');
+ await expect(page.getByText('Coaching mobile number',{exact:true}).locator('..').locator('input')).toHaveValue('0871234567');
  await page.getByLabel('I confirm that my coaching email address is correct.').check();
  await page.getByLabel('I confirm that my coaching mobile number is correct.').check();
  await page.getByRole('button',{name:'Continue',exact:true}).click();
