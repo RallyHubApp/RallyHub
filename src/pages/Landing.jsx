@@ -21,8 +21,8 @@ const FOOTER_PHOTO = '/assets/rallyhub-home-footer-pickleball.webp';
 const features = [
   {
     icon: Search,
-    title: 'Find Clubs',
-    description: 'Discover clubs, venues and sessions near you.',
+    title: 'Explore the Directory',
+    description: 'Discover clubs, venues, sessions, coaches, equipment and pickleball holidays.',
     action: 'Search Directory',
     to: '/directory',
   },
