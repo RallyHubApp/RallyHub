@@ -36,7 +36,7 @@ const features = [
   {
     icon: Users,
     title: 'Manage Your Listing',
-    description: 'Create, claim and update club, coach, event, supplier and holiday listings.',
+    description: 'Create, claim and update club, event, coach, supplier and holiday listings.',
     action: 'Get Started',
     to: '/directory',
   },
