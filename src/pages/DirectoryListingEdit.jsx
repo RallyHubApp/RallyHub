@@ -547,7 +547,7 @@ export default function DirectoryListingEdit() {
       setSaved(true);
       invalidatePublicDirectoryCache();
       try {
-        sessionStorage.setItem(`rallyhub-directory-profile-${slug}`, JSON.stringify({ profile: merged, savedAt: Date.now() }));
+        sessionStorage.setItem(`rallyhub-directory-profile-${slug}`, JSON.stringify({ profile: ['coach','equipment'].includes(listingType) ? {...merged,contact:{}} : merged, savedAt: Date.now() }));
         localStorage.removeItem(`rallyhub-directory-guided-draft-v1:${user?.id || 'user'}:${slug}`);
       } catch {}
       return true;
