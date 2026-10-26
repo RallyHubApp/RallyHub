@@ -19,7 +19,7 @@ test('supplier guided journey: seeded details, logo stage, private contact confi
    if(name==='securityContext')return reply({success:true,context:null});
    if(name==='directoryClaim')return reply({success:true,hasAccess:true,listing:{verificationStatus:'verified'},accessRole:'owner'});
    if(name==='directoryEvents')return reply({success:true,events:[]});
-   if(name==='directoryListingProfile'){
+   if(name==='directoryListingProfile'){console.log('MOCK PROFILE ACTION',JSON.stringify(b).slice(0,230));
     if(b.action==='private_get')return reply({success:true,profile:profile||base,base,visibility:'public',setup:{},privateContact});
     if(b.action==='save_supplier_private_contact'){savedContact=b;return reply({success:true,privateContact:b.contact})}
     if(b.action==='save'){saveCount++;profile={...b.profile,contact:{}};return reply({success:true,profile})}
@@ -48,8 +48,8 @@ test('supplier guided journey: seeded details, logo stage, private contact confi
  await expect(page.getByText('Your protected supplier contact')).toBeVisible();
  await expect(page.getByText('protected Contact Supplier')).toBeVisible();
  await expect(page.getByText('Use this mobile for WhatsApp')).toHaveCount(0);
- await expect(page.getByText('Supplier email address',{exact:true}).locator('..').locator('input')).toHaveValue(privateContact.email);
- await expect(page.getByText('Supplier mobile / telephone',{exact:true}).locator('..').locator('input')).toHaveValue(privateContact.phone);
+ await expect(page.locator('#contact input[type=email]')).toHaveValue(privateContact.email);
+ await expect(page.locator('#contact input[placeholder="e.g. 087 123 4567"]')).toHaveValue(privateContact.phone);
  await page.getByLabel('I confirm that this supplier email address is correct.').check();
  await page.getByLabel('I confirm that this supplier mobile / telephone number is correct.').check();
  await page.getByRole('button',{name:/Save & continue|Continue/}).last().click();
