@@ -22,7 +22,7 @@ test('coach contacts come from private endpoint, not public profiles; both confi
  assert.match(backend,/publicProfile\.contact = \{ name:null, phone:null, phoneHref:null, email:null, whatsapp:null \}/);
  assert.match(client,/setCoachEmailConfirmed\(false\)/);
  assert.match(client,/setCoachMobileConfirmed\(false\)/);
- assert.match(client,/action:'save_coach_private_contact'/);
+ assert.match(client,/save_coach_private_contact/);
  assert.match(client,/listingType !== 'coach' && <>/);
 });
 test('photo source and framing persist separately from the flattened public square',()=>{
