@@ -14,112 +14,149 @@
 ```
 Error: expect(locator).toHaveValue(expected) failed
 
-Locator: getByLabel('Coach name (private contact)')
-Expected: "Marie V. C. Moore"
-Timeout: 3000ms
-Error: element(s) not found
+Locator: getByText('Coaching email address').locator('..').locator('input')
+Expected: "coach@example.test"
+Error: strict mode violation: getByText('Coaching email address').locator('..').locator('input') resolved to 2 elements:
+    1) <input class="mt-1" type="checkbox" data-dynamic-content="true" data-source-location="src/pages/DirectoryListingEdit.jsx:1249:574"/> aka getByRole('checkbox', { name: 'I confirm that my coaching email address is correct.' })
+    2) <input type="email" value="coach@example.test" data-dynamic-content="true" data-source-location="src/pages/DirectoryListingEdit.jsx:1253:130" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text…/> aka locator('input[type="email"]')
 
 Call log:
-  - Expect "toHaveValue" getByLabel('Coach name (private contact)') with timeout 3000ms
-  - waiting for getByLabel('Coach name (private contact)')
+  - Expect "toHaveValue" getByText('Coaching email address').locator('..').locator('input') with timeout 3000ms
+  - waiting for getByText('Coaching email address').locator('..').locator('input')
 
 ```
 
+# Page snapshot
+
 ```yaml
-- banner:
-  - link "RallyHub — Play Connect Belong":
-    - /url: /
-    - img "RallyHub — Play Connect Belong"
-  - button "Menu":
-    - img
-- main:
-  - button "Back to public listing":
-    - img
-    - text: Back to public listing
-  - paragraph: Primary Directory Owner
-  - heading "Brian Moore — TEST PREVIEW" [level=1]
-  - text: Directory listing
-  - paragraph: Keep the public listing accurate. The displayed name, description, contact details, service area and links can be updated at any time; the underlying RallyHub URL stays fixed.
-  - button "View public listing":
-    - img
-    - text: View public listing
-  - link "Open in Communications":
-    - /url: /app/communications?scope=platform&source=directory&sourceId=test-preview-coach&template=directory_claim&returnTo=%2Fdirectory%2Ftest-preview-coach%2Fedit&label=Brian%20Moore%20%E2%80%94%20TEST%20PREVIEW
-    - button "Open in Communications"
-  - button "All saved" [disabled]:
-    - img
-    - text: All saved
-  - heading "Guided setup" [level=2]
-  - paragraph: RallyHub shows what is already done and takes you straight to what needs attention.
-  - button "Guided setup"
-  - paragraph: "Step 3 of 6: Confirm contact details"
-  - button "Back to checklist"
-  - list "Numbered setup steps":
-    - listitem: 1. About you
-    - listitem: 2. Your coaching photograph ✓
-    - listitem: 3. Confirm contact details ✓
-    - listitem: 4. Where you operate
-    - listitem: 5. Clinic or event (optional) ✓
-    - listitem: 6. Preview & publish
-  - paragraph: Check what RallyHub already found, change only what needs changing, then continue.
-  - button "Previous"
-  - button "Continue"
-  - img
-  - heading "Contact & social" [level=2]
-  - paragraph: Your coaching email and mobile are held privately for contact and verification. Neither will be published by RallyHub on your coaching profile.
-  - heading "Confirm your private contact details" [level=3]
-  - paragraph: These details are used by the protected Contact Coach system. They are not displayed on your public coaching profile. You can correct the pre-filled details below.
-  - paragraph: "Signed-in account: Marie V. C. Moore"
-  - checkbox "I confirm that my coaching email address is correct."
-  - text: I confirm that my coaching email address is correct.
-  - checkbox "I confirm that my coaching mobile number is correct."
-  - text: I confirm that my coaching mobile number is correct. Coach name (private contact)
-  - textbox "e.g. Chairperson, Club Contact, Debbie Brown": Marie V. C. Moore
-  - paragraph: This does not change the privately verified RallyHub account holder.
-  - text: Coaching email address
-  - textbox: coach@example.test
-  - text: Coaching mobile number
-  - textbox "e.g. 087 123 4567": "0871234567"
-  - text: Website (optional)
-  - textbox "Website":
-    - /placeholder: https://…
-  - text: Facebook (optional)
-  - textbox "Facebook":
-    - /placeholder: https://facebook.com/…
-  - text: Instagram (optional)
-  - textbox "Instagram":
-    - /placeholder: https://instagram.com/…
-  - text: TikTok (optional)
-  - textbox "TikTok":
-    - /placeholder: https://www.tiktok.com/@yourname
-  - paragraph: All changes saved
-  - paragraph: Changes stay private until you publish.
-  - button "View listing":
-    - img
-    - text: View listing
-  - button "All saved" [disabled]:
-    - img
-    - text: All saved
-- contentinfo "RallyHub footer":
-  - link "RallyHub home":
-    - /url: /
-    - img "RallyHub"
-  - navigation "Footer navigation":
-    - link "Directory":
-      - /url: /directory
-    - link "Events":
-      - /url: /events
-    - link "Club Guide":
-      - /url: /directory/help
-    - link "About":
-      - /url: /about
-    - link "Contact":
-      - /url: /contact
-  - text: © 2026 RallyHub All rights reserved.
-- paragraph: Help us improve RallyHub
-- paragraph: We use optional analytics to understand which clubs, venues and Directory features people find useful. Analytics only starts if you allow it. We do not use this for advertising profiles.
-- button "Necessary only"
-- button "Allow analytics"
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "RallyHub — Play Connect Belong" [ref=e7]
+        - button "Menu" [ref=e8] [cursor=pointer]
+    - main [ref=e10]:
+      - button "Back to public listing" [ref=e12] [cursor=pointer]
+      - generic [ref=e15]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - paragraph [ref=e20]: Primary Directory Owner
+            - heading "Brian Moore — TEST PREVIEW" [level=1] [ref=e21]
+            - generic [ref=e22]: Directory listing
+            - paragraph [ref=e24]: Keep the public listing accurate. The displayed name, description, contact details, service area and links can be updated at any time; the underlying RallyHub URL stays fixed.
+          - generic [ref=e25]:
+            - button "View public listing" [ref=e26] [cursor=pointer]
+            - link [ref=e27] [cursor=pointer]:
+              - /url: /app/communications?scope=platform&source=directory&sourceId=test-preview-coach&template=directory_claim&returnTo=%2Fdirectory%2Ftest-preview-coach%2Fedit&label=Brian%20Moore%20%E2%80%94%20TEST%20PREVIEW
+              - button "Open in Communications" [ref=e28]
+            - button "All saved" [disabled]
+        - generic [ref=e29]:
+          - generic [ref=e30]:
+            - generic [ref=e31]:
+              - heading "Guided setup" [level=2] [ref=e32]
+              - paragraph [ref=e33]: RallyHub shows what is already done and takes you straight to what needs attention.
+            - button "Guided setup" [ref=e35] [cursor=pointer]
+          - generic [ref=e36]:
+            - generic [ref=e37]:
+              - paragraph [ref=e38]: "Step 3 of 6: Confirm contact details"
+              - button "Back to checklist" [ref=e39] [cursor=pointer]
+            - list "Numbered setup steps" [ref=e40]:
+              - listitem [ref=e41]:
+                - generic [ref=e42]: "1."
+                - text: About you
+              - listitem [ref=e43]:
+                - generic [ref=e44]: "2."
+                - text: Your coaching photograph ✓
+              - listitem [ref=e45]:
+                - generic [ref=e46]: "3."
+                - text: Confirm contact details ✓
+              - listitem [ref=e47]:
+                - generic [ref=e48]: "4."
+                - text: Where you operate
+              - listitem [ref=e49]:
+                - generic [ref=e50]: "5."
+                - text: Clinic or event (optional) ✓
+              - listitem [ref=e51]:
+                - generic [ref=e52]: "6."
+                - text: Preview & publish
+            - paragraph [ref=e53]: Check what RallyHub already found, change only what needs changing, then continue.
+            - generic [ref=e54]:
+              - button "Previous" [ref=e55] [cursor=pointer]
+              - button "Continue" [ref=e56] [cursor=pointer]
+        - generic [ref=e57]:
+          - heading "Contact & social" [level=2] [ref=e62]
+          - paragraph [ref=e63]: Your coaching email and mobile are held privately for contact and verification. Neither will be published by RallyHub on your coaching profile.
+          - generic [ref=e64]:
+            - heading "Confirm your private contact details" [level=3] [ref=e65]
+            - paragraph [ref=e66]: These details are used by the protected Contact Coach system. They are not displayed on your public coaching profile. You can correct the pre-filled details below.
+            - paragraph [ref=e67]: "Signed-in account: Marie V. C. Moore"
+            - generic [ref=e68]:
+              - checkbox "I confirm that my coaching email address is correct." [ref=e69]
+              - generic [ref=e70]: I confirm that my coaching email address is correct.
+            - generic [ref=e71]:
+              - checkbox "I confirm that my coaching mobile number is correct." [ref=e72]
+              - generic [ref=e73]: I confirm that my coaching mobile number is correct.
+          - generic [ref=e74]:
+            - generic [ref=e75]:
+              - text: Coach name (private contact)
+              - textbox "e.g. Chairperson, Club Contact, Debbie Brown" [ref=e76]: Marie V. C. Moore
+              - paragraph [ref=e77]: This does not change the privately verified RallyHub account holder.
+            - generic [ref=e78]:
+              - text: Coaching email address
+              - textbox [ref=e79]: coach@example.test
+            - generic [ref=e80]:
+              - text: Coaching mobile number
+              - textbox "e.g. 087 123 4567" [ref=e81]: "0871234567"
+            - generic [ref=e82]:
+              - generic [ref=e83]: Website (optional)
+              - textbox "Website" [ref=e84]:
+                - /placeholder: https://…
+            - generic [ref=e85]:
+              - generic [ref=e86]: Facebook (optional)
+              - textbox "Facebook" [ref=e87]:
+                - /placeholder: https://facebook.com/…
+            - generic [ref=e88]:
+              - generic [ref=e89]: Instagram (optional)
+              - textbox "Instagram" [ref=e90]:
+                - /placeholder: https://instagram.com/…
+            - generic [ref=e91]:
+              - generic [ref=e92]: TikTok (optional)
+              - textbox "TikTok" [ref=e93]:
+                - /placeholder: https://www.tiktok.com/@yourname
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - paragraph [ref=e96]: All changes saved
+            - paragraph [ref=e97]: Changes stay private until you publish.
+          - generic [ref=e98]:
+            - button "View listing" [ref=e99] [cursor=pointer]
+            - button "All saved" [disabled]
+    - contentinfo "RallyHub footer" [ref=e101]:
+      - generic [ref=e102]:
+        - generic [ref=e103]:
+          - link "RallyHub home" [ref=e104] [cursor=pointer]:
+            - /url: /
+            - img "RallyHub" [ref=e105]
+          - navigation "Footer navigation" [ref=e106]:
+            - link "Directory" [ref=e107] [cursor=pointer]:
+              - /url: /directory
+            - link "Events" [ref=e108] [cursor=pointer]:
+              - /url: /events
+            - link "Club Guide" [ref=e109] [cursor=pointer]:
+              - /url: /directory/help
+            - link "About" [ref=e110] [cursor=pointer]:
+              - /url: /about
+            - link "Contact" [ref=e111] [cursor=pointer]:
+              - /url: /contact
+        - generic [ref=e112]: © 2026 RallyHub All rights reserved.
+  - generic [ref=e114]:
+    - generic [ref=e115]:
+      - paragraph [ref=e116]: Help us improve RallyHub
+      - paragraph [ref=e117]: We use optional analytics to understand which clubs, venues and Directory features people find useful. Analytics only starts if you allow it. We do not use this for advertising profiles.
+    - generic [ref=e118]:
+      - button "Necessary only" [ref=e119] [cursor=pointer]
+      - button "Allow analytics" [ref=e120] [cursor=pointer]
 ```
 
 # Test source
@@ -173,10 +210,10 @@ Call log:
   46 |  await page.getByTestId('setup-step-contact').click();
   47 |  await expect(page.locator('#contact')).toBeVisible();
   48 |  await expect(page.getByText('Use this mobile for WhatsApp')).toHaveCount(0);
-> 49 |  await expect(page.getByLabel('Coach name (private contact)')).toHaveValue('Marie V. C. Moore');
-     |                                                                ^ Error: expect(locator).toHaveValue(expected) failed
-  50 |  await expect(page.getByLabel('Coaching email address')).toHaveValue('coach@example.test');
-  51 |  await expect(page.getByLabel('Coaching mobile number')).toHaveValue('0871234567');
+  49 |  await expect(page.getByText('Coach name (private contact)').locator('..').locator('input')).toHaveValue('Marie V. C. Moore');
+> 50 |  await expect(page.getByText('Coaching email address').locator('..').locator('input')).toHaveValue('coach@example.test');
+     |                                                                                        ^ Error: expect(locator).toHaveValue(expected) failed
+  51 |  await expect(page.getByText('Coaching mobile number').locator('..').locator('input')).toHaveValue('0871234567');
   52 |  await page.getByLabel('I confirm that my coaching email address is correct.').check();
   53 |  await page.getByLabel('I confirm that my coaching mobile number is correct.').check();
   54 |  await page.getByRole('button',{name:'Continue',exact:true}).click();
