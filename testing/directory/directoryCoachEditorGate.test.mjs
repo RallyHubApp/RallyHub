@@ -14,7 +14,7 @@ test('coach setup has its own photography stage while club navigation remains se
 test('coach contacts come from private endpoint, not public profiles; both confirmations required',()=>{
  assert.match(backend,/if \(action === 'private_get'\)/);
  assert.match(backend,/let privateContact = null/);
- assert.match(backend,/if \(action === 'save_coach_private_contact'\)/);
+ assert.match(backend,/action === 'save_coach_private_contact' \|\| action === 'save_supplier_private_contact'/);
  assert.match(backend,/body\.confirmEmail!==true \|\| body\.confirmMobile!==true/);
  assert.match(backend,/authorisedDirectorySuperAdmin\(user\)/);
  assert.match(backend,/DirectoryContactEndpoint\.update\(target\.id,values\)/);

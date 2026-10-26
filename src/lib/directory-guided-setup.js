@@ -96,8 +96,9 @@ export function buildDirectorySetupProgress({ listingType='club', profile={}, ev
       detail: listingType === 'equipment' ? 'Confirm your protected supplier contact details' : hasContact(profile) ? 'Contact details already added' : 'Add at least one way for players to contact or find you',
     },
     location: {
-      complete: (listingType === 'equipment' && !hasText(profile?.serviceArea)) || hasText(profile?.serviceArea) || (listingType === 'coach' && Array.isArray(profile?.areasServed) && profile.areasServed.some(hasText)),
-      detail: (listingType === 'equipment' && !hasText(profile?.serviceArea)) || hasText(profile?.serviceArea) || (listingType === 'coach' && Array.isArray(profile?.areasServed) && profile.areasServed.some(hasText)) ? 'Area or destination already added' : 'Tell players where you operate',
+      complete: hasText(profile?.serviceArea) || (listingType === 'coach' && Array.isArray(profile?.areasServed) && profile.areasServed.some(hasText)),
+      optional: listingType === 'equipment',
+      detail: hasText(profile?.serviceArea) || (listingType === 'coach' && Array.isArray(profile?.areasServed) && profile.areasServed.some(hasText)) ? 'Area or destination already added' : 'Tell players where you operate',
     },
     venues: {
       complete: (profile?.venues || []).some(venueReady),
