@@ -67,7 +67,7 @@ export function setupStepLabel(listingType, id) {
   return STEP_LABELS[id]?.[listingType] || STEP_LABELS[id]?.default || id;
 }
 
-/** @param {{listingType?: string, profile?: {name?: string,description?: string, contact?: {email?: string,phone?:string},website?: string, serviceArea?: string,venues?: any[],sessions?: any[]},events?: any[],visibility?: string,setup?: {identity?: {requiresConfirmation?:boolean,confirmed?:boolean,candidates?:any[],selectedPublicName?:string}}}} [options] */
+/** @param {{listingType?: string, profile?: {name?: string,description?: string,photoUrl?: string, contact?: {email?: string,phone?:string},website?: string, serviceArea?: string,venues?: any[],sessions?: any[]},events?: any[],visibility?: string,setup?: {identity?: {requiresConfirmation?:boolean,confirmed?:boolean,candidates?:any[],selectedPublicName?:string}}}} [options] */
 export function buildDirectorySetupProgress({ listingType='club', profile={}, events=[], visibility='public', setup={} }={}) {
   const blueprint = DIRECTORY_SETUP_BLUEPRINTS[listingType] || DIRECTORY_SETUP_BLUEPRINTS.other;
   const identity = setup?.identity || {};
