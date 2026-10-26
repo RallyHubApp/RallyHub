@@ -22,7 +22,7 @@ test('coach guided journey has independent photo editing, private contact prefil
    if(name==='directoryEvents')return reply({success:true,events:[]});
    if(name==='secureCreditAction'){imageUploads++;return reply({success:true,file_url:`https://images.example.test/edited-${imageUploads}.webp`});}
    if(name==='directoryListingProfile'){
-    if(b.action==='private_get')return reply({success:true,profile,base,visibility:'preview_only',setup:{},privateContact});
+    if(b.action==='private_get')return reply({success:true,profile:savedProfile||profile,base,visibility:'preview_only',setup:{},privateContact});
     if(b.action==='save_coach_private_contact'){privateSaves.push(b);privateContact=b.contact;return reply({success:true,privateContact:b.contact})}
     if(b.action==='save'){savedProfile={...b.profile,contact:{name:null,email:null,phone:null,whatsapp:null}};return reply({success:true,profile:savedProfile});}
     return reply({success:true,profile,base});
@@ -51,6 +51,13 @@ test('coach guided journey has independent photo editing, private contact prefil
  expect(savedProfile.photoSourceUrl).toBe('https://images.example.test/saved-coach.png');
  expect(savedProfile.photoCrop.offsetX).toBe(20);
  expect(savedProfile.photoUrl).toBe('https://images.example.test/edited-1.webp');
+ // Reload as the coach and confirm that the original source and adjustment controls survive.
+ await page.reload();
+ await expect(page.getByTestId('setup-step-photograph')).toBeVisible({timeout:10000});
+ await page.getByTestId('setup-step-photograph').click();
+ await page.getByTestId('edit-saved-coach-photo').click();
+ await expect(page.getByLabel('Photograph size')).toHaveValue('1.2');
+ await expect(page.getByLabel('Photograph horizontal position')).toHaveValue('20');
  await page.getByRole('button',{name:'Back to checklist'}).click();
  await page.getByTestId('setup-step-contact').click();
  await expect(page.locator('#contact')).toBeVisible();
