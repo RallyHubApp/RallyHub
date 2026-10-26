@@ -358,9 +358,9 @@ export default function DirectoryListingEdit() {
             const known = res.data?.privateContact || {};
             merged.contact = {
               ...(merged.contact || {}),
-              name:merged.contact?.name || user?.full_name || user?.display_name || known.name || '',
-              email:merged.contact?.email || known.email || user?.email || '',
-              phone:merged.contact?.phone || known.phone || '',
+              name:known.name || user?.full_name || user?.display_name || merged.contact?.name || '',
+              email:known.email || merged.contact?.email || user?.email || '',
+              phone:known.phone || merged.contact?.phone || user?.mobile || user?.phone || '',
             };
           }
           const serverBaseline = JSON.stringify(merged);
@@ -1262,12 +1262,16 @@ export default function DirectoryListingEdit() {
               <section id="contact" style={{ display: guidedSectionVisible('contact') ? undefined : 'none' }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><UserRound className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club contact' : listingType === 'coach' ? 'Your private coaching contact' : 'Contact & social'}</h2></div>
                 <p className="text-sm text-muted-foreground">{listingType === 'coach' ? 'Your coaching email and mobile are held privately for contact and verification. Neither will be published by RallyHub on your coaching profile.' : 'These details are separate from the private verified owner/editor identity held by RallyHub. Add only the public contact and social links you want players to use.'}</p>
-                {listingType === 'coach' && <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-3"><h3 className="font-bold">Confirm your private contact details</h3><p className="text-sm">These details are used by the protected Contact Coach system. They are not displayed on your public coaching profile. You can correct the pre-filled details below.</p><p className="text-xs text-muted-foreground">Signed-in account: {user?.full_name || user?.display_name || user?.email || 'Directory owner'}</p><label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={coachEmailConfirmed} onChange={e=>{setCoachEmailConfirmed(e.target.checked);setError('')}} /><span>I confirm that my coaching email address is correct.</span></label><label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={coachMobileConfirmed} onChange={e=>{setCoachMobileConfirmed(e.target.checked);setError('')}} /><span>I confirm that my coaching mobile number is correct.</span></label></div>}
+                {listingType === 'coach' && <p className="text-sm text-muted-foreground">Check the pre-filled details below and confirm each one. Your email and mobile are never shown publicly. Players contact you through RallyHub’s protected Contact Coach form.</p>}
 
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>{listingType === 'coach' ? 'Coach name (private contact)' : 'Public contact label / name'}</Label><Input value={form.contact?.name || ''} onChange={e => setContact('name', e.target.value)} placeholder="e.g. Chairperson, Club Contact, Debbie Brown" /><p className="text-xs text-muted-foreground">This does not change the privately verified RallyHub account holder.</p></div>
-                  <div className="space-y-2"><Label>{listingType === 'coach' ? 'Coaching email address' : 'Contact email'}</Label><Input type="email" value={form.contact?.email || ''} onChange={e => { setContact('email', e.target.value); if(listingType==='coach') setCoachEmailConfirmed(false);setCoachMobileConfirmed(false); }} /></div>
-                  <div className="space-y-2"><Label>{listingType === 'coach' ? 'Coaching mobile number' : 'Contact phone'}</Label><Input value={form.contact?.phone || ''} onChange={e => { setContactPhone(e.target.value); if(listingType==='coach') setCoachMobileConfirmed(false);setCoachMobileConfirmed(false); }} placeholder="e.g. 087 123 4567" /></div>
+                  <div className="space-y-2"><Label>{listingType === 'coach' ? 'Coach name' : 'Public contact label / name'}</Label><Input value={form.contact?.name || ''} onChange={e => setContact('name', e.target.value)} placeholder={listingType === 'coach' ? 'Coach name' : 'e.g. Chairperson, Club Contact'} /><p className="text-xs text-muted-foreground">{listingType === 'coach' ? 'Pre-filled from your verified account or contact record, where available.' : 'This does not change the privately verified RallyHub account holder.'}</p></div>
+                  <div className="space-y-2"><Label>{listingType === 'coach' ? 'Coaching email address' : 'Contact email'}</Label><Input type="email" value={form.contact?.email || ''} onChange={e => { setContact('email', e.target.value); if(listingType==='coach') setCoachEmailConfirmed(false); }} />
+                    {listingType === 'coach' && <label className="flex items-start gap-2 text-sm cursor-pointer"><input type="checkbox" className="mt-1" checked={coachEmailConfirmed} onChange={e => {setCoachEmailConfirmed(e.target.checked);setError('');}} /><span>I confirm that my coaching email address is correct.</span></label>}
+                  </div>
+                  <div className="space-y-2"><Label>{listingType === 'coach' ? 'Coaching mobile number' : 'Contact phone'}</Label><Input value={form.contact?.phone || ''} onChange={e => { setContactPhone(e.target.value); if(listingType==='coach') setCoachMobileConfirmed(false); }} placeholder="e.g. 087 123 4567" />
+                    {listingType === 'coach' && <label className="flex items-start gap-2 text-sm cursor-pointer"><input type="checkbox" className="mt-1" checked={coachMobileConfirmed} onChange={e => {setCoachMobileConfirmed(e.target.checked);setError('');}} /><span>I confirm that my coaching mobile number is correct.</span></label>}
+                  </div>
                   {listingType !== 'coach' && <>
                   <div className="space-y-2">
                     <Label>WhatsApp</Label>
