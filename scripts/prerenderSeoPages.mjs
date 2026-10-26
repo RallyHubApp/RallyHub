@@ -3,6 +3,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createClient } from '@base44/sdk';
 import { rallyhubShareForPath } from '../src/lib/rallyhubShare.js';
+import { DIRECTORY_CATEGORY_PATHS } from '../src/lib/directory-category-paths.js';
 
 const root=process.cwd();
 const dist=path.join(root,'dist');
@@ -98,6 +99,16 @@ inject('/directory',{
   schema:[websiteSchema,directorySchema],
   body:`<h1>Pickleball clubs and places to play in Ireland</h1><p>RallyHub is an all-Ireland pickleball directory covering clubs, venues and weekly playing sessions. Browse by county or open a club listing for current playing information.</p><h2>Browse pickleball by county</h2><ul>${counties.map(c=>`<li><a href="/pickleball-clubs/${countySlug(c)}">Pickleball clubs in ${esc(c)}</a></li>`).join('')}</ul><h2>Irish pickleball clubs</h2><ul>${publicListings.map(c=>`<li><a href="/directory/${encodeURIComponent(c.slug)}">${esc(c.name)}</a> — County ${esc(c.county)}</li>`).join('')}</ul>`
 });
+
+for(const category of DIRECTORY_CATEGORY_PATHS){
+  const listings=publicListings.filter(item=>{
+    const type=providerType(item);
+    return (category.key==='coaching' && type==='coach') || (category.key==='tournaments_events' && ['tournaments_events','event_organiser','event'].includes(type)) || (category.key==='holidays' && ['holidays','holiday'].includes(type)) || (category.key==='equipment' && ['equipment','supplier'].includes(type)) || (category.key==='club' && type==='club') || (category.key==='other' && type==='other');
+  });
+  const route=`/directory/category/${category.slug}`;
+  const schema={'@context':'https://schema.org','@type':'CollectionPage',name:category.title,url:`${site}${route}`,description:category.description,mainEntity:{'@type':'ItemList',numberOfItems:listings.length,itemListElement:listings.map((listing,index)=>({'@type':'ListItem',position:index+1,name:listing.name,url:`${site}/directory/${enc(listing.slug)}`}))}};
+  inject(route,{title:`${category.title} | RallyHub`,description:category.description,schema:[schema],body:`<nav><a href="/directory">All RallyHub Directory listings</a></nav><h1>${esc(category.title)}</h1><p>${esc(category.description)}</p><nav>${DIRECTORY_CATEGORY_PATHS.map(c=>`<a style="margin-right:15px" href="/directory/category/${c.slug}">${esc(c.title)}</a>`).join('')}</nav><h2>Browse listings</h2><ul>${listings.map(listing=>`<li><a href="/directory/${enc(listing.slug)}">${esc(listing.name)}</a></li>`).join('')}</ul>`});
+}
 
 for(const county of counties){
   const clubs=publicClubs.filter(c=>c.county===county);

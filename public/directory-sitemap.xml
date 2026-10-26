@@ -2,6 +2,12 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://rallyhub.ie/</loc><lastmod>2026-10-26</lastmod></url>
   <url><loc>https://rallyhub.ie/directory</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://rallyhub.ie/directory/category/clubs</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://rallyhub.ie/directory/category/events</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://rallyhub.ie/directory/category/coaching</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://rallyhub.ie/directory/category/equipment</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://rallyhub.ie/directory/category/holidays</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://rallyhub.ie/directory/category/other</loc><lastmod>2026-10-26</lastmod></url>
   <url><loc>https://rallyhub.ie/directory/story</loc><lastmod>2026-10-26</lastmod></url>
   <url><loc>https://rallyhub.ie/directory/help</loc><lastmod>2026-10-26</lastmod></url>
   <url><loc>https://rallyhub.ie/directory/quick-start</loc><lastmod>2026-10-26</lastmod></url>

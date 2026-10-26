@@ -276,6 +276,7 @@ function App() {
             <Route path="/events/my" element={<MyEvents />} />
             <Route path="/events/:slug" element={<PublicEventDetail />} />
             <Route path="/directory" element={<PublicDirectory />} />
+            <Route path="/directory/category/:categorySlug" element={<PublicDirectory />} />
             <Route path="/directory/:slug" element={<PublicClubProfile />} />
             <Route path="/pickleball-venues/:clubSlug/:venueId" element={<PublicVenueProfile />} />
             <Route path="/directory/:slug/policies" element={<PublicClubPolicies />} />

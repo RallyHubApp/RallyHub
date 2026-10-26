@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createClient } from '@base44/sdk';
+import { DIRECTORY_CATEGORY_PATHS } from '../src/lib/directory-category-paths.js';
 
 const root=process.cwd();
 const site='https://rallyhub.ie';
@@ -41,6 +42,7 @@ const venueUrls=clubListings.flatMap(club=>(club.venues||[]).filter(v=>v?.id).ma
 const urls=unique([
   `${site}/`,
   `${site}/directory`,
+  ...DIRECTORY_CATEGORY_PATHS.map(c=>`${site}/directory/category/${c.slug}`),
   `${site}/directory/story`,
   `${site}/directory/help`,
   `${site}/directory/quick-start`,

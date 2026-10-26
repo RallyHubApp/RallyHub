@@ -1,6 +1,6 @@
 import { CoachPortrait } from '@/components/directory/CoachProfile';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -14,6 +14,7 @@ import DirectoryPlayerNetworkPanel from '@/components/directory/DirectoryPlayerN
 import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 import { trackSiteEvent } from '@/lib/site-analytics';
 import { DIRECTORY_CATEGORY_FALLBACK, loadDirectoryCategories } from '@/lib/directory-categories';
+import { directoryCategoryBySlug, directoryCategoryPath } from '@/lib/directory-category-paths';
 import { base44 } from '@/api/base44Client';
 
 delete /** @type {any} */ (L.Icon.Default.prototype)._getIconUrl;
@@ -167,12 +168,18 @@ const directorySearchScore = (club, rawQuery) => {
 
 export default function PublicDirectory() {
   const [searchParams] = useSearchParams();
+  const { categorySlug } = useParams();
+  const navigate = useNavigate();
+  const categoryRoute = directoryCategoryBySlug(categorySlug);
+  const requestedCategory = categoryRoute?.key || searchParams.get('category') || 'all';
   const manageMode = searchParams.get('manage') === '1';
   const [query, setQuery] = useState('');
   const [county, setCounty] = useState('All counties');
   const [day, setDay] = useState('Any day');
   const [view, setView] = useState('clubs');
-  const [categoryKey, setCategoryKey] = useState(searchParams.get('category') || 'all');
+  const [categoryKey, setCategoryKey] = useState(requestedCategory);
+  useEffect(()=>{setCategoryKey(requestedCategory);setCounty('All counties');setDay('Any day');setView('clubs');},[requestedCategory]);
+  const selectCategory = key => { setCategoryKey(key); setCounty('All counties'); setDay('Any day'); setView('clubs'); navigate(directoryCategoryPath(key)); }; 
   const [categories, setCategories] = useState(DIRECTORY_CATEGORY_FALLBACK);
   const [directoryState, setDirectoryState] = useState({});
   const [publicEventCount, setPublicEventCount] = useState(null);
@@ -342,9 +349,9 @@ export default function PublicDirectory() {
   return (
     <>
       <Seo
-        title="Find Pickleball Clubs, Coaches, Holidays & More | RallyHub Directory"
-        description={`Search ${effectiveClubs.length} pickleball listings including clubs, coaches, event organisers, holidays and suppliers. RallyHub supports listings across Ireland and beyond.`}
-        path="/directory"
+        title={categoryRoute ? `${categoryRoute.title} | RallyHub` : 'Find Pickleball Clubs, Coaches, Holidays & More | RallyHub Directory'}
+        description={categoryRoute ? categoryRoute.description : `Search ${effectiveClubs.length} pickleball listings including clubs, coaches, event organisers, holidays and suppliers. RallyHub supports listings across Ireland and beyond.`}
+        path={categoryRoute ? `/directory/category/${categoryRoute.slug}` : "/directory"}
         structuredData={[directorySchema]}
       />
 
@@ -420,17 +427,22 @@ export default function PublicDirectory() {
 
         <section className="bg-white">
           <div className="mx-auto max-w-[1380px] px-4 pb-2 pt-4 sm:px-6 lg:px-10 xl:px-12">
+            <nav aria-label="Directory navigation" className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+              <Link to="/directory" className="font-bold text-[#078e48] hover:underline">All Directory listings</Link>
+              {categoryRoute && <span className="text-[#52627d]">/ {categoryRoute.title}</span>}
+              {categoryRoute && <Link to="/directory" className="ml-auto rounded-lg border border-[#b8dfc7] px-3 py-2 font-semibold text-[#078e48] hover:bg-[#eef9f3]">View all categories</Link>}
+            </nav>
             <div className="mb-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-6" data-testid="directory-category-choices">
               {categoryOptions.map(item => {
                 const Icon = categoryIcon(item.key);
-                return <button key={item.key} type="button" onClick={()=>{if(item.key==='tournaments_events'){window.location.assign('/events');return;}setCategoryKey(item.key);setCounty('All counties');setDay('Any day');setView('clubs');}} className={`rounded-2xl border p-3 text-left transition ${categoryKey===item.key?'border-[#078e48] bg-[#eef9f3] ring-1 ring-[#078e48]/20':'border-[#dbe6e8] bg-white hover:border-[#b8dfc7]'}`}>
+                return <button key={item.key} type="button" onClick={()=>selectCategory(item.key)} className={`rounded-2xl border p-3 text-left transition ${categoryKey===item.key?'border-[#078e48] bg-[#eef9f3] ring-1 ring-[#078e48]/20':'border-[#dbe6e8] bg-white hover:border-[#b8dfc7]'}`}>
                   <div className="flex items-center gap-2"><Icon className="h-4 w-4 text-[#078e48]"/><span className="text-xs font-black text-[#07184c]">{item.pluralLabel||item.label}</span></div>
                   <p className="mt-1 text-[11px] text-[#6a778a]">{categoryCounts[item.key]||0} listed</p>
                 </button>
               })}
             </div>
             <div className={`grid gap-2.5 rounded-2xl border border-[#dbe6e8] bg-white p-2.5 shadow-[0_9px_25px_rgba(8,24,77,.055)] ${clubCategoryActive ? 'lg:grid-cols-[220px_minmax(300px,1.5fr)_220px_190px_auto]' : 'lg:grid-cols-[220px_minmax(300px,1fr)_auto]'}`}>
-              <select aria-label="What are you looking for?" value={categoryKey} onChange={e=>{setCategoryKey(e.target.value);setCounty('All counties');setDay('Any day');setView('clubs')}} className="h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 text-sm font-bold text-[#1a2c58]">
+              <select aria-label="What are you looking for?" value={categoryKey} onChange={e=>selectCategory(e.target.value)} className="h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 text-sm font-bold text-[#1a2c58]">
                 {categoryOptions.map(item=><option key={item.key} value={item.key}>{item.pluralLabel||item.label}</option>)}
               </select>
               <label className="relative">
