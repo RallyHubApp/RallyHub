@@ -1,1 +1,735 @@
-import{createClientFromRequest as Z}from"npm:@base44/sdk@0.8.29";import{authorisedDirectorySuperAdmin as j}from"../../shared/directorySuperAdmin.ts";import{geocodeDirectoryVenues as X}from"./geocode.ts";import{publicDirectoryFallbackSnapshot as F}from"./publicFallbackSnapshot.ts";import{protectedDirectoryList as Q,protectedDirectoryState as N}from"./protectedContract.ts";import{rallyHubEmailShellUsingTemplate as ee}from"../../shared/rallyHubPlatformEmail.ts";import{sendWithConfiguredEmailTransport as te}from"./emailRouter.ts";const c=(t,e=500)=>String(t??"").trim().slice(0,e),U=t=>/rate limit|too many requests|\b429\b|temporar(?:y|ily) busy/i.test(String(t?.message||t||"")),h=(t,e=500)=>c(t,e)||null,w=t=>{const e=c(t,500);if(!e)return null;try{const n=new URL(e);if(!["http:","https:"].includes(n.protocol))return null;const a="/files/mp/public/";if(n.hostname==="base44.app"&&n.pathname.includes(a)){const r=n.pathname.split(a)[1];if(r)return`https://media.base44.com/images/public/${r}`}return n.toString()}catch{return null}},G=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],ie=t=>[...t].sort((e,n)=>G.indexOf(e.day)-G.indexOf(n.day)||String(e.start||"").localeCompare(String(n.start||""))||String(e.level||"").localeCompare(String(n.level||""))),se=t=>{const e=c(t,500);return e?/^\/(?!\/)[a-zA-Z0-9_./-]+\.(?:png|jpe?g|webp|gif|svg)$/i.test(e)?e:w(e):null},T=t=>{const e=c(t,240).toLowerCase();return/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)?e:null},L=(t,e,n)=>{if(t===""||t===null||t===void 0)return null;const a=Number(t);return Number.isFinite(a)?Math.min(n,Math.max(e,a)):null},W=(t,e)=>c(t,120).replace(/[^a-zA-Z0-9_-]+/g,"-").replace(/^-+|-+$/g,"")||e,ne=t=>{const e=c(t,80);if(!e)return null;let n=e.replace(/\D/g,"");return n?(n.startsWith("00")&&(n=n.slice(2)),n.startsWith("0")&&(n=`353${n.slice(1)}`),`tel:+${n}`):null},ae="protected-contact-actions-v1",re="protected-contact-default-directory",oe=60*1e3,ce=900*1e3;let D=null;async function k(t){const e=Date.now();if(D&&e-D.savedAt<oe)return D.value;try{const[n,a,r]=await Promise.all([t.asServiceRole.entities.DirectorySettings.filter({},"-updated_date",100),t.asServiceRole.entities.DirectoryContactRollout.filter({},"-updated_at",500),t.asServiceRole.entities.DirectoryClaim.filter({},"-reviewed_at",500)]),s=!!n?.find(d=>d.key===ae&&d.active===!0),i=!!n?.find(d=>d.key===re&&d.active===!0);if(!s){const d={globalEnabled:!1,defaultDirectoryEnabled:!1,protectedSlugs:new Set,legacyHoldSlugs:new Set,hideNameSlugs:new Set,failClosed:!1};return D={savedAt:e,value:d},d}const u=new Set,o=new Set;for(const d of a||[]){if(!d?.listing_slug)continue;const y=String(d?.mode||"legacy");["protected_pilot","protected"].includes(y)&&u.add(String(d.listing_slug)),y==="legacy"&&o.add(String(d.listing_slug))}const l=new Set,g=new Set;for(const d of r||[]){const y=String(d?.listing_slug||"");!y||g.has(y)||["approved","auto_verified"].includes(String(d?.status||""))&&(g.add(y),d?.public_name_opt_out===!0&&l.add(y))}const f={globalEnabled:!0,defaultDirectoryEnabled:i,protectedSlugs:u,legacyHoldSlugs:o,hideNameSlugs:l,failClosed:!1};return D={savedAt:e,value:f},f}catch{return D&&e-D.savedAt<ce?D.value:{globalEnabled:!0,defaultDirectoryEnabled:!0,protectedSlugs:new Set,legacyHoldSlugs:new Set,hideNameSlugs:new Set,failClosed:!0}}}async function le(t,e,n){const a=await k(t);return N(n,{hideContactName:a.failClosed||a.hideNameSlugs.has(e)})}async function ue(t,e,n){if(["coach","equipment"].includes(String(n?.base?.listingType||n?.profile?.listingType)))return N(n,{hideContactName:!0});const a=await k(t);return a.failClosed||a.protectedSlugs.has(e)||a.defaultDirectoryEnabled&&!a.legacyHoldSlugs.has(e)?N(n,{hideContactName:a.failClosed||a.hideNameSlugs.has(e)}):n}async function de(t,e){const n=await k(t),a={};for(const r of Object.keys(e||{}))(n.failClosed||n.hideNameSlugs.has(r))&&(a[r]={hideContactName:!0});return Q(e,a)}async function pe(t,e){const n=await k(t),a={...e||{}};for(const[s,i]of Object.entries(a))["coach","equipment"].includes(String(i?.base?.listingType||i?.profile?.listingType))&&(a[s]=N(i,{hideContactName:!0}));if(e=a,!n.globalEnabled||!n.defaultDirectoryEnabled&&!n.protectedSlugs.size)return e;const r={...e||{}};if(n.failClosed||n.defaultDirectoryEnabled){for(const s of Object.keys(r))!n.failClosed&&n.legacyHoldSlugs.has(s)||(r[s]=N(r[s],{hideContactName:n.failClosed||n.hideNameSlugs.has(s)}));return r}for(const s of n.protectedSlugs)r[s]&&(r[s]=N(r[s],{hideContactName:n.hideNameSlugs.has(s)}));return r}const ge=60*1e3,fe=900*1e3,ye=60*1e3,_e=900*1e3;let A=null,I=null;const O=new Map,$=new Map;function Y(){A=null}function V(t){O.delete(t)}async function me(t,e){const[n,a,r]=await Promise.all([t.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:e,status:"active"},"-updated_at",5),t.asServiceRole.entities.DirectoryListingRecord.filter({slug:e,status:"active"},"-published_at",5),t.asServiceRole.entities.ClubWaitingListConfig.filter({public_slug:e,status:"active"},"-updated_date",5)]),s=n?.[0]||null,i=a?.[0]||null;if(i?.visibility==="preview_only")return{success:!0,listingSlug:e,verificationStatus:"unclaimed",profile:null,base:null};const u=C(s?.public_json),o=C(i?.base_json),l=w(r?.[0]?.public_entry_url);l&&(u&&(u.waitingListUrl=l),o&&(o.waitingListUrl=l));const g=await z(t,e);return{success:!0,listingSlug:e,verificationStatus:g,profile:u,base:o}}async function he(t,e){const n=Date.now(),a=O.get(e);if(a&&n-a.savedAt<ye)return a.data;if($.has(e))return $.get(e);const r=me(t,e).then(s=>(O.set(e,{savedAt:Date.now(),data:s}),s)).catch(s=>{const i=O.get(e);if(i&&Date.now()-i.savedAt<_e&&U(s))return i.data;if(U(s)){const u=F[e]||{},o={success:!0,listingSlug:e,verificationStatus:u.verificationStatus||"unclaimed",profile:u.profile||null,base:u.base||null,degraded:!0};return O.set(e,{savedAt:Date.now(),data:o}),o}throw s}).finally(()=>{$.delete(e)});return $.set(e,r),r}async function ve(t){const[e,n,a,r]=await Promise.all([t.asServiceRole.entities.DirectoryListingProfile.filter({status:"active"},"-updated_at",500),t.asServiceRole.entities.DirectoryListingAccess.filter({status:"active"},"-granted_at",500),t.asServiceRole.entities.DirectoryListingRecord.filter({status:"active"},"-published_at",500),t.asServiceRole.entities.ClubWaitingListConfig.filter({status:"active"},"-updated_date",500)]),s=new Set((a||[]).filter(o=>o.visibility==="preview_only").map(o=>o.slug)),i=new Set((n||[]).filter(o=>!s.has(o.listing_slug)).map(o=>o.listing_slug)),u={};for(const o of a||[])!o.slug||o.visibility==="preview_only"||u[o.slug]||(u[o.slug]={base:C(o.base_json),profile:null,verificationStatus:i.has(o.slug)?"verified":"unclaimed"});for(const o of e||[]){if(!o.listing_slug||s.has(o.listing_slug))continue;const l=u[o.listing_slug]||{base:null,profile:null,verificationStatus:i.has(o.listing_slug)?"verified":"unclaimed"};l.profile||(l.profile=C(o.public_json)),l.verificationStatus=i.has(o.listing_slug)?"verified":"unclaimed",u[o.listing_slug]=l}for(const o of i)u[o]||(u[o]={base:null,profile:null,verificationStatus:"verified"});for(const o of r||[]){const l=c(o?.public_slug,180),g=w(o?.public_entry_url),f=l?u[l]:null;!f||!g||(f.profile&&(f.profile.waitingListUrl=g),f.base&&(f.base.waitingListUrl=g))}return u}async function Se(t){const e=Date.now();if(A&&e-A.savedAt<ge)return A.listings;if(I)return I;const n=A;return I=ve(t).then(a=>(A={savedAt:Date.now(),listings:a},a)).catch(a=>{if(n&&Date.now()-n.savedAt<fe&&U(a))return n.listings;if(U(a))return A={savedAt:Date.now(),listings:F,degraded:!0},F;throw a}).finally(()=>{I=null}),I}function C(t){if(!t)return null;try{return JSON.parse(t)}catch{return null}}function we(t){const n=(Array.isArray(t?.venues)?t.venues.slice(0,20):[]).map((i,u)=>({id:W(i?.id,`venue-${u+1}`),name:c(i?.name,220),shortName:h(i?.shortName,120),address:h(i?.address,320),eircode:h(i?.eircode,40),indoor:typeof i?.indoor=="boolean"?i.indoor:null,courts:L(i?.courts,1,100),latitude:L(i?.latitude,-90,90),longitude:L(i?.longitude,-180,180),mapUrl:w(i?.mapUrl),websiteUrl:w(i?.websiteUrl),playType:h(i?.playType,120),source:c(i?.source,40)==="Spond"?"Spond":null})).filter(i=>i.name),a=new Set(n.map(i=>i.id)),r=Array.isArray(t?.sessions)?t.sessions.slice(0,80):[],s=ie(r.map((i,u)=>({id:W(i?.id,`session-${u+1}`),venueId:a.has(c(i?.venueId,120))?c(i?.venueId,120):n[0]?.id||null,day:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].includes(c(i?.day,20))?c(i?.day,20):"Monday",start:h(i?.start,10),end:h(i?.end,10),meetTime:h(i?.meetTime,10),level:c(i?.level,180)||"Club Session",price:L(i?.price,0,1e4),paymentMethod:["Cash","Online","Pay at venue","Included in membership","Contact club"].includes(c(i?.paymentMethod,80))?c(i?.paymentMethod,80):null,capacity:L(i?.capacity,1,1e4),host:h(i?.host,180),showPublicJoinLink:i?.showPublicJoinLink===!0,publicJoinUrl:w(i?.publicJoinUrl),source:c(i?.source,40)==="Spond"?"Spond":null})).filter(i=>i.venueId&&i.start));return{listingType:h(t?.listingType,60),photoUrl:w(t?.photoUrl),photoSourceUrl:w(t?.photoSourceUrl),photoCrop:t?.photoCrop&&typeof t.photoCrop=="object"?{zoom:L(t.photoCrop.zoom,.7,2)??1,offsetX:L(t.photoCrop.offsetX,-100,100)??0,offsetY:L(t.photoCrop.offsetY,-100,100)??0}:null,town:h(t?.town,160),county:h(t?.county,160),serviceArea:h(t?.serviceArea,240),qualifications:(Array.isArray(t?.qualifications)?t.qualifications:[]).slice(0,30).map(i=>c(i,300)).filter(Boolean),coachingExperience:h(t?.coachingExperience,1600),coachingServices:(Array.isArray(t?.coachingServices)?t.coachingServices:[]).slice(0,30).map(i=>c(i,300)).filter(Boolean),areasServed:(Array.isArray(t?.areasServed)?t.areasServed:[]).slice(0,32).map(i=>c(i,160)).filter(Boolean),linkedin:w(t?.linkedin),name:h(t?.name,220),description:h(t?.description,1600),membershipStatus:h(t?.membershipStatus,240),guestPolicy:h(t?.guestPolicy,1800),policyLabel:h(t?.policyLabel,120),website:w(t?.website),facebook:w(t?.facebook),instagram:w(t?.instagram),tiktok:w(t?.tiktok),shopUrl:w(t?.shopUrl),productCategories:(Array.isArray(t?.productCategories)?t.productCategories:[]).slice(0,40).map(i=>c(i,120)).filter(Boolean),waitingListUrl:w(t?.waitingListUrl),joiningCtaLabel:h(t?.joiningCtaLabel,120),logoUrl:se(t?.logoUrl),contact:{name:h(t?.contact?.name,180),phone:h(t?.contact?.phone,80),phoneHref:ne(t?.contact?.phone),email:T(t?.contact?.email),whatsapp:w(t?.contact?.whatsapp)},venues:n,sessions:s}}async function z(t,e){return(await t.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:e,status:"active"}))?.length?"verified":"unclaimed"}Deno.serve(async t=>{try{const e=Z(t),n=await t.json().catch(()=>({})),a=String(n.action||"public_get");if(a==="public_get"||a==="protected_public_get"){const s=c(n.listingSlug,180);if(!s)return Response.json({error:"listingSlug required"},{status:400});const i=await he(e,s),u=a==="protected_public_get"?{...await le(e,s,i),contractVersion:"protected-v1"}:await ue(e,s,i);return Response.json(u,{headers:{"Cache-Control":"public, max-age=5, stale-while-revalidate=30"}})}if(a==="public_list"||a==="protected_public_list"){const s=await Se(e),i=a==="protected_public_list"?await de(e,s):await pe(e,s);return Response.json({success:!0,listings:i,...a==="protected_public_list"?{contractVersion:"protected-v1"}:{}},{headers:{"Cache-Control":"public, max-age=5, stale-while-revalidate=30"}})}const r=await e.auth.me();if(!r)return Response.json({error:"Sign in required"},{status:401});if(a==="private_get"){const s=c(n.listingSlug,180);if(!s)return Response.json({error:"listingSlug required"},{status:400});let i=j(r);if(i||(i=!!(await e.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:s,user_id:r.id,status:"active"}))?.length),!i)return Response.json({error:"Directory editor access required"},{status:403});const u=await e.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:s,status:"active"},"-updated_at",5),o=await e.asServiceRole.entities.DirectoryListingRecord.filter({slug:s,status:"active"},"-published_at",5),l=u?.[0]||null,g=o?.[0]||null,f=C(l?.public_json),d=C(g?.base_json),y=C(g?.setup_json)||{};if(!y?.review?.completedAt){const p=await e.asServiceRole.entities.AuditLog.filter({action:"directory_guided_completion_email_reserved",scope_id:`${s}:${r.id}`},"-created_date",1);p?.[0]&&(y.review={completedAt:p[0].created_date,completedByUserId:r.id})}let b=null;if(["coach","equipment"].includes(String(g?.listing_type||d?.listingType||f?.listingType))){const v=(await e.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:s,status:"active"},"-updated_at",10)||[]).find(_=>_.email||_.phone||_.contact_name);if(v)b={name:c(v.contact_name,180),email:T(v.email),phone:c(v.phone,80)};else{const _=C(g?.trusted_contacts_json),m=(Array.isArray(_)?_:[]).find(R=>R?.name||R?.email||R?.phone);m&&(b={name:c(m.name,180),email:T(m.email),phone:c(m.phone,80)})}}return Response.json({success:!0,listingSlug:s,visibility:g?.visibility||"public",verificationStatus:await z(e,s),profile:f,base:d,setup:y,privateContact:b})}if(a==="confirm_identity"){const s=c(n.listingSlug,180),i=c(n.publicName,220);if(!s||!i)return Response.json({error:"listingSlug and publicName required"},{status:400});let u=j(r);if(u||(u=!!(await e.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:s,user_id:r.id,status:"active"}))?.length),!u)return Response.json({error:"Verified directory editor access required"},{status:403});const l=(await e.asServiceRole.entities.DirectoryListingRecord.filter({slug:s,status:"active"},"-published_at",5))?.[0];if(!l)return Response.json({error:"Database-backed Directory listing required for identity confirmation"},{status:404});const g=C(l.setup_json,{}),f=g?.identity||{},d=Array.isArray(f?.candidates)?f.candidates.map(S=>c(typeof S=="string"?S:S?.name,220)).filter(Boolean):[],y=f?.allowCustom!==!1;if(f?.requiresConfirmation===!0&&!y&&d.length&&!d.includes(i))return Response.json({error:"Choose one of the recognised public names."},{status:400});const b=new Date().toISOString(),p={...f,requiresConfirmation:!1,confirmed:!0,selectedPublicName:i,confirmedAt:b,confirmedByUserId:r.id},v={...g,identity:p},_=C(l.base_json,{})||{};await e.asServiceRole.entities.DirectoryListingRecord.update(l.id,{name:i,base_json:JSON.stringify({..._,name:i}),setup_json:JSON.stringify(v)});const m=await e.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:s,status:"active"},"-updated_at",5);if(m?.[0]){const S=C(m[0].public_json,{})||{};await e.asServiceRole.entities.DirectoryListingProfile.update(m[0].id,{public_json:JSON.stringify({...S,name:i}),updated_by_user_id:r.id,updated_at:b})}const R=await e.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:s,status:"active"},"-granted_at",100);for(const S of R||[])S.listing_name_snapshot!==i&&await e.asServiceRole.entities.DirectoryListingAccess.update(S.id,{listing_name_snapshot:i});const E=await e.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:s,status:"active"},"-updated_at",20).catch(()=>[]);for(const S of E||[])S.listing_name_snapshot!==i&&await e.asServiceRole.entities.DirectoryContactEndpoint.update(S.id,{listing_name_snapshot:i,updated_by_user_id:r.id,updated_at:b});return Y(),V(s),Response.json({success:!0,listingSlug:s,publicName:i,setup:v})}if(a==="complete_guided_setup"){const s=c(n.listingSlug,180);if(!s)return Response.json({error:"Listing required"},{status:400});if(!(await e.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:s,user_id:r.id,status:"active"}))?.length&&!j(r))return Response.json({error:"Verified Directory access required"},{status:403});const o=(await e.asServiceRole.entities.DirectoryListingRecord.filter({slug:s,status:"active"},"-published_at",5))?.[0];if(!o)return Response.json({error:"Directory listing not found"},{status:404});const g={coach:"coaching",coaching:"coaching",equipment:"suppliers",supplier:"suppliers",suppliers:"suppliers",club:"clubs",holiday:"holidays",holidays:"holidays",events:"events",event:"events",organiser:"events"}[String(o.listing_type||"").toLowerCase()];if(!g)return Response.json({success:!0,emailStatus:"not_configured_for_category"});const f=await e.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:s,status:"active"},"-updated_at",2),d=C(f?.[0]?.public_json)||{};if(!c(d.name,220)||!c(d.description,2e3))return Response.json({error:"Save your name and profile description before completing the guided review."},{status:400});const y=new Date().toISOString(),b=C(o.setup_json)||{};b?.review?.completedAt||(b.review={completedAt:y,completedByUserId:r.id},await e.asServiceRole.entities.DirectoryListingRecord.update(o.id,{setup_json:JSON.stringify(b)}));const p=`directory_${g}_profile_completed`,_=(await e.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:"platform",purpose:p,status:"approved"},"-updated_date",5))?.[0];if(!_)return Response.json({success:!0,emailStatus:"awaiting_template_approval"});const m=String(r.email||"").trim().toLowerCase();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m))return Response.json({error:"Your RallyHub login needs a verified email address"},{status:400});const R=`${s}:${r.id}`;if((await e.asServiceRole.entities.AuditLog.filter({action:"directory_guided_completion_email_reserved",scope_id:R},"-created_date",10))?.length)return Response.json({success:!0,emailStatus:"already_processed"});const S=`https://rallyhub.ie/directory/${encodeURIComponent(s)}/edit?guided=1`,q=c(r.full_name||r.display_name||"",180).split(/\s+/)[0]||"there",J={CONTACT_NAME:q,LISTING_NAME:c(d.name,220),MANAGE_LINK:S},x=P=>String(P||"").replace(/{{\s*(CONTACT_NAME|LISTING_NAME|MANAGE_LINK)\s*}}/g,(H,K)=>J[K]),B=x(_.subject_template),M=x(_.plain_text_template).replace(/^Hi\s+[^,\n]+,/i,`Hi ${q},`).replace(/\n\s*Yours in sport,?\s*$/i,"").trim();if(!B||!M||/{{\s*[A-Z_]+\s*}}/.test(B+" "+M))return Response.json({error:"Approved completion template has unresolved placeholders"},{status:409});await e.asServiceRole.entities.AuditLog.create({tenant_id:"platform",user_id:r.id,action:"directory_guided_completion_email_reserved",entity_type:"DirectoryListing",entity_id:s,scope_type:"DirectoryListing",scope_id:R,after_state:JSON.stringify({recipient:m,purpose:p}),reason:"One-time guided profile completion email send reservation."});try{const P=M.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>"),H=await ee(e,p,{title:"Thank you for completing your Directory profile",preheader:`${J.LISTING_NAME} is ready to maintain.`,content:`<p>${P}</p>`,actionUrl:S,actionLabel:"Manage your Directory profile",footerNote:"RallyHub Directory"});return await te(e,{scopeType:"platform",purpose:"directory"},{to:m,subject:B,textBody:M,htmlBody:H}),await e.asServiceRole.entities.AuditLog.create({tenant_id:"platform",user_id:r.id,action:"directory_guided_completion_email_sent",entity_type:"DirectoryListing",entity_id:s,scope_type:"DirectoryListing",scope_id:R,after_state:JSON.stringify({recipient:m,purpose:p}),reason:"Approved guided profile completion message sent."}).catch(()=>{}),Response.json({success:!0,emailStatus:"sent",recipient:m})}catch(P){return console.error("Directory guided completion email delivery failed",P),Response.json({success:!0,emailStatus:"delivery_failed_review_required"})}}if(a==="save_coach_private_contact"||a==="save_supplier_private_contact"){const s=c(n.listingSlug,180);if(!s||n.confirmEmail!==!0||n.confirmMobile!==!0)return Response.json({error:"Confirm the coaching email and mobile separately"},{status:400});let i=j(r);if(i||(i=!!(await e.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:s,user_id:r.id,status:"active"}))?.length),!i)return Response.json({error:"Directory editor access required"},{status:403});const u=await e.asServiceRole.entities.DirectoryListingRecord.filter({slug:s,status:"active"},"-published_at",5),o=a==="save_supplier_private_contact"?"equipment":"coach";if(u?.[0]?.listing_type!==o)return Response.json({error:"Protected contact requires the matching listing type"},{status:400});const l=c(n.contact?.name,160),g=T(n.contact?.email),f=c(n.contact?.phone,80);if(!l||!g||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(g)||!f)return Response.json({error:"Contact name, valid email and mobile are required"},{status:400});const y=(await e.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:s,status:"active"},"-updated_at",10))?.[0],b=new Date().toISOString(),p={listing_slug:s,listing_name_snapshot:c(u[0].name,220),contact_name:l,email:g,phone:f,whatsapp_url:"",allow_call:!1,allow_whatsapp:!1,allow_email:!0,status:"active",updated_by_user_id:r.id,updated_at:b};return y?await e.asServiceRole.entities.DirectoryContactEndpoint.update(y.id,p):await e.asServiceRole.entities.DirectoryContactEndpoint.create(p),Response.json({success:!0,privateContact:{name:l,email:g,phone:f},message:"Protected contact details saved. Email and mobile are not published."})}if(a==="save"){const s=c(n.listingSlug,180);if(!s)return Response.json({error:"listingSlug required"},{status:400});let i=j(r);if(i||(i=!!(await e.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:s,user_id:r.id,status:"active"}))?.length),!i)return Response.json({error:"Verified directory editor access required"},{status:403});const u=await e.asServiceRole.entities.DirectoryListingRecord.filter({slug:s,status:"active"},"-published_at",5),o=["coach","equipment"].includes(String(u?.[0]?.listing_type)),l=we(n.profile||{});o&&(l.listingType=u[0].listing_type,l.contact={name:null,phone:null,phoneHref:null,email:null,whatsapp:null}),l.venues=await X(l.venues||[],{town:c(n.town,120),county:c(n.county,120)});const g=JSON.stringify(l),f=new Date().toISOString(),d=await e.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:s,status:"active"},"-updated_at",5),y=d?.[0]?.public_json||null;let b;if(d?.[0]?b=await e.asServiceRole.entities.DirectoryListingProfile.update(d[0].id,{public_json:g,updated_by_user_id:r.id,updated_at:f}):b=await e.asServiceRole.entities.DirectoryListingProfile.create({listing_slug:s,public_json:g,status:"active",updated_by_user_id:r.id,updated_at:f}),!o)try{const v=(await e.asServiceRole.entities.DirectoryClaim.filter({listing_slug:s},"-reviewed_at",20)||[]).find(q=>["approved","auto_verified"].includes(String(q?.status||"")))||null,_=v?.public_phone_opt_out===!0,m=v?.public_name_opt_out===!0,R=l?.contact||{},E={listing_slug:s,listing_name_snapshot:c(l?.name||s,240),contact_name:m?"":c(R?.name,160),contact_role:c(v?.claimant_role,120),phone:_?"":c(R?.phone,100),email:T(R?.email)||"",whatsapp_url:_?"":w(R?.whatsapp)||"",allow_call:!_&&!!c(R?.phone,100),allow_whatsapp:!_&&!!w(R?.whatsapp),allow_email:!!T(R?.email),status:"active",updated_by_user_id:r.id,updated_at:f},S=await e.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:s,status:"active"},"-updated_at",5);S?.[0]?await e.asServiceRole.entities.DirectoryContactEndpoint.update(S[0].id,E):await e.asServiceRole.entities.DirectoryContactEndpoint.create(E)}catch(p){console.warn("Protected contact endpoint sync failed",p?.message||p)}if(l?.name)try{const v=(await e.asServiceRole.entities.DirectoryListingRecord.filter({slug:s,status:"active"},"-published_at",5))?.[0];if(v){const m=C(v.base_json)||{};await e.asServiceRole.entities.DirectoryListingRecord.update(v.id,{name:l.name,base_json:JSON.stringify({...m,name:l.name})})}const _=await e.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:s,status:"active"},"-granted_at",100);for(const m of _||[])m.listing_name_snapshot!==l.name&&await e.asServiceRole.entities.DirectoryListingAccess.update(m.id,{listing_name_snapshot:l.name})}catch(p){console.warn("Directory display-name sync failed",p?.message||p)}if(j(r)&&l?.contact?.email)try{const v=(await e.asServiceRole.entities.DirectoryListingRecord.filter({slug:s,status:"active"},"-published_at",5))?.[0];if(v){const _=[{name:l.contact?.name||null,email:l.contact?.email||null,phone:l.contact?.phone||null}];await e.asServiceRole.entities.DirectoryListingRecord.update(v.id,{trusted_contacts_json:JSON.stringify(_)})}}catch(p){console.warn("Directory trusted-contact sync failed",p?.message||p)}try{await e.asServiceRole.entities.DirectoryListingAudit.create({listing_slug:s,user_id:r.id,action:y?"profile_updated":"profile_created",occurred_at:f,...y?{before_json:y}:{},after_json:g})}catch(p){console.warn("Directory listing audit write failed",p?.message||p)}return Y(),V(s),Response.json({success:!0,profile:l,updatedAt:f,id:b?.id||d?.[0]?.id||null})}return Response.json({error:"Unknown action"},{status:400})}catch(e){return console.error("directoryListingProfile error",e),U(e)?Response.json({error:"RallyHub is temporarily busy. Please try again shortly.",retryAfterSeconds:3},{status:503,headers:{"Retry-After":"3"}}):Response.json({error:"Unable to process the directory profile request right now."},{status:500})}});
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
+import { authorisedDirectorySuperAdmin } from '../../shared/directorySuperAdmin.ts';
+import { geocodeDirectoryVenues } from './geocode.ts';
+import { publicDirectoryFallbackSnapshot } from './publicFallbackSnapshot.ts';
+import { protectedDirectoryList, protectedDirectoryState } from './protectedContract.ts';
+import { rallyHubEmailShellUsingTemplate } from '../../shared/rallyHubPlatformEmail.ts';
+import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
+
+const clean = (value:any, max=500) => String(value ?? '').trim().slice(0, max);
+const isRateLimit = (error:any) => /rate limit|too many requests|\b429\b|temporar(?:y|ily) busy/i.test(String(error?.message || error || ''));
+const nullable = (value:any, max=500) => { const v = clean(value, max); return v || null; };
+const safeUrl = (value:any) => {
+  const v = clean(value, 500);
+  if (!v) return null;
+  try {
+    const url = new URL(v);
+    if (!['http:', 'https:'].includes(url.protocol)) return null;
+    const marker = '/files/mp/public/';
+    if (url.hostname === 'base44.app' && url.pathname.includes(marker)) {
+      const tail = url.pathname.split(marker)[1];
+      if (tail) return `https://media.base44.com/images/public/${tail}`;
+    }
+    return url.toString();
+  } catch { return null; }
+};
+const weekOrder = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const sortSessions = (sessions:any[]) => [...sessions].sort((a:any,b:any) =>
+  weekOrder.indexOf(a.day) - weekOrder.indexOf(b.day) ||
+  String(a.start || '').localeCompare(String(b.start || '')) ||
+  String(a.level || '').localeCompare(String(b.level || ''))
+);
+const safeLogoUrl = (value:any) => {
+  const v = clean(value, 500);
+  if (!v) return null;
+  // Curated seed listings may use app-hosted public assets such as
+  // /limerick-city-pickleball.webp. Preserve those on editor save while
+  // rejecting protocol-relative/external-looking paths.
+  if (/^\/(?!\/)[a-zA-Z0-9_./-]+\.(?:png|jpe?g|webp|gif|svg)$/i.test(v)) return v;
+  return safeUrl(v);
+};
+const safeEmail = (value:any) => {
+  const v = clean(value, 240).toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? v : null;
+};
+const safeNumber = (value:any, min:number, max:number) => {
+  if (value === '' || value === null || value === undefined) return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : null;
+};
+const idSafe = (value:any, fallback:string) => clean(value, 120).replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || fallback;
+const phoneHref = (value:any) => {
+  const raw = clean(value, 80);
+  if (!raw) return null;
+  let digits = raw.replace(/\D/g, '');
+  if (!digits) return null;
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.startsWith('0')) digits = `353${digits.slice(1)}`;
+  return `tel:+${digits}`;
+};
+
+const CONTACT_FEATURE_KEY = 'protected-contact-actions-v1';
+const CONTACT_DEFAULT_DIRECTORY_KEY = 'protected-contact-default-directory';
+const CONTACT_CONFIG_TTL_MS = 60 * 1000;
+const CONTACT_CONFIG_STALE_MS = 15 * 60 * 1000;
+let contactConfigCache:any = null;
+
+async function contactProtectionConfig(base44:any) {
+  const now = Date.now();
+  if (contactConfigCache && now - contactConfigCache.savedAt < CONTACT_CONFIG_TTL_MS) return contactConfigCache.value;
+  try {
+    const [settings, rollouts, claims] = await Promise.all([
+      base44.asServiceRole.entities.DirectorySettings.filter({}, '-updated_date', 100),
+      base44.asServiceRole.entities.DirectoryContactRollout.filter({}, '-updated_at', 500),
+      base44.asServiceRole.entities.DirectoryClaim.filter({}, '-reviewed_at', 500),
+    ]);
+    const globalEnabled = !!settings?.find((row:any) => row.key === CONTACT_FEATURE_KEY && row.active === true);
+    const defaultDirectoryEnabled = !!settings?.find((row:any) => row.key === CONTACT_DEFAULT_DIRECTORY_KEY && row.active === true);
+    if (!globalEnabled) {
+      const value = { globalEnabled:false, defaultDirectoryEnabled:false, protectedSlugs:new Set<string>(), legacyHoldSlugs:new Set<string>(), hideNameSlugs:new Set<string>(), failClosed:false };
+      contactConfigCache = { savedAt:now, value };
+      return value;
+    }
+    const protectedSlugs = new Set<string>();
+    const legacyHoldSlugs = new Set<string>();
+    for (const row of rollouts || []) {
+      if (!row?.listing_slug) continue;
+      const mode = String(row?.mode || 'legacy');
+      if (['protected_pilot','protected'].includes(mode)) protectedSlugs.add(String(row.listing_slug));
+      if (mode === 'legacy') legacyHoldSlugs.add(String(row.listing_slug));
+    }
+    const hideNameSlugs = new Set<string>();
+    const seenClaimSlugs = new Set<string>();
+    for (const claim of claims || []) {
+      const slug = String(claim?.listing_slug || '');
+      if (!slug || seenClaimSlugs.has(slug)) continue;
+      if (!['approved','auto_verified'].includes(String(claim?.status || ''))) continue;
+      seenClaimSlugs.add(slug);
+      if (claim?.public_name_opt_out === true) hideNameSlugs.add(slug);
+    }
+    const value = { globalEnabled:true, defaultDirectoryEnabled, protectedSlugs, legacyHoldSlugs, hideNameSlugs, failClosed:false };
+    contactConfigCache = { savedAt:now, value };
+    return value;
+  } catch (error) {
+    if (contactConfigCache && now - contactConfigCache.savedAt < CONTACT_CONFIG_STALE_MS) return contactConfigCache.value;
+    return { globalEnabled:true, defaultDirectoryEnabled:true, protectedSlugs:new Set<string>(), legacyHoldSlugs:new Set<string>(), hideNameSlugs:new Set<string>(), failClosed:true };
+  }
+}
+
+async function protectedStateWithPrivacy(base44:any, listingSlug:string, state:any) {
+  const config = await contactProtectionConfig(base44);
+  return protectedDirectoryState(state, { hideContactName:config.failClosed || config.hideNameSlugs.has(listingSlug) });
+}
+
+async function publicStateForRollout(base44:any, listingSlug:string, state:any) {
+  if (['coach','equipment'].includes(String(state?.base?.listingType || state?.profile?.listingType))) return protectedDirectoryState(state, { hideContactName:true });
+  const config = await contactProtectionConfig(base44);
+  const protectedForListing = config.failClosed || config.protectedSlugs.has(listingSlug) || (config.defaultDirectoryEnabled && !config.legacyHoldSlugs.has(listingSlug));
+  return protectedForListing
+    ? protectedDirectoryState(state, { hideContactName:config.failClosed || config.hideNameSlugs.has(listingSlug) })
+    : state;
+}
+
+async function protectedListWithPrivacy(base44:any, listings:any) {
+  const config = await contactProtectionConfig(base44);
+  const optionsBySlug:any = {};
+  for (const slug of Object.keys(listings || {})) if (config.failClosed || config.hideNameSlugs.has(slug)) optionsBySlug[slug] = { hideContactName:true };
+  return protectedDirectoryList(listings, optionsBySlug);
+}
+
+async function publicListForRollout(base44:any, listings:any) {
+  const config = await contactProtectionConfig(base44);
+  const coachSafe:any = { ...(listings || {}) };
+  for (const [slug, state] of Object.entries(coachSafe) as any) {
+    if (['coach','equipment'].includes(String(state?.base?.listingType || state?.profile?.listingType))) coachSafe[slug] = protectedDirectoryState(state, { hideContactName:true });
+  }
+  listings = coachSafe;
+  if (!config.globalEnabled) return listings;
+  if (!config.defaultDirectoryEnabled && !config.protectedSlugs.size) return listings;
+  const out:any = { ...(listings || {}) };
+  if (config.failClosed || config.defaultDirectoryEnabled) {
+    for (const slug of Object.keys(out)) {
+      if (!config.failClosed && config.legacyHoldSlugs.has(slug)) continue;
+      out[slug] = protectedDirectoryState(out[slug], { hideContactName:config.failClosed || config.hideNameSlugs.has(slug) });
+    }
+    return out;
+  }
+  for (const slug of config.protectedSlugs) {
+    if (out[slug]) out[slug] = protectedDirectoryState(out[slug], { hideContactName:config.hideNameSlugs.has(slug) });
+  }
+  return out;
+}
+
+// Public Directory reads are identical for every visitor. Keep one warm snapshot per
+// function isolate and collapse simultaneous cold requests onto the same rebuild.
+// This prevents a launch-day burst from multiplying into three Base44 entity reads
+// per visitor. Writes invalidate the snapshot immediately.
+const PUBLIC_LIST_CACHE_TTL_MS = 60 * 1000;
+const PUBLIC_LIST_STALE_IF_BUSY_MS = 15 * 60 * 1000;
+const PUBLIC_GET_CACHE_TTL_MS = 60 * 1000;
+const PUBLIC_GET_STALE_IF_BUSY_MS = 15 * 60 * 1000;
+let publicListCache:any = null;
+let publicListInFlight:Promise<any> | null = null;
+const publicGetCache = new Map<string, any>();
+const publicGetInFlight = new Map<string, Promise<any>>();
+
+function invalidatePublicListCache() {
+  publicListCache = null;
+}
+
+function invalidatePublicGetCache(listingSlug:string) {
+  publicGetCache.delete(listingSlug);
+}
+
+async function buildPublicClub(base44:any, listingSlug:string) {
+  const [rows, dynamicRows, waitingListConfigs] = await Promise.all([
+    base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status: 'active' }, '-updated_at', 5),
+    base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5),
+    base44.asServiceRole.entities.ClubWaitingListConfig.filter({ public_slug:listingSlug, status:'active' }, '-updated_date', 5),
+  ]);
+  const row = rows?.[0] || null;
+  const dynamic = dynamicRows?.[0] || null;
+  if (dynamic?.visibility === 'preview_only') {
+    return { success:true, listingSlug, verificationStatus:'unclaimed', profile:null, base:null };
+  }
+  const profile = parseJson(row?.public_json);
+  const base = parseJson(dynamic?.base_json);
+  const waitingListUrl = safeUrl(waitingListConfigs?.[0]?.public_entry_url);
+  if (waitingListUrl) {
+    if (profile) profile.waitingListUrl = waitingListUrl;
+    if (base) base.waitingListUrl = waitingListUrl;
+  }
+  const verificationStatus = await verifiedStatus(base44, listingSlug);
+  return { success:true, listingSlug, verificationStatus, profile, base };
+}
+
+async function getPublicClub(base44:any, listingSlug:string) {
+  const now = Date.now();
+  const cached = publicGetCache.get(listingSlug);
+  if (cached && now - cached.savedAt < PUBLIC_GET_CACHE_TTL_MS) return cached.data;
+  if (publicGetInFlight.has(listingSlug)) return publicGetInFlight.get(listingSlug);
+
+  const request = buildPublicClub(base44, listingSlug)
+    .then((data:any) => {
+      publicGetCache.set(listingSlug, { savedAt: Date.now(), data });
+      return data;
+    })
+    .catch((error:any) => {
+      const stale = publicGetCache.get(listingSlug);
+      if (stale && Date.now() - stale.savedAt < PUBLIC_GET_STALE_IF_BUSY_MS && isRateLimit(error)) return stale.data;
+      if (isRateLimit(error)) {
+        const fallback:any = publicDirectoryFallbackSnapshot[listingSlug] || {};
+        const data = {
+          success: true,
+          listingSlug,
+          verificationStatus: fallback.verificationStatus || 'unclaimed',
+          profile: fallback.profile || null,
+          base: fallback.base || null,
+          degraded: true,
+        };
+        publicGetCache.set(listingSlug, { savedAt: Date.now(), data });
+        return data;
+      }
+      throw error;
+    })
+    .finally(() => { publicGetInFlight.delete(listingSlug); });
+
+  publicGetInFlight.set(listingSlug, request);
+  return request;
+}
+
+async function buildPublicDirectoryList(base44:any) {
+  const [rows, accesses, dynamicRows, waitingListConfigs] = await Promise.all([
+    base44.asServiceRole.entities.DirectoryListingProfile.filter({ status: 'active' }, '-updated_at', 500),
+    base44.asServiceRole.entities.DirectoryListingAccess.filter({ status: 'active' }, '-granted_at', 500),
+    base44.asServiceRole.entities.DirectoryListingRecord.filter({ status: 'active' }, '-published_at', 500),
+    base44.asServiceRole.entities.ClubWaitingListConfig.filter({ status:'active' }, '-updated_date', 500),
+  ]);
+  const hidden = new Set((dynamicRows || []).filter((x:any) => x.visibility === 'preview_only').map((x:any) => x.slug));
+  const verified = new Set((accesses || []).filter((x:any) => !hidden.has(x.listing_slug)).map((x:any) => x.listing_slug));
+  const result:any = {};
+  for (const row of dynamicRows || []) {
+    if (!row.slug || row.visibility === 'preview_only' || result[row.slug]) continue;
+    result[row.slug] = { base: parseJson(row.base_json), profile: null, verificationStatus: verified.has(row.slug) ? 'verified' : 'unclaimed' };
+  }
+  for (const row of rows || []) {
+    if (!row.listing_slug || hidden.has(row.listing_slug)) continue;
+    const current = result[row.listing_slug] || { base: null, profile: null, verificationStatus: verified.has(row.listing_slug) ? 'verified' : 'unclaimed' };
+    if (!current.profile) current.profile = parseJson(row.public_json);
+    current.verificationStatus = verified.has(row.listing_slug) ? 'verified' : 'unclaimed';
+    result[row.listing_slug] = current;
+  }
+  for (const slug of verified) {
+    if (!result[slug]) result[slug] = { base: null, profile: null, verificationStatus: 'verified' };
+  }
+  for (const config of waitingListConfigs || []) {
+    const slug = clean(config?.public_slug, 180);
+    const url = safeUrl(config?.public_entry_url);
+    const current = slug ? result[slug] : null;
+    if (!current || !url) continue;
+    if (current.profile) current.profile.waitingListUrl = url;
+    if (current.base) current.base.waitingListUrl = url;
+  }
+  return result;
+}
+
+async function getPublicDirectoryList(base44:any) {
+  const now = Date.now();
+  if (publicListCache && now - publicListCache.savedAt < PUBLIC_LIST_CACHE_TTL_MS) return publicListCache.listings;
+  if (publicListInFlight) return publicListInFlight;
+
+  const stale = publicListCache;
+  publicListInFlight = buildPublicDirectoryList(base44)
+    .then((listings:any) => {
+      publicListCache = { savedAt: Date.now(), listings };
+      return listings;
+    })
+    .catch((error:any) => {
+      if (stale && Date.now() - stale.savedAt < PUBLIC_LIST_STALE_IF_BUSY_MS && isRateLimit(error)) {
+        return stale.listings;
+      }
+      if (isRateLimit(error)) {
+        // Last-resort launch resilience: return the last known-good public snapshot
+        // rather than failing a first-time visitor with a 503 during a traffic burst.
+        publicListCache = { savedAt: Date.now(), listings: publicDirectoryFallbackSnapshot, degraded: true };
+        return publicDirectoryFallbackSnapshot;
+      }
+      throw error;
+    })
+    .finally(() => { publicListInFlight = null; });
+
+  return publicListInFlight;
+}
+
+function parseJson(value:any) {
+  if (!value) return null;
+  try { return JSON.parse(value); } catch { return null; }
+}
+
+function sanitiseProfile(input:any) {
+  const venuesIn = Array.isArray(input?.venues) ? input.venues.slice(0, 20) : [];
+  const venues = venuesIn.map((v:any, i:number) => ({
+    id: idSafe(v?.id, `venue-${i+1}`),
+    name: clean(v?.name, 220),
+    shortName: nullable(v?.shortName, 120),
+    address: nullable(v?.address, 320),
+    eircode: nullable(v?.eircode, 40),
+    indoor: typeof v?.indoor === 'boolean' ? v.indoor : null,
+    courts: safeNumber(v?.courts, 1, 100),
+    latitude: safeNumber(v?.latitude, -90, 90),
+    longitude: safeNumber(v?.longitude, -180, 180),
+    mapUrl: safeUrl(v?.mapUrl),
+    websiteUrl: safeUrl(v?.websiteUrl),
+    playType: nullable(v?.playType, 120),
+    source: clean(v?.source, 40) === 'Spond' ? 'Spond' : null,
+  })).filter((v:any) => v.name);
+
+  const venueIds = new Set(venues.map((v:any) => v.id));
+  const sessionsIn = Array.isArray(input?.sessions) ? input.sessions.slice(0, 80) : [];
+  const sessions = sortSessions(sessionsIn.map((s:any, i:number) => ({
+    id: idSafe(s?.id, `session-${i+1}`),
+    venueId: venueIds.has(clean(s?.venueId, 120)) ? clean(s?.venueId, 120) : (venues[0]?.id || null),
+    day: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].includes(clean(s?.day, 20)) ? clean(s?.day, 20) : 'Monday',
+    start: nullable(s?.start, 10),
+    end: nullable(s?.end, 10),
+    meetTime: nullable(s?.meetTime, 10),
+    level: clean(s?.level, 180) || 'Club Session',
+    price: safeNumber(s?.price, 0, 10000),
+    paymentMethod: ['Cash','Online','Pay at venue','Included in membership','Contact club'].includes(clean(s?.paymentMethod, 80)) ? clean(s?.paymentMethod, 80) : null,
+    capacity: safeNumber(s?.capacity, 1, 10000),
+    host: nullable(s?.host, 180),
+    showPublicJoinLink: s?.showPublicJoinLink === true,
+    publicJoinUrl: safeUrl(s?.publicJoinUrl),
+    source: clean(s?.source, 40) === 'Spond' ? 'Spond' : null,
+  })).filter((s:any) => s.venueId && s.start));
+
+  return {
+    listingType: nullable(input?.listingType, 60),
+    photoUrl: safeUrl(input?.photoUrl),
+    photoSourceUrl: safeUrl(input?.photoSourceUrl),
+    photoCrop: input?.photoCrop && typeof input.photoCrop === 'object' ? {
+      zoom: safeNumber(input.photoCrop.zoom,0.7,2) ?? 1,
+      offsetX: safeNumber(input.photoCrop.offsetX,-100,100) ?? 0,
+      offsetY: safeNumber(input.photoCrop.offsetY,-100,100) ?? 0,
+    } : null,
+    town: nullable(input?.town, 160),
+    county: nullable(input?.county, 160),
+    serviceArea: nullable(input?.serviceArea, 240),
+    qualifications: (Array.isArray(input?.qualifications) ? input.qualifications : []).slice(0,30).map((v:any)=>clean(v,300)).filter(Boolean),
+    coachingExperience: nullable(input?.coachingExperience, 1600),
+    coachingServices: (Array.isArray(input?.coachingServices) ? input.coachingServices : []).slice(0,30).map((v:any)=>clean(v,300)).filter(Boolean),
+    areasServed: (Array.isArray(input?.areasServed) ? input.areasServed : []).slice(0,32).map((v:any)=>clean(v,160)).filter(Boolean),
+    linkedin: safeUrl(input?.linkedin),
+    name: nullable(input?.name, 220),
+    description: nullable(input?.description, 1600),
+    membershipStatus: nullable(input?.membershipStatus, 240),
+    guestPolicy: nullable(input?.guestPolicy, 1800),
+    policyLabel: nullable(input?.policyLabel, 120),
+    website: safeUrl(input?.website),
+    facebook: safeUrl(input?.facebook),
+    instagram: safeUrl(input?.instagram),
+    tiktok: safeUrl(input?.tiktok),
+    shopUrl: safeUrl(input?.shopUrl),
+    productCategories: (Array.isArray(input?.productCategories) ? input.productCategories : []).slice(0,40).map((v:any)=>clean(v,120)).filter(Boolean),
+    waitingListUrl: safeUrl(input?.waitingListUrl),
+    joiningCtaLabel: nullable(input?.joiningCtaLabel, 120),
+    logoUrl: safeLogoUrl(input?.logoUrl),
+    contact: {
+      name: nullable(input?.contact?.name, 180),
+      phone: nullable(input?.contact?.phone, 80),
+      phoneHref: phoneHref(input?.contact?.phone),
+      email: safeEmail(input?.contact?.email),
+      whatsapp: safeUrl(input?.contact?.whatsapp),
+    },
+    venues,
+    sessions,
+  };
+}
+
+async function verifiedStatus(base44:any, slug:string) {
+  const access = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: slug, status: 'active' });
+  return access?.length ? 'verified' : 'unclaimed';
+}
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const body = await req.json().catch(() => ({}));
+    const action = String(body.action || 'public_get');
+
+    if (action === 'public_get' || action === 'protected_public_get') {
+      const listingSlug = clean(body.listingSlug, 180);
+      if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
+      const data = await getPublicClub(base44, listingSlug);
+      const payload = action === 'protected_public_get'
+        ? { ...(await protectedStateWithPrivacy(base44, listingSlug, data)), contractVersion:'protected-v1' }
+        : await publicStateForRollout(base44, listingSlug, data);
+      return Response.json(
+        payload,
+        { headers: { 'Cache-Control': 'public, max-age=5, stale-while-revalidate=30' } }
+      );
+    }
+
+    if (action === 'public_list' || action === 'protected_public_list') {
+      const result = await getPublicDirectoryList(base44);
+      const listings = action === 'protected_public_list'
+        ? await protectedListWithPrivacy(base44, result)
+        : await publicListForRollout(base44, result);
+      return Response.json(
+        { success: true, listings, ...(action === 'protected_public_list' ? { contractVersion:'protected-v1' } : {}) },
+        { headers: { 'Cache-Control': 'public, max-age=5, stale-while-revalidate=30' } }
+      );
+    }
+
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Sign in required' }, { status: 401 });
+
+    if (action === 'private_get') {
+      const listingSlug = clean(body.listingSlug, 180);
+      if (!listingSlug) return Response.json({ error:'listingSlug required' }, { status:400 });
+      let allowed = authorisedDirectorySuperAdmin(user);
+      if (!allowed) {
+        const access = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug:listingSlug, user_id:user.id, status:'active' });
+        allowed = !!access?.length;
+      }
+      if (!allowed) return Response.json({ error:'Directory editor access required' }, { status:403 });
+      const rows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status:'active' }, '-updated_at', 5);
+      const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 5);
+      const row = rows?.[0] || null;
+      const dynamic = dynamicRows?.[0] || null;
+      const profile = parseJson(row?.public_json);
+      const base = parseJson(dynamic?.base_json);
+      const setup = parseJson(dynamic?.setup_json) || {};
+      // Older completed journeys logged completion but did not persist checklist state.
+      // Restore completion for this authorised editor without sending another email.
+      if (!setup?.review?.completedAt) {
+        const priorCompletion = await base44.asServiceRole.entities.AuditLog.filter({
+          action:'directory_guided_completion_email_reserved',
+          scope_id:`${listingSlug}:${user.id}`
+        },'-created_date',1);
+        if (priorCompletion?.[0]) setup.review = {completedAt:priorCompletion[0].created_date,completedByUserId:user.id};
+      }
+      // The coach's forwarding/contact endpoint is private. Return it only to an authorised
+      // signed-in editor; public_get must never expose the email or mobile.
+      let privateContact = null;
+      if (['coach','equipment'].includes(String(dynamic?.listing_type || base?.listingType || profile?.listingType))) {
+        const endpoints = await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:listingSlug,status:'active'},'-updated_at',10);
+        const entry = (endpoints || []).find((item:any)=>item.email || item.phone || item.contact_name);
+        if (entry) privateContact = {name:clean(entry.contact_name,180),email:safeEmail(entry.email),phone:clean(entry.phone,80)};
+        else {
+          // Trusted contact details were collected when the coach preview was created.
+          // Only return them to the authorised owner/editor; never expose via public_get.
+          const trusted = parseJson(dynamic?.trusted_contacts_json);
+          const supplied = (Array.isArray(trusted) ? trusted : []).find((item:any) => item?.name || item?.email || item?.phone);
+          if (supplied) privateContact = {name:clean(supplied.name,180),email:safeEmail(supplied.email),phone:clean(supplied.phone,80)};
+        }
+      }
+      return Response.json({ success:true, listingSlug, visibility:dynamic?.visibility || 'public', verificationStatus:await verifiedStatus(base44, listingSlug), profile, base, setup, privateContact });
+    }
+
+    if (action === 'confirm_identity') {
+      const listingSlug = clean(body.listingSlug, 180);
+      const publicName = clean(body.publicName, 220);
+      if (!listingSlug || !publicName) return Response.json({ error:'listingSlug and publicName required' }, { status:400 });
+      let allowed = authorisedDirectorySuperAdmin(user);
+      if (!allowed) {
+        const access = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug:listingSlug, user_id:user.id, status:'active' });
+        allowed = !!access?.length;
+      }
+      if (!allowed) return Response.json({ error:'Verified directory editor access required' }, { status:403 });
+
+      const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 5);
+      const dynamic = dynamicRows?.[0];
+      if (!dynamic) return Response.json({ error:'Database-backed Directory listing required for identity confirmation' }, { status:404 });
+      const setup = parseJson(dynamic.setup_json, {});
+      const identity = setup?.identity || {};
+      const candidates = Array.isArray(identity?.candidates) ? identity.candidates.map((item:any)=>clean(typeof item === 'string' ? item : item?.name, 220)).filter(Boolean) : [];
+      const allowCustom = identity?.allowCustom !== false;
+      if (identity?.requiresConfirmation === true && !allowCustom && candidates.length && !candidates.includes(publicName)) {
+        return Response.json({ error:'Choose one of the recognised public names.' }, { status:400 });
+      }
+
+      const now = new Date().toISOString();
+      const nextIdentity = { ...identity, requiresConfirmation:false, confirmed:true, selectedPublicName:publicName, confirmedAt:now, confirmedByUserId:user.id };
+      const nextSetup = { ...setup, identity:nextIdentity };
+      const base = parseJson(dynamic.base_json, {}) || {};
+      await base44.asServiceRole.entities.DirectoryListingRecord.update(dynamic.id, {
+        name:publicName,
+        base_json:JSON.stringify({ ...base, name:publicName }),
+        setup_json:JSON.stringify(nextSetup),
+      });
+
+      const profiles = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5);
+      if (profiles?.[0]) {
+        const publicProfile = parseJson(profiles[0].public_json, {}) || {};
+        await base44.asServiceRole.entities.DirectoryListingProfile.update(profiles[0].id, {
+          public_json:JSON.stringify({ ...publicProfile, name:publicName }),
+          updated_by_user_id:user.id,
+          updated_at:now,
+        });
+      }
+
+      const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug:listingSlug, status:'active' }, '-granted_at', 100);
+      for (const access of accesses || []) {
+        if (access.listing_name_snapshot !== publicName) await base44.asServiceRole.entities.DirectoryListingAccess.update(access.id, { listing_name_snapshot:publicName });
+      }
+      const endpoints = await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 20).catch(()=>[]);
+      for (const endpoint of endpoints || []) {
+        if (endpoint.listing_name_snapshot !== publicName) await base44.asServiceRole.entities.DirectoryContactEndpoint.update(endpoint.id, { listing_name_snapshot:publicName, updated_by_user_id:user.id, updated_at:now });
+      }
+
+      // Directory identity confirmation updates Directory-owned records only.
+      // Tenant/Club identity changes require a separate explicit, audited action.
+
+      invalidatePublicListCache();
+      invalidatePublicGetCache(listingSlug);
+      return Response.json({ success:true, listingSlug, publicName, setup:nextSetup });
+    }
+
+    if (action === 'complete_guided_setup') {
+      // Only explicit Finish review can trigger completion; ordinary saves and autosaves cannot.
+      const listingSlug = clean(body.listingSlug, 180);
+      if (!listingSlug) return Response.json({ error:'Listing required' }, { status:400 });
+      const access = await base44.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:listingSlug,user_id:user.id,status:'active'});
+      if (!access?.length && !authorisedDirectorySuperAdmin(user)) return Response.json({error:'Verified Directory access required'}, {status:403});
+      const listingRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({slug:listingSlug,status:'active'},'-published_at',5);
+      const listing = listingRows?.[0];
+      if (!listing) return Response.json({error:'Directory listing not found'},{status:404});
+      const categoryMap:Record<string,string> = {coach:'coaching',coaching:'coaching',equipment:'suppliers',supplier:'suppliers',suppliers:'suppliers',club:'clubs',holiday:'holidays',holidays:'holidays',events:'events',event:'events',organiser:'events'};
+      const category = categoryMap[String(listing.listing_type || '').toLowerCase()];
+      if (!category) return Response.json({success:true,emailStatus:'not_configured_for_category'});
+      const profileRows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:listingSlug,status:'active'},'-updated_at',2);
+      const profile = parseJson(profileRows?.[0]?.public_json) || {};
+      if (!clean(profile.name,220) || !clean(profile.description,2000)) return Response.json({error:'Save your name and profile description before completing the guided review.'},{status:400});
+      const now=new Date().toISOString();
+      const setup=parseJson(listing.setup_json) || {};
+      if (!setup?.review?.completedAt) {
+        setup.review={completedAt:now,completedByUserId:user.id};
+        await base44.asServiceRole.entities.DirectoryListingRecord.update(listing.id,{setup_json:JSON.stringify(setup)});
+      }
+      const purpose = `directory_${category}_profile_completed`;
+      const templates = await base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose,status:'approved'},'-updated_date',5);
+      const template = templates?.[0];
+      if (!template) return Response.json({success:true,emailStatus:'awaiting_template_approval'});
+      const recipient = String(user.email || '').trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) return Response.json({error:'Your RallyHub login needs a verified email address'},{status:400});
+      const key = `${listingSlug}:${user.id}`;
+      const prior = await base44.asServiceRole.entities.AuditLog.filter({action:'directory_guided_completion_email_reserved',scope_id:key},'-created_date',10);
+      if (prior?.length) return Response.json({success:true,emailStatus:'already_processed'});
+      const manageUrl = `https://rallyhub.ie/directory/${encodeURIComponent(listingSlug)}/edit?guided=1`;
+      const firstName = clean(user.full_name || user.display_name || '',180).split(/\s+/)[0] || 'there';
+      const values:Record<string,string> = {CONTACT_NAME:firstName,LISTING_NAME:clean(profile.name,220),MANAGE_LINK:manageUrl};
+      const render=(str:string)=>String(str||'').replace(/{{\s*(CONTACT_NAME|LISTING_NAME|MANAGE_LINK)\s*}}/g,(_,k)=>values[k]);
+      const subject=render(template.subject_template);
+      // The approved branded email shell provides its own signature.
+      // Normalise greeting to first name and remove duplicate sign-offs in body.
+      const textBody=render(template.plain_text_template)
+        .replace(/^Hi\s+[^,\n]+,/i,`Hi ${firstName},`)
+        .replace(/\n\s*Yours in sport,?\s*$/i,'').trim();
+      if (!subject || !textBody || /{{\s*[A-Z_]+\s*}}/.test(subject+' '+textBody)) return Response.json({error:'Approved completion template has unresolved placeholders'},{status:409});
+      // Reserve before external send. Never retry automatically after an uncertain provider response.
+      await base44.asServiceRole.entities.AuditLog.create({tenant_id:'platform',user_id:user.id,action:'directory_guided_completion_email_reserved',entity_type:'DirectoryListing',entity_id:listingSlug,scope_type:'DirectoryListing',scope_id:key,after_state:JSON.stringify({recipient,purpose}),reason:'One-time guided profile completion email send reservation.'});
+      try {
+        const safeText=textBody.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+        const htmlBody=await rallyHubEmailShellUsingTemplate(base44,purpose,{title:'Thank you for completing your Directory profile',preheader:`${values.LISTING_NAME} is ready to maintain.`,content:`<p>${safeText}</p>`,actionUrl:manageUrl,actionLabel:'Manage your Directory profile',footerNote:'RallyHub Directory'});
+        await sendWithConfiguredEmailTransport(base44,{scopeType:'platform',purpose:'directory'},{to:recipient,subject,textBody,htmlBody});
+        await base44.asServiceRole.entities.AuditLog.create({tenant_id:'platform',user_id:user.id,action:'directory_guided_completion_email_sent',entity_type:'DirectoryListing',entity_id:listingSlug,scope_type:'DirectoryListing',scope_id:key,after_state:JSON.stringify({recipient,purpose}),reason:'Approved guided profile completion message sent.'}).catch(()=>{});
+        return Response.json({success:true,emailStatus:'sent',recipient});
+      } catch (sendError) {
+        console.error('Directory guided completion email delivery failed',sendError);
+        return Response.json({success:true,emailStatus:'delivery_failed_review_required'});
+      }
+    }
+
+    if (action === 'save_coach_private_contact' || action === 'save_supplier_private_contact') {
+      const listingSlug=clean(body.listingSlug,180);
+      if(!listingSlug || body.confirmEmail!==true || body.confirmMobile!==true) return Response.json({error:'Confirm the coaching email and mobile separately'},{status:400});
+      let authorised=authorisedDirectorySuperAdmin(user);
+      if(!authorised){
+        const rights=await base44.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:listingSlug,user_id:user.id,status:'active'});
+        authorised=!!rights?.length;
+      }
+      if(!authorised)return Response.json({error:'Directory editor access required'},{status:403});
+      const records=await base44.asServiceRole.entities.DirectoryListingRecord.filter({slug:listingSlug,status:'active'},'-published_at',5);
+      const expectedType=action==='save_supplier_private_contact'?'equipment':'coach';
+      if(records?.[0]?.listing_type!==expectedType)return Response.json({error:'Protected contact requires the matching listing type'},{status:400});
+      const name=clean(body.contact?.name,160);
+      const email=safeEmail(body.contact?.email);
+      const phone=clean(body.contact?.phone,80);
+      if(!name||!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!phone)return Response.json({error:'Contact name, valid email and mobile are required'},{status:400});
+      const existing=await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:listingSlug,status:'active'},'-updated_at',10);
+      const target=existing?.[0];
+      const now=new Date().toISOString();
+      const values={listing_slug:listingSlug,listing_name_snapshot:clean(records[0].name,220),contact_name:name,email,phone,
+        whatsapp_url:'',allow_call:false,allow_whatsapp:false,allow_email:true,status:'active',updated_by_user_id:user.id,updated_at:now};
+      if(target)await base44.asServiceRole.entities.DirectoryContactEndpoint.update(target.id,values);
+      else await base44.asServiceRole.entities.DirectoryContactEndpoint.create(values);
+      return Response.json({success:true,privateContact:{name,email,phone},message:'Protected contact details saved. Email and mobile are not published.'});
+    }
+
+    if (action === 'save') {
+      const listingSlug = clean(body.listingSlug, 180);
+      if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
+      let allowed = authorisedDirectorySuperAdmin(user);
+      if (!allowed) {
+        const access = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, user_id: user.id, status: 'active' });
+        allowed = !!access?.length;
+      }
+      if (!allowed) return Response.json({ error: 'Verified directory editor access required' }, { status: 403 });
+
+      const listingRecords = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 5);
+      const protectedListing = ['coach','equipment'].includes(String(listingRecords?.[0]?.listing_type));
+      const publicProfile = sanitiseProfile(body.profile || {});
+      if (protectedListing) { publicProfile.listingType = listingRecords[0].listing_type; publicProfile.contact = { name:null, phone:null, phoneHref:null, email:null, whatsapp:null }; }
+
+      publicProfile.venues = await geocodeDirectoryVenues(publicProfile.venues || [], { town: clean(body.town, 120), county: clean(body.county, 120) });
+      const publicJson = JSON.stringify(publicProfile);
+      const now = new Date().toISOString();
+      const existing = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status: 'active' }, '-updated_at', 5);
+      const beforeJson = existing?.[0]?.public_json || null;
+      let record;
+      if (existing?.[0]) {
+        record = await base44.asServiceRole.entities.DirectoryListingProfile.update(existing[0].id, {
+          public_json: publicJson, updated_by_user_id: user.id, updated_at: now,
+        });
+      } else {
+        record = await base44.asServiceRole.entities.DirectoryListingProfile.create({
+          listing_slug: listingSlug, public_json: publicJson, status: 'active', updated_by_user_id: user.id, updated_at: now,
+        });
+      }
+
+      if (!protectedListing) {
+      // Keep the protected-contact override aligned with owner/editor changes.
+      // Claim privacy preferences remain authoritative over raw contact fields.
+      try {
+        const claims = await base44.asServiceRole.entities.DirectoryClaim.filter({ listing_slug:listingSlug }, '-reviewed_at', 20);
+        const claim = (claims || []).find((row:any) => ['approved','auto_verified'].includes(String(row?.status || ''))) || null;
+        const phoneOptOut = claim?.public_phone_opt_out === true;
+        const nameOptOut = claim?.public_name_opt_out === true;
+        const contact = publicProfile?.contact || {};
+        const endpointPatch = {
+          listing_slug:listingSlug,
+          listing_name_snapshot:clean(publicProfile?.name || listingSlug, 240),
+          contact_name:nameOptOut ? '' : clean(contact?.name, 160),
+          contact_role:clean(claim?.claimant_role, 120),
+          phone:phoneOptOut ? '' : clean(contact?.phone, 100),
+          email:safeEmail(contact?.email) || '',
+          whatsapp_url:phoneOptOut ? '' : (safeUrl(contact?.whatsapp) || ''),
+          allow_call:!phoneOptOut && !!clean(contact?.phone, 100),
+          allow_whatsapp:!phoneOptOut && !!safeUrl(contact?.whatsapp),
+          allow_email:!!safeEmail(contact?.email),
+          status:'active',
+          updated_by_user_id:user.id,
+          updated_at:now,
+        };
+        const endpoints = await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5);
+        if (endpoints?.[0]) await base44.asServiceRole.entities.DirectoryContactEndpoint.update(endpoints[0].id, endpointPatch);
+        else await base44.asServiceRole.entities.DirectoryContactEndpoint.create(endpointPatch);
+      } catch (contactEndpointSyncError) {
+        console.warn('Protected contact endpoint sync failed', contactEndpointSyncError?.message || contactEndpointSyncError);
+      }
+
+      } // Coach public edits never overwrite private contact endpoints.
+
+      // Keep the editable display name aligned with database-backed listings while
+      // deliberately preserving the stable listing slug / URL.
+      if (publicProfile?.name) {
+        try {
+          const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5);
+          const dynamic = dynamicRows?.[0];
+          if (dynamic) {
+            const base = parseJson(dynamic.base_json) || {};
+            await base44.asServiceRole.entities.DirectoryListingRecord.update(dynamic.id, {
+              name: publicProfile.name,
+              base_json: JSON.stringify({ ...base, name: publicProfile.name }),
+            });
+          }
+          const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' }, '-granted_at', 100);
+          for (const access of accesses || []) {
+            if (access.listing_name_snapshot !== publicProfile.name) {
+              await base44.asServiceRole.entities.DirectoryListingAccess.update(access.id, { listing_name_snapshot: publicProfile.name });
+            }
+          }
+        } catch (nameSyncError) {
+          console.warn('Directory display-name sync failed', nameSyncError?.message || nameSyncError);
+        }
+      }
+
+      // For database-backed listings curated by a RallyHub Super Admin, keep the
+      // trusted claim contact aligned with the contact shown in the editor. This is
+      // what allows an invited representative to auto-verify with the same email.
+      if (authorisedDirectorySuperAdmin(user) && publicProfile?.contact?.email) {
+        try {
+          const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5);
+          const dynamic = dynamicRows?.[0];
+          if (dynamic) {
+            const trusted = [{
+              name: publicProfile.contact?.name || null,
+              email: publicProfile.contact?.email || null,
+              phone: publicProfile.contact?.phone || null,
+            }];
+            await base44.asServiceRole.entities.DirectoryListingRecord.update(dynamic.id, { trusted_contacts_json: JSON.stringify(trusted) });
+          }
+        } catch (contactSyncError) {
+          console.warn('Directory trusted-contact sync failed', contactSyncError?.message || contactSyncError);
+        }
+      }
+      try {
+        await base44.asServiceRole.entities.DirectoryListingAudit.create({
+          listing_slug: listingSlug,
+          user_id: user.id,
+          action: beforeJson ? 'profile_updated' : 'profile_created',
+          occurred_at: now,
+          ...(beforeJson ? { before_json: beforeJson } : {}),
+          after_json: publicJson,
+        });
+      } catch (auditError) {
+        console.warn('Directory listing audit write failed', auditError?.message || auditError);
+      }
+      invalidatePublicListCache();
+      invalidatePublicGetCache(listingSlug);
+      return Response.json({ success: true, profile: publicProfile, updatedAt: now, id: record?.id || existing?.[0]?.id || null });
+    }
+
+    return Response.json({ error: 'Unknown action' }, { status: 400 });
+  } catch (error) {
+    console.error('directoryListingProfile error', error);
+    if (isRateLimit(error)) {
+      return Response.json(
+        { error: 'RallyHub is temporarily busy. Please try again shortly.', retryAfterSeconds: 3 },
+        { status: 503, headers: { 'Retry-After': '3' } }
+      );
+    }
+    return Response.json({ error: 'Unable to process the directory profile request right now.' }, { status: 500 });
+  }
+});
