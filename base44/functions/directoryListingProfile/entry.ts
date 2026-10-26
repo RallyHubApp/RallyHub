@@ -420,7 +420,15 @@ Deno.serve(async (req) => {
       const profile = parseJson(row?.public_json);
       const base = parseJson(dynamic?.base_json);
       const setup = parseJson(dynamic?.setup_json);
-      return Response.json({ success:true, listingSlug, visibility:dynamic?.visibility || 'public', verificationStatus:await verifiedStatus(base44, listingSlug), profile, base, setup });
+      // The coach's forwarding/contact endpoint is private. Return it only to an authorised
+      // signed-in editor; public_get must never expose the email or mobile.
+      let privateContact = null;
+      if (String(dynamic?.listing_type || base?.listingType || profile?.listingType) === 'coach') {
+        const endpoints = await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:listingSlug,status:'active'},'-updated_at',10);
+        const entry = (endpoints || []).find((item:any)=>item.email || item.phone || item.contact_name);
+        if (entry) privateContact = {name:clean(entry.contact_name,180),email:safeEmail(entry.email),phone:clean(entry.phone,80)};
+      }
+      return Response.json({ success:true, listingSlug, visibility:dynamic?.visibility || 'public', verificationStatus:await verifiedStatus(base44, listingSlug), profile, base, setup, privateContact });
     }
 
     if (action === 'confirm_identity') {

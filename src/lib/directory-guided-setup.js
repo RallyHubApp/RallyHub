@@ -29,7 +29,7 @@ export const DIRECTORY_SETUP_BLUEPRINTS = {
   coach: {
     noun: 'coach',
     intro: 'We’ve already prepared your coaching profile. Check your photograph, biography, qualifications, coaching services and where you teach, then preview and save. Adding a clinic or event is optional.',
-    steps: ['basics','contact','location','events','review'],
+    steps: ['basics','photograph','contact','location','events','review'],
     eventOptional: true,
   },
   coaching: {
@@ -54,6 +54,7 @@ export const DIRECTORY_SETUP_BLUEPRINTS = {
 const STEP_LABELS = {
   identity: { club:'Confirm club name', default:'Confirm public name' },
   basics: { club:'Club details', default:'About you' },
+  photograph: { coach:'Your coaching photograph', default:'Photograph or logo' },
   contact: { club:'Contact information', coach:'Confirm contact details', coaching:'Confirm contact details', default:'Contact & social' },
   location: { default:'Where you operate' },
   venues: { default:'Playing venues' },
@@ -85,6 +86,10 @@ export function buildDirectorySetupProgress({ listingType='club', profile={}, ev
     basics: {
       complete: hasText(profile?.name) && hasUsableDescription(profile?.description),
       detail: hasText(profile?.name) && hasUsableDescription(profile?.description) ? 'Already filled' : 'Check your name and short description',
+    },
+    photograph: {
+      complete: hasText(profile?.photoUrl),
+      detail: hasText(profile?.photoUrl) ? 'Photograph uploaded — you can adjust its framing' : 'Upload and frame your coaching photograph',
     },
     contact: {
       complete: hasContact(profile),
