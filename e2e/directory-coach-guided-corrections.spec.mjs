@@ -6,7 +6,7 @@ test('coach guided journey has independent photo editing, private contact prefil
  const profile={listingType:'coach',name:'Brian Moore — TEST PREVIEW',description:'Experienced coach',photoUrl:'https://images.example.test/saved-coach.png',contact:{}};
  const base={slug:'test-preview-coach',...profile,county:'Clare'};
  const privateContact={email:'coach@example.test',phone:'0871234567'};
- const privateSaves=[];
+ const privateSaves=[];let savedProfile=null;let imageUploads=0;
  await page.route('https://images.example.test/saved-coach.png',route=>route.fulfill({status:200,contentType:'image/png',headers:{'Access-Control-Allow-Origin':'*'},body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg==','base64')}));
  await page.route('**/api/apps/**',async route=>{
   const path=new URL(route.request().url()).pathname;
@@ -20,10 +20,11 @@ test('coach guided journey has independent photo editing, private contact prefil
    if(name==='securityContext')return reply({success:true,context:null});
    if(name==='directoryClaim')return reply({success:true,hasAccess:true,listing:{verificationStatus:'verified'},accessRole:'owner'});
    if(name==='directoryEvents')return reply({success:true,events:[]});
+   if(name==='secureCreditAction'){imageUploads++;return reply({success:true,file_url:`https://images.example.test/edited-${imageUploads}.webp`});}
    if(name==='directoryListingProfile'){
     if(b.action==='private_get')return reply({success:true,profile,base,visibility:'preview_only',setup:{},privateContact});
     if(b.action==='save_coach_private_contact'){privateSaves.push(b);return reply({success:true,privateContact:b.contact})}
-    if(b.action==='save')return reply({success:true,profile:b.profile});
+    if(b.action==='save'){savedProfile=b.profile;return reply({success:true,profile:b.profile});}
     return reply({success:true,profile,base});
    }
   }
@@ -42,6 +43,14 @@ test('coach guided journey has independent photo editing, private contact prefil
  await expect(page.getByLabel('Photograph size')).toBeVisible();
  await expect(page.getByLabel('Photograph horizontal position')).toBeVisible();
  await expect(page.getByLabel('Photograph vertical position')).toBeVisible();
+ await page.getByLabel('Photograph size').fill('1.2');
+ await page.getByLabel('Photograph horizontal position').fill('20');
+ await page.getByTestId('directory-logo-apply').click();
+ await expect.poll(()=>imageUploads).toBe(1);
+ await expect.poll(()=>savedProfile?.photoCrop?.zoom,{timeout:11000}).toBe(1.2);
+ expect(savedProfile.photoSourceUrl).toBe('https://images.example.test/saved-coach.png');
+ expect(savedProfile.photoCrop.offsetX).toBe(20);
+ expect(savedProfile.photoUrl).toBe('https://images.example.test/edited-1.webp');
  await page.getByRole('button',{name:'Back to checklist'}).click();
  await page.getByTestId('setup-step-contact').click();
  await expect(page.locator('#contact')).toBeVisible();
