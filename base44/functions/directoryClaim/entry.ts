@@ -428,6 +428,7 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
       </div>`,
     actionUrl: claimUrl,
     actionLabel: coachInvite ? 'Claim your coaching profile' : actionLabel,
+    afterActionContent: coachInvite ? `<div style="margin:12px 0 16px;padding:16px 18px;border:1px solid #e0e8ed;border-radius:12px;background-color:#f7fafc;color:#334155;font:13px/1.6 Arial,sans-serif;"><strong style="color:#07184c;">More information and support</strong><p style="margin:8px 0 4px;">Need help? <a href="https://rallyhub.ie/directory/help#coaching" style="color:#075f9c;font-weight:bold;">Coaching Help Centre</a></p><p style="margin:4px 0;">Browse <a href="https://rallyhub.ie/directory/category/coaching" style="color:#075f9c;font-weight:bold;">the Coaching Directory</a>.</p><p style="margin:8px 0 0;">Your coaching email and mobile number are not published on the profile. Players can reach you through the protected Contact Coach form.</p></div>` : '',
     utilityLinks: coachInvite ? [] : undefined,
     allowTemplateBody:!coachInvite && !categoryInvitationTemplate && !String(customText||'').trim(),
     templateVariables:{CONTACT_NAME:recipientName,LISTING_NAME:listing.name,CLAIM_LINK:claimUrl},

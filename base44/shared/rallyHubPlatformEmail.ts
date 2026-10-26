@@ -45,7 +45,7 @@ function rallyHubEmailUtilityMenuHtml(selectedKeys:string[]|null=null) {
   });
 }
 
-export function rallyHubEmailShell({ title = '', preheader = '', content = '', actionUrl = '', actionLabel = '', footerNote = 'RallyHub Directory', utilityLinks = null, secondaryActionUrl = '', secondaryActionLabel = '' }:any) {
+export function rallyHubEmailShell({ title = '', preheader = '', content = '', actionUrl = '', actionLabel = '', footerNote = 'RallyHub Directory', utilityLinks = null, secondaryActionUrl = '', secondaryActionLabel = '', afterActionContent = '' }:any) {
   const button = actionUrl && actionLabel ? `
     <table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px auto 24px;"><tr>
       <td bgcolor="${RALLYHUB_GREEN}" style="border-radius:12px;">
@@ -71,6 +71,7 @@ export function rallyHubEmailShell({ title = '', preheader = '', content = '', a
           ${title ? `<h1 style="margin:0 0 20px;font-size:24px;line-height:1.25;color:${RALLYHUB_NAVY};font-weight:850;">${escapeHtml(title)}</h1>` : ''}
           ${content}
           ${button}
+          ${afterActionContent}
           ${secondaryButton}
           ${rallyHubEmailSignatureHtml()}
         </td></tr>
