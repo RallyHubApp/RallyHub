@@ -26,6 +26,12 @@ export const DIRECTORY_SETUP_BLUEPRINTS = {
     intro: 'We’ve already started your organiser listing. Check the details we found, finish your event, then preview and publish.',
     steps: ['basics','contact','location','events','review'],
   },
+  coach: {
+    noun: 'coach',
+    intro: 'We’ve already prepared your coaching profile. Check your photograph, biography, qualifications, coaching services and where you teach, then preview and save. Adding a clinic or event is optional.',
+    steps: ['basics','contact','location','events','review'],
+    eventOptional: true,
+  },
   coaching: {
     noun: 'coach or coaching provider',
     intro: 'We’ve already started your RallyHub coaching listing. Check the details we found and add a clinic or event when it is useful.',
