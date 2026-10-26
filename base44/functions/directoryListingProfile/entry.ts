@@ -112,7 +112,7 @@ async function protectedStateWithPrivacy(base44:any, listingSlug:string, state:a
 }
 
 async function publicStateForRollout(base44:any, listingSlug:string, state:any) {
-  if (state?.base?.listingType === 'coach' || state?.profile?.listingType === 'coach') return protectedDirectoryState(state, { hideContactName:true });
+  if (['coach','equipment'].includes(String(state?.base?.listingType || state?.profile?.listingType))) return protectedDirectoryState(state, { hideContactName:true });
   const config = await contactProtectionConfig(base44);
   const protectedForListing = config.failClosed || config.protectedSlugs.has(listingSlug) || (config.defaultDirectoryEnabled && !config.legacyHoldSlugs.has(listingSlug));
   return protectedForListing
@@ -131,7 +131,7 @@ async function publicListForRollout(base44:any, listings:any) {
   const config = await contactProtectionConfig(base44);
   const coachSafe:any = { ...(listings || {}) };
   for (const [slug, state] of Object.entries(coachSafe) as any) {
-    if (state?.base?.listingType === 'coach' || state?.profile?.listingType === 'coach') coachSafe[slug] = protectedDirectoryState(state, { hideContactName:true });
+    if (['coach','equipment'].includes(String(state?.base?.listingType || state?.profile?.listingType))) coachSafe[slug] = protectedDirectoryState(state, { hideContactName:true });
   }
   listings = coachSafe;
   if (!config.globalEnabled) return listings;
