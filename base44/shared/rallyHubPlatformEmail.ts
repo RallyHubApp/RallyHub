@@ -58,13 +58,13 @@ export function rallyHubEmailShell({ title = '', preheader = '', content = '', a
         <a href="${escapeHtml(secondaryActionUrl)}" style="display:inline-block;padding:12px 22px;color:${RALLYHUB_NAVY};text-decoration:none;font-size:14px;font-weight:800;">${escapeHtml(secondaryActionLabel)}</a>
       </td>
     </tr></table>` : '';
-  return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>@media only screen and (max-width:680px){.rh-email-shell{width:100%!important;max-width:100%!important;table-layout:fixed!important}.rh-email-body{padding-left:18px!important;padding-right:18px!important}body{overflow-wrap:anywhere}}</style></head><body style="margin:0;padding:0;background:#eef3f2;font-family:Arial,Helvetica,sans-serif;color:#172033;">
+  return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"><style>:root{color-scheme:light only!important;}@media only screen and (max-width:680px){.rh-email-shell{width:100%!important;max-width:100%!important;table-layout:fixed!important}.rh-email-body{padding-left:18px!important;padding-right:18px!important}body{overflow-wrap:anywhere}}</style></head><body style="margin:0;padding:0;background:#eef3f2;font-family:Arial,Helvetica,sans-serif;color:#172033;">
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader || title)}</div>
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;table-layout:fixed;background:#eef3f2;padding:24px 10px;"><tr><td align="center">
       <table class="rh-email-shell" role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;max-width:660px;background:#ffffff;border:1px solid #d8e3df;border-radius:20px;overflow:hidden;box-shadow:0 8px 28px rgba(7,24,76,.08);">
         <tr><td style="height:7px;background:${RALLYHUB_GREEN};"></td></tr>
-        <tr><td style="padding:24px 24px 18px;background:#ffffff;">
-          <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto;"><tr><td style="vertical-align:middle;text-align:center;"><img src="${RALLYHUB_EMAIL_LOGO}" width="232" alt="RallyHub Play Connect Belong" style="display:block;width:232px;max-width:100%;height:auto;margin:0 auto;border:0;"></td></tr></table>
+        <tr><td bgcolor="#ffffff" style="padding:24px 24px 18px;background-color:#ffffff!important;color:#07184c!important;">
+          <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto;background-color:#ffffff!important;" bgcolor="#ffffff"><tr><td bgcolor="#ffffff" style="vertical-align:middle;text-align:center;background-color:#ffffff!important;"><img src="${RALLYHUB_EMAIL_LOGO}" width="232" alt="RallyHub — Play Connect Belong" style="display:block;width:232px;max-width:100%;height:auto;margin:0 auto;border:0;background-color:#ffffff!important;"></td></tr></table>
         </td></tr>
         <tr><td class="rh-email-body" style="padding:0 24px 28px;">
           <div style="height:1px;background:#e7eeec;margin:0 0 24px;"></div>

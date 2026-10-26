@@ -63,7 +63,10 @@ export default function DirectoryClaim() {
   const loginHref = `/login?mode=directory&returnTo=${encodeURIComponent(returnTo)}`;
   const registerHref = `/register?mode=directory&returnTo=${encodeURIComponent(returnTo)}`;
 
-  const club = seedClub || dynamicClub;
+  // An invited preview listing is intentionally absent from public Directory results.
+  // The opaque token is validated by directoryClaim.status after sign-in.
+  const club = seedClub || dynamicClub || (inviteToken ? { slug, name: status?.listing?.name || 'your invited coaching profile', listingType: 'coach' } : null);
+  const isCoachInvite = Boolean(inviteToken && club?.listingType === 'coach');
 
   useEffect(() => {
     if (seedClub) return;
@@ -106,6 +109,7 @@ export default function DirectoryClaim() {
         if (!active) return;
         if (res.data?.error) throw new Error(res.data.error);
         setStatus(res.data);
+        if (res.data?.listing?.name) setDynamicClub(previous => ({...(previous||{}),slug:club.slug,name:res.data.listing.name,listingType:isCoachInvite?'coach':(previous?.listingType||'club')}));
         const invitedName = res.data?.secureInvitation?.contactName || '';
         const invitedPhone = res.data?.secureInvitation?.contactPhone || '';
         if (!res.data?.claim && invitedName && looksLikePersonalFullName(invitedName) && !looksLikePersonalFullName(user?.full_name || user?.display_name || '')) {
@@ -210,9 +214,9 @@ export default function DirectoryClaim() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Directory verification</p>
                 <h1 className="text-3xl font-black mt-1">Update {club.name}</h1>
                 <p className="text-muted-foreground mt-2">
-                  If you help run this club, verify your connection and request permission to keep its public Directory information accurate. Directory access is separate from RallyHub club membership and the RallyHub club-management app.
+                  {isCoachInvite ? 'You have been invited to claim and review this coaching profile. Sign in with the email address that received your personal invitation, then complete the verification steps.' : 'If you help run this club, verify your connection and request permission to keep its public Directory information accurate. Directory access is separate from RallyHub club membership and the RallyHub club-management app.'}
                 </p>
-                {inviteToken && <div className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300"><strong>Secure invitation detected.</strong> This one-time link was sent by RallyHub for this club, usually by WhatsApp or email. If it came by WhatsApp, use the same mobile number. If it came by email, use the same email address. After you confirm your details, your Directory request is sent to RallyHub for approval.</div>}
+                {inviteToken && <div className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300"><strong>Secure invitation detected.</strong> This personal link was sent by RallyHub for this listing, by WhatsApp or email. If it came by WhatsApp, use the same mobile number. If it came by email, use the same email address. After you confirm your details, your Directory request is sent to RallyHub for approval.</div>}
               </div>
             </div>
 
@@ -252,7 +256,7 @@ export default function DirectoryClaim() {
                   Your RallyHub account now has permission to manage this directory listing. That permission does not give you access to a RallyHub Club, player records or club-management tools.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <Link to={`/directory/${club.slug}/edit`}>
+                  <Link to={`/directory/${club.slug}/edit?guided=1`}>
                     <Button className="gap-2"><UserCheck className="w-4 h-4" /> Edit your listing</Button>
                   </Link>
                   <Link to={`/directory/${club.slug}`}>
