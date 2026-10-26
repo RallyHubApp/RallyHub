@@ -96,8 +96,8 @@ export function buildDirectorySetupProgress({ listingType='club', profile={}, ev
       detail: hasContact(profile) ? 'Contact details already added' : 'Add at least one way for players to contact or find you',
     },
     location: {
-      complete: hasText(profile?.serviceArea),
-      detail: hasText(profile?.serviceArea) ? 'Area or destination already added' : 'Tell players where you operate',
+      complete: hasText(profile?.serviceArea) || (listingType === 'coach' && Array.isArray(profile?.areasServed) && profile.areasServed.some(hasText)),
+      detail: hasText(profile?.serviceArea) || (listingType === 'coach' && Array.isArray(profile?.areasServed) && profile.areasServed.some(hasText)) ? 'Area or destination already added' : 'Tell players where you operate',
     },
     venues: {
       complete: (profile?.venues || []).some(venueReady),
@@ -117,14 +117,14 @@ export function buildDirectorySetupProgress({ listingType='club', profile={}, ev
         : (blueprint.eventOptional ? 'Optional — add one when useful' : 'Add the event you want players to see'),
     },
     review: {
-      complete: visibility === 'public' && (!eventRequired || publishedEvents.length > 0),
+      complete: Boolean(setup?.review?.completedAt) || (visibility === 'public' && (!eventRequired || publishedEvents.length > 0)),
       detail: visibility === 'public' ? 'Public listing ready' : 'Preview everything, then publish',
     },
   };
   const stepIds = identityRelevant ? ['identity', ...blueprint.steps] : blueprint.steps;
   const requiredBeforeReview = stepIds.filter(id => id !== 'review' && !states[id]?.optional);
-  states.review.complete = visibility === 'public' && requiredBeforeReview.every(id => states[id]?.complete);
-  states.review.detail = states.review.complete ? 'Public listing ready' : (visibility === 'public' ? 'Review the items still needing attention' : 'Preview everything, then publish');
+  states.review.complete = Boolean(setup?.review?.completedAt) || (visibility === 'public' && requiredBeforeReview.every(id => states[id]?.complete));
+  states.review.detail = setup?.review?.completedAt ? 'Review completed — you can update your profile at any time' : states.review.complete ? 'Public listing ready' : (visibility === 'public' ? 'Review the items still needing attention' : 'Preview everything, then publish');
 
   const steps = stepIds.map((id, index) => ({
     id,

@@ -329,6 +329,7 @@ export default function DirectoryListingEdit() {
         try {
           const finished = await base44.functions.invoke('directoryListingProfile', {action:'complete_guided_setup',listingSlug:slug});
           if (finished.data?.error) throw new Error(finished.data.error);
+          setSetupContext(prev => ({...prev,review:{completedAt:new Date().toISOString()}}));
           if (finished.data?.emailStatus === 'sent') setAutoSaveState('Review finished — thank-you email sent ✓');
           else if (finished.data?.emailStatus === 'awaiting_template_approval') setAutoSaveState('Review finished — follow-up email awaiting approval');
           else if (finished.data?.emailStatus === 'already_processed') setAutoSaveState('Review already completed — no duplicate email sent');
@@ -1030,7 +1031,7 @@ export default function DirectoryListingEdit() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Button type="button" onClick={() => openGuidedStep(setupProgress.firstIncomplete)} disabled={(!isClubListing && setupEventsLoadedFor !== `${slug}:${listingType}`) || saving}>
                       {loadingSetupEvents && !isClubListing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                      Continue setup
+                      {setupProgress.steps.every(step=>step.complete || step.optional) ? 'Review or update profile' : 'Continue setup'}
                     </Button>
                     <span className="text-xs text-muted-foreground">We’ll open the first item that still needs your attention.</span>
                   </div>
@@ -1041,7 +1042,7 @@ export default function DirectoryListingEdit() {
                     <p className="text-sm font-semibold">Step {guidedStep + 1} of {guidedSections.length}: {guidedSections[guidedStep]?.label}</p>
                     <Button type="button" size="sm" variant="ghost" onClick={() => setGuidedOverview(true)}>Back to checklist</Button>
                   </div>
-                  <ol aria-label="Numbered setup steps" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">{guidedSections.map((section,index) => <li key={section.id} className={`rounded-lg border px-2 py-2 text-xs ${index===guidedStep?'border-primary bg-primary/10 font-bold':'border-border bg-background/30'}`}><span className="font-bold">{index + 1}.</span> {section.label}{setupProgress.steps[index]?.complete?' ✓':''}</li>)}</ol>
+                  <ol aria-label="Numbered setup steps" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">{guidedSections.map((section,index) => <li key={section.id}><button type="button" aria-current={index===guidedStep?'step':undefined} onClick={() => openGuidedStep(setupProgress.steps[index])} className={`w-full h-full text-left rounded-lg border px-2 py-2 text-xs transition hover:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${index===guidedStep?'border-primary bg-primary/10 font-bold':'border-border bg-background/30'}`}><span className="font-bold">{index + 1}.</span> {section.label}{setupProgress.steps[index]?.complete?' ✓':''}</button></li>)}</ol>
 
                   <p className="text-xs text-muted-foreground">Check what RallyHub already found, change only what needs changing, then continue.</p>
                   {!isClubListing && autoSaveState && <p aria-live="polite" className="text-xs font-semibold text-primary">{autoSaveState}</p>}

@@ -344,6 +344,7 @@ function sanitiseProfile(input:any) {
     } : null,
     town: nullable(input?.town, 160),
     county: nullable(input?.county, 160),
+    serviceArea: nullable(input?.serviceArea, 240),
     qualifications: (Array.isArray(input?.qualifications) ? input.qualifications : []).slice(0,30).map((v:any)=>clean(v,300)).filter(Boolean),
     coachingExperience: nullable(input?.coachingExperience, 1600),
     coachingServices: (Array.isArray(input?.coachingServices) ? input.coachingServices : []).slice(0,30).map((v:any)=>clean(v,300)).filter(Boolean),
@@ -426,7 +427,16 @@ Deno.serve(async (req) => {
       const dynamic = dynamicRows?.[0] || null;
       const profile = parseJson(row?.public_json);
       const base = parseJson(dynamic?.base_json);
-      const setup = parseJson(dynamic?.setup_json);
+      const setup = parseJson(dynamic?.setup_json) || {};
+      // Older completed journeys logged completion but did not persist checklist state.
+      // Restore completion for this authorised editor without sending another email.
+      if (!setup?.review?.completedAt) {
+        const priorCompletion = await base44.asServiceRole.entities.AuditLog.filter({
+          action:'directory_guided_completion_email_reserved',
+          scope_id:`${listingSlug}:${user.id}`
+        },'-created_date',1);
+        if (priorCompletion?.[0]) setup.review = {completedAt:priorCompletion[0].created_date,completedByUserId:user.id};
+      }
       // The coach's forwarding/contact endpoint is private. Return it only to an authorised
       // signed-in editor; public_get must never expose the email or mobile.
       let privateContact = null;
@@ -516,6 +526,12 @@ Deno.serve(async (req) => {
       const categoryMap:Record<string,string> = {coach:'coaching',coaching:'coaching',equipment:'suppliers',supplier:'suppliers',suppliers:'suppliers',club:'clubs',holiday:'holidays',holidays:'holidays',events:'events',event:'events',organiser:'events'};
       const category = categoryMap[String(listing.listing_type || '').toLowerCase()];
       if (!category) return Response.json({success:true,emailStatus:'not_configured_for_category'});
+      const now=new Date().toISOString();
+      const setup=parseJson(listing.setup_json) || {};
+      if (!setup?.review?.completedAt) {
+        setup.review={completedAt:now,completedByUserId:user.id};
+        await base44.asServiceRole.entities.DirectoryListingRecord.update(listing.id,{setup_json:JSON.stringify(setup)});
+      }
       const profileRows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:listingSlug,status:'active'},'-updated_at',2);
       const profile = parseJson(profileRows?.[0]?.public_json) || {};
       if (!clean(profile.name,220) || !clean(profile.description,2000)) return Response.json({error:'Save your name and profile description before completing the guided review.'},{status:400});
@@ -533,7 +549,13 @@ Deno.serve(async (req) => {
       const values:Record<string,string> = {CONTACT_NAME:firstName,LISTING_NAME:clean(profile.name,220),MANAGE_LINK:manageUrl};
       const render=(str:string)=>String(str||'').replace(/{{\s*(CONTACT_NAME|LISTING_NAME|MANAGE_LINK)\s*}}/g,(_,k)=>values[k]);
       const subject=render(template.subject_template);
-      const textBody=render(template.plain_text_template);
+      // The approved branded email shell provides its own signature.
+      // Normalise greeting to first name and remove duplicate sign-offs in body.
+      const textBody=render(template.plain_text_template)
+        .replace(/^Hi\s+[^,
+]+,/i,`Hi ${firstName},`)
+        .replace(/
+\s*Yours in sport,?\s*$/i,'').trim();
       if (!subject || !textBody || /{{\s*[A-Z_]+\s*}}/.test(subject+' '+textBody)) return Response.json({error:'Approved completion template has unresolved placeholders'},{status:409});
       // Reserve before external send. Never retry automatically after an uncertain provider response.
       await base44.asServiceRole.entities.AuditLog.create({tenant_id:'platform',user_id:user.id,action:'directory_guided_completion_email_reserved',entity_type:'DirectoryListing',entity_id:listingSlug,scope_type:'DirectoryListing',scope_id:key,after_state:JSON.stringify({recipient,purpose}),reason:'One-time guided profile completion email send reservation.'});
