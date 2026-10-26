@@ -315,7 +315,7 @@ export default function DirectoryListingEdit() {
         setSaving(true);setError('');
         const response = await base44.functions.invoke('directoryListingProfile', {action:listingType==='equipment'?'save_supplier_private_contact':'save_coach_private_contact',listingSlug:slug,contact:form?.contact,confirmEmail:coachEmailConfirmed,confirmMobile:coachMobileConfirmed});
         if(response.data?.error)throw new Error(response.data.error);
-      }catch(err){setError(err?.message||'Could not save the protected coaching contact.');return;}
+      }catch(err){setError(err?.message||'Could not save the protected contact details.');return;}
       finally{setSaving(false);}
     }
     if (dirty) {
@@ -540,7 +540,7 @@ export default function DirectoryListingEdit() {
       const merged = mergeProfile(baseClub, res.data.profile || {});
       // Protected coach contact fields are intentionally stripped from the public profile.
       // Retain them in the private editor; the separate confirmed contact endpoint stores them.
-      if(listingType === 'coach') merged.contact={...(form?.contact || {})};
+      if(['coach','equipment'].includes(listingType)) merged.contact={...(form?.contact || {})};
       setForm(merged);
       setBaseline(JSON.stringify(merged));
       setValidation([]);
@@ -567,7 +567,7 @@ export default function DirectoryListingEdit() {
       if (autoSaveInFlight.current) return;
       const snapshot = clone(form);
       const essentialReady = String(snapshot?.name || '').trim() && String(snapshot?.description || '').trim() && isValidEmail(snapshot?.contact?.email);
-      const urlsValid = [snapshot?.website,snapshot?.facebook,snapshot?.instagram,snapshot?.waitingListUrl,snapshot?.contact?.whatsapp].every(isValidUrl);
+      const urlsValid = [snapshot?.website,snapshot?.facebook,snapshot?.instagram,snapshot?.tiktok,snapshot?.shopUrl,snapshot?.waitingListUrl,snapshot?.contact?.whatsapp].every(isValidUrl);
       if (!essentialReady || !urlsValid) { setAutoSaveState('Progress saved on this device ✓'); return; }
       autoSaveInFlight.current = true;
       try {
@@ -575,7 +575,7 @@ export default function DirectoryListingEdit() {
         const response = await base44.functions.invoke('directoryListingProfile', { action:'save', listingSlug:slug, profile:profileToSave, town:baseClub?.town || '', county:baseClub?.county || '' });
         if (response.data?.error) throw new Error(response.data.error);
         const savedProfile = mergeProfile(baseClub, response.data?.profile || profileToSave);
-        if(listingType === 'coach')savedProfile.contact={...(snapshot?.contact || {})};
+        if(['coach','equipment'].includes(listingType))savedProfile.contact={...(snapshot?.contact || {})};
         setForm(current => JSON.stringify(current) === JSON.stringify(snapshot) ? savedProfile : current);
         setBaseline(JSON.stringify(savedProfile));
         setSaved(true);
