@@ -1355,7 +1355,7 @@ Deno.serve(async (req) => {
       const access = accesses.find(x => x.status === 'active') || null;
       return Response.json({
         success: true,
-        listing: { slug: listing.slug, name: listing.name, verificationStatus: allListingAccesses?.length ? 'verified' : 'unclaimed' },
+        listing: { slug: listing.slug, name: listing.name, listingType: listing.listingType || listing.listing_type || 'club', verificationStatus: allListingAccesses?.length ? 'verified' : 'unclaimed' },
         claim: publicClaim(latest),
         hasAccess: !!access,
         accessRole: access?.role || null,

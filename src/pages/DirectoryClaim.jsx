@@ -65,7 +65,7 @@ export default function DirectoryClaim() {
 
   // An invited preview listing is intentionally absent from public Directory results.
   // The opaque token is validated by directoryClaim.status after sign-in.
-  const club = seedClub || dynamicClub || (inviteToken ? { slug, name: status?.listing?.name || 'your invited coaching profile', listingType: 'coach' } : null);
+  const club = seedClub || dynamicClub || (inviteToken ? { slug, name: status?.listing?.name || 'your invited Directory listing', listingType: status?.listing?.listingType || 'other' } : null);
   const isCoachInvite = Boolean(inviteToken && club?.listingType === 'coach');
 
   useEffect(() => {
@@ -109,7 +109,7 @@ export default function DirectoryClaim() {
         if (!active) return;
         if (res.data?.error) throw new Error(res.data.error);
         setStatus(res.data);
-        if (res.data?.listing?.name) setDynamicClub(previous => ({...(previous||{}),slug:club.slug,name:res.data.listing.name,listingType:isCoachInvite?'coach':(previous?.listingType||'club')}));
+        if (res.data?.listing?.name) setDynamicClub(previous => ({...(previous||{}),slug:club.slug,name:res.data.listing.name,listingType:res.data.listing.listingType||(previous?.listingType||'other')}));
         const invitedName = res.data?.secureInvitation?.contactName || '';
         const invitedPhone = res.data?.secureInvitation?.contactPhone || '';
         if (!res.data?.claim && invitedName && looksLikePersonalFullName(invitedName) && !looksLikePersonalFullName(user?.full_name || user?.display_name || '')) {
