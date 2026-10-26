@@ -535,6 +535,31 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (action === 'save_coach_private_contact') {
+      const listingSlug=clean(body.listingSlug,180);
+      if(!listingSlug || body.confirmEmail!==true || body.confirmMobile!==true) return Response.json({error:'Confirm the coaching email and mobile separately'},{status:400});
+      let authorised=authorisedDirectorySuperAdmin(user);
+      if(!authorised){
+        const rights=await base44.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:listingSlug,user_id:user.id,status:'active'});
+        authorised=!!rights?.length;
+      }
+      if(!authorised)return Response.json({error:'Directory editor access required'},{status:403});
+      const records=await base44.asServiceRole.entities.DirectoryListingRecord.filter({slug:listingSlug,status:'active'},'-published_at',5);
+      if(records?.[0]?.listing_type!=='coach')return Response.json({error:'Only coach listings have a protected coaching contact'},{status:400});
+      const name=clean(body.contact?.name,160);
+      const email=safeEmail(body.contact?.email);
+      const phone=clean(body.contact?.phone,80);
+      if(!name||!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!phone)return Response.json({error:'Coach name, valid email and mobile are required'},{status:400});
+      const existing=await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:listingSlug,status:'active'},'-updated_at',10);
+      const target=existing?.[0];
+      const now=new Date().toISOString();
+      const values={listing_slug:listingSlug,listing_name_snapshot:clean(records[0].name,220),contact_name:name,email,phone,
+        whatsapp_url:'',allow_call:false,allow_whatsapp:false,allow_email:true,status:'active',updated_by_user_id:user.id,updated_at:now};
+      if(target)await base44.asServiceRole.entities.DirectoryContactEndpoint.update(target.id,values);
+      else await base44.asServiceRole.entities.DirectoryContactEndpoint.create(values);
+      return Response.json({success:true,privateContact:{name,email,phone},message:'Protected coach contact details saved. Nothing is published on the public profile.'});
+    }
+
     if (action === 'save') {
       const listingSlug = clean(body.listingSlug, 180);
       if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });

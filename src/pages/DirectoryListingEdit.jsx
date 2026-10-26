@@ -309,6 +309,14 @@ export default function DirectoryListingEdit() {
       setError('Please confirm that you have reviewed the contact email and mobile number before continuing.');
       return;
     }
+    if (listingType === 'coach' && guidedSections[guidedStep]?.id === 'contact') {
+      try {
+        setSaving(true);setError('');
+        const response = await base44.functions.invoke('directoryListingProfile', {action:'save_coach_private_contact',listingSlug:slug,contact:form?.contact,confirmEmail:coachEmailConfirmed,confirmMobile:coachMobileConfirmed});
+        if(response.data?.error)throw new Error(response.data.error);
+      }catch(err){setError(err?.message||'Could not save the protected coaching contact.');return;}
+      finally{setSaving(false);}
+    }
     if (dirty) {
       if (!validate()) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
       const ok = await save();
@@ -349,7 +357,7 @@ export default function DirectoryListingEdit() {
             const known = res.data?.privateContact || {};
             merged.contact = {
               ...(merged.contact || {}),
-              name:merged.contact?.name || known.name || user?.full_name || user?.display_name || '',
+              name:merged.contact?.name || user?.full_name || user?.display_name || known.name || '',
               email:merged.contact?.email || known.email || user?.email || '',
               phone:merged.contact?.phone || known.phone || '',
             };
