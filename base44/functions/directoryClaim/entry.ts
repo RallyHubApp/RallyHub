@@ -263,6 +263,7 @@ async function resolveListing(base44, listingSlug) {
   return {
     slug: row.slug,
     name: row.name,
+    listingType: row.listing_type || 'club',
     county: row.county,
     verificationStatus: 'unclaimed',
     contacts: Array.isArray(contacts) ? contacts : [],
