@@ -371,7 +371,7 @@ export default function PublicDirectory() {
 
                 <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
                   <Link to="/directory/add" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#078e48] px-5 text-[13px] font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] transition hover:bg-[#067b3f]">
-                    <Building2 className="h-4 w-4" /> Add or update a Directory listing
+                    <Building2 className="h-4 w-4" /> Add or update a club or listing
                   </Link>
                   <a href="#player-network" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[#b8dfc7] bg-[#eef9f3] px-5 text-[13px] font-bold text-[#067b3f] transition hover:bg-[#e4f5eb]">
                     <BellRing className="h-4 w-4" /> Player updates
