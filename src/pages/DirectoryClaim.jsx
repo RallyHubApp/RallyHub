@@ -72,7 +72,8 @@ export default function DirectoryClaim() {
   const isCoachInvite = Boolean(inviteToken && club?.listingType === 'coach');
 
   useEffect(() => {
-    if (seedClub) return;
+    // Never query the public index for a private, invitation-only listing.
+    if (seedClub || inviteToken) { setLoadingClub(false); return; }
     let active = true;
     setLoadingClub(true);
     loadPublicDirectoryState()
@@ -84,7 +85,7 @@ export default function DirectoryClaim() {
       .catch(() => {})
       .finally(() => { if (active) setLoadingClub(false); });
     return () => { active = false; };
-  }, [seedClub, slug]);
+  }, [seedClub, slug, inviteToken]);
 
   useEffect(() => {
     if (!user) return;
@@ -147,7 +148,9 @@ export default function DirectoryClaim() {
   if (loadingClub && !club) return <div className="min-h-screen bg-background text-foreground"><PublicDirectoryHeader /><main className="container mx-auto px-4 py-10 max-w-4xl"><div className="glass rounded-2xl p-6">Loading club listing…</div></main></div>;
   if (!club) return <Navigate to="/directory" replace />;
   if (inviteToken && !isLoadingAuth && authChecked && !isAuthenticated) return <div className="min-h-screen bg-background text-foreground"><PublicDirectoryHeader/><main className="container mx-auto max-w-xl px-4 py-16"><section className="rounded-xl border bg-card p-6"><h1 className="text-2xl font-black">Your RallyHub Directory invitation</h1><p className="mt-3 text-muted-foreground">Sign in with the account that received your personal invitation. We'll open the pre-filled listing directly so you can review and complete it.</p><div className="mt-6 flex flex-wrap gap-3"><Link to={loginHref}><Button>Sign in and open my profile</Button></Link><Link to={registerHref}><Button variant="outline">Create an account</Button></Link></div></section></main></div>;
-  if (inviteToken && (loadingStatus || error || (!status && isAuthenticated))) return <div className="min-h-screen bg-background text-foreground"><PublicDirectoryHeader/><main className="container mx-auto max-w-xl px-4 py-16"><div className="rounded-xl border bg-card p-6"><h1 className="text-xl font-bold">Opening your invited Directory profile</h1><p className="mt-3 text-sm">{error || 'Checking your secure invitation and preparing the guided profile…'}</p>{error&&<Link to={loginHref} className="mt-4 inline-block underline">Sign in with the invited email</Link>}</div></main></div>;
+  // Invite links must never render the legacy club-verification form while the
+  // identity and listing type are loading, or while coach auto-claim is underway.
+  if (inviteToken && (isLoadingAuth || !authChecked || loadingStatus || error || (isAuthenticated && (!status || isCoachInvite)))) return <div className="min-h-screen bg-background text-foreground"><PublicDirectoryHeader/><main className="container mx-auto max-w-xl px-4 py-16"><section className="rounded-xl border bg-card p-6"><h1 className="text-xl font-bold">Opening your invited coaching profile</h1><p role="status" className="mt-3 text-sm text-muted-foreground">{error || 'Checking your secure invitation and opening the pre-filled listing…'}</p>{error && <div className="mt-5 space-y-3"><p className="text-sm">Your invitation has not been completed. Please contact RallyHub if this error continues.</p><button type="button" onClick={() => window.location.reload()} className="rounded-lg border px-4 py-2 text-sm font-bold">Try again</button></div>}</section></main></div>;
 
   const submitClaim = async (event) => {
     event.preventDefault();
