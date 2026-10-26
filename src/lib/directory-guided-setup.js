@@ -54,11 +54,11 @@ export const DIRECTORY_SETUP_BLUEPRINTS = {
 const STEP_LABELS = {
   identity: { club:'Confirm club name', default:'Confirm public name' },
   basics: { club:'Club details', default:'About you' },
-  contact: { club:'Contact information', default:'Contact & social' },
+  contact: { club:'Contact information', coach:'Confirm contact details', coaching:'Confirm contact details', default:'Contact & social' },
   location: { default:'Where you operate' },
   venues: { default:'Playing venues' },
   sessions: { default:'Regular sessions' },
-  events: { holidays:'Your holiday event', tournaments_events:'Your event', coaching:'Clinic or event', default:'Your event' },
+  events: { holidays:'Your holiday event', tournaments_events:'Your event', coach:'Clinic or event (optional)', coaching:'Clinic or event (optional)', default:'Your event' },
   review: { default:'Preview & publish' },
 };
 

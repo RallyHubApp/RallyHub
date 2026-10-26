@@ -233,6 +233,7 @@ export default function DirectoryListingEdit() {
   const [editorMode, setEditorMode] = useState('choose');
   const [guidedStep, setGuidedStep] = useState(0);
   const [guidedOverview, setGuidedOverview] = useState(true);
+  const [coachContactReviewed, setCoachContactReviewed] = useState(false);
   const [setupEvents, setSetupEvents] = useState([]);
   const [loadingSetupEvents, setLoadingSetupEvents] = useState(false);
   const [setupEventsLoadedFor, setSetupEventsLoadedFor] = useState('');
@@ -301,6 +302,10 @@ export default function DirectoryListingEdit() {
       else setGuidedOverview(true);
       return;
     }
+    if (listingType === 'coach' && guidedSections[guidedStep]?.id === 'contact' && !coachContactReviewed) {
+      setError('Please confirm that you have reviewed the contact email and mobile number before continuing.');
+      return;
+    }
     if (dirty) {
       if (!validate()) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
       const ok = await save();
@@ -313,6 +318,7 @@ export default function DirectoryListingEdit() {
   useEffect(() => {
     let active = true;
     setLoadingListing(true);
+    setCoachContactReviewed(false);
     base44.functions.invoke('directoryListingProfile', { action: isAuthenticated ? 'private_get' : 'public_get', listingSlug: slug })
       .then(res => {
         if (!active || res.data?.error) return;
@@ -971,7 +977,8 @@ export default function DirectoryListingEdit() {
                     <p className="text-sm font-semibold">Step {guidedStep + 1} of {guidedSections.length}: {guidedSections[guidedStep]?.label}</p>
                     <Button type="button" size="sm" variant="ghost" onClick={() => setGuidedOverview(true)}>Back to checklist</Button>
                   </div>
-                  <div className="flex gap-1" aria-label="Setup progress">{guidedSections.map((section, index) => <div key={section.id} className={`h-2 flex-1 rounded-full ${setupProgress.steps[index]?.complete ? 'bg-emerald-500' : index === guidedStep ? 'bg-primary' : 'bg-border'}`} />)}</div>
+                  <ol aria-label="Numbered setup steps" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">{guidedSections.map((section,index) => <li key={section.id} className={`rounded-lg border px-2 py-2 text-xs ${index===guidedStep?'border-primary bg-primary/10 font-bold':'border-border bg-background/30'}`}><span className="font-bold">{index + 1}.</span> {section.label}{setupProgress.steps[index]?.complete?' ✓':''}</li>)}</ol>
+
                   <p className="text-xs text-muted-foreground">Check what RallyHub already found, change only what needs changing, then continue.</p>
                   {!isClubListing && autoSaveState && <p aria-live="polite" className="text-xs font-semibold text-primary">{autoSaveState}</p>}
                   <div className="flex flex-wrap gap-2">
@@ -1116,10 +1123,12 @@ export default function DirectoryListingEdit() {
               <section id="contact" style={{ display: guidedSectionVisible('contact') ? undefined : 'none' }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><UserRound className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club contact' : 'Contact & social'}</h2></div>
                 <p className="text-sm text-muted-foreground">These details are separate from the private verified owner/editor identity held by RallyHub. Add only the public contact and social links you want players to use.</p>
+                {listingType === 'coach' && <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-2"><h3 className="font-bold">Confirm your contact details</h3><p className="text-sm">Your signed-in account email is <strong>{user?.email || 'not available'}</strong>. Check the public coaching email and mobile below, correct them if needed, and confirm you have reviewed both. Your account email is not automatically published.</p><p className="text-xs text-muted-foreground">Only add the email or phone you want players to use to the public contact fields. Leave a public field blank if you prefer not to display it.</p><label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={coachContactReviewed} onChange={e=>{setCoachContactReviewed(e.target.checked);setError('')}} /><span>I have checked the coaching contact email and mobile number and chosen what should be available publicly.</span></label></div>}
+
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2"><Label>Public contact label / name</Label><Input value={form.contact?.name || ''} onChange={e => setContact('name', e.target.value)} placeholder="e.g. Chairperson, Club Contact, Debbie Brown" /><p className="text-xs text-muted-foreground">This does not change the privately verified RallyHub account holder.</p></div>
-                  <div className="space-y-2"><Label>Contact email</Label><Input type="email" value={form.contact?.email || ''} onChange={e => setContact('email', e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Contact phone</Label><Input value={form.contact?.phone || ''} onChange={e => setContactPhone(e.target.value)} placeholder="e.g. 087 123 4567" /></div>
+                  <div className="space-y-2"><Label>Contact email</Label><Input type="email" value={form.contact?.email || ''} onChange={e => { setContact('email', e.target.value); if(listingType==='coach') setCoachContactReviewed(false); }} /></div>
+                  <div className="space-y-2"><Label>Contact phone</Label><Input value={form.contact?.phone || ''} onChange={e => { setContactPhone(e.target.value); if(listingType==='coach') setCoachContactReviewed(false); }} placeholder="e.g. 087 123 4567" /></div>
                   <div className="space-y-2">
                     <Label>WhatsApp</Label>
                     <label className="flex items-start gap-3 rounded-lg border border-border bg-background/30 px-3 py-2.5 cursor-pointer">
