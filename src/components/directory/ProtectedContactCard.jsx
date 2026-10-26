@@ -165,7 +165,7 @@ export default function ProtectedContactCard({ listingSlug, clubName, county, en
               </button>
             )}
             {actionError && <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive" role="alert">{actionError}</p>}
-            <p className="pt-2 text-xs leading-5 text-muted-foreground"><ShieldCheck className="mr-1 inline h-3.5 w-3.5 text-primary" />{card.privacyCopy}</p>
+            <p className="pt-2 text-xs leading-5 text-muted-foreground"><ShieldCheck className="mr-1 inline h-3.5 w-3.5 text-primary" />{entityLabel === 'supplier' || entityLabel === 'coach' ? 'Your contact details are protected by RallyHub. Send your enquiry through our secure contact form.' : card.privacyCopy}</p>
           </div>
         )}
       </section>
