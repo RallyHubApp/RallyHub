@@ -1,4 +1,3 @@
-import CoachEditor from '@/components/directory/CoachEditor';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { CircleMarker, MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
@@ -463,7 +462,7 @@ export default function DirectoryListingEdit() {
     if (!String(form?.description || '').trim()) issues.push('Add a short public listing description.');
     if (!isValidEmail(form?.contact?.email)) issues.push('The listing contact email is not valid.');
     [
-      ['Website', form?.website], ['Facebook', form?.facebook], ['Instagram', form?.instagram],
+      ['Website', form?.website], ['Facebook', form?.facebook], ['Instagram', form?.instagram], ['Coach photograph', form?.photoUrl], ['LinkedIn', form?.linkedin],
       ['Joining link', form?.waitingListUrl], ['WhatsApp link', form?.contact?.whatsapp]
     ].forEach(([label, value]) => { if (!isValidUrl(value)) issues.push(`${label} must be a full http:// or https:// link.`); });
     if (clubListing) {
@@ -829,7 +828,6 @@ export default function DirectoryListingEdit() {
       : 'Spond import merged safely. Existing sessions were preserved and matching duplicates were skipped. Review the result below, then press Save changes.');
   };
 
-  if (!loadingListing && !loadingAccess && form && listingType === 'coach' && (user?.role === 'admin' || access?.hasAccess)) return <CoachEditor key={slug} initial={form} slug={slug}/>;
 
   if (!loadingListing && !baseClub) return <Navigate to="/directory" replace />;
 
@@ -928,7 +926,7 @@ export default function DirectoryListingEdit() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button type="button" variant={editorMode === 'guided' ? 'default' : 'outline'} onClick={() => { setEditorMode('guided'); setGuidedOverview(true); }}>Guided setup</Button>
-                    <Button type="button" variant={editorMode === 'direct' ? 'default' : 'outline'} onClick={() => setEditorMode('direct')}>Edit directly</Button>
+                    {isClubListing && <Button type="button" variant={editorMode === 'direct' ? 'default' : 'outline'} onClick={() => setEditorMode('direct')}>Edit directly</Button>}
                   </div>
                 </div>
 
@@ -1009,10 +1007,20 @@ export default function DirectoryListingEdit() {
               </section>}
 
               <section id="basics" style={{ display: guidedSectionVisible('basics') ? undefined : 'none' }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
-                <div className="flex items-center gap-2"><Info className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club information' : 'Public listing information'}</h2></div>
+                <div className="flex items-center gap-2"><Info className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club information' : listingType === 'coach' ? 'Your coaching profile' : 'Public listing information'}</h2></div>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2 sm:col-span-2"><Label>{isClubListing ? 'Club name' : 'Business / listing name'}</Label><Input value={form.name || ''} onChange={e => setField('name', e.target.value)} maxLength={220} placeholder={isClubListing ? 'e.g. Dalkey Pickleball Club' : 'Public listing name'} /><p className="text-xs text-muted-foreground">This changes the public heading only. The RallyHub listing link stays the same.</p></div>
-                  <div className="space-y-2 sm:col-span-2"><Label>{isClubListing ? 'Club description' : 'Listing description'}</Label><Textarea value={form.description || ''} onChange={e => setField('description', e.target.value)} rows={4} placeholder={isClubListing ? 'Tell players what your club is about, where you play and who you welcome.' : 'Tell players clearly what you provide and why it may be useful.'} /><p className="text-xs text-muted-foreground">This is the main introduction players see in search and on the public listing page.</p></div>
+                  <div className="space-y-2 sm:col-span-2"><Label>{isClubListing ? 'Club name' : listingType === 'coach' ? 'Your public coaching name' : 'Business / listing name'}</Label><Input value={form.name || ''} onChange={e => setField('name', e.target.value)} maxLength={220} placeholder={isClubListing ? 'e.g. Dalkey Pickleball Club' : 'Public listing name'} /><p className="text-xs text-muted-foreground">This changes the public heading only. The RallyHub listing link stays the same.</p></div>
+                  <div className="space-y-2 sm:col-span-2"><Label>{isClubListing ? 'Club description' : listingType === 'coach' ? 'Biography' : 'Listing description'}</Label><Textarea value={form.description || ''} onChange={e => setField('description', e.target.value)} rows={4} placeholder={isClubListing ? 'Tell players what your club is about, where you play and who you welcome.' : 'Tell players clearly what you provide and why it may be useful.'} /><p className="text-xs text-muted-foreground">This is the main introduction players see in search and on the public listing page.</p></div>
+                  {listingType === 'coach' && <>
+                    <div className="sm:col-span-2 space-y-2"><Label>Profile photograph</Label><Input type="url" value={form.photoUrl || ''} onChange={e => setField('photoUrl', e.target.value)} placeholder="https://…" />{form.photoUrl && <img src={form.photoUrl} alt="Coach photograph preview" className="h-28 w-28 rounded-xl object-cover"/>}<p className="text-xs text-muted-foreground">This is your public coaching photograph, not a business logo.</p></div>
+                    <div className="sm:col-span-2 space-y-2"><Label>Qualifications and accreditations (one per line)</Label><Textarea rows={3} value={Array.isArray(form.qualifications) ? form.qualifications.join('\n') : form.qualifications || ''} onChange={e => setField('qualifications', e.target.value.split('\n').map(x=>x.trim()).filter(Boolean))} /></div>
+                    <div className="sm:col-span-2 space-y-2"><Label>Coaching experience</Label><Textarea rows={3} value={form.coachingExperience || ''} onChange={e => setField('coachingExperience', e.target.value)} /></div>
+                    <div className="sm:col-span-2 space-y-2"><Label>Coaching services (one per line)</Label><Textarea rows={3} value={Array.isArray(form.coachingServices) ? form.coachingServices.join('\n') : form.coachingServices || ''} onChange={e => setField('coachingServices', e.target.value.split('\n').map(x=>x.trim()).filter(Boolean))} /></div>
+                    <div className="sm:col-span-2 space-y-2"><Label>Areas served (one per line)</Label><Textarea rows={3} value={Array.isArray(form.areasServed) ? form.areasServed.join('\n') : form.areasServed || ''} onChange={e => setField('areasServed', e.target.value.split('\n').map(x=>x.trim()).filter(Boolean))} /></div>
+                    <div className="space-y-2"><Label>Website</Label><Input type="url" value={form.website || ''} onChange={e => setField('website', e.target.value)}/></div>
+                    <div className="space-y-2"><Label>LinkedIn</Label><Input type="url" value={form.linkedin || ''} onChange={e => setField('linkedin', e.target.value)}/></div>
+                  </>}
+
                   {!isClubListing && editorMode !== 'guided' && <div className="space-y-2 sm:col-span-2"><Label>Area, destination or service coverage</Label><Input value={form.serviceArea || ''} onChange={e => setField('serviceArea', e.target.value)} placeholder="e.g. Nationwide, Munster, Dublin, Portugal, Online" /><p className="text-xs text-muted-foreground">Leave blank when location is not relevant.</p></div>}
                   {(isClubListing || editorMode !== 'guided') && <div className="sm:col-span-2 rounded-xl border border-border bg-background/35 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div><p className="font-semibold">{isClubListing ? 'Optional club details' : 'Optional listing details'}</p><p className="text-xs text-muted-foreground mt-1">{isClubListing ? 'Website, social links, joining information and attendance policy can all be added later. If your club uses Spond, you can also connect your Spond account here to bring your regular venues and session times into RallyHub instead of entering them manually.' : 'Add your website and social links so players can learn more or continue to your own site.'}</p></div>
