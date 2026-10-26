@@ -434,6 +434,13 @@ Deno.serve(async (req) => {
         const endpoints = await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:listingSlug,status:'active'},'-updated_at',10);
         const entry = (endpoints || []).find((item:any)=>item.email || item.phone || item.contact_name);
         if (entry) privateContact = {name:clean(entry.contact_name,180),email:safeEmail(entry.email),phone:clean(entry.phone,80)};
+        else {
+          // Trusted contact details were collected when the coach preview was created.
+          // Only return them to the authorised owner/editor; never expose via public_get.
+          const trusted = parseJson(dynamic?.trusted_contacts_json);
+          const supplied = (Array.isArray(trusted) ? trusted : []).find((item:any) => item?.name || item?.email || item?.phone);
+          if (supplied) privateContact = {name:clean(supplied.name,180),email:safeEmail(supplied.email),phone:clean(supplied.phone,80)};
+        }
       }
       return Response.json({ success:true, listingSlug, visibility:dynamic?.visibility || 'public', verificationStatus:await verifiedStatus(base44, listingSlug), profile, base, setup, privateContact });
     }
