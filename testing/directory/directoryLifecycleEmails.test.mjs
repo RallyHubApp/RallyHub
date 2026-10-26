@@ -10,10 +10,14 @@ for(const category of ['coaching','suppliers','clubs','holidays','events']) {
  for(const stage of ['invitation','access_approved','profile_completed']) {
   test(`Directory ${category} ${stage} template is reviewed before activation`,()=>{
    if(category==='coaching'&&stage==='invitation')assert.match(catalogue,/"id": "directory_claim_coaching"/);
+   else if(category==='coaching'&&stage==='access_approved')assert.doesNotMatch(catalogue,/"id": "directory_coaching_access_approved"/);
    else assert.match(catalogue,new RegExp(`"id": "directory_${category}_${stage}"[^\\n]*"status": "draft"`));
   });
  }
 }
+test('coaching claim approval sends no intermediary welcome email',()=>{
+ assert.match(invite,/coach_two_email_journey/);
+});
 test('completion email requires explicit finish, no autosave trigger',()=>{
  assert.match(guided,/action:'complete_guided_setup'/);
  assert.equal((guided.match(/action:'complete_guided_setup'/g)||[]).length,1);
