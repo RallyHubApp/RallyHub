@@ -672,8 +672,8 @@ export default function DirectoryListingEdit() {
 
   const chooseLogo = async file => {
     if (!file) return;
-    if (!file.type?.startsWith('image/')) { setError('Please choose an image file for the club logo.'); return; }
-    if (file.size > 5 * 1024 * 1024) { setError('Club logo must be 5 MB or smaller.'); return; }
+    if (!file.type?.startsWith('image/')) { setError('Please choose an image file.'); return; }
+    if (file.size > 5 * 1024 * 1024) { setError('Image must be 5 MB or smaller.'); return; }
     try {
       setError('');
       const draft = await prepareLogoDraft(file);
@@ -704,7 +704,7 @@ export default function DirectoryListingEdit() {
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, size, size);
-      const baseScale = Math.min((size * 0.88) / image.naturalWidth, (size * 0.88) / image.naturalHeight);
+      const baseScale = listingType === 'coach' ? Math.max(size / image.naturalWidth, size / image.naturalHeight) : Math.min((size * 0.88) / image.naturalWidth, (size * 0.88) / image.naturalHeight);
       const scale = baseScale * logoDraft.zoom;
       const drawWidth = image.naturalWidth * scale;
       const drawHeight = image.naturalHeight * scale;
@@ -712,15 +712,15 @@ export default function DirectoryListingEdit() {
       const drawY = (size - drawHeight) / 2 + (logoDraft.offsetY / 100) * (size / 2);
       ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
       const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('Could not prepare the logo image.')), 'image/webp', 0.9));
-      const positionedFile = new File([blob], `${slug}-logo.webp`, { type: blob.type || 'image/webp' });
+      const positionedFile = new File([blob], `${slug}-${listingType === 'coach' ? 'portrait' : 'logo'}.webp`, { type: blob.type || 'image/webp' });
       const uploadRes = await base44.functions.invoke('secureCreditAction', { action: 'upload_image', purpose: 'directory_logo', listingSlug: slug, file: positionedFile });
       if (uploadRes.data?.error) throw new Error(uploadRes.data.error);
       const fileUrl = uploadRes.data?.file_url;
       if (!fileUrl) throw new Error('No file URL returned');
-      setField('logoUrl', fileUrl);
+      setField(listingType === 'coach' ? 'photoUrl' : 'logoUrl', fileUrl);
       setLogoDraft(null);
     } catch (err) {
-      setError(err?.message || 'Could not upload the club logo.');
+      setError(err?.message || 'Could not upload the image.');
     } finally { setUploadingLogo(false); }
   };
 
@@ -1019,7 +1019,7 @@ export default function DirectoryListingEdit() {
                   <div className="space-y-2 sm:col-span-2"><Label>{isClubListing ? 'Club name' : listingType === 'coach' ? 'Your public coaching name' : 'Business / listing name'}</Label><Input value={form.name || ''} onChange={e => setField('name', e.target.value)} maxLength={220} placeholder={isClubListing ? 'e.g. Dalkey Pickleball Club' : 'Public listing name'} /><p className="text-xs text-muted-foreground">This changes the public heading only. The RallyHub listing link stays the same.</p></div>
                   <div className="space-y-2 sm:col-span-2"><Label>{isClubListing ? 'Club description' : listingType === 'coach' ? 'Biography' : 'Listing description'}</Label><Textarea value={form.description || ''} onChange={e => setField('description', e.target.value)} rows={4} placeholder={isClubListing ? 'Tell players what your club is about, where you play and who you welcome.' : 'Tell players clearly what you provide and why it may be useful.'} /><p className="text-xs text-muted-foreground">This is the main introduction players see in search and on the public listing page.</p></div>
                   {listingType === 'coach' && <>
-                    <div className="sm:col-span-2 space-y-2"><Label>Profile photograph</Label><Input type="url" value={form.photoUrl || ''} onChange={e => setField('photoUrl', e.target.value)} placeholder="https://…" />{form.photoUrl && <img src={form.photoUrl} alt="Coach photograph preview" className="h-28 w-28 rounded-xl object-cover"/>}<p className="text-xs text-muted-foreground">This is your public coaching photograph, not a business logo.</p></div>
+
                     <div className="sm:col-span-2 space-y-2"><Label>Qualifications and accreditations (one per line)</Label><Textarea rows={3} value={Array.isArray(form.qualifications) ? form.qualifications.join('\n') : form.qualifications || ''} onChange={e => setField('qualifications', e.target.value.split('\n').map(x=>x.trim()).filter(Boolean))} /></div>
                     <div className="sm:col-span-2 space-y-2"><Label>Coaching experience</Label><Textarea rows={3} value={form.coachingExperience || ''} onChange={e => setField('coachingExperience', e.target.value)} /></div>
                     <div className="sm:col-span-2 space-y-2"><Label>Coaching services (one per line)</Label><Textarea rows={3} value={Array.isArray(form.coachingServices) ? form.coachingServices.join('\n') : form.coachingServices || ''} onChange={e => setField('coachingServices', e.target.value.split('\n').map(x=>x.trim()).filter(Boolean))} /></div>
@@ -1044,24 +1044,24 @@ export default function DirectoryListingEdit() {
                   <div className="space-y-2"><Label>Instagram page</Label><Input type="url" value={form.instagram || ''} onChange={e => setField('instagram', e.target.value)} placeholder="https://instagram.com/…" /><p className="text-xs text-muted-foreground">Only the Instagram button is shown publicly — not this full link as text.</p></div>
                   </>}
                   <div className="space-y-2 sm:col-span-2">
-                    <Label>{isClubListing ? 'Club logo' : 'Logo / image'}</Label>
+                    <Label>{listingType === 'coach' ? 'Your coaching photograph' : isClubListing ? 'Club logo' : 'Logo / image'}</Label>
                     <div className="rounded-xl border border-border bg-background/30 p-4 flex flex-col sm:flex-row sm:items-center gap-4">
-                      {form.logoUrl && isValidUrl(form.logoUrl) ? <img src={form.logoUrl} alt="Club logo preview" className="h-24 w-24 rounded-xl bg-white object-contain p-1 shrink-0" /> : <div className="h-24 w-24 rounded-xl border border-dashed border-border flex items-center justify-center shrink-0"><ImageIcon className="w-6 h-6 text-muted-foreground" /></div>}
+                      {(listingType === 'coach' ? form.photoUrl : form.logoUrl) && isValidUrl(listingType === 'coach' ? form.photoUrl : form.logoUrl) ? <img src={listingType === 'coach' ? form.photoUrl : form.logoUrl} alt={listingType === 'coach' ? 'Coaching photograph preview' : 'Club logo preview'} className={`h-24 w-24 rounded-xl bg-white shrink-0 ${listingType === 'coach' ? 'object-cover' : 'object-contain p-1'}`} /> : <div className="h-24 w-24 rounded-xl border border-dashed border-border flex items-center justify-center shrink-0"><ImageIcon className="w-6 h-6 text-muted-foreground" /></div>}
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-2">
                           <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
                             {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                            {uploadingLogo ? 'Uploading…' : form.logoUrl ? 'Replace logo' : 'Upload logo'}
+                            {uploadingLogo ? 'Uploading…' : listingType === 'coach' ? (form.photoUrl ? 'Replace photograph' : 'Upload photograph') : form.logoUrl ? 'Replace logo' : 'Upload logo'}
                             <input type="file" accept="image/*" className="hidden" disabled={uploadingLogo} onChange={e => { chooseLogo(e.target.files?.[0]); e.target.value = ''; }} />
                           </label>
-                          {form.logoUrl && <Button type="button" variant="outline" onClick={() => setField('logoUrl', '')}>Remove logo</Button>}
+                          {(listingType === 'coach' ? form.photoUrl : form.logoUrl) && <Button type="button" variant="outline" onClick={() => setField(listingType === 'coach' ? 'photoUrl' : 'logoUrl', '')}>{listingType === 'coach' ? 'Remove photograph' : 'Remove logo'}</Button>}
                         </div>
-                        <p className="text-xs text-muted-foreground">JPG, PNG or WebP up to 5 MB. RallyHub automatically removes common transparent/white padding, centres the crest, then lets you resize and reposition it before upload.</p>
+                        <p className="text-xs text-muted-foreground">{listingType === 'coach' ? 'JPG, PNG or WebP up to 5 MB. Upload a photograph, adjust its size and position, then apply it. Your photograph is public; your email and mobile number are not.' : 'JPG, PNG or WebP up to 5 MB. RallyHub automatically removes common transparent/white padding, centres the crest, then lets you resize and reposition it before upload.'}</p>
                         <div className="mt-3 space-y-2 max-w-xl">
-                          <Label htmlFor="directory-logo-https-url">Or use a logo image URL (HTTPS)</Label>
-                          <Input id="directory-logo-https-url" type="url" aria-label="Logo image HTTPS URL" placeholder="https://example.com/club-logo.png" value={form.logoUrl || ''} onChange={e => setField('logoUrl', e.target.value.trim())} />
+                          <Label htmlFor="directory-logo-https-url">{listingType === 'coach' ? 'Or use a photograph image URL (HTTPS)' : 'Or use a logo image URL (HTTPS)'}</Label>
+                          <Input id="directory-logo-https-url" type="url" aria-label="Logo image HTTPS URL" placeholder="https://example.com/club-logo.png" value={(listingType === 'coach' ? form.photoUrl : form.logoUrl) || ''} onChange={e => setField(listingType === 'coach' ? 'photoUrl' : 'logoUrl', e.target.value.trim())} />
                           <p className="text-xs text-muted-foreground">Optional alternative to uploading an image. Paste a direct HTTPS image link, preview it above, then use Save changes to update this listing.</p>
-                          {form.logoUrl && !/^https:\/\//i.test(form.logoUrl) && <p role="alert" className="text-xs text-red-600">Please enter a direct HTTPS image URL.</p>}
+                          {(listingType === 'coach' ? form.photoUrl : form.logoUrl) && !/^https:\/\//i.test(listingType === 'coach' ? form.photoUrl : form.logoUrl) && <p role="alert" className="text-xs text-red-600">Please enter a direct HTTPS image URL.</p>}
                         </div>
                       </div>
                     </div>
@@ -1069,7 +1069,7 @@ export default function DirectoryListingEdit() {
                       <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-4" data-testid="directory-logo-editor">
                         <div className="flex flex-col lg:flex-row gap-5">
                           <div className="shrink-0">
-                            <p className="text-sm font-semibold mb-2">Logo preview</p>
+                            <p className="text-sm font-semibold mb-2">{listingType === 'coach' ? 'Photograph preview' : 'Logo preview'}</p>
                             <div className="relative h-48 w-48 overflow-hidden rounded-2xl border-2 border-border bg-white shadow-inner" data-testid="directory-logo-preview">
                               <img
                                 src={logoDraft.url}
@@ -1077,8 +1077,8 @@ export default function DirectoryListingEdit() {
                                 draggable="false"
                                 className="absolute max-w-none select-none pointer-events-none"
                                 style={{
-                                  width: `${Math.max(1, logoDraft.width) * Math.min((192 * 0.88) / Math.max(1, logoDraft.width), (192 * 0.88) / Math.max(1, logoDraft.height)) * logoDraft.zoom}px`,
-                                  height: `${Math.max(1, logoDraft.height) * Math.min((192 * 0.88) / Math.max(1, logoDraft.width), (192 * 0.88) / Math.max(1, logoDraft.height)) * logoDraft.zoom}px`,
+                                  width: `${Math.max(1, logoDraft.width) * (listingType === 'coach' ? Math.max(192 / Math.max(1, logoDraft.width), 192 / Math.max(1, logoDraft.height)) : Math.min((192 * 0.88) / Math.max(1, logoDraft.width), (192 * 0.88) / Math.max(1, logoDraft.height))) * logoDraft.zoom}px`,
+                                  height: `${Math.max(1, logoDraft.height) * (listingType === 'coach' ? Math.max(192 / Math.max(1, logoDraft.width), 192 / Math.max(1, logoDraft.height)) : Math.min((192 * 0.88) / Math.max(1, logoDraft.width), (192 * 0.88) / Math.max(1, logoDraft.height))) * logoDraft.zoom}px`,
                                   left: '50%',
                                   top: '50%',
                                   transform: `translate(calc(-50% + ${logoDraft.offsetX * 0.96}px), calc(-50% + ${logoDraft.offsetY * 0.96}px))`,
@@ -1101,17 +1101,17 @@ export default function DirectoryListingEdit() {
                               <input id="directory-logo-y" aria-label="Logo vertical position" type="range" min="-100" max="100" step="1" value={logoDraft.offsetY} onChange={e => setLogoDraft(prev => ({ ...prev, offsetY: Number(e.target.value) }))} className="mt-2 w-full accent-primary" />
                             </div>
                             <div className="rounded-lg border border-border bg-background/50 p-3 text-xs text-muted-foreground">
-                              Keep the whole crest visible where possible. Use Size and the position controls to fill the square cleanly. RallyHub preserves the logo's proportions so it will not stretch or squash the crest.
+                              {listingType === 'coach' ? 'Adjust the photograph size, then use the left/right and up/down controls to position your face within the square. The original proportions are preserved.' : 'Keep the whole crest visible where possible. Use Size and the position controls to fill the square cleanly. RallyHub preserves the logo proportions so it will not stretch or squash the crest.'}
                             </div>
                             <div className="flex flex-wrap gap-2">
                               <Button type="button" variant="outline" onClick={resetLogoEdit}>Reset position</Button>
                               <Button type="button" variant="ghost" onClick={cancelLogoEdit}>Cancel</Button>
                               <Button type="button" onClick={uploadPositionedLogo} disabled={uploadingLogo} className="gap-2" data-testid="directory-logo-apply">
                                 {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                                {uploadingLogo ? 'Preparing logo…' : 'Use this logo'}
+                                {uploadingLogo ? 'Preparing image…' : listingType === 'coach' ? 'Use this photograph' : 'Use this logo'}
                               </Button>
                             </div>
-                            <p className="text-xs text-muted-foreground">After choosing <strong>Use this logo</strong>, press <strong>Save changes</strong> to publish it to the directory.</p>
+                            <p className="text-xs text-muted-foreground">After choosing <strong>{listingType === 'coach' ? 'Use this photograph' : 'Use this logo'}</strong>, press <strong>Save changes</strong> to update the directory.</p>
                           </div>
                         </div>
                       </div>
@@ -1122,13 +1122,13 @@ export default function DirectoryListingEdit() {
 
               <section id="contact" style={{ display: guidedSectionVisible('contact') ? undefined : 'none' }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><UserRound className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club contact' : 'Contact & social'}</h2></div>
-                <p className="text-sm text-muted-foreground">These details are separate from the private verified owner/editor identity held by RallyHub. Add only the public contact and social links you want players to use.</p>
-                {listingType === 'coach' && <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-2"><h3 className="font-bold">Confirm your contact details</h3><p className="text-sm">Your signed-in account email is <strong>{user?.email || 'not available'}</strong>. Check the public coaching email and mobile below, correct them if needed, and confirm you have reviewed both. Your account email is not automatically published.</p><p className="text-xs text-muted-foreground">Only add the email or phone you want players to use to the public contact fields. Leave a public field blank if you prefer not to display it.</p><label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={coachContactReviewed} onChange={e=>{setCoachContactReviewed(e.target.checked);setError('')}} /><span>I have checked the coaching contact email and mobile number and chosen what should be available publicly.</span></label></div>}
+                <p className="text-sm text-muted-foreground">{listingType === 'coach' ? 'Your coaching email and mobile are held privately for contact and verification. Neither will be published by RallyHub on your coaching profile.' : 'These details are separate from the private verified owner/editor identity held by RallyHub. Add only the public contact and social links you want players to use.'}</p>
+                {listingType === 'coach' && <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-2"><h3 className="font-bold">Confirm your contact details</h3><p className="text-sm">Your signed-in account email is <strong>{user?.email || 'not available'}</strong>. Check the coaching email and mobile below, correct them if needed, and confirm you have reviewed both. Your account email is not automatically published.</p><p className="text-xs text-muted-foreground">Neither your mobile number nor your email address will be published by RallyHub on your coaching profile. Players use the protected Contact Coach form. Your verified enquiry forwarding address is managed separately.</p><label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={coachContactReviewed} onChange={e=>{setCoachContactReviewed(e.target.checked);setError('')}} /><span>I have checked my email address and mobile number.</span></label></div>}
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2"><Label>Public contact label / name</Label><Input value={form.contact?.name || ''} onChange={e => setContact('name', e.target.value)} placeholder="e.g. Chairperson, Club Contact, Debbie Brown" /><p className="text-xs text-muted-foreground">This does not change the privately verified RallyHub account holder.</p></div>
-                  <div className="space-y-2"><Label>Contact email</Label><Input type="email" value={form.contact?.email || ''} onChange={e => { setContact('email', e.target.value); if(listingType==='coach') setCoachContactReviewed(false); }} /></div>
-                  <div className="space-y-2"><Label>Contact phone</Label><Input value={form.contact?.phone || ''} onChange={e => { setContactPhone(e.target.value); if(listingType==='coach') setCoachContactReviewed(false); }} placeholder="e.g. 087 123 4567" /></div>
+                  <div className="space-y-2"><Label>{listingType === 'coach' ? 'Coaching email address' : 'Contact email'}</Label><Input type="email" value={form.contact?.email || ''} onChange={e => { setContact('email', e.target.value); if(listingType==='coach') setCoachContactReviewed(false); }} /></div>
+                  <div className="space-y-2"><Label>{listingType === 'coach' ? 'Coaching mobile number' : 'Contact phone'}</Label><Input value={form.contact?.phone || ''} onChange={e => { setContactPhone(e.target.value); if(listingType==='coach') setCoachContactReviewed(false); }} placeholder="e.g. 087 123 4567" /></div>
                   <div className="space-y-2">
                     <Label>WhatsApp</Label>
                     <label className="flex items-start gap-3 rounded-lg border border-border bg-background/30 px-3 py-2.5 cursor-pointer">
