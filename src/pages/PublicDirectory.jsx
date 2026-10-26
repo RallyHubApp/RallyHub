@@ -1,6 +1,6 @@
 import { CoachPortrait } from '@/components/directory/CoachProfile';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams, useParams, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -168,7 +168,8 @@ const directorySearchScore = (club, rawQuery) => {
 
 export default function PublicDirectory() {
   const [searchParams] = useSearchParams();
-  const { categorySlug } = useParams();
+  const { pathname } = useLocation();
+  const categorySlug = pathname.match(/^\/directory\/category\/([^/]+)\/?$/)?.[1];
   const navigate = useNavigate();
   const categoryRoute = directoryCategoryBySlug(categorySlug);
   const requestedCategory = categoryRoute?.key || searchParams.get('category') || 'all';
