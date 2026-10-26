@@ -726,12 +726,14 @@ export default function DirectoryListingEdit() {
       setError('');
       // Edit the saved rendered image without discarding it. When an original is needed
       // for a wider crop, the coach can still choose Replace photograph.
-      const response = await fetch(form.photoUrl, { mode: 'cors' });
+      const originalUrl = form.photoSourceUrl || form.photoUrl;
+      const response = await fetch(originalUrl, { mode: 'cors' });
       if (!response.ok) throw new Error('Image could not be loaded');
       const blob = await response.blob();
       const file = new File([blob], `${slug}-saved-photograph.webp`, {type:blob.type || 'image/webp'});
       const draft = await prepareLogoDraft(file, { preserveFullImage:true });
-      setLogoDraft(draft);
+      const crop = form.photoSourceUrl ? form.photoCrop : null;
+      setLogoDraft({...draft,sourcePhotoUrl:originalUrl,zoom:crop?.zoom ?? 1,offsetX:crop?.offsetX ?? 0,offsetY:crop?.offsetY ?? 0});
     } catch {
       setError('This saved photograph cannot be reopened from its current image host. Choose Replace photograph to edit the original file again.');
     }
@@ -761,11 +763,21 @@ export default function DirectoryListingEdit() {
       ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
       const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('Could not prepare the logo image.')), 'image/webp', 0.9));
       const positionedFile = new File([blob], `${slug}-${listingType === 'coach' ? 'portrait' : 'logo'}.webp`, { type: blob.type || 'image/webp' });
+      let originalPhotoUrl = logoDraft.sourcePhotoUrl || '';
+      if (listingType === 'coach' && !originalPhotoUrl) {
+        // Upload the untrimmed original once so subsequent edits can recover the entire image.
+        const original = await base44.functions.invoke('secureCreditAction', {action:'upload_image',purpose:'directory_logo',listingSlug:slug,file:logoDraft.file});
+        if (original.data?.error || !original.data?.file_url)throw new Error(original.data?.error || 'Unable to preserve the original photograph.');
+        originalPhotoUrl = original.data.file_url;
+      }
       const uploadRes = await base44.functions.invoke('secureCreditAction', { action: 'upload_image', purpose: 'directory_logo', listingSlug: slug, file: positionedFile });
       if (uploadRes.data?.error) throw new Error(uploadRes.data.error);
       const fileUrl = uploadRes.data?.file_url;
       if (!fileUrl) throw new Error('No file URL returned');
-      setField(listingType === 'coach' ? 'photoUrl' : 'logoUrl', fileUrl);
+      if(listingType === 'coach') {
+        setSaved(false);
+        setForm(prev=>({...prev,photoUrl:fileUrl,photoSourceUrl:originalPhotoUrl,photoCrop:{zoom:logoDraft.zoom,offsetX:logoDraft.offsetX,offsetY:logoDraft.offsetY}}));
+      } else setField('logoUrl',fileUrl);
       setLogoDraft(null);
     } catch (err) {
       setError(err?.message || 'Could not upload the image.');

@@ -336,6 +336,12 @@ function sanitiseProfile(input:any) {
   return {
     listingType: nullable(input?.listingType, 60),
     photoUrl: safeUrl(input?.photoUrl),
+    photoSourceUrl: safeUrl(input?.photoSourceUrl),
+    photoCrop: input?.photoCrop && typeof input.photoCrop === 'object' ? {
+      zoom: safeNumber(input.photoCrop.zoom,0.7,2) ?? 1,
+      offsetX: safeNumber(input.photoCrop.offsetX,-100,100) ?? 0,
+      offsetY: safeNumber(input.photoCrop.offsetY,-100,100) ?? 0,
+    } : null,
     town: nullable(input?.town, 160),
     county: nullable(input?.county, 160),
     qualifications: (Array.isArray(input?.qualifications) ? input.qualifications : []).slice(0,30).map((v:any)=>clean(v,300)).filter(Boolean),
