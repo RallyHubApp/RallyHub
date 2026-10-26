@@ -3,6 +3,8 @@ import { authorisedDirectorySuperAdmin } from '../../shared/directorySuperAdmin.
 import { geocodeDirectoryVenues } from './geocode.ts';
 import { publicDirectoryFallbackSnapshot } from './publicFallbackSnapshot.ts';
 import { protectedDirectoryList, protectedDirectoryState } from './protectedContract.ts';
+import { rallyHubEmailShellUsingTemplate } from '../../shared/rallyHubPlatformEmail.ts';
+import { sendWithConfiguredEmailTransport } from '../directoryClaim/emailRouter.ts';
 
 const clean = (value:any, max=500) => String(value ?? '').trim().slice(0, max);
 const isRateLimit = (error:any) => /rate limit|too many requests|\b429\b|temporar(?:y|ily) busy/i.test(String(error?.message || error || ''));
@@ -478,6 +480,51 @@ Deno.serve(async (req) => {
       invalidatePublicListCache();
       invalidatePublicGetCache(listingSlug);
       return Response.json({ success:true, listingSlug, publicName, setup:nextSetup });
+    }
+
+    if (action === 'complete_guided_setup') {
+      // Only explicit Finish review can trigger completion; ordinary saves and autosaves cannot.
+      const listingSlug = clean(body.listingSlug, 180);
+      if (!listingSlug) return Response.json({ error:'Listing required' }, { status:400 });
+      const access = await base44.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:listingSlug,user_id:user.id,status:'active'});
+      if (!access?.length && !authorisedDirectorySuperAdmin(user)) return Response.json({error:'Verified Directory access required'}, {status:403});
+      const listingRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({slug:listingSlug,status:'active'},'-published_at',5);
+      const listing = listingRows?.[0];
+      if (!listing) return Response.json({error:'Directory listing not found'},{status:404});
+      const categoryMap:Record<string,string> = {coach:'coaching',coaching:'coaching',equipment:'suppliers',supplier:'suppliers',suppliers:'suppliers',club:'clubs',holiday:'holidays',holidays:'holidays',events:'events',event:'events',organiser:'events'};
+      const category = categoryMap[String(listing.listing_type || '').toLowerCase()];
+      if (!category) return Response.json({success:true,emailStatus:'not_configured_for_category'});
+      const profileRows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:listingSlug,status:'active'},'-updated_at',2);
+      const profile = parseJson(profileRows?.[0]?.public_json) || {};
+      if (!clean(profile.name,220) || !clean(profile.description,2000)) return Response.json({error:'Save your name and profile description before completing the guided review.'},{status:400});
+      const purpose = `directory_${category}_profile_completed`;
+      const templates = await base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose,status:'approved'},'-updated_date',5);
+      const template = templates?.[0];
+      if (!template) return Response.json({success:true,emailStatus:'awaiting_template_approval'});
+      const recipient = String(user.email || '').trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) return Response.json({error:'Your RallyHub login needs a verified email address'},{status:400});
+      const key = `${listingSlug}:${user.id}`;
+      const prior = await base44.asServiceRole.entities.AuditLog.filter({action:'directory_guided_completion_email_reserved',scope_id:key},'-created_date',10);
+      if (prior?.length) return Response.json({success:true,emailStatus:'already_processed'});
+      const manageUrl = `https://rallyhub.ie/directory/${encodeURIComponent(listingSlug)}/edit?guided=1`;
+      const firstName = clean(user.full_name || user.display_name || '',180).split(/\s+/)[0] || 'there';
+      const values:Record<string,string> = {CONTACT_NAME:firstName,LISTING_NAME:clean(profile.name,220),MANAGE_LINK:manageUrl};
+      const render=(str:string)=>String(str||'').replace(/{{\s*(CONTACT_NAME|LISTING_NAME|MANAGE_LINK)\s*}}/g,(_,k)=>values[k]);
+      const subject=render(template.subject_template);
+      const textBody=render(template.plain_text_template);
+      if (!subject || !textBody || /{{\s*[A-Z_]+\s*}}/.test(subject+' '+textBody)) return Response.json({error:'Approved completion template has unresolved placeholders'},{status:409});
+      // Reserve before external send. Never retry automatically after an uncertain provider response.
+      await base44.asServiceRole.entities.AuditLog.create({tenant_id:'platform',user_id:user.id,action:'directory_guided_completion_email_reserved',entity_type:'DirectoryListing',entity_id:listingSlug,scope_type:'DirectoryListing',scope_id:key,after_state:JSON.stringify({recipient,purpose}),reason:'One-time guided profile completion email send reservation.'});
+      try {
+        const safeText=textBody.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+        const htmlBody=await rallyHubEmailShellUsingTemplate(base44,purpose,{title:'Thank you for completing your Directory profile',preheader:`${values.LISTING_NAME} is ready to maintain.`,content:`<p>${safeText}</p>`,actionUrl:manageUrl,actionLabel:'Manage your Directory profile',footerNote:'RallyHub Directory'});
+        await sendWithConfiguredEmailTransport(base44,{scopeType:'platform',purpose:'directory'},{to:recipient,subject,textBody,htmlBody});
+        await base44.asServiceRole.entities.AuditLog.create({tenant_id:'platform',user_id:user.id,action:'directory_guided_completion_email_sent',entity_type:'DirectoryListing',entity_id:listingSlug,scope_type:'DirectoryListing',scope_id:key,after_state:JSON.stringify({recipient,purpose}),reason:'Approved guided profile completion message sent.'}).catch(()=>{});
+        return Response.json({success:true,emailStatus:'sent',recipient});
+      } catch (sendError) {
+        console.error('Directory guided completion email delivery failed',sendError);
+        return Response.json({success:true,emailStatus:'delivery_failed_review_required'});
+      }
     }
 
     if (action === 'save') {

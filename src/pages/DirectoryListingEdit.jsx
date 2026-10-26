@@ -312,7 +312,23 @@ export default function DirectoryListingEdit() {
       if (!ok) return;
     }
     if (guidedStep < guidedSections.length - 1) setGuidedStep(value => value + 1);
-    else setGuidedOverview(true);
+    else {
+      if (!isClubListing) {
+        try {
+          const finished = await base44.functions.invoke('directoryListingProfile', {action:'complete_guided_setup',listingSlug:slug});
+          if (finished.data?.error) throw new Error(finished.data.error);
+          if (finished.data?.emailStatus === 'sent') setAutoSaveState('Review finished — thank-you email sent ✓');
+          else if (finished.data?.emailStatus === 'awaiting_template_approval') setAutoSaveState('Review finished — follow-up email awaiting approval');
+          else if (finished.data?.emailStatus === 'already_processed') setAutoSaveState('Review already completed — no duplicate email sent');
+          else if (finished.data?.emailStatus === 'delivery_failed_review_required') setAutoSaveState('Review finished — email delivery requires administrator follow-up');
+          else setAutoSaveState('Review finished ✓');
+        } catch (completionError) {
+          setError(completionError?.message || 'Your profile is saved, but completion confirmation could not be recorded.');
+          return;
+        }
+      }
+      setGuidedOverview(true);
+    }
   };
 
   useEffect(() => {
