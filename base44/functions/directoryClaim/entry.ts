@@ -566,6 +566,9 @@ async function trySendDirectoryWelcomeEmail(base44, args) {
 }
 
 async function trySendDirectoryWelcomeEmailOnce(base44, args) {
+  // Coach owner journey has two emails only: invitation and profile-completed thank-you.
+  // Claim approval is a workflow step, not another customer email.
+  if (['coach','coaching'].includes(String(args?.listing?.listingType || args?.listing?.listing_type || '').toLowerCase())) return {sent:0,skipped:true,reason:'coach_two_email_journey'};
   const listingSlug = String(args?.listing?.slug || '').trim();
   const recipientEmail = normaliseEmail(args?.recipientEmail || '');
   if (listingSlug) {
