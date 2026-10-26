@@ -40,8 +40,8 @@ export const DIRECTORY_SETUP_BLUEPRINTS = {
   },
   equipment: {
     noun: 'supplier',
-    intro: 'We’ve already started your RallyHub supplier listing. Check your details, contact links and public preview before publishing.',
-    steps: ['basics','contact','review'],
+    intro: 'We’ve prepared your supplier profile using the information we already have. Check your business description, logo, products, website, social links and protected contact details, then preview and finish.',
+    steps: ['basics','photograph','contact','location','review'],
   },
   other: {
     noun: 'provider',
@@ -54,8 +54,8 @@ export const DIRECTORY_SETUP_BLUEPRINTS = {
 const STEP_LABELS = {
   identity: { club:'Confirm club name', default:'Confirm public name' },
   basics: { club:'Club details', default:'About you' },
-  photograph: { coach:'Your coaching photograph', default:'Photograph or logo' },
-  contact: { club:'Contact information', coach:'Confirm contact details', coaching:'Confirm contact details', default:'Contact & social' },
+  photograph: { coach:'Your coaching photograph', equipment:'Your business logo', default:'Photograph or logo' },
+  contact: { club:'Contact information', coach:'Confirm contact details', equipment:'Confirm supplier contact', coaching:'Confirm contact details', default:'Contact & social' },
   location: { default:'Where you operate' },
   venues: { default:'Playing venues' },
   sessions: { default:'Regular sessions' },
@@ -88,16 +88,16 @@ export function buildDirectorySetupProgress({ listingType='club', profile={}, ev
       detail: hasText(profile?.name) && hasUsableDescription(profile?.description) ? 'Already filled' : 'Check your name and short description',
     },
     photograph: {
-      complete: hasText(profile?.photoUrl),
-      detail: hasText(profile?.photoUrl) ? 'Photograph uploaded — you can adjust its framing' : 'Upload and frame your coaching photograph',
+      complete: hasText(listingType === 'equipment' ? profile?.logoUrl : profile?.photoUrl),
+      detail: hasText(listingType === 'equipment' ? profile?.logoUrl : profile?.photoUrl) ? (listingType === 'equipment' ? 'Business logo ready — you can update it' : 'Photograph uploaded — you can adjust its framing') : (listingType === 'equipment' ? 'Add or adjust your business logo' : 'Upload and frame your coaching photograph'),
     },
     contact: {
-      complete: hasContact(profile),
-      detail: hasContact(profile) ? 'Contact details already added' : 'Add at least one way for players to contact or find you',
+      complete: listingType === 'equipment' ? hasText(profile?.website) || hasText(profile?.contact?.email) : hasContact(profile),
+      detail: listingType === 'equipment' ? 'Confirm your protected supplier contact details' : hasContact(profile) ? 'Contact details already added' : 'Add at least one way for players to contact or find you',
     },
     location: {
-      complete: hasText(profile?.serviceArea) || (listingType === 'coach' && Array.isArray(profile?.areasServed) && profile.areasServed.some(hasText)),
-      detail: hasText(profile?.serviceArea) || (listingType === 'coach' && Array.isArray(profile?.areasServed) && profile.areasServed.some(hasText)) ? 'Area or destination already added' : 'Tell players where you operate',
+      complete: (listingType === 'equipment' && !hasText(profile?.serviceArea)) || hasText(profile?.serviceArea) || (listingType === 'coach' && Array.isArray(profile?.areasServed) && profile.areasServed.some(hasText)),
+      detail: (listingType === 'equipment' && !hasText(profile?.serviceArea)) || hasText(profile?.serviceArea) || (listingType === 'coach' && Array.isArray(profile?.areasServed) && profile.areasServed.some(hasText)) ? 'Area or destination already added' : 'Tell players where you operate',
     },
     venues: {
       complete: (profile?.venues || []).some(venueReady),

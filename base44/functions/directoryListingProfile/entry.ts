@@ -359,6 +359,8 @@ function sanitiseProfile(input:any) {
     facebook: safeUrl(input?.facebook),
     instagram: safeUrl(input?.instagram),
     tiktok: safeUrl(input?.tiktok),
+    shopUrl: safeUrl(input?.shopUrl),
+    productCategories: (Array.isArray(input?.productCategories) ? input.productCategories : []).slice(0,40).map((v:any)=>clean(v,120)).filter(Boolean),
     waitingListUrl: safeUrl(input?.waitingListUrl),
     joiningCtaLabel: nullable(input?.joiningCtaLabel, 120),
     logoUrl: safeLogoUrl(input?.logoUrl),
@@ -440,7 +442,7 @@ Deno.serve(async (req) => {
       // The coach's forwarding/contact endpoint is private. Return it only to an authorised
       // signed-in editor; public_get must never expose the email or mobile.
       let privateContact = null;
-      if (String(dynamic?.listing_type || base?.listingType || profile?.listingType) === 'coach') {
+      if (['coach','equipment'].includes(String(dynamic?.listing_type || base?.listingType || profile?.listingType))) {
         const endpoints = await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:listingSlug,status:'active'},'-updated_at',10);
         const entry = (endpoints || []).find((item:any)=>item.email || item.phone || item.contact_name);
         if (entry) privateContact = {name:clean(entry.contact_name,180),email:safeEmail(entry.email),phone:clean(entry.phone,80)};
@@ -569,7 +571,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (action === 'save_coach_private_contact') {
+    if (action === 'save_coach_private_contact' || action === 'save_supplier_private_contact') {
       const listingSlug=clean(body.listingSlug,180);
       if(!listingSlug || body.confirmEmail!==true || body.confirmMobile!==true) return Response.json({error:'Confirm the coaching email and mobile separately'},{status:400});
       let authorised=authorisedDirectorySuperAdmin(user);
@@ -579,11 +581,12 @@ Deno.serve(async (req) => {
       }
       if(!authorised)return Response.json({error:'Directory editor access required'},{status:403});
       const records=await base44.asServiceRole.entities.DirectoryListingRecord.filter({slug:listingSlug,status:'active'},'-published_at',5);
-      if(records?.[0]?.listing_type!=='coach')return Response.json({error:'Only coach listings have a protected coaching contact'},{status:400});
+      const expectedType=action==='save_supplier_private_contact'?'equipment':'coach';
+      if(records?.[0]?.listing_type!==expectedType)return Response.json({error:'Protected contact requires the matching listing type'},{status:400});
       const name=clean(body.contact?.name,160);
       const email=safeEmail(body.contact?.email);
       const phone=clean(body.contact?.phone,80);
-      if(!name||!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!phone)return Response.json({error:'Coach name, valid email and mobile are required'},{status:400});
+      if(!name||!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!phone)return Response.json({error:'Contact name, valid email and mobile are required'},{status:400});
       const existing=await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:listingSlug,status:'active'},'-updated_at',10);
       const target=existing?.[0];
       const now=new Date().toISOString();
@@ -591,7 +594,7 @@ Deno.serve(async (req) => {
         whatsapp_url:'',allow_call:false,allow_whatsapp:false,allow_email:true,status:'active',updated_by_user_id:user.id,updated_at:now};
       if(target)await base44.asServiceRole.entities.DirectoryContactEndpoint.update(target.id,values);
       else await base44.asServiceRole.entities.DirectoryContactEndpoint.create(values);
-      return Response.json({success:true,privateContact:{name,email,phone},message:'Protected coach contact details saved. Nothing is published on the public profile.'});
+      return Response.json({success:true,privateContact:{name,email,phone},message:'Protected contact details saved. Email and mobile are not published.'});
     }
 
     if (action === 'save') {
@@ -605,9 +608,9 @@ Deno.serve(async (req) => {
       if (!allowed) return Response.json({ error: 'Verified directory editor access required' }, { status: 403 });
 
       const listingRecords = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 5);
-      const coachListing = listingRecords?.[0]?.listing_type === 'coach';
+      const protectedListing = ['coach','equipment'].includes(String(listingRecords?.[0]?.listing_type));
       const publicProfile = sanitiseProfile(body.profile || {});
-      if (coachListing) { publicProfile.listingType = 'coach'; publicProfile.contact = { name:null, phone:null, phoneHref:null, email:null, whatsapp:null }; }
+      if (protectedListing) { publicProfile.listingType = listingRecords[0].listing_type; publicProfile.contact = { name:null, phone:null, phoneHref:null, email:null, whatsapp:null }; }
 
       publicProfile.venues = await geocodeDirectoryVenues(publicProfile.venues || [], { town: clean(body.town, 120), county: clean(body.county, 120) });
       const publicJson = JSON.stringify(publicProfile);
@@ -625,7 +628,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      if (!coachListing) {
+      if (!protectedListing) {
       // Keep the protected-contact override aligned with owner/editor changes.
       // Claim privacy preferences remain authoritative over raw contact fields.
       try {
