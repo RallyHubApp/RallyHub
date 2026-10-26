@@ -1,3 +1,9 @@
+import DirectoryCategoryOther from './pages/DirectoryCategoryOther';
+import DirectoryCategoryHolidays from './pages/DirectoryCategoryHolidays';
+import DirectoryCategoryEquipment from './pages/DirectoryCategoryEquipment';
+import DirectoryCategoryCoaching from './pages/DirectoryCategoryCoaching';
+import DirectoryCategoryEvents from './pages/DirectoryCategoryEvents';
+import DirectoryCategoryClubs from './pages/DirectoryCategoryClubs';
 import { lazy, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider, useQuery } from '@tanstack/react-query'
@@ -276,7 +282,12 @@ function App() {
             <Route path="/events/my" element={<MyEvents />} />
             <Route path="/events/:slug" element={<PublicEventDetail />} />
             <Route path="/directory" element={<PublicDirectory />} />
-            <Route path="/directory/category/:categorySlug" element={<PublicDirectory />} />
+            <Route path="/directory/category/clubs" element={<DirectoryCategoryClubs />} />
+            <Route path="/directory/category/events" element={<DirectoryCategoryEvents />} />
+            <Route path="/directory/category/coaching" element={<DirectoryCategoryCoaching />} />
+            <Route path="/directory/category/equipment" element={<DirectoryCategoryEquipment />} />
+            <Route path="/directory/category/holidays" element={<DirectoryCategoryHolidays />} />
+            <Route path="/directory/category/other" element={<DirectoryCategoryOther />} />
             <Route path="/directory/:slug" element={<PublicClubProfile />} />
             <Route path="/pickleball-venues/:clubSlug/:venueId" element={<PublicVenueProfile />} />
             <Route path="/directory/:slug/policies" element={<PublicClubPolicies />} />
