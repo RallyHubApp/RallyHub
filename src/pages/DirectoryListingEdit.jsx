@@ -537,6 +537,9 @@ export default function DirectoryListingEdit() {
       const res = await base44.functions.invoke('directoryListingProfile', { action: 'save', listingSlug: slug, profile: profileToSave, town: baseClub?.town || '', county: baseClub?.county || '' });
       if (res.data?.error) throw new Error(res.data.error);
       const merged = mergeProfile(baseClub, res.data.profile || {});
+      // Protected coach contact fields are intentionally stripped from the public profile.
+      // Retain them in the private editor; the separate confirmed contact endpoint stores them.
+      if(listingType === 'coach') merged.contact={...(form?.contact || {})};
       setForm(merged);
       setBaseline(JSON.stringify(merged));
       setValidation([]);
@@ -571,6 +574,7 @@ export default function DirectoryListingEdit() {
         const response = await base44.functions.invoke('directoryListingProfile', { action:'save', listingSlug:slug, profile:profileToSave, town:baseClub?.town || '', county:baseClub?.county || '' });
         if (response.data?.error) throw new Error(response.data.error);
         const savedProfile = mergeProfile(baseClub, response.data?.profile || profileToSave);
+        if(listingType === 'coach')savedProfile.contact={...(snapshot?.contact || {})};
         setForm(current => JSON.stringify(current) === JSON.stringify(snapshot) ? savedProfile : current);
         setBaseline(JSON.stringify(savedProfile));
         setSaved(true);
@@ -1256,7 +1260,7 @@ export default function DirectoryListingEdit() {
               </section>}
 
               <section id="contact" style={{ display: guidedSectionVisible('contact') ? undefined : 'none' }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
-                <div className="flex items-center gap-2"><UserRound className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club contact' : 'Contact & social'}</h2></div>
+                <div className="flex items-center gap-2"><UserRound className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club contact' : listingType === 'coach' ? 'Your private coaching contact' : 'Contact & social'}</h2></div>
                 <p className="text-sm text-muted-foreground">{listingType === 'coach' ? 'Your coaching email and mobile are held privately for contact and verification. Neither will be published by RallyHub on your coaching profile.' : 'These details are separate from the private verified owner/editor identity held by RallyHub. Add only the public contact and social links you want players to use.'}</p>
                 {listingType === 'coach' && <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-3"><h3 className="font-bold">Confirm your private contact details</h3><p className="text-sm">These details are used by the protected Contact Coach system. They are not displayed on your public coaching profile. You can correct the pre-filled details below.</p><p className="text-xs text-muted-foreground">Signed-in account: {user?.full_name || user?.display_name || user?.email || 'Directory owner'}</p><label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={coachEmailConfirmed} onChange={e=>{setCoachEmailConfirmed(e.target.checked);setError('')}} /><span>I confirm that my coaching email address is correct.</span></label><label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={coachMobileConfirmed} onChange={e=>{setCoachMobileConfirmed(e.target.checked);setError('')}} /><span>I confirm that my coaching mobile number is correct.</span></label></div>}
 
