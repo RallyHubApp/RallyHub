@@ -294,7 +294,7 @@ function cardFor(endpoint:any) {
       whatsapp: endpoint?.allow_whatsapp === true && !!whatsappTarget(endpoint),
       email: endpoint?.allow_email === true && validEmail(clean(endpoint?.email, 240).toLowerCase()),
     },
-    privacyCopy: 'Contact details are protected by RallyHub. Choose an action to contact the club.',
+    privacyCopy: 'Contact details are protected by RallyHub. Use the secure enquiry option to get in touch.',
   };
 }
 
