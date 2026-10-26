@@ -5,6 +5,15 @@ import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 import Seo from '@/components/public/Seo';
 
+const categoryGuides = [
+  { id:'clubs', name:'Clubs & places to play', summary:'Manage your club, venues and regular sessions.', items:['Open your personal invitation and sign in or create an account. Submit your claim and await verification.','Check your club description, venue, regular sessions and public contact details.','Preview and save your updates. Club administrators can add events and optional enhancements later.'], extra:'/directory/quick-start', extraLabel:'Club Quick Start Guide' },
+  { id:'coaching', name:'Coaches & coaching', summary:'Take ownership of your coaching profile and keep your information current.', items:['Open your personal secure link, sign in or register and request ownership. Access is granted after verification.','Review your photograph, biography, qualifications, coaching services and areas covered.','Update your public website or social links, preview your profile and save. Return to Manage listing whenever details change.'], note:'Only add public contact information you are comfortable sharing. Enquiry forwarding should not be assumed active until verified.' },
+  { id:'equipment', name:'Equipment & suppliers', summary:'Present your products, business and contact details.', items:['Sign in through your invitation or request ownership of your business listing.','Check the business name, description, products or services, geographical coverage, logo, website and public contact links.','Preview and save the listing; return whenever your range or contact information changes.'] },
+  { id:'holidays', name:'Holidays & experiences', summary:'Help players understand your pickleball holiday or experience.', items:['Verify access to your provider listing.','Review the destination, itinerary or package details, imagery, contact and booking information.','If you are creating an associated event, check the dates, location, registration details and poster. Preview before publishing.'], extra:'/events/quick-start', extraLabel:'Events Quick Start Guide' },
+  { id:'tournaments_events', name:'Tournaments & event organisers', summary:'Maintain your organiser listing and upcoming events.', items:['Claim and verify your organiser listing.','Check organiser contact details and add or update the event, including dates, venue, poster, registration and intended audience.','Preview the event before publishing and return to update details when arrangements change.'], extra:'/events/quick-start', extraLabel:'Events Quick Start Guide' },
+  { id:'other', name:'Other pickleball services', summary:'Maintain your service information.', items:['Sign in and request verified ownership.','Check the service description, location or coverage, photograph or logo and public links.','Preview, save and revisit your listing when information changes.'] }
+];
+
 const faqs = [
   {
     q: 'Why did RallyHub create the Directory?',
@@ -91,19 +100,19 @@ const faqs = [
 export default function DirectoryHelp() {
   return (
     <>
-      <Seo title="RallyHub Directory Club Guide & Help" description="Why the RallyHub Directory exists, how to claim and manage your club listing, and answers to common questions." path="/directory/help" robots="index,follow" />
+      <Seo title="RallyHub Directory Help Centre" description="Why the RallyHub Directory exists, how to claim and manage club, coaching, supplier, holiday and organiser listings, and answers to common questions." path="/directory/help" robots="index,follow" />
       <div className="min-h-screen bg-background text-foreground">
         <PublicDirectoryHeader />
         <main className="container mx-auto px-4 py-8 max-w-5xl">
-          <Link to="/directory" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6"><ArrowLeft className="w-4 h-4" /> Back to Club Directory</Link>
+          <Link to="/directory" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6"><ArrowLeft className="w-4 h-4" /> Back to Directory</Link>
 
           <section className="glass rounded-2xl p-6 sm:p-8">
             <div className="flex items-start gap-3">
               <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0"><HelpCircle className="w-6 h-6 text-primary" /></div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Club guide & help</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Directory help centre</p>
                 <h1 className="text-3xl sm:text-4xl font-black mt-1">Everything you need for the RallyHub Directory</h1>
-                <p className="text-muted-foreground mt-2 max-w-3xl">Start with the story behind the Directory, follow the two-page Quick Start Guide, or jump straight to the frequently asked questions.</p>
+                <p className="text-muted-foreground mt-2 max-w-3xl">Choose your listing type below for relevant guidance. Clubs remain our main focus, with dedicated help for coaches, suppliers, holidays and event organisers.</p>
               </div>
             </div>
 
@@ -116,8 +125,8 @@ export default function DirectoryHelp() {
               </Link>
               <Link to="/directory/quick-start" className="rounded-2xl border border-primary/20 bg-primary/5 p-5 hover:border-primary/40 transition-colors">
                 <FileText className="w-6 h-6 text-primary" />
-                <h2 className="font-black text-lg mt-3">2. Quick Start Guide</h2>
-                <p className="text-sm text-muted-foreground mt-1">A phone-friendly two-page guide covering WhatsApp invitations, account creation, verification and managing your listing.</p>
+                <h2 className="font-black text-lg mt-3">2. Club Quick Start Guide</h2>
+                <p className="text-sm text-muted-foreground mt-1">For clubs: a phone-friendly two-page guide covering WhatsApp invitations, account creation, verification and managing your listing.</p>
                 <span className="inline-flex mt-4 text-sm font-semibold text-primary">Open Quick Start Guide →</span>
               </Link>
               <Link to="/events/quick-start" className="rounded-2xl border border-primary/20 bg-primary/5 p-5 hover:border-primary/40 transition-colors">
@@ -148,6 +157,19 @@ export default function DirectoryHelp() {
                 </div>
               ))}
             </div>
+          </section>
+
+          <section id="by-category" className="mt-6 glass rounded-2xl p-6 sm:p-8 scroll-mt-24">
+            <h2 className="text-2xl font-black">Help for your type of listing</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Your Directory account is separate from club-management permissions. All ownership requests are verified before editing access is granted.</p>
+            <nav aria-label="Choose listing guidance" className="mt-5 flex flex-wrap gap-2">{categoryGuides.map(guide => <a key={guide.id} href={'#'+guide.id} className="rounded-full border border-primary/30 px-3 py-2 text-sm font-semibold hover:bg-primary/10">{guide.name}</a>)}</nav>
+            <div className="mt-5 space-y-4">{categoryGuides.map(guide => <article key={guide.id} id={guide.id} className="rounded-2xl border border-border bg-background/40 p-5 scroll-mt-24">
+              <h3 className="text-lg font-bold">{guide.name}</h3><p className="text-sm text-muted-foreground mt-1">{guide.summary}</p>
+              <ol className="mt-3 list-decimal pl-5 space-y-2 text-sm leading-6">{guide.items.map(item=><li key={item}>{item}</li>)}</ol>
+              {guide.note&&<p className="mt-3 text-sm text-muted-foreground">{guide.note}</p>}
+              {guide.extra&&<Link to={guide.extra} className="mt-3 inline-block text-sm font-semibold text-primary underline">{guide.extraLabel}</Link>}
+            </article>)}</div>
+            <p className="mt-5 text-sm text-muted-foreground">Your secure invitation is personal and expires after 72 hours. If it has expired, request a fresh invitation from RallyHub at <a className="underline" href="mailto:rallyhubapp@gmail.com">rallyhubapp@gmail.com</a>. Never forward your personal claim link to somebody else.</p>
           </section>
 
           <section id="faqs" className="mt-6 glass rounded-2xl p-6 sm:p-8 scroll-mt-24">

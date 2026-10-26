@@ -402,6 +402,7 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
     allowTemplateBody:!String(customText||'').trim(),
     templateVariables:{CONTACT_NAME:recipientName,LISTING_NAME:listing.name,CLAIM_LINK:claimUrl},
     requiredTemplateTokens:['CLAIM_LINK'],
+    journeyCategory: String(listing?.listingType || listing?.listing_type || 'club'),
     footerNote: 'RallyHub Directory',
   });
 

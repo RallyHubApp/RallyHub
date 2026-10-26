@@ -17,12 +17,24 @@ function rallyHubEmailSignatureHtml() {
 
 export const RALLYHUB_UTILITY_LINKS = [
   {key:'help',label:'Help Centre',url:'https://rallyhub.ie/directory/help'},
+  {key:'help_clubs',label:'Club help',url:'https://rallyhub.ie/directory/help#clubs'},
+  {key:'help_coaching',label:'Coach help',url:'https://rallyhub.ie/directory/help#coaching'},
+  {key:'help_equipment',label:'Supplier help',url:'https://rallyhub.ie/directory/help#equipment'},
+  {key:'help_holidays',label:'Holiday help',url:'https://rallyhub.ie/directory/help#holidays'},
+  {key:'help_tournaments_events',label:'Event organiser help',url:'https://rallyhub.ie/directory/help#tournaments_events'},
+  {key:'help_other',label:'Directory help',url:'https://rallyhub.ie/directory/help#other'},
   {key:'contact',label:'Contact',url:'mailto:rallyhubapp@gmail.com'},
   {key:'directory',label:'Directory',url:'https://rallyhub.ie/directory'},
   {key:'website',label:'RallyHub',url:'https://rallyhub.ie/',accent:true},
   {key:'facebook',label:'Facebook',url:'https://www.facebook.com/rallyhubapp/'},
   {key:'instagram',label:'Instagram',url:'https://www.instagram.com/rallyhubapp/'},
 ];
+// Category-aware Directory links. Other email workflows retain their existing approved menus.
+export function directoryJourneyUtilityLinks(category:string='club') {
+  const key=({coach:'coaching',supplier:'equipment',events:'tournaments_events',event:'tournaments_events',holiday:'holidays',club:'clubs'} as Record<string,string>)[category]||category;
+  const helpKey=`help_${['clubs','coaching','equipment','holidays','tournaments_events','other'].includes(key)?key:'other'}`;
+  return [helpKey,'directory','contact'];
+}
 function rallyHubEmailUtilityMenuHtml(selectedKeys:string[]|null=null) {
   const links=selectedKeys===null?RALLYHUB_UTILITY_LINKS:RALLYHUB_UTILITY_LINKS.filter(x=>selectedKeys.includes(x.key));
   return emailUtilityMenuHtml({
@@ -122,7 +134,7 @@ export async function renderRallyHubSystemEmail(base44:any,options:{
  * Drafts are editorial only and never change outgoing customer emails.
  */
 export async function rallyHubEmailShellUsingTemplate(base44:any,purpose:string,options:any){
- let utilityLinks=options.utilityLinks??null;
+ let utilityLinks=options.journeyCategory ? directoryJourneyUtilityLinks(String(options.journeyCategory)) : options.utilityLinks??null;
  let content=options.content||'';
  try{
   const matches=await base44.asServiceRole.entities.CommunicationTemplate.filter(
@@ -132,7 +144,7 @@ export async function rallyHubEmailShellUsingTemplate(base44:any,purpose:string,
    const saved=approved.channel_templates?.email?.utility_links;
    if(Array.isArray(saved)){
     const allowed=new Set(RALLYHUB_UTILITY_LINKS.map(x=>x.key));
-    utilityLinks=saved.filter((key:any)=>typeof key==='string'&&allowed.has(key));
+    if(!options.journeyCategory) utilityLinks=saved.filter((key:any)=>typeof key==='string'&&allowed.has(key));
    }
    // Only use owner-approved editable wording when the sender explicitly supplies
    // the required variables. Never replace secure links with missing placeholders.
