@@ -9,6 +9,7 @@ import {
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { invalidatePublicDirectoryCache } from '@/lib/public-directory-cache';
+import { directoryImagePlacement } from '@/lib/directory-image-placement';
 import { getClub, weekDays } from '@/data/directorySeed';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
@@ -756,12 +757,7 @@ export default function DirectoryListingEdit() {
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, size, size);
-      const baseScale = listingType === 'coach' ? Math.max(size / image.naturalWidth, size / image.naturalHeight) : Math.min((size * 0.88) / image.naturalWidth, (size * 0.88) / image.naturalHeight);
-      const scale = baseScale * logoDraft.zoom;
-      const drawWidth = image.naturalWidth * scale;
-      const drawHeight = image.naturalHeight * scale;
-      const drawX = (size - drawWidth) / 2 + (logoDraft.offsetX / 100) * (size / 2);
-      const drawY = (size - drawHeight) / 2 + (logoDraft.offsetY / 100) * (size / 2);
+      const {drawWidth,drawHeight,drawX,drawY}=directoryImagePlacement({width:image.naturalWidth,height:image.naturalHeight,zoom:logoDraft.zoom,offsetX:logoDraft.offsetX,offsetY:logoDraft.offsetY,dimension:size,coach:listingType==='coach'});
       ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
       const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('Could not prepare the logo image.')), 'image/webp', 0.9));
       const positionedFile = new File([blob], `${slug}-${listingType === 'coach' ? 'portrait' : 'logo'}.webp`, { type: blob.type || 'image/webp' });
@@ -1130,13 +1126,7 @@ export default function DirectoryListingEdit() {
                                 alt={listingType === 'coach' ? 'Positioned coaching photograph preview' : 'Positioned club logo preview'}
                                 draggable="false"
                                 className="absolute max-w-none select-none pointer-events-none"
-                                style={{
-                                  width: `${Math.max(1, logoDraft.width) * (listingType === 'coach' ? Math.max(192 / Math.max(1, logoDraft.width), 192 / Math.max(1, logoDraft.height)) : Math.min((192 * 0.88) / Math.max(1, logoDraft.width), (192 * 0.88) / Math.max(1, logoDraft.height))) * logoDraft.zoom}px`,
-                                  height: `${Math.max(1, logoDraft.height) * (listingType === 'coach' ? Math.max(192 / Math.max(1, logoDraft.width), 192 / Math.max(1, logoDraft.height)) : Math.min((192 * 0.88) / Math.max(1, logoDraft.width), (192 * 0.88) / Math.max(1, logoDraft.height))) * logoDraft.zoom}px`,
-                                  left: '50%',
-                                  top: '50%',
-                                  transform: `translate(calc(-50% + ${logoDraft.offsetX * 0.96}px), calc(-50% + ${logoDraft.offsetY * 0.96}px))`,
-                                }}
+                                style={(() => {const placement=directoryImagePlacement({width:logoDraft.width,height:logoDraft.height,zoom:logoDraft.zoom,offsetX:logoDraft.offsetX,offsetY:logoDraft.offsetY,dimension:192,coach:listingType==='coach'});return {width:`${placement.drawWidth}px`,height:`${placement.drawHeight}px`,left:`${placement.drawX}px`,top:`${placement.drawY}px`};})()}
                               />
                             </div>
                             <p className="mt-2 max-w-48 text-xs text-muted-foreground">{listingType === 'coach' ? 'Your photograph will be cropped into this square, as shown.' : 'The white square matches how logos appear in the directory.'}</p>
