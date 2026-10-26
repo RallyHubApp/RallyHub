@@ -526,15 +526,15 @@ Deno.serve(async (req) => {
       const categoryMap:Record<string,string> = {coach:'coaching',coaching:'coaching',equipment:'suppliers',supplier:'suppliers',suppliers:'suppliers',club:'clubs',holiday:'holidays',holidays:'holidays',events:'events',event:'events',organiser:'events'};
       const category = categoryMap[String(listing.listing_type || '').toLowerCase()];
       if (!category) return Response.json({success:true,emailStatus:'not_configured_for_category'});
+      const profileRows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:listingSlug,status:'active'},'-updated_at',2);
+      const profile = parseJson(profileRows?.[0]?.public_json) || {};
+      if (!clean(profile.name,220) || !clean(profile.description,2000)) return Response.json({error:'Save your name and profile description before completing the guided review.'},{status:400});
       const now=new Date().toISOString();
       const setup=parseJson(listing.setup_json) || {};
       if (!setup?.review?.completedAt) {
         setup.review={completedAt:now,completedByUserId:user.id};
         await base44.asServiceRole.entities.DirectoryListingRecord.update(listing.id,{setup_json:JSON.stringify(setup)});
       }
-      const profileRows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:listingSlug,status:'active'},'-updated_at',2);
-      const profile = parseJson(profileRows?.[0]?.public_json) || {};
-      if (!clean(profile.name,220) || !clean(profile.description,2000)) return Response.json({error:'Save your name and profile description before completing the guided review.'},{status:400});
       const purpose = `directory_${category}_profile_completed`;
       const templates = await base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose,status:'approved'},'-updated_date',5);
       const template = templates?.[0];
@@ -552,10 +552,8 @@ Deno.serve(async (req) => {
       // The approved branded email shell provides its own signature.
       // Normalise greeting to first name and remove duplicate sign-offs in body.
       const textBody=render(template.plain_text_template)
-        .replace(/^Hi\s+[^,
-]+,/i,`Hi ${firstName},`)
-        .replace(/
-\s*Yours in sport,?\s*$/i,'').trim();
+        .replace(/^Hi\s+[^,\n]+,/i,`Hi ${firstName},`)
+        .replace(/\n\s*Yours in sport,?\s*$/i,'').trim();
       if (!subject || !textBody || /{{\s*[A-Z_]+\s*}}/.test(subject+' '+textBody)) return Response.json({error:'Approved completion template has unresolved placeholders'},{status:409});
       // Reserve before external send. Never retry automatically after an uncertain provider response.
       await base44.asServiceRole.entities.AuditLog.create({tenant_id:'platform',user_id:user.id,action:'directory_guided_completion_email_reserved',entity_type:'DirectoryListing',entity_id:listingSlug,scope_type:'DirectoryListing',scope_id:key,after_state:JSON.stringify({recipient,purpose}),reason:'One-time guided profile completion email send reservation.'});
