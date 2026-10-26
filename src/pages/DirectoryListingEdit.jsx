@@ -1087,6 +1087,7 @@ export default function DirectoryListingEdit() {
                   <div className="space-y-2"><Label>Facebook page</Label><Input type="url" value={form.facebook || ''} onChange={e => setField('facebook', e.target.value)} placeholder="https://facebook.com/…" /><p className="text-xs text-muted-foreground">Only the Facebook button is shown publicly — not this full link as text.</p></div>
                   <div className="space-y-2"><Label>Instagram page</Label><Input type="url" value={form.instagram || ''} onChange={e => setField('instagram', e.target.value)} placeholder="https://instagram.com/…" /><p className="text-xs text-muted-foreground">Only the Instagram button is shown publicly — not this full link as text.</p></div>
                   </>}
+                  {listingType !== 'coach' && (
                   <div className="space-y-2 sm:col-span-2">
                     <Label>{listingType === 'coach' ? 'Your coaching photograph' : isClubListing ? 'Club logo' : 'Logo / image'}</Label>
                     <div className="rounded-xl border border-border bg-background/30 p-4 flex flex-col sm:flex-row sm:items-center gap-4">
@@ -1162,8 +1163,87 @@ export default function DirectoryListingEdit() {
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
               </section>
+
+              {listingType === 'coach' && <section id="photograph" style={{ display: guidedSectionVisible('photograph') ? undefined : 'none' }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24" data-testid="directory-coach-photograph-step"><h2 className="text-xl font-bold">Your coaching photograph</h2><p className="text-sm text-muted-foreground">Review the exact square crop that will be saved. Adjust the existing photograph or replace it with another image, then save.</p>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label>{listingType === 'coach' ? 'Your coaching photograph' : isClubListing ? 'Club logo' : 'Logo / image'}</Label>
+                    <div className="rounded-xl border border-border bg-background/30 p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                      {(listingType === 'coach' ? form.photoUrl : form.logoUrl) && isValidUrl(listingType === 'coach' ? form.photoUrl : form.logoUrl) ? <img src={listingType === 'coach' ? form.photoUrl : form.logoUrl} alt={listingType === 'coach' ? 'Coaching photograph preview' : 'Club logo preview'} className={`h-24 w-24 rounded-xl bg-white shrink-0 ${listingType === 'coach' ? 'object-cover' : 'object-contain p-1'}`} /> : <div className="h-24 w-24 rounded-xl border border-dashed border-border flex items-center justify-center shrink-0"><ImageIcon className="w-6 h-6 text-muted-foreground" /></div>}
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
+                            {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                            {uploadingLogo ? 'Uploading…' : listingType === 'coach' ? (form.photoUrl ? 'Replace photograph' : 'Upload photograph') : form.logoUrl ? 'Replace logo' : 'Upload logo'}
+                            <input type="file" accept="image/*" className="hidden" disabled={uploadingLogo} onChange={e => { chooseLogo(e.target.files?.[0]); e.target.value = ''; }} />
+                          </label>
+                          {listingType === 'coach' && form.photoUrl && <Button type="button" variant="outline" onClick={editSavedPhotograph} disabled={uploadingLogo} data-testid="edit-saved-coach-photo">Adjust current photograph</Button>}
+                          {(listingType === 'coach' ? form.photoUrl : form.logoUrl) && <Button type="button" variant="outline" onClick={() => setField(listingType === 'coach' ? 'photoUrl' : 'logoUrl', '')}>{listingType === 'coach' ? 'Remove photograph' : 'Remove logo'}</Button>}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{listingType === 'coach' ? 'JPG, PNG or WebP up to 5 MB. Upload a photograph, adjust its size and position, then apply it. Your photograph is public; your email and mobile number are not.' : 'JPG, PNG or WebP up to 5 MB. RallyHub automatically removes common transparent/white padding, centres the crest, then lets you resize and reposition it before upload.'}</p>
+                        {listingType !== 'coach' && <div className="mt-3 space-y-2 max-w-xl">
+                          <Label htmlFor="directory-logo-https-url">{listingType === 'coach' ? 'Or use a photograph image URL (HTTPS)' : 'Or use a logo image URL (HTTPS)'}</Label>
+                          <Input id="directory-logo-https-url" type="url" aria-label="Logo image HTTPS URL" placeholder="https://example.com/club-logo.png" value={(listingType === 'coach' ? form.photoUrl : form.logoUrl) || ''} onChange={e => setField(listingType === 'coach' ? 'photoUrl' : 'logoUrl', e.target.value.trim())} />
+                          <p className="text-xs text-muted-foreground">Optional alternative to uploading an image. Paste a direct HTTPS image link, preview it above, then use Save changes to update this listing.</p>
+                          {(listingType === 'coach' ? form.photoUrl : form.logoUrl) && !/^https:\/\//i.test(listingType === 'coach' ? form.photoUrl : form.logoUrl) && <p role="alert" className="text-xs text-red-600">Please enter a direct HTTPS image URL.</p>}
+                        </div>}
+                      </div>
+                    </div>
+                    {logoDraft && (
+                      <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-4" data-testid="directory-logo-editor">
+                        <div className="flex flex-col lg:flex-row gap-5">
+                          <div className="shrink-0">
+                            <p className="text-sm font-semibold mb-2">{listingType === 'coach' ? 'Photograph preview' : 'Logo preview'}</p>
+                            <div className="relative h-48 w-48 overflow-hidden rounded-2xl border-2 border-border bg-white shadow-inner" data-testid="directory-logo-preview">
+                              <img
+                                src={logoDraft.url}
+                                alt={listingType === 'coach' ? 'Positioned coaching photograph preview' : 'Positioned club logo preview'}
+                                draggable="false"
+                                className="absolute max-w-none select-none pointer-events-none"
+                                style={{
+                                  width: `${Math.max(1, logoDraft.width) * (listingType === 'coach' ? Math.max(192 / Math.max(1, logoDraft.width), 192 / Math.max(1, logoDraft.height)) : Math.min((192 * 0.88) / Math.max(1, logoDraft.width), (192 * 0.88) / Math.max(1, logoDraft.height))) * logoDraft.zoom}px`,
+                                  height: `${Math.max(1, logoDraft.height) * (listingType === 'coach' ? Math.max(192 / Math.max(1, logoDraft.width), 192 / Math.max(1, logoDraft.height)) : Math.min((192 * 0.88) / Math.max(1, logoDraft.width), (192 * 0.88) / Math.max(1, logoDraft.height))) * logoDraft.zoom}px`,
+                                  left: '50%',
+                                  top: '50%',
+                                  transform: `translate(calc(-50% + ${logoDraft.offsetX * 0.96}px), calc(-50% + ${logoDraft.offsetY * 0.96}px))`,
+                                }}
+                              />
+                            </div>
+                            <p className="mt-2 max-w-48 text-xs text-muted-foreground">{listingType === 'coach' ? 'Your photograph will be cropped into this square, as shown.' : 'The white square matches how logos appear in the directory.'}</p>
+                          </div>
+                          <div className="flex-1 space-y-4">
+                            <div>
+                              <div className="flex items-center justify-between gap-3"><Label htmlFor="directory-logo-zoom">Size</Label><span className="text-xs text-muted-foreground">{Math.round(logoDraft.zoom * 100)}%</span></div>
+                              <input id="directory-logo-zoom" aria-label={listingType === 'coach' ? 'Photograph size' : 'Logo size'} type="range" min="0.7" max="2" step="0.02" value={logoDraft.zoom} onChange={e => setLogoDraft(prev => ({ ...prev, zoom: Number(e.target.value) }))} className="mt-2 w-full accent-primary" />
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between gap-3"><Label htmlFor="directory-logo-x">Move left / right</Label><span className="text-xs text-muted-foreground">{logoDraft.offsetX}</span></div>
+                              <input id="directory-logo-x" aria-label={listingType === 'coach' ? 'Photograph horizontal position' : 'Logo horizontal position'} type="range" min="-100" max="100" step="1" value={logoDraft.offsetX} onChange={e => setLogoDraft(prev => ({ ...prev, offsetX: Number(e.target.value) }))} className="mt-2 w-full accent-primary" />
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between gap-3"><Label htmlFor="directory-logo-y">Move up / down</Label><span className="text-xs text-muted-foreground">{logoDraft.offsetY}</span></div>
+                              <input id="directory-logo-y" aria-label={listingType === 'coach' ? 'Photograph vertical position' : 'Logo vertical position'} type="range" min="-100" max="100" step="1" value={logoDraft.offsetY} onChange={e => setLogoDraft(prev => ({ ...prev, offsetY: Number(e.target.value) }))} className="mt-2 w-full accent-primary" />
+                            </div>
+                            <div className="rounded-lg border border-border bg-background/50 p-3 text-xs text-muted-foreground">
+                              {listingType === 'coach' ? 'Adjust the photograph size, then use the left/right and up/down controls to position your face within the square. The original proportions are preserved.' : 'Keep the whole crest visible where possible. Use Size and the position controls to fill the square cleanly. RallyHub preserves the logo proportions so it will not stretch or squash the crest.'}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Button type="button" variant="outline" onClick={resetLogoEdit}>Reset position</Button>
+                              <Button type="button" variant="ghost" onClick={cancelLogoEdit}>Cancel</Button>
+                              <Button type="button" onClick={uploadPositionedLogo} disabled={uploadingLogo} className="gap-2" data-testid="directory-logo-apply">
+                                {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                                {uploadingLogo ? 'Preparing image…' : listingType === 'coach' ? 'Use this photograph' : 'Use this logo'}
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">After choosing <strong>{listingType === 'coach' ? 'Use this photograph' : 'Use this logo'}</strong>, press <strong>Save changes</strong> to update the directory.</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+              </section>}
 
               <section id="contact" style={{ display: guidedSectionVisible('contact') ? undefined : 'none' }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><UserRound className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club contact' : 'Contact & social'}</h2></div>
