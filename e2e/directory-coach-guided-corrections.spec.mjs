@@ -5,7 +5,7 @@ test('coach guided journey has independent photo editing, private contact prefil
  const user={id:'testcoach-user',full_name:'Marie V. C. Moore',email:'account@example.test',role:'admin',approval_status:'approved'};
  const profile={listingType:'coach',name:'Brian Moore — TEST PREVIEW',description:'Experienced coach',photoUrl:'https://images.example.test/saved-coach.png',contact:{}};
  const base={slug:'test-preview-coach',...profile,county:'Clare'};
- const privateContact={email:'coach@example.test',phone:'0871234567'};
+ let privateContact={email:'coach@example.test',phone:'0871234567'};
  const privateSaves=[];let savedProfile=null;let imageUploads=0;
  await page.route('https://images.example.test/saved-coach.png',route=>route.fulfill({status:200,contentType:'image/png',headers:{'Access-Control-Allow-Origin':'*'},body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg==','base64')}));
  await page.route('**/api/apps/**',async route=>{
@@ -23,8 +23,8 @@ test('coach guided journey has independent photo editing, private contact prefil
    if(name==='secureCreditAction'){imageUploads++;return reply({success:true,file_url:`https://images.example.test/edited-${imageUploads}.webp`});}
    if(name==='directoryListingProfile'){
     if(b.action==='private_get')return reply({success:true,profile,base,visibility:'preview_only',setup:{},privateContact});
-    if(b.action==='save_coach_private_contact'){privateSaves.push(b);return reply({success:true,privateContact:b.contact})}
-    if(b.action==='save'){savedProfile=b.profile;return reply({success:true,profile:b.profile});}
+    if(b.action==='save_coach_private_contact'){privateSaves.push(b);privateContact=b.contact;return reply({success:true,privateContact:b.contact})}
+    if(b.action==='save'){savedProfile={...b.profile,contact:{name:null,email:null,phone:null,whatsapp:null}};return reply({success:true,profile:savedProfile});}
     return reply({success:true,profile,base});
    }
   }
@@ -58,13 +58,17 @@ test('coach guided journey has independent photo editing, private contact prefil
  await expect(page.getByText('Coach name (private contact)').locator('..').locator('input')).toHaveValue('Marie V. C. Moore');
  await expect(page.getByText('Coaching email address',{exact:true}).locator('..').locator('input')).toHaveValue('coach@example.test');
  await expect(page.getByText('Coaching mobile number',{exact:true}).locator('..').locator('input')).toHaveValue('0871234567');
+ await page.getByText('Coaching email address',{exact:true}).locator('..').locator('input').fill('updatedcoach@example.test');
  await page.getByLabel('I confirm that my coaching email address is correct.').check();
  await page.getByLabel('I confirm that my coaching mobile number is correct.').check();
  await page.getByRole('button',{name:'Continue',exact:true}).click();
  await expect.poll(()=>privateSaves.length).toBe(1);
- expect(privateSaves[0].contact.email).toBe('coach@example.test');
+ expect(privateSaves[0].contact.email).toBe('updatedcoach@example.test');
  expect(privateSaves[0].contact.name).toBe('Marie V. C. Moore');
  expect(privateSaves[0].confirmEmail).toBe(true);
  expect(privateSaves[0].confirmMobile).toBe(true);
+ await page.getByRole('button',{name:'Previous'}).click();
+ await expect(page.getByText('Coaching email address',{exact:true}).locator('..').locator('input')).toHaveValue('updatedcoach@example.test');
+ expect(savedProfile?.contact?.email).toBe(null); // public profile still contains no private coach email
  expect(errors).toEqual([]);
 });
