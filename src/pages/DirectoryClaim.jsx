@@ -67,7 +67,8 @@ export default function DirectoryClaim() {
 
   // An invited preview listing is intentionally absent from public Directory results.
   // The opaque token is validated by directoryClaim.status after sign-in.
-  const club = seedClub || dynamicClub || (inviteToken ? { slug, name: status?.listing?.name || 'your invited Directory listing', listingType: status?.listing?.listingType || 'other' } : null);
+  const invitationFallback = useMemo(() => inviteToken ? { slug, name:'your invited Directory listing', listingType:'other' } : null, [slug, Boolean(inviteToken)]);
+  const club = seedClub || dynamicClub || invitationFallback;
   const isCoachInvite = Boolean(inviteToken && club?.listingType === 'coach');
 
   useEffect(() => {
@@ -141,7 +142,7 @@ export default function DirectoryClaim() {
         if (active) setLoadingStatus(false);
       });
     return () => { active = false; };
-  }, [isAuthenticated, club, inviteToken, user]);
+  }, [isAuthenticated, club?.slug, inviteToken, user?.id, navigate]);
 
   if (loadingClub && !club) return <div className="min-h-screen bg-background text-foreground"><PublicDirectoryHeader /><main className="container mx-auto px-4 py-10 max-w-4xl"><div className="glass rounded-2xl p-6">Loading club listing…</div></main></div>;
   if (!club) return <Navigate to="/directory" replace />;
