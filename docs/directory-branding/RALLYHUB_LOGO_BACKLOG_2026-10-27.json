@@ -1,0 +1,272 @@
+{
+  "date": "2026-10-27",
+  "scope": "Read-only reconciliation: current Base44 directoryListingProfile public_list + current directorySeed.js + 15 October approved/reviewed ledgers",
+  "inventory": {
+    "static": 82,
+    "dynamicOnlyEligible": 40,
+    "rawIncludingPublicMarkedTest": 123,
+    "eligible": 122,
+    "effectiveImages": 80,
+    "hiddenByNullProfile": 7,
+    "missing": 35,
+    "attention": 42,
+    "countiesAllCategories": 28,
+    "countiesClubs": 27
+  },
+  "newlyDetected": {
+    "slug": "brian-moore-coach-test",
+    "issue": "Public feed returns an active public-marked TEST PREVIEW listing; exclude from eligible counts and investigate visibility without mutating live records"
+  },
+  "reviewed": 10,
+  "entries": [
+    {
+      "slug": "castlerahan-pickleball-club",
+      "name": "Castlerahan Pickleball Club",
+      "county": "Cavan",
+      "status": "Parent-organisation artwork only; no verified club logo",
+      "sources": [
+        {
+          "type": "Official website",
+          "url": "https://castlerahan.ie/pickleballbooking/",
+          "note": "Booking page returned 403 today; earlier parent branding is not established as club logo"
+        }
+      ],
+      "reviewNumber": 1,
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "approvedCandidate": false,
+      "stagedReceipt": null,
+      "sha256": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "coillte-pickleball-club",
+      "name": "Coillte Pickleball Club",
+      "county": "Mayo",
+      "status": "Archived Facebook group photograph is not a logo",
+      "sources": [
+        {
+          "type": "Facebook",
+          "url": "https://www.facebook.com/share/18YRb1HLuf/",
+          "note": "Direct access disabled; 15 October photograph retained as non-logo evidence"
+        }
+      ],
+      "reviewNumber": 2,
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "approvedCandidate": false,
+      "stagedReceipt": null,
+      "sha256": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "cumann-pickleball-a-chorrain",
+      "name": "Cumann Pickleball A Chorráin",
+      "county": "Mayo",
+      "status": "No verified official artwork",
+      "sources": [
+        {
+          "type": "Club identity",
+          "url": "https://docs.google.com/spreadsheets/d/1-3gsxh_NURnYlm5TDiaR0tcgYIJ3WIoK3pmZRnojO7k/htmlembed/sheet?gid=0&headers=false",
+          "note": "Club identity listed; no logo established"
+        }
+      ],
+      "reviewNumber": 3,
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "approvedCandidate": false,
+      "stagedReceipt": null,
+      "sha256": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "drogheda-pickleball",
+      "name": "Drogheda Pickleball",
+      "county": "Louth",
+      "status": "Social images inaccessible; no confirmed logo",
+      "sources": [
+        {
+          "type": "Facebook",
+          "url": "https://www.facebook.com/share/WLfRNxYQVFqnnNrD/",
+          "note": "Direct access disabled"
+        },
+        {
+          "type": "Instagram",
+          "url": "https://www.instagram.com/droghedapickleball/",
+          "note": "Direct access disabled"
+        }
+      ],
+      "reviewNumber": 4,
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "approvedCandidate": false,
+      "stagedReceipt": null,
+      "sha256": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "kinsale-pickleball",
+      "name": "Kinsale Pickleball",
+      "county": "Cork",
+      "status": "Official venue confirms club; no separate logo",
+      "sources": [
+        {
+          "type": "Venue website",
+          "url": "https://www.sailesportsandleisure.ie/whats-on/",
+          "note": "Kinsale Pickleball Club sessions confirmed; venue artwork is not automatically club artwork"
+        }
+      ],
+      "reviewNumber": 5,
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "approvedCandidate": false,
+      "stagedReceipt": null,
+      "sha256": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "leeside-pickleball",
+      "name": "Leeside Pickleball",
+      "county": "Cork",
+      "status": "Club identity confirmed; no verified logo",
+      "sources": [
+        {
+          "type": "Sports partnership",
+          "url": "https://corksports.ie/latest-news/cork-pickleball-directory/",
+          "note": "22 September 2026 listing confirms Leeside group, not logo"
+        }
+      ],
+      "reviewNumber": 6,
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "approvedCandidate": false,
+      "stagedReceipt": null,
+      "sha256": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "mostrim-pickleball",
+      "name": "Mostrim Pickleball",
+      "county": "Longford",
+      "status": "Sports Hub branding not proven to be club branding",
+      "sources": [
+        {
+          "type": "Facebook",
+          "url": "https://www.facebook.com/sportshubedgeworthstown",
+          "note": "Direct access disabled"
+        },
+        {
+          "type": "Instagram",
+          "url": "https://www.instagram.com/sportshubedgeworthstown",
+          "note": "Direct access disabled"
+        },
+        {
+          "type": "Sports Ireland",
+          "url": "https://www.sportireland.ie/participation/community-hubs-contact-finder?page=2",
+          "note": "Confirms Sports Hub, not Mostrim logo"
+        }
+      ],
+      "reviewNumber": 7,
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "approvedCandidate": false,
+      "stagedReceipt": null,
+      "sha256": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "mullahoran-pickleball-club",
+      "name": "Mullahoran Pickleball Club",
+      "county": "Cavan",
+      "status": "Club identity confirmed by grant list; no verified logo",
+      "sources": [
+        {
+          "type": "Grant record",
+          "url": "https://ageandopportunity.ie/wp-content/uploads/2023/05/Names-of-909-successful-organisations-by-county-in-Active-National-Grant-Scheme-2023.pdf",
+          "note": "Club named; no logo"
+        }
+      ],
+      "reviewNumber": 8,
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "approvedCandidate": false,
+      "stagedReceipt": null,
+      "sha256": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "newbridge-community-pickleball",
+      "name": "Newbridge Community Pickleball",
+      "county": "Kildare",
+      "status": "No verified artwork for this exact listing",
+      "sources": [
+        {
+          "type": "Other local group",
+          "url": "https://www.pickleheads.com/courts/ie/county-kildare/newbridge/newbridge-pickleball-club",
+          "note": "Newbridge Pickleball Club exists; relationship to Community listing unproven"
+        }
+      ],
+      "reviewNumber": 9,
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "approvedCandidate": false,
+      "stagedReceipt": null,
+      "sha256": null,
+      "productionPublished": false
+    },
+    {
+      "slug": "pickleball-iorrais",
+      "name": "Pickleball Iorrais",
+      "county": "Mayo",
+      "status": "No verified official artwork",
+      "sources": [],
+      "reviewNumber": 10,
+      "sourceOrder": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "approvedCandidate": false,
+      "stagedReceipt": null,
+      "sha256": null,
+      "productionPublished": false
+    }
+  ],
+  "priorApprovals": {
+    "annascaulKingdom": "Same authorised JPG SHA-256 82868b909e9e10cf2fa1475baaae5642021faa0640d6a0e9bf7199214760a7b1, both readback HTTP 200",
+    "eastCork": "Approved JPG SHA-256 76bd32d0197c77e136d3b0614081015b25df8d34528941d7b5e53dcd42c9effc HTTP 200; current owner profile image differs, no overwrite",
+    "coolmine": "Receipt 6adc5883f7bd0ef41a39aa03; SHA-256 068d8267233f41b062bfb1a2cafb5cdfdf67e9ee6473c529f74aa13e6be616cf HTTP 200",
+    "irishDinks": "Receipt 6addb8519b2a7380fd49c563; SHA-256 741bd4205cde3e595f5a5df5135118b9f215e0ad522de6961e365b56a6242937 HTTP 200",
+    "bluestack": "Approved AVIF SHA-256 3e6a22c5a44eab543d32fa92635e29abd4179a13a3a3d2c59230928fe9a1d36d HTTP 200 but application/octet-stream; original JPG/PNG requested for safe replacement"
+  },
+  "noNewStaging": true,
+  "noProductionMutation": true,
+  "backlogComplete": false
+}
