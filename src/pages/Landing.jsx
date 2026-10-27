@@ -246,8 +246,13 @@ export default function Landing() {
                     <Link to="/contact" className="rounded-sm hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">Contact</Link>
                   </nav>
                 </div>
-                <div className="mt-4 border-t border-white/15 pt-3 text-[11px] text-white/70">
-                  © 2026 RallyHub. All rights reserved.
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/15 pt-3 text-[11px] text-white/70">
+                  <span>© 2026 RallyHub. All rights reserved.</span>
+                  <nav aria-label="Legal information" className="flex flex-wrap gap-x-4 gap-y-2">
+                    <Link to="/legal/privacy" className="hover:text-white hover:underline">Privacy Policy</Link>
+                    <Link to="/legal/terms" className="hover:text-white hover:underline">Terms of Use</Link>
+                    <Link to="/legal/cookies" className="hover:text-white hover:underline">Cookies</Link>
+                  </nav>
                 </div>
               </div>
             </div>
