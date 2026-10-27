@@ -10,7 +10,6 @@ export const RALLYHUB_LOGO_URL = RALLYHUB_BRAND.icon;
 const navItems = [
   ['Home','/'],
   ['Directory','/directory'],
-  ['Clubs','/directory'],
   ['Events','/events'],
   ['About','/about'],
 ];
@@ -31,7 +30,7 @@ export default function PublicSiteHeader() {
 
         <nav className="hidden items-center gap-[27px] text-[12px] font-semibold text-[#0d2258] lg:flex" aria-label="Main navigation">
           {navItems.map(([label,to]) => (
-            <Link key={label} to={to} className={`border-b-2 py-[25px] transition-colors ${isActive(to) && !(label === 'Clubs' && location.pathname === '/directory') ? 'border-[#078e48] text-[#078e48]' : 'border-transparent hover:text-[#078e48]'}`}>
+            <Link key={label} to={to} className={`border-b-2 py-[25px] transition-colors ${isActive(to) ? 'border-[#078e48] text-[#078e48]' : 'border-transparent hover:text-[#078e48]'}`}>
               {label}
             </Link>
           ))}

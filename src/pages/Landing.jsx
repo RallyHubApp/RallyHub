@@ -117,7 +117,6 @@ export default function Landing() {
             <nav className="hidden items-center gap-[27px] text-[12px] font-semibold text-[#0d2258] lg:flex">
               <Link to="/" className="hover:text-[#078e48]">Home</Link>
               <Link to="/directory" className="hover:text-[#078e48]">Directory</Link>
-              <Link to="/directory" className="hover:text-[#078e48]">Clubs</Link>
               <Link to="/events" className="hover:text-[#078e48]">Events</Link>
               <Link to="/about" className="hover:text-[#078e48]">About</Link>
             </nav>
@@ -151,7 +150,7 @@ export default function Landing() {
           {menuOpen && (
             <div className="absolute left-0 right-0 top-full border-t border-[#e8edef] bg-white px-4 py-4 shadow-xl lg:hidden">
               <div className="mx-auto max-w-[1380px] space-y-1">
-                {[['Home','/'],['Directory','/directory'],['Clubs','/directory'],['Events','/events'],['About','/about']].map(([label,to])=>(
+                {[['Home','/'],['Directory','/directory'],['Events','/events'],['About','/about']].map(([label,to])=>(
                   <Link key={label} to={to} onClick={()=>setMenuOpen(false)} className="flex items-center justify-between rounded-lg px-3 py-3 font-semibold text-[#0c2257] hover:bg-[#f4faf7]">
                     {label}<ChevronRight className="h-4 w-4 text-[#078e48]"/>
                   </Link>
@@ -240,9 +239,9 @@ export default function Landing() {
                     <img src="https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/85b0612d8_rallyhub-1fa08c810cc2f349fd52.png" alt="RallyHub" className="h-[78px] w-[300px] max-w-full object-contain shadow-none drop-shadow-none [filter:none]" />
                   </Link>
                   <nav aria-label="Footer navigation" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] font-semibold text-white/90">
+                    <Link to="/" className="rounded-sm hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">Home</Link>
                     <Link to="/directory" className="rounded-sm hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">Directory</Link>
                     <Link to="/events" className="rounded-sm hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">Events</Link>
-                    <Link to="/directory/help" className="rounded-sm hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">Club Guide</Link>
                     <Link to="/about" className="rounded-sm hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">About</Link>
                     <Link to="/contact" className="rounded-sm hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">Contact</Link>
                   </nav>

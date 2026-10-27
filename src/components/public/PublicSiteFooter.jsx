@@ -4,10 +4,7 @@ import { RALLYHUB_BRAND } from '@/lib/rallyhubBrand';
 
 const FOOTER_PHOTO = '/assets/about/card-play.webp';
 const legalLinks = [['Privacy Policy','/legal/privacy'],['Terms of Use','/legal/terms'],['Cookies','/legal/cookies']];
-const footerLinks = [
-  ['Directory', '/directory'], ['Events', '/events'],
-  ['Club Guide', '/directory/help'], ['About', '/about'], ['Contact', '/contact'],
-];
+const footerLinks = [['Home','/'],['Directory','/directory'],['Events','/events'],['About','/about'],['Contact','/contact']];
 
 /** Shared public-site footer: the approved compact photo + navy band design. */
 export default function PublicSiteFooter({ photoSrc = FOOTER_PHOTO, photoAlt = "Pickleball players enjoying time together", cropPhotoEdges = false }) {

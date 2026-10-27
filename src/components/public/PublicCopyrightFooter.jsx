@@ -4,13 +4,7 @@ import { cn } from '@/lib/utils';
 import { RALLYHUB_BRAND } from '@/lib/rallyhubBrand';
 
 const legalLinks = [['Privacy Policy','/legal/privacy'],['Terms of Use','/legal/terms'],['Cookies','/legal/cookies']];
-const footerLinks = [
-  ['Directory','/directory'],
-  ['Events','/events'],
-  ['Club Guide','/directory/help'],
-  ['About','/about'],
-  ['Contact','/contact'],
-];
+const footerLinks = [['Home','/'],['Directory','/directory'],['Events','/events'],['About','/about'],['Contact','/contact']];
 
 export default function PublicCopyrightFooter({ className = '', maxWidthClass = 'max-w-[1380px]' }) {
   return (
