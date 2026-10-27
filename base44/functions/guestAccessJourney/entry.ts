@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
+import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
 
 async function clubRestrictionCheck(base44:any,tenantId:any,clubId:any,identity:any){
  const rows=await base44.asServiceRole.entities.ClubAccessRestriction.filter({tenant_id:String(tenantId),club_id:String(clubId),status:'active'},'-created_date',200);
@@ -179,7 +180,7 @@ async function sendApprovedGuestInvite(base44:any,club:any,row:any,session:any,v
   const renderedSubject=approvedTemplate?.subject_template?merge(approvedTemplate.subject_template):subject;
   const renderedText=approvedTemplate?.plain_text_template?merge(approvedTemplate.plain_text_template):textBody;
   const renderedContent=approvedTemplate?.html_template?merge(approvedTemplate.html_template):details;
-  const htmlBody=emailShell({club,headline:'Your guest session is approved',preheader:formatDate(date)+' · '+venueName,content:renderedContent,brandKit});
+  const htmlBody=renderBasicBrandedEmail(renderedContent,brandKit,club,club.name||'Clare Pickleball','Your guest session is approved',formatDate(date)+' · '+venueName);
   await sendWithConfiguredEmailTransport(base44,scope,{to:row.email,subject:renderedSubject,textBody:renderedText,htmlBody,senderName:club.name});
 }
 
@@ -216,7 +217,17 @@ async function sendPendingApprovalEmail(base44:any,club:any,row:any,selected:any
   const subject=`Action required · ${club.name} guest session request · ${row.full_name}`;
   const sessionText=`${selected?.day||''} ${selected?.start||''}${selected?.end?`–${selected.end}`:''}`.trim();
   const textBody=`A new guest session request is waiting for approval in RallyHub.\n\nGuest: ${row.full_name}\nEmail: ${row.email}\nMobile: ${row.mobile}\nExperience: ${row.experience_level||''}\nSession: ${sessionText}\nVenue: ${selected?.venueName||row.preferred_venue_key||''}\n${row.home_club?`Home club: ${row.home_club}\n`:''}${row.dupr_id?`DUPR: ${row.dupr_id}\n`:''}${row.health_declaration_applies===true?'Health/medical details were supplied — review them securely inside RallyHub.\n':''}\nOpen Session Bookings to review and approve or decline:\n${manageUrl}\n\nRallyHub`;
-  const htmlBody=`<!doctype html><html><body style="margin:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px 12px;"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#fff;border:1px solid #d9e1ec;border-radius:16px;overflow:hidden;"><tr><td style="height:6px;background:${escapeHtml(club.primary_colour||'#078e48')};"></td></tr><tr><td style="padding:26px;"><div style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#078e48;">Session Bookings</div><h1 style="margin:8px 0 16px;font-size:23px;">Guest request waiting for approval</h1><p style="margin:0 0 18px;line-height:1.6;color:#4b5563;">A new guest request needs your decision in RallyHub.</p><div style="padding:16px;border:1px solid #e1e7ef;border-radius:12px;background:#f8fafc;line-height:1.75;font-size:14px;"><strong>${escapeHtml(row.full_name)}</strong><br>${escapeHtml(row.email)} · ${escapeHtml(row.mobile)}<br>${escapeHtml(sessionText)}<br>${escapeHtml(selected?.venueName||row.preferred_venue_key||'')}${row.health_declaration_applies===true?'<br><strong style="color:#b45309;">Health/medical details supplied — review in RallyHub.</strong>':''}</div><div style="text-align:center;margin-top:22px;"><a href="${manageUrl}" style="display:inline-block;padding:13px 20px;border-radius:10px;background:#078e48;color:#fff;text-decoration:none;font-weight:800;">Review Session Booking</a></div></td></tr><tr><td style="padding:16px 20px;background:#f7f9fc;border-top:1px solid #e4e9f1"><div style="text-align:center;line-height:1.3"><a href="https://rallyhub.ie/" target="_blank" style="display:inline-table;text-decoration:none;color:#081342"><span style="display:table-cell;vertical-align:middle;padding-right:7px"><img src="https://rallyhub.ie/assets/brand/rallyhub-icon-light.png" alt="RallyHub" width="28" height="28" style="display:block;width:28px;height:28px;object-fit:contain;border:0"></span><span style="display:table-cell;vertical-align:middle;text-align:left"><span style="display:block;font-size:10px;color:#7b8494">Powered by</span><span style="display:block;font-size:17px;font-weight:900;letter-spacing:-.4px;color:#081342">Rally<span style="color:#078e48">Hub</span></span></span></a></div></td></tr></table></td></tr></table></body></html>`;
+  // All club notifications use the approved tenant Basic email renderer.
+  // Never embed a legacy RallyHub logo, signature or footer in a workflow email.
+  const brandKit=await tenantEmailBrandKit(base44,club.tenant_id,club.id);
+  if(!brandKit)throw new Error('Approved Clare Pickleball email brand kit is unavailable; notification not sent.');
+  const content='<p style="margin:0 0 18px;line-height:1.65">A new guest request needs your decision in RallyHub.</p>'
+    +'<div style="padding:16px;border:1px solid #dfe5ee;border-radius:12px;background:#f8fafc;line-height:1.75;font-size:14px">'
+    +'<strong>'+escapeHtml(row.full_name)+'</strong><br>'+escapeHtml(row.email)+' · '+escapeHtml(row.mobile)
+    +'<br>'+escapeHtml(sessionText)+'<br>'+escapeHtml(selected?.venueName||row.preferred_venue_key||'')
+    +(row.health_declaration_applies===true?'<br><strong style="color:#b45309">Health/medical details supplied — review securely in RallyHub.</strong>':'')
+    +'</div><div style="text-align:center;margin-top:22px"><a href="'+escapeHtml(manageUrl)+'" style="display:inline-block;padding:13px 20px;border-radius:10px;background:'+escapeHtml(brandKit.colours?.primary||'#0755a8')+';color:#fff;text-decoration:none;font-weight:800">Review Session Booking</a></div>';
+  const htmlBody=renderBasicBrandedEmail(content,brandKit,club,club.name||'Clare Pickleball','Guest request waiting for approval');
   await sendWithConfiguredEmailTransport(base44,scope,{to,subject,textBody,htmlBody,senderName:club.name});
   return {sent:true,to};
 }
