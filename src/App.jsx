@@ -35,6 +35,7 @@ const PublicTournament = lazy(() => import('@/pages/PublicTournament'));
 import Landing from '@/pages/Landing';
 const About = lazy(() => import('@/pages/About'));
 const Contact = lazy(() => import('@/pages/Contact'));
+const DirectoryLegalDocument = lazy(() => import('@/pages/DirectoryLegalDocument'));
 const Events = lazy(() => import('@/pages/Events'));
 const PublicEventDetail = lazy(() => import('@/pages/PublicEventDetail'));
 const MyEvents = lazy(() => import('@/pages/MyEvents'));
@@ -277,6 +278,7 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/legal/:type" element={<DirectoryLegalDocument />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events/quick-start" element={<EventQuickStart />} />
             <Route path="/events/my" element={<MyEvents />} />

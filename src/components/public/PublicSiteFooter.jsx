@@ -6,6 +6,7 @@ const FOOTER_PHOTO = '/assets/about/card-play.webp';
 const footerLinks = [
   ['Directory', '/directory'], ['Events', '/events'],
   ['Club Guide', '/directory/help'], ['About', '/about'], ['Contact', '/contact'],
+  ['Privacy Policy','/legal/privacy'], ['Terms of Use','/legal/terms'], ['Cookies','/legal/cookies'],
 ];
 
 /** Shared public-site footer: the approved compact photo + navy band design. */

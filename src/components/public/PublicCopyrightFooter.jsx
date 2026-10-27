@@ -9,6 +9,9 @@ const footerLinks = [
   ['Club Guide','/directory/help'],
   ['About','/about'],
   ['Contact','/contact'],
+  ['Privacy Policy','/legal/privacy'],
+  ['Terms of Use','/legal/terms'],
+  ['Cookies','/legal/cookies'],
 ];
 
 export default function PublicCopyrightFooter({ className = '', maxWidthClass = 'max-w-[1380px]' }) {
