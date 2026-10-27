@@ -25,6 +25,9 @@ export const RALLYHUB_UTILITY_LINKS = [
   {key:'help_other',label:'Directory help',url:'https://rallyhub.ie/directory/help#other'},
   {key:'contact',label:'Contact',url:'mailto:rallyhubapp@gmail.com'},
   {key:'directory',label:'Directory',url:'https://rallyhub.ie/directory'},
+  {key:'privacy',label:'Privacy Policy',url:'https://rallyhub.ie/legal/privacy'},
+  {key:'terms',label:'Terms of Use',url:'https://rallyhub.ie/legal/terms'},
+  {key:'cookies',label:'Cookies',url:'https://rallyhub.ie/legal/cookies'},
   {key:'website',label:'RallyHub',url:'https://rallyhub.ie/',accent:true},
   {key:'facebook',label:'Facebook',url:'https://www.facebook.com/rallyhubapp/'},
   {key:'instagram',label:'Instagram',url:'https://www.instagram.com/rallyhubapp/'},
@@ -33,7 +36,7 @@ export const RALLYHUB_UTILITY_LINKS = [
 export function directoryJourneyUtilityLinks(category:string='club') {
   const key=({coach:'coaching',supplier:'equipment',events:'tournaments_events',event:'tournaments_events',holiday:'holidays',club:'clubs'} as Record<string,string>)[category]||category;
   const helpKey=`help_${['clubs','coaching','equipment','holidays','tournaments_events','other'].includes(key)?key:'other'}`;
-  return [helpKey,'directory','contact'];
+  return [helpKey,'directory','contact','privacy','terms'];
 }
 function rallyHubEmailUtilityMenuHtml(selectedKeys:string[]|null=null) {
   const links=selectedKeys===null?RALLYHUB_UTILITY_LINKS:RALLYHUB_UTILITY_LINKS.filter(x=>selectedKeys.includes(x.key));
