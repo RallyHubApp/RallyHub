@@ -3,15 +3,13 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { RALLYHUB_BRAND } from '@/lib/rallyhubBrand';
 
+const legalLinks = [['Privacy Policy','/legal/privacy'],['Terms of Use','/legal/terms'],['Cookies','/legal/cookies']];
 const footerLinks = [
   ['Directory','/directory'],
   ['Events','/events'],
   ['Club Guide','/directory/help'],
   ['About','/about'],
   ['Contact','/contact'],
-  ['Privacy Policy','/legal/privacy'],
-  ['Terms of Use','/legal/terms'],
-  ['Cookies','/legal/cookies'],
 ];
 
 export default function PublicCopyrightFooter({ className = '', maxWidthClass = 'max-w-[1380px]' }) {
@@ -26,8 +24,11 @@ export default function PublicCopyrightFooter({ className = '', maxWidthClass = 
             {footerLinks.map(([label,to]) => <Link key={label} to={to} className="rounded-md px-2 py-1 transition hover:bg-white/10 hover:text-white hover:underline">{label}</Link>)}
           </nav>
         </div>
-        <div className="flex min-h-[36px] items-center justify-center border-t border-white/10 px-4 py-2 text-center text-[10px] font-medium tracking-[.01em] text-white/70 sm:px-6 sm:text-[11px] lg:px-8">
-          © 2026 RallyHub All rights reserved.
+        <div className="flex min-h-[36px] flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-white/10 px-4 py-2 text-center text-[10px] font-medium tracking-[.01em] text-white/70 sm:px-6 sm:text-[11px] lg:px-8">
+          <span>© 2026 RallyHub. All rights reserved.</span>
+          <nav aria-label="Legal information" className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            {legalLinks.map(([label,to])=><Link key={to} to={to} className="hover:text-white hover:underline">{label}</Link>)}
+          </nav>
         </div>
       </div>
     </footer>

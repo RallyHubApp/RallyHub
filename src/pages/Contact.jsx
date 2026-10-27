@@ -50,6 +50,7 @@ export default function Contact() {
               </div>
               {error&&<div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
               {done&&<div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm"><CheckCircle2 className="h-5 w-5 text-emerald-500"/>{done}</div>}
+              <p className="text-xs leading-5 text-muted-foreground">RallyHub uses the details you provide to process and respond to your message. Read our <Link to="/legal/privacy" target="_blank" rel="noreferrer" className="font-semibold text-primary underline">Privacy Policy</Link>.</p>
               <Button type="submit" disabled={busy} className="w-full sm:w-auto"><Send className="mr-2 h-4 w-4"/>{busy?'Sending…':'Send to RallyHub'}</Button>
             </form>
 

@@ -352,6 +352,7 @@ export default function DirectoryClaim() {
                   </span>
                 </label>
                 <div className="flex flex-wrap gap-3">
+                  <p className="text-xs leading-5 text-muted-foreground">We use your submitted details to verify Directory access and maintain the listing. See the <Link to="/legal/privacy" target="_blank" rel="noreferrer" className="font-semibold text-primary underline">Privacy Policy</Link> and <Link to="/legal/terms" target="_blank" rel="noreferrer" className="font-semibold text-primary underline">Directory Terms</Link>.</p>
                   <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
                     {submitting ? 'Submitting…' : (editingPending ? 'Save updated verification details' : (inviteToken ? 'Submit for review' : 'Request directory access'))}
                   </Button>

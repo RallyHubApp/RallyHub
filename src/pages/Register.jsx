@@ -199,6 +199,7 @@ export default function Register() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        <p className="text-xs leading-5 text-muted-foreground">RallyHub accounts are intended for people aged 18 or over. Please review the <Link to="/legal/terms" target="_blank" rel="noreferrer" className="font-semibold text-primary underline">Directory Terms</Link> and <Link to="/legal/privacy" target="_blank" rel="noreferrer" className="font-semibold text-primary underline">Privacy Policy</Link>.</p>
         {directoryMode && (
           <>
             <div className="space-y-2">

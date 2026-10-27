@@ -411,6 +411,7 @@ export default function AddDirectoryClub() {
                 </div>
 
                 {!isSuperAdmin && <p className="text-xs text-muted-foreground">Your progress is automatically saved on this device while you complete the form.</p>}
+                <p className="text-xs leading-5 text-muted-foreground">See how RallyHub handles your contact and listing details in our <Link to="/legal/privacy" target="_blank" rel="noreferrer" className="font-semibold text-primary underline">Privacy Policy</Link>. The <Link to="/legal/terms" target="_blank" rel="noreferrer" className="font-semibold text-primary underline">Directory Terms</Link> explain how free listings work.</p>
                 <Button type="submit" disabled={submitting || !!exactExisting} className="w-full sm:w-auto">
                   {submitting ? (isSuperAdmin ? 'Creating…' : clubListing ? 'Submitting…' : 'Saving…') : (isSuperAdmin ? 'Create unclaimed listing & continue' : clubListing ? 'Submit listing for review' : 'Save & continue')}
                 </Button>

@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import { RALLYHUB_BRAND } from '@/lib/rallyhubBrand';
 
 const FOOTER_PHOTO = '/assets/about/card-play.webp';
+const legalLinks = [['Privacy Policy','/legal/privacy'],['Terms of Use','/legal/terms'],['Cookies','/legal/cookies']];
 const footerLinks = [
   ['Directory', '/directory'], ['Events', '/events'],
   ['Club Guide', '/directory/help'], ['About', '/about'], ['Contact', '/contact'],
-  ['Privacy Policy','/legal/privacy'], ['Terms of Use','/legal/terms'], ['Cookies','/legal/cookies'],
 ];
 
 /** Shared public-site footer: the approved compact photo + navy band design. */
@@ -26,7 +26,12 @@ export default function PublicSiteFooter({ photoSrc = FOOTER_PHOTO, photoAlt = "
               {footerLinks.map(([label, href]) => <Link key={href} to={href} className="rounded-sm hover:text-white hover:underline">{label}</Link>)}
             </nav>
           </div>
-          <div className="border-t border-white/15 pt-3 text-center text-[11px] text-white/70 sm:text-left">© 2026 RallyHub. All rights reserved.</div>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-white/15 pt-3 text-center text-[11px] text-white/70 sm:justify-between">
+            <span>© 2026 RallyHub. All rights reserved.</span>
+            <nav aria-label="Legal information" className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+              {legalLinks.map(([label,to])=><Link key={to} to={to} className="hover:text-white hover:underline">{label}</Link>)}
+            </nav>
+          </div>
         </div>
       </div>
     </footer>

@@ -190,6 +190,7 @@ export default function ProtectedContactCard({ listingSlug, clubName, county, en
               <label className="block text-sm font-semibold">Message<textarea required minLength={5} rows={5} value={emailForm.message} onChange={e => setEmailForm(v => ({...v,message:e.target.value}))} className="mt-1 w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 font-normal" placeholder="How can they help?" /></label>
               <input aria-hidden="true" tabIndex={-1} autoComplete="off" value={emailForm.website} onChange={e => setEmailForm(v => ({...v,website:e.target.value}))} className="hidden" />
               {emailError && <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive" role="alert">{emailError}</p>}
+              <p className="text-xs leading-5 text-muted-foreground">Your name, reply email and message may be passed to the intended listing contact. Read our <a href="/legal/privacy" target="_blank" rel="noreferrer" className="font-semibold text-primary underline">Privacy Policy</a>.</p>
               <Button type="submit" className="w-full" disabled={emailState === 'sending'}>
                 {emailState === 'sending' ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending…</> : 'Send through RallyHub'}
               </Button>
