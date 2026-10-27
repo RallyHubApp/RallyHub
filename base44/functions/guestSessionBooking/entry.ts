@@ -636,6 +636,7 @@ async function clubBrand(base44:any,clubId:string){
       logo_url:club.logo_url||'',
       primary_colour:club.primary_colour||'',
       secondary_colour:club.secondary_colour||'',
+      emailBrandKit:await tenantEmailBrandKit(base44,club.tenant_id,club.id),
     };
   }catch{return null}
 }
