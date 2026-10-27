@@ -212,7 +212,7 @@ export default function PublicGuestSessionBooking(){
         <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs">
           <span className="rounded-full bg-primary/10 px-3 py-1.5 font-bold text-primary">{session.paymentMethod==='none'?'No payment required':`Guest fee €${Number(session.feeAmount||0).toFixed(2)}`}</span>
           <span className="rounded-full bg-secondary px-3 py-1.5">{session.paymentMethod==='none'?'Registration + waiver only':session.paymentMethod==='cash'?`€${Number(session.feeAmount||0).toFixed(2)} hall contribution · cash to host`:'Secure SumUp payment'}</span>
-          {data?.spotsRemaining!==null&&data?.spotsRemaining!==undefined&&<span className="rounded-full bg-secondary px-3 py-1.5">{data.spotsRemaining} places remaining</span>}
+
         </div>
         <p className="mt-4 text-xs text-muted-foreground">{data?.inviteApproved&&inviteToken?"Your guest visit has been approved. Confirm your emergency contact and participation declarations below, then continue securely to payment. You do not need to apply again.":"No RallyHub account is needed. This is a guest booking only and does not create club membership."}</p>
       </header>
