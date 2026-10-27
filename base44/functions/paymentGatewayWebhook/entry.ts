@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { membershipPaidTemplate } from './membershipPaidTemplate.ts';
 import { notifyJoiningVenueHosts } from './venueHostNotifications.ts';
@@ -21,20 +22,9 @@ function detailRow(label:string,value:any){
   return `<tr><td style="padding:7px 0;color:#6b7280;font-size:13px;width:38%;vertical-align:top;">${escapeHtml(label)}</td><td style="padding:7px 0;color:#172033;font-size:13px;font-weight:700;vertical-align:top;">${escapeHtml(value)}</td></tr>`;
 }
 function emailShell({club,headline,preheader,content}:any){
-  const name=escapeHtml(club?.name||'Clare Pickleball');
-  const logo=escapeHtml(club?.logo_url||'');
-  const primary=escapeHtml(club?.primary_colour||'#2667f2');
-  const secondary=escapeHtml(club?.secondary_colour||'#facc15');
-  return `<!doctype html><html><body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader||headline||'')}</div>
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:24px 12px;"><tr><td align="center">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #d9e1ec;border-radius:18px;overflow:hidden;">
-<tr><td style="height:6px;background:${primary};border-bottom:3px solid ${secondary};"></td></tr>
-<tr><td style="padding:26px 28px 18px;text-align:center;">${logo?`<img src="${logo}" alt="${name} logo" width="72" height="72" style="display:block;margin:0 auto 12px;object-fit:contain;border-radius:12px;">`:''}<div style="font-size:25px;font-weight:800;color:#10182b;">${name}</div><div style="margin-top:5px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6b7280;">Session Booking</div></td></tr>
-<tr><td style="padding:0 28px 28px;"><h1 style="margin:0 0 18px;font-size:23px;line-height:1.25;color:#10182b;">${escapeHtml(headline)}</h1>${content}</td></tr>
-<tr><td style="padding:0 28px 22px;"><div style="border-top:1px solid #dbe5f1;padding-top:18px;font-size:14px;line-height:1.65;color:#172033;">Yours in sport,<br><strong>Brian Moore</strong><br>Chairperson, Clare Pickleball<br><a href="tel:+353878100333" style="color:#0755a8;text-decoration:none;">087 810 0333</a> · <a href="https://wa.me/353878100333" style="color:#078e48;text-decoration:none;font-weight:700;">WhatsApp</a><br><a href="mailto:clarepb2025@gmail.com" style="color:#0755a8;text-decoration:none;">clarepb2025@gmail.com</a> · <a href="https://clarepickleball.ie/" style="color:#0755a8;text-decoration:none;">ClarePickleball.ie</a></div></td></tr>
-<tr><td style="padding:16px 20px;background:#f7f9fc;border-top:1px solid #e4e9f1;text-align:center;"><div style="font:11px Arial,sans-serif;color:#667085;margin-bottom:5px">Powered by</div><a href="https://rallyhub.ie/" target="_blank" style="display:inline-block;text-decoration:none"><img src="https://rallyhub.ie/assets/brand/master-review/rallyhub-master-01-horizontal.png" alt="RallyHub" width="126" style="display:block;width:126px;max-width:100%;height:auto;border:0;margin:auto"></a></td></tr>
-</table></td></tr></table></body></html>`;
+  const kit=club?.emailBrandKit;
+  if(!kit)throw new Error('Approved tenant email brand kit unavailable. Cannot send an unbranded email.');
+  return renderBasicBrandedEmail('<h1>'+escapeHtml(headline||'Club update')+'</h1>'+content,kit,club,club?.name||'Clare Pickleball','Club update',preheader||'');
 }
 
 async function clubBrand(base44:any,clubId:string){
@@ -42,7 +32,9 @@ async function clubBrand(base44:any,clubId:string){
     const rows=await base44.asServiceRole.entities.Club.filter({id:clubId},'-updated_date',5);
     const club=rows?.[0]||null;
     if(!club)return null;
-    return {id:club.id,name:club.name||'',slug:club.slug||'',logo_url:club.logo_url||'',primary_colour:club.primary_colour||'',secondary_colour:club.secondary_colour||''};
+    const kits=await base44.asServiceRole.entities.CommunicationBrandKit.filter({tenant_id:club.tenant_id,owner_scope:'tenant',status:'active'},'-updated_date',30);
+    const emailBrandKit=(kits||[]).find((k:any)=>!k.club_id||String(k.club_id)===String(club.id))||null;
+    return {id:club.id,name:club.name||'',slug:club.slug||'',logo_url:club.logo_url||'',primary_colour:club.primary_colour||'',secondary_colour:club.secondary_colour||'',emailBrandKit};
   }catch{return null}
 }
 
@@ -105,19 +97,9 @@ async function nextMemberId(base44:any,config:any){
 }
 
 function membershipEmailShell({club,headline,preheader,content}:any){
-  const name=escapeHtml(club?.name||'RallyHub Club');
-  const logo=escapeHtml(club?.logo_url||'');
-  const primary=escapeHtml(club?.primary_colour||'#2563eb');
-  const secondary=escapeHtml(club?.secondary_colour||'#facc15');
-  return `<!doctype html><html><body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader||headline||'')}</div>
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:24px 12px;"><tr><td align="center">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #d9e1ec;border-radius:18px;overflow:hidden;">
-<tr><td style="height:6px;background:${primary};border-bottom:3px solid ${secondary};"></td></tr>
-<tr><td style="padding:26px 28px 18px;text-align:center;">${logo?`<img src="${logo}" alt="${name} logo" width="72" height="72" style="display:block;margin:0 auto 12px;object-fit:contain;border-radius:12px;">`:''}<div style="font-size:25px;font-weight:800;color:#10182b;">${name}</div><div style="margin-top:5px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6b7280;">Membership</div></td></tr>
-<tr><td style="padding:0 28px 28px;"><h1 style="margin:0 0 18px;font-size:23px;line-height:1.25;color:#10182b;">${escapeHtml(headline)}</h1>${content}</td></tr>
-<tr><td style="padding:18px 28px;background:#f7f9fc;border-top:1px solid #e4e9f1;text-align:center;font-size:11px;line-height:1.5;color:#7b8494;">Powered by <strong>RallyHub</strong> · membership technology for clubs</td></tr>
-</table></td></tr></table></body></html>`;
+  const kit=club?.emailBrandKit;
+  if(!kit)throw new Error('Approved tenant email brand kit unavailable. Cannot send an unbranded email.');
+  return renderBasicBrandedEmail('<h1>'+escapeHtml(headline||'Club update')+'</h1>'+content,kit,club,club?.name||'Clare Pickleball','Club update',preheader||'');
 }
 
 async function sendMembershipPaidEmail(base44:any,config:any,club:any,application:any){

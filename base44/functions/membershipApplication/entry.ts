@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
 async function clubRestrictionCheck(base44:any,tenantId:any,clubId:any,identity:any){const rows=await base44.asServiceRole.entities.ClubAccessRestriction.filter({tenant_id:String(tenantId),club_id:String(clubId),status:'active'},'-created_date',200);const email=String(identity.email||'').trim().toLowerCase(),phone=String(identity.mobile||'').replace(/\D/g,''),name=String(identity.fullName||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();let review=false;for(const r of rows||[]){const re=String(r.email_key||'').toLowerCase(),rp=String(r.mobile_key||'').replace(/\D/g,''),rn=String(r.full_name||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();if((email&&re===email)||(phone.length>=9&&rp.length>=9&&phone.slice(-9)===rp.slice(-9)))return 'deny';if(name&&rn===name)review=true;}return review?'review':'clear';}
 function clubRestrictionResponse(v:string){return Response.json({error:v==='deny'?'This registration cannot be accepted. Contact the club.':'This registration needs club review. Contact the club.'},{status:v==='deny'?403:409});}
 
@@ -34,7 +35,9 @@ async function first(base44:any,entity:string,filter:any,sort='-updated_date'){
 async function clubBrand(base44:any,clubId:string,tenantId=''){
   const club=await first(base44,'Club',{id:clubId,...(tenantId?{tenant_id:tenantId}:{})});
   if(!club)return null;
-  return {id:club.id,name:club.name||'',slug:club.slug||'',logo_url:club.logo_url||'',primary_colour:club.primary_colour||'#2563eb',secondary_colour:club.secondary_colour||'#facc15'};
+  const kits=await base44.asServiceRole.entities.CommunicationBrandKit.filter({tenant_id:club.tenant_id,owner_scope:'tenant',status:'active'},'-updated_date',30);
+  const emailBrandKit=(kits||[]).find((k:any)=>!k.club_id||String(k.club_id)===String(club.id))||null;
+  return {id:club.id,name:club.name||'',slug:club.slug||'',logo_url:club.logo_url||'',primary_colour:club.primary_colour||'#2563eb',secondary_colour:club.secondary_colour||'#facc15',emailBrandKit};
 }
 async function activeConfig(base44:any,publicSlug:string){
   const rows=await base44.asServiceRole.entities.MembershipApplicationConfig.filter({public_slug:publicSlug,status:'active'},'-updated_date',20);
@@ -203,19 +206,9 @@ async function ensureRelationship(base44:any,config:any,person:any,membership:an
 }
 
 function emailShell({club,headline,preheader,content}:any){
-  const name=escapeHtml(club?.name||'RallyHub Club');
-  const logo=escapeHtml(club?.logo_url||'');
-  const primary=escapeHtml(club?.primary_colour||'#2563eb');
-  const secondary=escapeHtml(club?.secondary_colour||'#facc15');
-  return `<!doctype html><html><body style="margin:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader||headline||'')}</div>
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:24px 12px;"><tr><td align="center">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#fff;border:1px solid #d9e1ec;border-radius:18px;overflow:hidden;">
-<tr><td style="height:6px;background:${primary};border-bottom:3px solid ${secondary};"></td></tr>
-<tr><td style="padding:26px 28px 18px;text-align:center;">${logo?`<img src="${logo}" alt="${name} logo" width="72" height="72" style="display:block;margin:0 auto 12px;object-fit:contain;border-radius:12px;">`:''}<div style="font-size:25px;font-weight:800;">${name}</div><div style="margin-top:5px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6b7280;">Membership</div></td></tr>
-<tr><td style="padding:0 28px 28px;"><h1 style="margin:0 0 18px;font-size:23px;line-height:1.25;">${escapeHtml(headline)}</h1>${content}</td></tr>
-<tr><td style="padding:18px 28px;background:#f7f9fc;border-top:1px solid #e4e9f1;text-align:center;font-size:11px;color:#7b8494;">Powered by <strong>RallyHub</strong> · membership technology for clubs</td></tr>
-</table></td></tr></table></body></html>`;
+  const kit=club?.emailBrandKit;
+  if(!kit)throw new Error('Approved tenant email brand kit unavailable. Cannot send an unbranded email.');
+  return renderBasicBrandedEmail('<h1>'+escapeHtml(headline||'Club update')+'</h1>'+content,kit,club,club?.name||'Clare Pickleball','Club update',preheader||'');
 }
 function detailRow(label:string,value:any){return `<tr><td style="padding:7px 0;color:#6b7280;font-size:13px;width:38%;vertical-align:top;">${escapeHtml(label)}</td><td style="padding:7px 0;color:#172033;font-size:13px;font-weight:700;vertical-align:top;">${escapeHtml(value)}</td></tr>`}
 function signoffText(config:any,club:any){return `${config.signatory_name||club?.name||'Club team'}\n${config.signatory_title||''}${config.signatory_title?'\n':''}${club?.name||''}\n\nPowered by RallyHub`.trim()}
