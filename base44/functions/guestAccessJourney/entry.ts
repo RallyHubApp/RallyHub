@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
-import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
+import { renderBasicBrandedEmail } from '../communicationsBasicRenderer.ts';
 
 async function clubRestrictionCheck(base44:any,tenantId:any,clubId:any,identity:any){
  const rows=await base44.asServiceRole.entities.ClubAccessRestriction.filter({tenant_id:String(tenantId),club_id:String(clubId),status:'active'},'-created_date',200);
