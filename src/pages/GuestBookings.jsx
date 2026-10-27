@@ -86,6 +86,20 @@ export default function GuestBookings(){
   });
 
   const selected=useMemo(()=>templateData.templates?.find(t=>t.key===templateKey)||null,[templateData,templateKey]);
+  // Optimistic removal makes decisions visible immediately; the authoritative
+  // server list is still refetched after every decision.
+  const removePendingRequest=(id)=>{
+    qc.setQueryData(['guest-access-requests'],old=>old?{...old,requests:(old.requests||[]).filter(r=>r.id!==id)}:old);
+    setApprovalSelections(old=>{const next={...old};delete next[id];return next});
+  };
+  const refreshGuestRequests=async()=>{
+    await Promise.allSettled([
+      qc.invalidateQueries({queryKey:['guest-access-requests']}),
+      qc.invalidateQueries({queryKey:['guest-access-requests','pending-count']}),
+      qc.invalidateQueries({queryKey:['guest-session-admin-list']})
+    ]);
+    await qc.refetchQueries({queryKey:['guest-access-requests'],type:'active'});
+  };
   const pendingRequests=useMemo(()=>[...(requestData.requests||[])].filter(r=>r.status==='pending_approval'),[requestData]);
   const approvedRequests=useMemo(()=>[...(requestData.requests||[])].filter(r=>r.status==='approved'),[requestData]);
   const sessions=useMemo(()=>[...(listData.sessions||[])].sort((a,b)=>`${b.sessionDate} ${b.startTime}`.localeCompare(`${a.sessionDate} ${a.startTime}`)),[listData.sessions]);
@@ -207,11 +221,11 @@ export default function GuestBookings(){
       if(res.data?.error)throw new Error(res.data.error);
       if(res.data?.success!==true)throw new Error('Approval was not confirmed by the server. Check the request before retrying.');
       const message=res.data.emailSent?'Approved — confirmation email sent.':'Approved, but confirmation email was not sent. Use the private link or resend the email.';
+      removePendingRequest(request.id);
       setApprovalFeedback(previous=>({...previous,[request.id]:{type:'success',message}}));
       if(res.data.magicInviteUrl)copy(res.data.magicInviteUrl,'Private guest booking link copied');
       toast.success(message);
-      try{await Promise.all([qc.invalidateQueries({queryKey:['guest-access-requests']}),qc.invalidateQueries({queryKey:['guest-access-requests','pending-count']}),qc.invalidateQueries({queryKey:['guest-session-admin-list']})]);}
-      catch(refreshError){toast.warning('Approved, but the list could not refresh. Reload to see the updated status.');}
+      try{await refreshGuestRequests()}catch(refreshError){toast.warning('Approved successfully; list refresh failed. Use Refresh to update.');}
     }catch(e){
       const rawMessage=e?.response?.data?.error||e?.message||'Approval could not be confirmed. Check the request before retrying.';
       const message=/rate limit|too many requests|429/i.test(rawMessage)?'Booking service rate limit reached. Do not press Approve again yet; check the request status before retrying.':rawMessage;
@@ -246,8 +260,11 @@ export default function GuestBookings(){
     try{
       const res=await base44.functions.invoke('guestAccessJourney',{action:'admin_reject',requestId:request.id,reason});
       if(res.data?.error)throw new Error(res.data.error);
-      await Promise.all([qc.invalidateQueries({queryKey:['guest-access-requests']}),qc.invalidateQueries({queryKey:['guest-access-requests','pending-count']})]);
-      toast.success('Guest request declined');
+      if(res.data?.success!==true)throw new Error('Decline was not confirmed. The request has not been removed.');
+      removePendingRequest(request.id);
+      setApprovalFeedback(previous=>({...previous,[request.id]:{type:'success',message:'Guest request declined.'}}));
+      toast.success(`${request.fullName} declined — removed from pending requests`);
+      try{await refreshGuestRequests()}catch{toast.warning('Declined successfully; the latest list could not be refreshed.');}
     }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not decline guest request')}
     finally{setBusy('')}
   };
@@ -532,7 +549,7 @@ export default function GuestBookings(){
     <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
       <div className="flex items-center justify-between gap-3"><div><h2 className="text-lg font-black">Guest requests awaiting approval</h2><p className="mt-1 text-xs text-muted-foreground">These are Clare club guest-session requests, separate from the public Directory Player Network. They do not reach payment until you approve them.</p></div><Badge variant="outline">{pendingRequests.length} pending</Badge></div>
       {pendingRequests.length===0?<p className="text-sm text-muted-foreground">No guest requests are waiting for approval.</p>:pendingRequests.map(r=><div key={r.id} className="rounded-xl border bg-secondary/20 p-4">
-        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-black">{r.fullName}</p><Badge variant="outline">{r.experienceLevel==='beginner'?'Beginner':'Experienced'}</Badge>{r.healthDeclarationApplies&&<Badge variant="outline" className="border-amber-500/40 text-amber-700">Health details supplied</Badge>}</div><p className="mt-1 text-sm text-muted-foreground">{r.email} · {r.mobile}</p><p className="mt-2 text-sm font-semibold">{r.venueName} · {r.day} {r.start}{r.end?`–${r.end}`:''}</p>{r.memberPrimaryVenue&&<p className="text-xs text-muted-foreground">Existing member primary venue: {r.memberPrimaryVenue}</p>}{r.experienceLevel==='experienced'&&<p className="mt-1 text-xs text-muted-foreground">Club: {r.homeClub||'—'} · DUPR: {r.duprId||'—'}</p>}<p className="mt-2 text-xs"><strong>Previous sports:</strong> {(r.previousSports||[]).join(', ')||'—'}</p>{r.sportingBackgroundNote&&<p className="mt-1 text-xs"><strong>Other sporting background:</strong> {r.sportingBackgroundNote}</p>}<p className="mt-1 text-xs"><strong>Health/medical:</strong> {r.healthDeclarationApplies?'Yes, details supplied':'No issues declared'}</p>{r.healthDeclarationApplies&&r.medicalNote&&<p className="mt-1 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 text-xs"><strong>Health details:</strong> {r.medicalNote}</p>}<p className="mt-1 text-xs text-muted-foreground">Next matching date: {r.nextDate||'RallyHub will use the next occurrence'}</p><div className="mt-4 rounded-xl border bg-background/70 p-3"><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Offer this session</p><div className="mt-2 grid gap-2 sm:grid-cols-2">{(templateData.templates||[]).map(s=>{const chosen=(approvalSelections[r.id]||r.sessionId)===s.key;return <label key={s.key} className={`flex cursor-pointer gap-2 rounded-lg border p-3 text-sm ${chosen?'border-primary bg-primary/10':''}`}><input type="radio" name={`approval-session-${r.id}`} className="mt-1" checked={chosen} onChange={()=>setApprovalSelections(prev=>({...prev,[r.id]:s.key}))}/><span><strong>{s.venueName}</strong><span className="block text-xs text-muted-foreground">{s.weekday} · {s.start}{s.end?`–${s.end}`:''} · €{Number(s.fee||0).toFixed(2)}{s.payment==='cash'?' cash to host':' online'}</span></span></label>})}</div></div></div><div className="flex flex-wrap gap-2"><Button size="sm" disabled={busy===`approve-${r.id}`||busy===`reject-${r.id}`||approvalFeedback[r.id]?.type==='success'} onClick={()=>approveRequest(r)}>{busy===`approve-${r.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<UserCheck className="mr-1.5 h-3.5 w-3.5"/>}Approve & send private link</Button><Button size="sm" variant="outline" disabled={!!busy} onClick={()=>startGuestEdit(r)}>Edit details</Button><Button size="sm" variant="outline" disabled={busy===`approve-${r.id}`||busy===`reject-${r.id}`} onClick={()=>rejectRequest(r)}><XCircle className="mr-1.5 h-3.5 w-3.5"/>Decline</Button>{approvalFeedback[r.id]&&<p role="status" aria-live="polite" className={`w-full rounded-lg border p-2 text-sm ${approvalFeedback[r.id].type==='error'?'border-red-500/40 text-red-700':approvalFeedback[r.id].type==='success'?'border-green-500/40 text-green-700':'border-border text-muted-foreground'}`}>{approvalFeedback[r.id].message}</p>}</div></div>
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-black">{r.fullName}</p><Badge variant="outline">{r.experienceLevel==='beginner'?'Beginner':'Experienced'}</Badge>{r.healthDeclarationApplies&&<Badge variant="outline" className="border-amber-500/40 text-amber-700">Health details supplied</Badge>}</div><p className="mt-1 text-sm text-muted-foreground">{r.email} · {r.mobile}</p><p className="mt-2 text-sm font-semibold">{r.venueName} · {r.day} {r.start}{r.end?`–${r.end}`:''}</p>{r.memberPrimaryVenue&&<p className="text-xs text-muted-foreground">Existing member primary venue: {r.memberPrimaryVenue}</p>}{r.experienceLevel==='experienced'&&<p className="mt-1 text-xs text-muted-foreground">Club: {r.homeClub||'—'} · DUPR: {r.duprId||'—'}</p>}<p className="mt-2 text-xs"><strong>Previous sports:</strong> {(r.previousSports||[]).join(', ')||'—'}</p>{r.sportingBackgroundNote&&<p className="mt-1 text-xs"><strong>Other sporting background:</strong> {r.sportingBackgroundNote}</p>}<p className="mt-1 text-xs"><strong>Health/medical:</strong> {r.healthDeclarationApplies?'Yes, details supplied':'No issues declared'}</p>{r.healthDeclarationApplies&&r.medicalNote&&<p className="mt-1 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 text-xs"><strong>Health details:</strong> {r.medicalNote}</p>}<p className="mt-1 text-xs text-muted-foreground">Next matching date: {r.nextDate||'RallyHub will use the next occurrence'}</p><div className="mt-4 rounded-xl border bg-background/70 p-3"><p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Offer this session</p><div className="mt-2 grid gap-2 sm:grid-cols-2">{(templateData.templates||[]).map(s=>{const chosen=(approvalSelections[r.id]||r.sessionId)===s.key;return <label key={s.key} className={`flex cursor-pointer gap-2 rounded-lg border p-3 text-sm ${chosen?'border-primary bg-primary/10':''}`}><input type="radio" name={`approval-session-${r.id}`} className="mt-1" checked={chosen} onChange={()=>setApprovalSelections(prev=>({...prev,[r.id]:s.key}))}/><span><strong>{s.venueName}</strong><span className="block text-xs text-muted-foreground">{s.weekday} · {s.start}{s.end?`–${s.end}`:''} · €{Number(s.fee||0).toFixed(2)}{s.payment==='cash'?' cash to host':' online'}</span></span></label>})}</div></div></div><div className="flex flex-wrap gap-2"><Button size="sm" disabled={!!busy||approvalFeedback[r.id]?.type==='success'} onClick={()=>approveRequest(r)}>{busy===`approve-${r.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<UserCheck className="mr-1.5 h-3.5 w-3.5"/>}Approve & send private link</Button><Button size="sm" variant="outline" disabled={!!busy} onClick={()=>startGuestEdit(r)}>Edit details</Button><Button size="sm" variant="outline" disabled={!!busy} onClick={()=>rejectRequest(r)}><XCircle className="mr-1.5 h-3.5 w-3.5"/>Decline</Button>{approvalFeedback[r.id]&&<p role="status" aria-live="polite" className={`w-full rounded-lg border p-2 text-sm ${approvalFeedback[r.id].type==='error'?'border-red-500/40 text-red-700':approvalFeedback[r.id].type==='success'?'border-green-500/40 text-green-700':'border-border text-muted-foreground'}`}>{approvalFeedback[r.id].message}</p>}</div></div>
       </div>)}
     </section>
 
