@@ -199,7 +199,7 @@ export default function PublicGuestSessionBooking(){
     <div className="mx-auto max-w-2xl space-y-5">
       <header className="glass rounded-2xl p-5 sm:p-7 text-center">
         <RallyHubPublicBrand club={data?.clubBrand||CLARE_FALLBACK_BRAND} clubFirst pageLabel="Session Booking"/>
-        <h1 className="mt-5 text-2xl sm:text-3xl font-black">Guest Session</h1>
+        <h1 className="mt-5 text-2xl sm:text-3xl font-black">{data?.inviteApproved&&inviteToken?"Complete your approved guest booking":"Guest Session"}</h1>
         <p className="mt-2 text-base font-bold">{niceDate(session.sessionDate)} · {session.startTime}{session.endTime?`–${session.endTime}`:''}</p>
         <div className="mx-auto mt-4 max-w-lg rounded-xl border bg-secondary/30 p-4 text-left">
           <p className="font-black">{session.venueName}</p>
@@ -214,7 +214,7 @@ export default function PublicGuestSessionBooking(){
           <span className="rounded-full bg-secondary px-3 py-1.5">{session.paymentMethod==='none'?'Registration + waiver only':session.paymentMethod==='cash'?`€${Number(session.feeAmount||0).toFixed(2)} hall contribution · cash to host`:'Secure SumUp payment'}</span>
           {data?.spotsRemaining!==null&&data?.spotsRemaining!==undefined&&<span className="rounded-full bg-secondary px-3 py-1.5">{data.spotsRemaining} places remaining</span>}
         </div>
-        <p className="mt-4 text-xs text-muted-foreground">No RallyHub account is needed. This is a guest booking only and does not create club membership.</p>
+        <p className="mt-4 text-xs text-muted-foreground">{data?.inviteApproved&&inviteToken?"Your guest visit has been approved. Confirm your emergency contact and participation declarations below, then continue securely to payment. You do not need to apply again.":"No RallyHub account is needed. This is a guest booking only and does not create club membership."}</p>
       </header>
 
       {checkingPayment&&<div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm font-semibold"><RefreshCw className="mr-2 inline h-4 w-4 animate-spin"/>Checking your SumUp payment and confirming your place…</div>}
@@ -222,7 +222,7 @@ export default function PublicGuestSessionBooking(){
 
       <form onSubmit={submit} className="space-y-5">
         <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
-          <div><h2 className="text-lg font-black">Your details</h2><p className="mt-1 text-xs text-muted-foreground">Used to administer this guest session and contact you if needed.</p></div>
+          <div><h2 className="text-lg font-black">{data?.inviteApproved&&inviteToken?"Confirm your details":"Your details"}</h2><p className="mt-1 text-xs text-muted-foreground">{data?.inviteApproved&&inviteToken?"These details have been carried forward from your approved request.":"Used to administer this guest session and contact you if needed."}</p></div>
           <div><Label htmlFor="name">Full name</Label><Input id="name" value={form.fullName} onChange={e=>set('fullName',e.target.value)} autoComplete="name" required className="mt-1.5 bg-secondary"/></div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div><Label htmlFor="email">Email</Label><Input id="email" type="email" value={form.email} onChange={e=>set('email',e.target.value)} autoComplete="email" required className="mt-1.5 bg-secondary"/></div>

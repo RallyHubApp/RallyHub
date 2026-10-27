@@ -1838,7 +1838,7 @@ ${detailRow('Reason',reason)}
       }
       const invite=await inviteForSession(base44,session,body.inviteToken||'');
       const approvedRequest=invite?await guestRequestForInvite(base44,invite):null;
-      const intakeCaptured=!!approvedRequest&&guestPreviousSports(approvedRequest.previous_sports).length>0&&typeof approvedRequest.health_declaration_applies==='boolean';
+      const intakeCaptured=!!approvedRequest&&typeof approvedRequest.health_declaration_applies==='boolean'&&(String(approvedRequest.experience_level||'').toLowerCase()==='experienced'||guestPreviousSports(approvedRequest.previous_sports).length>0);
       const templates=await directoryTemplates(base44,session.tenant_id,session.club_id);
       const directoryTemplate=templates.find((t:any)=>String(t.key)===String(session.session_label)) || templates.find((t:any)=>t.venueName===session.venue_name&&t.weekday===session.weekday&&t.start===session.start_time);
       const directRegistration=['none','cash'].includes(session.payment_method);
@@ -1896,7 +1896,7 @@ ${detailRow('Reason',reason)}
     if(suppliedInviteToken&&!invite)return Response.json({error:'This private invitation is invalid, expired, or does not match the email/mobile supplied.',approvalRequired:true},{status:403});
     if(!directRegistration&&!invite)return Response.json({error:'This guest booking requires club approval. Please request a guest place first, or use the private invitation link sent by Clare Pickleball.',approvalRequired:true},{status:403});
     const approvedRequest=invite?await guestRequestForInvite(base44,invite):null;
-    const approvedIntakeCaptured=!!approvedRequest&&guestPreviousSports(approvedRequest.previous_sports).length>0&&typeof approvedRequest.health_declaration_applies==='boolean';
+    const approvedIntakeCaptured=!!approvedRequest&&typeof approvedRequest.health_declaration_applies==='boolean'&&(String(approvedRequest.experience_level||'').toLowerCase()==='experienced'||guestPreviousSports(approvedRequest.previous_sports).length>0);
     const mobileK=mobileKey(mobile);
     const emergencyName=clean(body.emergencyContactName,120);
     const emergencyMobile=clean(body.emergencyContactMobile,50);
@@ -1911,7 +1911,7 @@ ${detailRow('Reason',reason)}
     if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return Response.json({error:'Please enter a valid email address.'},{status:400});
     if(mobileK.length<8)return Response.json({error:'Please enter a valid mobile number.'},{status:400});
     if(!emergencyName||mobileKey(emergencyMobile).length<8)return Response.json({error:'Please provide an emergency contact name and mobile number.'},{status:400});
-    if(!previousSports.length)return Response.json({error:'Please tell us whether you have previously played any of the listed sports. You can choose more than one, or choose “None of these”.'},{status:400});
+    if(!previousSports.length&&String(approvedRequest?.experience_level||'').toLowerCase()!=='experienced')return Response.json({error:'Please tell us whether you have previously played any of the listed sports. You can choose more than one, or choose “None of these”.'},{status:400});
     if(!healthAnswered)return Response.json({error:'Please answer the guest health and medical screening question.'},{status:400});
     if(healthDeclarationApplies&&!medicalNote)return Response.json({error:'Please give brief details of the health, treatment, surgery, injury or other issue that may be relevant to the session host.'},{status:400});
     if(Number(legalBundle.minimumAge||0)>0&&body.ageConfirmed!==true)return Response.json({error:`Guest sessions are currently for participants aged ${legalBundle.minimumAge} or over.`},{status:400});
