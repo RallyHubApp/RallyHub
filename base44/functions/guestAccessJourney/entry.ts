@@ -224,10 +224,13 @@ async function sendPendingApprovalEmail(base44:any,club:any,row:any,selected:any
 function publicOptions(directory:any,config:any){
   const venues=(directory.venues||[]).map((v:any)=>({id:String(v.id),name:v.name||'',shortName:v.shortName||v.name||'',address:v.address||'',eircode:v.eircode||'',mapUrl:v.mapUrl||''}));
   const beginnerSet=new Set((config?.beginner_session_keys||[]).map(String));
-  const experiencedVenueSet=new Set((config?.experienced_venue_keys||[]).map(String));
+  // Experienced guests may REQUEST every guest-enabled session; the club host
+  // decides appropriateness at approval. Do not use the former experienced_venue_keys
+  // restriction (which accidentally exposed only Doora-Barefield).
   const sessions=(directory.sessions||[]).filter((s:any)=>s?.guestEligible!==false).map((s:any)=>{
     const venue=venues.find((v:any)=>v.id===String(s.venueId));
-    return {id:String(s.id),venueId:String(s.venueId),venueName:venue?.name||'',day:s.day||'',start:s.start||'',end:s.end||'',level:s.level||'',price:Number(s.price||0),paymentMethod:s.paymentMethod||'',capacity:Number(s.capacity||0)||null,beginnerEligible:beginnerSet.size?beginnerSet.has(String(s.id)):s.beginnerGuestEligible===true,experiencedEligible:experiencedVenueSet.size?experiencedVenueSet.has(String(s.venueId)):true};
+    const isDooraBarefield=String(s.venueId)==='doora-barefield'||/doora\s*[-–]?\s*barefield|st\.?\s*joseph'?s/i.test(String(venue?.name||''));
+    return {id:String(s.id),venueId:String(s.venueId),venueName:venue?.name||'',day:s.day||'',start:s.start||'',end:s.end||'',level:s.level||'',price:Number(s.price||0),paymentMethod:s.paymentMethod||'',capacity:Number(s.capacity||0)||null,beginnerEligible:!isDooraBarefield&&(beginnerSet.size?beginnerSet.has(String(s.id)):s.beginnerGuestEligible===true),experiencedEligible:true};
   });
   return {venues,sessions};
 }
