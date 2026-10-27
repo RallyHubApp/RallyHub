@@ -491,9 +491,17 @@ Deno.serve(async(req)=>{
       const date=clean(body.sessionDate,20)||nextDateForDay(String(session.day||''),String(session.start||''),String(session.end||''));
       if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return Response.json({error:'RallyHub could not determine the next session date.'},{status:400});
       if(weekday(date)!==String(session.day||''))return Response.json({error:`That date is not a ${session.day}.`},{status:400});
+      // Doora-Barefield evenings are host-approved for experienced guests only.
+      // They do not use the automated guest-release window used by daytime venues.
+      const isDooraBarefield=/doora\s*[-–]?\s*barefield|st\.?\s*joseph'?s/i.test(String(venue.name||'')) || /\bdb-(?:mon|thu)-/i.test(String(session.id||''));
+      const guestExperience=String(row.experience_level||'').toLowerCase();
+      if(isDooraBarefield && guestExperience!=='experienced') return Response.json({error:'Doora-Barefield evening guest sessions are for experienced players only, subject to host approval.'},{status:409});
+      // Recheck the current directory session rather than trusting an old request or
+      // allowing a host to approve a session which is no longer guest-eligible.
+      if(session.guestEligible===false)return Response.json({error:'This session is no longer accepting guest requests.'},{status:409});
       const allocationOpens=priorityOpening({...session,venueName:venue.name},date);
-      if(!allocationOpens)return Response.json({error:'Guest allocation schedule has not been configured for this venue.'},{status:409});
-      if(Date.now()<allocationOpens.getTime()){
+      if(!allocationOpens&&!isDooraBarefield)return Response.json({error:'Guest allocation schedule has not been configured for this venue.'},{status:409});
+      if(allocationOpens && Date.now()<allocationOpens.getTime()){
         const warning=`Members have priority. Guest allocation opens ${allocationOpens.toLocaleString('en-IE',{timeZone:'Europe/Dublin',weekday:'long',hour:'2-digit',minute:'2-digit'})}.`;
         // An admin may explicitly override the timing gate for an individual guest.
         // The request must be repeated with an affirmative override; no silent bypass.
