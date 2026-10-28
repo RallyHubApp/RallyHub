@@ -41,6 +41,11 @@ export default function GuestBookings(){
   const [showArchived,setShowArchived]=useState(false);
   const [showPastAttendees,setShowPastAttendees]=useState(false);
   const [attendeeCentre,setAttendeeCentre]=useState('all');
+  const [hostListSessionId,setHostListSessionId]=useState('');
+  const [hostListExtras,setHostListExtras]=useState({});
+  const [hostListAddName,setHostListAddName]=useState('');
+  const [hostListAddEmail,setHostListAddEmail]=useState('');
+  const [hostListAddMobile,setHostListAddMobile]=useState('');
   const [attendeeTime,setAttendeeTime]=useState('all');
   const [recentOfferLinks,setRecentOfferLinks]=useState({});
   const [approvalSelections,setApprovalSelections]=useState({});
@@ -137,6 +142,25 @@ export default function GuestBookings(){
   const centreOptions=[...new Set(bookingRows.map(row=>row.venueName).filter(Boolean))].sort();
   const timeOptions=[...new Set(bookingRows.filter(row=>attendeeCentre==='all'||row.venueName===attendeeCentre).map(row=>row.start).filter(Boolean))].sort();
   const visibleBookingRows=(showPastAttendees?pastBookingRows:currentBookingRows).filter(row=>(attendeeCentre==='all'||row.venueName===attendeeCentre)&&(attendeeTime==='all'||row.start===attendeeTime));
+  const hostSession=sessions.find(s=>s.id===hostListSessionId)||null;
+  const hostConfirmed=(hostSession?.bookings||[]).filter(b=>b.bookingStatus==='confirmed'||b.bookingStatus==='cash_due')
+    .map(b=>({id:b.id,name:b.fullName||'',mobile:b.mobile||'',email:b.email||'',status:b.paymentStatus==='paid'?'Paid':b.paymentStatus==='cash_due'?'Cash due':'Confirmed'}))
+    .sort((a,b)=>a.name.localeCompare(b.name));
+  const hostExtras=hostListExtras[hostListSessionId]||[];
+  const hostSeen=new Set(hostConfirmed.map(r=>(r.name.trim().toLowerCase()+'|'+String(r.mobile).replace(/\D/g,''))));
+  const hostExpected=hostExtras.filter(r=>!hostSeen.has(r.name.trim().toLowerCase()+'|'+String(r.mobile).replace(/\D/g,'')));
+  const hostListRows=[...hostConfirmed,...hostExpected.map(r=>({...r,status:'Expected — verify'}))];
+  const hostListTitle=hostSession?`Clare Pickleball — Session Host List\n${niceDate(hostSession.sessionDate)} · ${hostSession.startTime}${hostSession.endTime?'–'+hostSession.endTime:''}\n${hostSession.venueName}\nRecorded: ${hostConfirmed.length} · Host-added (unverified): ${hostExpected.length}`:'';
+  const hostListText=hostListTitle+'\n\n'+hostListRows.map((r,i)=>`${i+1}. ${r.name} | ${r.mobile||'—'} | ${r.email||'—'} | ${r.status}`).join('\n');
+  const addHostExpected=()=>{
+    const name=hostListAddName.trim(),mobile=hostListAddMobile.trim(),email=hostListAddEmail.trim();
+    if(!hostSession||!name){toast.error('Choose a session and enter a name');return}
+    if(hostListRows.some(r=>r.name.toLowerCase()===name.toLowerCase()&&(!mobile||String(r.mobile).replace(/\D/g,'')===mobile.replace(/\D/g,'')))){toast.error('This attendee is already on the host list');return}
+    setHostListExtras(old=>({...old,[hostSession.id]:[...(old[hostSession.id]||[]),{id:`extra-${Date.now()}`,name,mobile,email}]}));
+    setHostListAddName('');setHostListAddMobile('');setHostListAddEmail('');
+    toast.success('Added to host preview as unverified — not a booking or payment');
+  };
+
   const remindAlternative=async(row,channel='whatsapp')=>{
     const offer=offerFor(row);
     if(!offer||offer.status!=='pending'){toast.error('No pending alternative offer found');return;}
@@ -563,6 +587,20 @@ export default function GuestBookings(){
       <div className="flex flex-wrap gap-2"><Button disabled={!!busy} onClick={saveGuestEdit}>{busy==='save-guest-edit'?'Saving…':'Save changes'}</Button><Button variant="outline" disabled={!!busy} onClick={()=>setEditingGuest(null)}>Cancel</Button></div>
     </section>}
     <GuestAttendanceFollowup sessions={sessions}/>
+
+    <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
+      <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center"><div><h2 className="text-lg font-black">Session Host List</h2><p className="mt-1 text-xs text-muted-foreground">A compact, screenshot-ready attendee list. Only confirmed/cash-due bookings are counted as recorded. Add expected attendees for a host reminder without creating a payment or booking.</p></div><Button size="sm" variant="outline" disabled={!hostSession} onClick={()=>copy(hostListText,'Host list copied — share only with the authorised host')}><Copy className="mr-1.5 h-4 w-4"/>Copy host list</Button></div>
+      <label className="block text-sm font-semibold">Choose session<select aria-label="Session for host list" className="mt-2 block w-full max-w-xl rounded-lg border bg-background p-3" value={hostListSessionId} onChange={e=>setHostListSessionId(e.target.value)}><option value="">Select venue, date and time</option>{sessions.filter(s=>!s.archivedAt).map(s=><option key={s.id} value={s.id}>{niceDate(s.sessionDate)} · {s.startTime} · {s.venueName}</option>)}</select></label>
+      {hostSession&&<>
+        <div className="rounded-xl border bg-background p-4" aria-label="Session host screenshot list">
+          <h3 className="font-black text-lg">Clare Pickleball · Session Host List</h3>
+          <p className="mt-1 text-sm font-semibold">{niceDate(hostSession.sessionDate)} · {hostSession.startTime}{hostSession.endTime?`–${hostSession.endTime}`:''}</p><p className="text-sm">{hostSession.venueName}</p>
+          <p className="mt-2 text-xs font-bold text-muted-foreground">{hostConfirmed.length} recorded · {hostExpected.length} host-added (unverified)</p>
+          <div className="mt-3 space-y-2">{hostListRows.length?hostListRows.map((r,i)=><div key={r.id} className="flex items-start justify-between gap-2 border-t py-2 text-sm"><div className="min-w-0"><p className="font-bold">{i+1}. {r.name} <span className="font-normal text-muted-foreground">· {r.status}</span></p><p className="break-all text-xs text-muted-foreground">{r.mobile||'No mobile'} · {r.email||'No email'}</p></div>{String(r.id).startsWith('extra-')&&<Button size="sm" variant="ghost" aria-label={`Remove ${r.name} from preview`} onClick={()=>setHostListExtras(old=>({...old,[hostSession.id]:(old[hostSession.id]||[]).filter(x=>x.id!==r.id)}))}><XCircle className="h-4 w-4"/></Button>}</div>):<p className="text-sm text-muted-foreground">No confirmed bookings recorded for this session.</p>}</div>
+        </div>
+        <div className="rounded-lg border p-3"><p className="text-sm font-semibold">Add somebody expected by the host (not yet recorded for this date)</p><div className="mt-2 grid gap-2 sm:grid-cols-3"><Input aria-label="Additional attendee name" placeholder="Full name" value={hostListAddName} onChange={e=>setHostListAddName(e.target.value)}/><Input aria-label="Additional attendee mobile" placeholder="Mobile (optional)" value={hostListAddMobile} onChange={e=>setHostListAddMobile(e.target.value)}/><Input aria-label="Additional attendee email" placeholder="Email (optional)" value={hostListAddEmail} onChange={e=>setHostListAddEmail(e.target.value)}/></div><Button size="sm" variant="outline" className="mt-2" onClick={addHostExpected}>Add to preview only</Button><p className="mt-2 text-xs text-muted-foreground">Host-added attendees are labelled unverified. This preview does not save bookings, confirm payment or send messages. Copy or screenshot only for an authorised host; mobile numbers and emails are personal data.</p></div>
+      </>}
+    </section>
 
     <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
