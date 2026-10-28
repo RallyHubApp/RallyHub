@@ -1408,6 +1408,11 @@ Deno.serve(async (req) => {
       if (anyAccess?.length) return Response.json({ error: 'This listing has already been claimed.' }, { status: 409 });
       if (!contactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) return Response.json({ error: 'A valid club contact email is required' }, { status: 400 });
 
+      if (['coach','coaching'].includes(String(listing.listingType||listing.listing_type||'').toLowerCase())) {
+        const outstanding=await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({listing_slug:listingSlug,status:'pending'},'-created_date',30);
+        const existingOwner=(outstanding||[]).find((item:any)=>item.access_role==='owner' && normaliseEmail(item.contact_email)===contactEmail && (!item.expires_at||Date.parse(item.expires_at)>Date.now()));
+        if (existingOwner) return Response.json({error:'A coach invitation is already awaiting acceptance; use the existing invitation or a controlled resend.'},{status:409});
+      }
       const records = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5);
       const record = records?.[0];
       if (record) {
@@ -1684,6 +1689,33 @@ Deno.serve(async (req) => {
         after_json: JSON.stringify({ status: 'revoked' }),
       });
       return Response.json({ success: true, status: 'revoked' });
+    }
+
+    if (action === 'list_coach_invitation_candidates') {
+      // Private Directory mailing queue. Never expose trusted addresses in public APIs.
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({ error:'Directory super-admin access required' }, { status:403 });
+      const [records,endpoints,accesses,invitations] = await Promise.all([
+        base44.asServiceRole.entities.DirectoryListingRecord.filter({listing_type:'coach',status:'active'},'-updated_date',100),
+        base44.asServiceRole.entities.DirectoryContactEndpoint.list('-updated_date',250),
+        base44.asServiceRole.entities.DirectoryListingAccess.list('-created_date',500),
+        base44.asServiceRole.entities.DirectoryClaimInvitation.list('-created_date',300),
+      ]);
+      const candidates = (records||[])
+        .filter((record:any)=> record.visibility==='public' && !/test|preview/i.test(String(record.slug||'')+' '+String(record.name||'')))
+        .map((record:any)=>{
+          const slug=String(record.slug||'');
+          const endpoint=(endpoints||[]).find((e:any)=>e.listing_slug===slug && e.status==='active' && normaliseEmail(e.email));
+          const invites=(invitations||[]).filter((e:any)=>e.listing_slug===slug && e.access_role==='owner');
+          const sent=invites.find((e:any)=>e.status==='pending'||e.status==='used') || null;
+          const claimed=(accesses||[]).some((e:any)=>e.listing_slug===slug && e.status==='active');
+          const contactEmail=normaliseEmail(endpoint?.email||'');
+          const contactName=String(endpoint?.contact_name||record.name||'').trim();
+          const inviteStatus=claimed?'claimed':sent?.status==='used'?'accepted':sent?'invited':contactEmail?'ready':'no_email';
+          return {slug,name:record.name,contactName,contactEmail,inviteStatus,expiresAt:sent?.expires_at||null};
+        })
+        .filter((row:any)=>row.slug)
+        .sort((a:any,b:any)=>String(a.name).localeCompare(String(b.name),'en',{sensitivity:'base'}));
+      return Response.json({success:true,candidates,count:candidates.length});
     }
 
     if (action === 'list_admin') {
