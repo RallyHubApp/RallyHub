@@ -1920,6 +1920,12 @@ ${detailRow('Reason',reason)}
     }
     if(!['yes','no'].includes(photo))return Response.json({error:'Please choose Yes or No for photo/video consent.'},{status:400});
 
+    // A guest must not pay twice for the same session by changing email.
+    // Require both a matching name and mobile number to avoid conflating people.
+    const sameIdentityBooking=(bookings||[]).find((b:any)=>b.booking_status!=='cancelled'
+      &&mobileKey(b.mobile||'')===mobileK&&nameKey(b.full_name||'')===nameKey(fullName)
+      &&emailKey(b.email||'')!==email);
+    if(sameIdentityBooking)return Response.json({error:'A booking already exists for this guest and session under another email address. Please contact the session host to check the existing payment before booking again.',code:'POSSIBLE_DUPLICATE_GUEST_BOOKING'},{status:409});
     const duplicate=(bookings||[]).find((b:any)=>b.email_key===email&&b.booking_status!=='cancelled');
     if(duplicate){
       let paymentUrl=duplicate.sumup_checkout_url||'';

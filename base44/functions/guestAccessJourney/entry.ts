@@ -300,6 +300,13 @@ Deno.serve(async(req)=>{
       if(!healthAnswered)return Response.json({error:'Please answer the guest health and medical screening question.'},{status:400});
       if(healthDeclarationApplies&&!medicalNote)return Response.json({error:'Please give brief details of the health, treatment, surgery, injury or other issue that may be relevant to the session host.'},{status:400});
 
+      // Prevent duplicate applications by the same guest/session even when
+      // they use another email address. Never treat a changed email as a new place.
+      const priorSessionRequests=await base44.asServiceRole.entities.GuestBookingRequest.filter({tenant_id:club.tenant_id,club_id:club.id,preferred_session_key:sessionId},'-submitted_at',300);
+      const duplicateIdentity=(priorSessionRequests||[]).find((r:any)=>['pending_approval','approved'].includes(String(r.status||''))
+        &&nameKey(r.full_name||'')===nameKey(fullName)
+        &&mobileKey(r.mobile||'')===mobileKey(mobile));
+      if(duplicateIdentity)return Response.json({success:true,pending:true,message:'We already have a guest request for you at this session. Please contact the session host if you need to change your details. No new request was created.'});
       const existing=await base44.asServiceRole.entities.GuestBookingRequest.filter({tenant_id:club.tenant_id,club_id:club.id,email,status:'pending_approval',preferred_session_key:sessionId},'-submitted_at',10);
       if(existing?.[0])return Response.json({success:true,pending:true,requestToken:existing[0].request_token,message:'Your guest request is already awaiting club approval.'});
 
