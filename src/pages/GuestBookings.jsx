@@ -146,6 +146,22 @@ export default function GuestBookings(){
   const hostConfirmed=(hostSession?.bookings||[]).filter(b=>b.bookingStatus==='confirmed'||b.bookingStatus==='cash_due')
     .map(b=>({id:b.id,name:b.fullName||'',mobile:b.mobile||'',email:b.email||'',status:b.paymentStatus==='paid'?'Paid':b.paymentStatus==='cash_due'?'Cash due':'Confirmed'}))
     .sort((a,b)=>a.name.localeCompare(b.name));
+  // Include earlier guest request contacts for this session type, even where
+  // attendance was arranged separately by email/phone. A tick is not proof of payment.
+  const hostRequestCandidates=hostSession?[...(requestData.requests||[])]
+    .filter(r=>r.sessionId===hostSession.sessionLabel||r.sessionId===hostSession.templateKey||r.sessionId===hostSession.key)
+    .filter(r=>r.status==='approved'||r.status==='pending_approval')
+    .filter(r=>!(hostSession.bookings||[]).some(b=>String(b.fullName||'').trim().toLowerCase()===String(r.fullName||'').trim().toLowerCase()&&String(b.mobile||'').replace(/\D/g,'')===String(r.mobile||'').replace(/\D/g,'')))
+    .filter((r,i,all)=>all.findIndex(v=>String(v.fullName||'').trim().toLowerCase()===String(r.fullName||'').trim().toLowerCase()&&String(v.mobile||'').replace(/\D/g,'')===String(r.mobile||'').replace(/\D/g,''))===i)
+    .sort((a,b)=>String(a.fullName||'').localeCompare(String(b.fullName||''))):[];
+  const toggleHostCandidate=(r,checked)=>{
+    if(!hostSession)return;
+    setHostListExtras(old=>{
+      const current=old[hostSession.id]||[];
+      const id=`request-${r.id}`;
+      return {...old,[hostSession.id]:checked?[...current.filter(x=>x.id!==id),{id,name:r.fullName||'',mobile:r.mobile||'',email:r.email||''}]:current.filter(x=>x.id!==id)};
+    });
+  };
   const hostExtras=hostListExtras[hostListSessionId]||[];
   const hostSeen=new Set(hostConfirmed.map(r=>(r.name.trim().toLowerCase()+'|'+String(r.mobile).replace(/\D/g,''))));
   const hostExpected=hostExtras.filter(r=>!hostSeen.has(r.name.trim().toLowerCase()+'|'+String(r.mobile).replace(/\D/g,'')));
@@ -597,6 +613,9 @@ export default function GuestBookings(){
           <p className="mt-1 text-sm font-semibold">{niceDate(hostSession.sessionDate)} · {hostSession.startTime}{hostSession.endTime?`–${hostSession.endTime}`:''}</p><p className="text-sm">{hostSession.venueName}</p>
           <p className="mt-2 text-xs font-bold text-muted-foreground">{hostConfirmed.length} recorded · {hostExpected.length} host-added (unverified)</p>
           <div className="mt-3 space-y-2">{hostListRows.length?hostListRows.map((r,i)=><div key={r.id} className="flex items-start justify-between gap-2 border-t py-2 text-sm"><div className="min-w-0"><p className="font-bold">{i+1}. {r.name} <span className="font-normal text-muted-foreground">· {r.status}</span></p><p className="break-all text-xs text-muted-foreground">{r.mobile||'No mobile'} · {r.email||'No email'}</p></div>{String(r.id).startsWith('extra-')&&<Button size="sm" variant="ghost" aria-label={`Remove ${r.name} from preview`} onClick={()=>setHostListExtras(old=>({...old,[hostSession.id]:(old[hostSession.id]||[]).filter(x=>x.id!==r.id)}))}><XCircle className="h-4 w-4"/></Button>}</div>):<p className="text-sm text-muted-foreground">No confirmed bookings recorded for this session.</p>}</div>
+        </div>
+        <div className="rounded-lg border p-3 space-y-2"><h4 className="text-sm font-bold">Include from existing requests (manual arrangements)</h4><p className="text-xs text-muted-foreground">Tick anyone expected for this date, including guests previously approved for the same weekly session. They are added to this host preview only; no payment, approval or booking is changed.</p>
+          {hostRequestCandidates.length?hostRequestCandidates.map(r=><label key={r.id} className="flex cursor-pointer items-center gap-3 rounded-md border p-2 text-sm"><input type="checkbox" className="h-4 w-4 shrink-0" checked={hostExtras.some(x=>x.id===`request-${r.id}`)} onChange={e=>toggleHostCandidate(r,e.target.checked)}/><span className="min-w-0"><strong>{r.fullName}</strong> <span className="text-xs text-muted-foreground">· {r.status==='pending_approval'?'Pending request':'Previously approved'} — payment not verified for this date</span><span className="block break-all text-xs text-muted-foreground">{r.mobile||'No mobile'} · {r.email||'No email'}</span></span></label>):<p className="text-xs text-muted-foreground">No other requests found for this weekly session. You can add a name below.</p>}
         </div>
         <div className="rounded-lg border p-3"><p className="text-sm font-semibold">Add somebody expected by the host (not yet recorded for this date)</p><div className="mt-2 grid gap-2 sm:grid-cols-3"><Input aria-label="Additional attendee name" placeholder="Full name" value={hostListAddName} onChange={e=>setHostListAddName(e.target.value)}/><Input aria-label="Additional attendee mobile" placeholder="Mobile (optional)" value={hostListAddMobile} onChange={e=>setHostListAddMobile(e.target.value)}/><Input aria-label="Additional attendee email" placeholder="Email (optional)" value={hostListAddEmail} onChange={e=>setHostListAddEmail(e.target.value)}/></div><Button size="sm" variant="outline" className="mt-2" onClick={addHostExpected}>Add to preview only</Button><p className="mt-2 text-xs text-muted-foreground">Host-added attendees are labelled unverified. This preview does not save bookings, confirm payment or send messages. Copy or screenshot only for an authorised host; mobile numbers and emails are personal data.</p></div>
       </>}
