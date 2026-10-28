@@ -421,7 +421,9 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
     preheader: coachInvite ? `Your coaching profile is ready to claim and review.` : delegated
       ? `You have been invited to help manage ${listing.name} on the RallyHub Directory.`
       : `Your free RallyHub Directory listing for ${listing.name} is ready to claim.`,
-    content: coachInvite ? `<p style="margin:0 0 14px;font:15px/1.65 Arial,sans-serif;color:#334155;">Hi ${escapeHtml(recipientName)},</p><p style="margin:0 0 14px;font:15px/1.65 Arial,sans-serif;color:#334155;">We've prepared a coaching profile for <strong>${escapeHtml(listing.name)}</strong> in the RallyHub Pickleball Directory.</p><p style="margin:0 0 14px;font:15px/1.65 Arial,sans-serif;color:#334155;">We'd love you to take ownership of it. Use the button below to sign in, claim your listing and review the details we've already entered. You can correct the information, upload your coaching photograph and add anything missing.</p><p style="margin:0 0 4px;font:15px/1.65 Arial,sans-serif;color:#334155;">Your personal claim link is valid for 14 days.</p>` : `${textToBrandedHtml(textBody, claimUrl)}
+    // Every coach invitation, including its HTML body, must use the approved
+    // Communications Centre wording. Keep the CTA in the branded shell.
+    content: coachInvite ? textToBrandedHtml(textBody, claimUrl) : `${textToBrandedHtml(textBody, claimUrl)}
       <div style="margin:4px 0 0;padding:15px 17px;border:1px solid #cfe6d7;background:#f1faf4;border-radius:12px;">
         <div style="font-size:13px;font-weight:800;color:${RALLYHUB_NAVY};margin-bottom:5px;">Directory access only</div>
         <div style="font-size:13px;line-height:1.6;color:#52606d;">The RallyHub Directory listing is free. This secure invitation is personal, single-use and expires after ${delegated ? '72 hours' : '14 days'}. Directory access does not grant access to a club’s members, tournaments, matches or administration.</div>
