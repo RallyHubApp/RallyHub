@@ -158,7 +158,7 @@ function textToBrandedHtml(value = '', primaryUrl = '') {
   text = text.replace(/\n*Yours in sport,[\s\S]*$/i, '').trim();
   if (primaryUrl) {
     text = text.replaceAll(primaryUrl, '');
-    text = text.replace(/(^|\n)\s*(Your (?:personal secure invitation|secure (?:claim|editor)) link|Manage your listing):\s*(?=\n|$)/gi, '$1');
+    text = text.replace(/(^|\n)\s*(Your (?:personal secure invitation|secure (?:claim|editor)) link|Manage your listing|To claim and manage this listing, accept your personal invitation here):\s*(?=\n|$)/gi, '$1');
   }
   const escaped = escapeHtml(text);
   const linked = escaped.replace(/https:\/\/[^\s<]+/g, matched => {
@@ -431,7 +431,7 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
         <div style="font-size:13px;line-height:1.6;color:#52606d;">The RallyHub Directory listing is free. This secure invitation is personal, single-use and expires after ${delegated ? '72 hours' : '14 days'}. Directory access does not grant access to a club’s members, tournaments, matches or administration.</div>
       </div>`,
     actionUrl: claimUrl,
-    actionLabel: coachInvite ? 'Claim your coaching profile' : actionLabel,
+    actionLabel: coachInvite ? 'Claim your coaching profile' : directoryCategory==='suppliers' ? 'Claim your supplier profile' : actionLabel,
     afterActionContent: coachInvite ? `<div style="margin:12px 0 16px;padding:16px 18px;border:1px solid #e0e8ed;border-radius:12px;background-color:#f7fafc;color:#334155;font:13px/1.6 Arial,sans-serif;"><strong style="color:#07184c;">More information and support</strong><p style="margin:8px 0 4px;">Need help? <a href="https://rallyhub.ie/directory/help#coaching" style="color:#075f9c;font-weight:bold;">Coaching Help Centre</a></p><p style="margin:4px 0;">Browse <a href="https://rallyhub.ie/directory/category/coaching" style="color:#075f9c;font-weight:bold;">the Coaching Directory</a>.</p><p style="margin:8px 0 0;">Your coaching email and mobile number are not published on the profile. Players can reach you through the protected Contact Coach form.</p></div>` : '',
     utilityLinks: coachInvite ? [] : undefined,
     allowTemplateBody:!coachInvite && !categoryInvitationTemplate && !String(customText||'').trim(),
@@ -1420,6 +1420,13 @@ Deno.serve(async (req) => {
         if(coachOverrideText && (!['{{CONTACT_NAME}}','{{LISTING_NAME}}','{{CLAIM_LINK}}'].every(t=>coachOverrideText.includes(t)) || coachOverrideText.length>11000))return Response.json({error:'Personalised message must retain required fields and fit size limits.'},{status:400});
         if(coachOverrideSubject.length>180)return Response.json({error:'Subject too long'},{status:400});
       } else if(coachOverrideText||coachOverrideSubject)return Response.json({error:'Coach-only overrides are not permitted on other listings.'},{status:400});
+      if(String(listing.listingType||listing.listing_type||'').toLowerCase()==='equipment'){
+        const actual=(await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:listingSlug,status:'active'},'-updated_date',10))||[];
+        if(!actual.some((e:any)=>normaliseEmail(e.email)===contactEmail))return Response.json({error:'Supplier recipient must match the verified private contact.'},{status:400});
+        const waiting=await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({listing_slug:listingSlug,status:'pending'},'-created_date',20);
+        if((waiting||[]).some((e:any)=>e.access_role==='owner' && normaliseEmail(e.contact_email)===contactEmail && (!e.expires_at||Date.parse(e.expires_at)>Date.now())))return Response.json({error:'Supplier already has an active invitation. Resend requires a separate controlled action.'},{status:409});
+      }
+
 
 
       if (['coach','coaching'].includes(String(listing.listingType||listing.listing_type||'').toLowerCase())) {
