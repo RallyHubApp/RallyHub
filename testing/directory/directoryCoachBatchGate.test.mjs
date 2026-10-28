@@ -17,11 +17,11 @@ test('coach candidate API is private and excludes test listings',()=>{
 test('batch selection defaults empty and cannot send without explicit review and confirmation',()=>{
  assert.match(ui,/useState\(\[\]\)/);
  assert.match(ui,/const selectedReady=/);
- assert.match(ui,/if\(!reviewing\|\|!selectedReady\.length\|\|sending\)return/);
+ assert.match(ui,/selectedReady\.some\(c=>!previews\[c\.slug\]\?\.html\)/);
  assert.match(ui,/window\.confirm/);
  assert.match(ui,/Select all available/);
  assert.match(ui,/Clear selection/);
- assert.match(ui,/Review \{selectedReady\.length\} selected invitation/);
+ assert.match(ui,/Preview '\+selectedReady\.length/);
  assert.match(ui,/Send only '\+selectedReady\.length\+' selected/);
  assert.match(ui,/if\(response\.data\?\.sent!==true\)throw/);
  assert.match(ui,/break;/);
@@ -42,4 +42,16 @@ test('coach mailing reuses approved Comms template for both HTML and text',()=>{
 test('Admin directory coach workspace shows the batch component',()=>{
  assert.match(admin,/import CoachInvitationBatch from/);
  assert.match(admin,/<CoachInvitationBatch \/>/);
+});
+
+test('HTML preview is exactly derived from the approved send renderer, without any side effect',()=>{
+ assert.match(api,/if \(action === 'preview_coach_invitation'\)/);
+ assert.match(api,/previewOnly:true/);
+ assert.match(api,/if \(!previewOnly\) \{/);
+ assert.match(api,/if \(previewOnly\) return \{preview:true,to,subject,textBody,htmlBody\}/);
+ assert.match(api,/PREVIEW-ONLY-NOT-A-REAL-LINK/);
+ assert.match(ui,/srcDoc=\{previews\[previewSlug\]\.html\}/);
+ assert.match(ui,/sandbox=""/);
+ assert.match(ui,/preview_coach_invitation/);
+ assert.match(ui,/loadPreviews/);
 });
