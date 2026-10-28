@@ -14,6 +14,7 @@ async function clubRestrictionCheck(base44:any,tenantId:any,clubId:any,identity:
  }
  return 'clear';
 }
+function nameKey(value:any){return String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
 function clubRestrictionResponse(v:string){return Response.json({error:v==='deny'?'This registration cannot be accepted. Contact the club.':'This registration needs club review. Contact the club.'},{status:v==='deny'?403:409});}
 
 
