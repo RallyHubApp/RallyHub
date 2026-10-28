@@ -351,11 +351,12 @@ async function grantAccess(base44, { listing, userId, claimId, grantedByUserId =
   return created;
 }
 
-async function sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName, claimUrl, accessRole = 'owner', customText = '', customSubject = '' }) {
+async function sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName, claimUrl, accessRole = 'owner', customText = '', customSubject = '', previewOnly = false }) {
   const to = normaliseEmail(contactEmail);
   if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
     return { sent: 0, error: 'A valid club contact email is required.' };
   }
+  if (!previewOnly) {
   const auditAction = 'credit_guard_directory_claim_invite';
   const [userRows, globalRows] = await Promise.all([
     base44.asServiceRole.entities.AuditLog.filter({ user_id: user.id, action: auditAction }, '-created_date', 30),
@@ -376,6 +377,7 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
     after_state: JSON.stringify({ listingSlug: listing.slug, recipient: to, windowHours: 24 }),
     reason: 'Reserved before sending a RallyHub Directory claim invitation.',
   });
+  }
   const delegated = accessRole === 'editor';
   const recipientName = String(contactName || '').trim().split(/\s+/)[0] || 'there';
   // Coach invitations are composed ONLY from the owner-approved Communications Centre
@@ -439,6 +441,7 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
     footerNote: 'RallyHub Directory',
   });
 
+  if (previewOnly) return {preview:true,to,subject,textBody,htmlBody};
   await sendWithConfiguredEmailTransport(
     base44,
     { scopeType: 'platform', purpose: 'directory' },
@@ -1689,6 +1692,25 @@ Deno.serve(async (req) => {
         after_json: JSON.stringify({ status: 'revoked' }),
       });
       return Response.json({ success: true, status: 'revoked' });
+    }
+
+    if (action === 'preview_coach_invitation') {
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({error:'Directory super-admin access required'},{status:403});
+      const listingSlug=String(body.listingSlug||'').trim();
+      const record=(await base44.asServiceRole.entities.DirectoryListingRecord.filter({slug:listingSlug,listing_type:'coach',status:'active'},'-updated_date',5))?.[0];
+      if(!record || record.visibility!=='public' || /test|preview/i.test(String(record.slug||'')+' '+String(record.name||'')))return Response.json({error:'Eligible coach listing not found'},{status:404});
+      const claimed=(await base44.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:listingSlug,status:'active'},'-created_date',5))?.length;
+      if(claimed)return Response.json({error:'Coach listing already claimed'},{status:409});
+      const endpoint=(await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:listingSlug,status:'active'},'-updated_date',10))?.find((e:any)=>normaliseEmail(e.email));
+      if(!endpoint)return Response.json({error:'No verified coach email'},{status:400});
+      const invites=await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({listing_slug:listingSlug,status:'pending'},'-created_date',20);
+      if((invites||[]).some((i:any)=>i.access_role==='owner' && (!i.expires_at||Date.parse(i.expires_at)>Date.now())))return Response.json({error:'Coach already has a pending invitation'},{status:409});
+      const listing=await resolveListing(base44,listingSlug);
+      if(!listing)return Response.json({error:'Listing unavailable'},{status:404});
+      const contactName=String(endpoint.contact_name||record.name||'').trim();
+      const dummyLink='https://rallyhub.ie/directory/'+encodeURIComponent(listingSlug)+'/claim?invite=PREVIEW-ONLY-NOT-A-REAL-LINK';
+      const result=await sendClaimInviteEmail(base44,{user,listing,contactName,contactEmail:endpoint.email,claimUrl:dummyLink,previewOnly:true});
+      return Response.json({success:true,subject:result.subject,to:result.to,contactName,html:result.htmlBody,text:result.textBody,template:'directory_claim_coaching',previewOnly:true});
     }
 
     if (action === 'list_coach_invitation_candidates') {
