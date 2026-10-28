@@ -222,6 +222,7 @@ export default function DirectoryListingEdit() {
   const [listingVisibility, setListingVisibility] = useState('public');
   const [publishingListing, setPublishingListing] = useState(false);
   const [changingVisibility, setChangingVisibility] = useState(false);
+  const [archivingListing,setArchivingListing] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoDraft, setLogoDraft] = useState(null);
   const [inviting, setInviting] = useState(false);
@@ -640,6 +641,19 @@ export default function DirectoryListingEdit() {
     finally {setChangingVisibility(false);}
   };
 
+  const archiveSuperAdminListing = async () => {
+    if(!access?.canControlListingVisibility||archivingListing||saving||dirty){if(dirty)setError('Save your edits before archiving the listing.');return;}
+    if(!window.confirm(`Archive ${form?.name||baseClub?.name||slug}?\n\nThe listing will be removed from public discovery, but its content and permissions will be retained. Only a Directory super-admin can restore it from Directory Admin.`))return;
+    setArchivingListing(true);setError('');
+    try{
+      const result=await base44.functions.invoke('directoryClaim',{action:'archive_listing',listingSlug:slug});
+      if(result.data?.error||result.data?.success!==true)throw Error(result.data?.error||'Archive was not confirmed');
+      invalidatePublicDirectoryCache();
+      navigate('/app/admin?tab=directory');
+    }catch(err){setError(err?.response?.data?.error||err?.message||'Could not archive listing.');}
+    finally{setArchivingListing(false);}
+  };
+
   const openWhatsAppClaimInvite = async () => {
     setInviteMessage('');
     setError('');
@@ -990,6 +1004,7 @@ export default function DirectoryListingEdit() {
                       {changingVisibility?<Loader2 className="h-4 w-4 animate-spin"/>:<Globe2 className="h-4 w-4"/>}
                       {listingVisibility==='public'?'Hide from Directory':'Restore to Directory'}
                     </Button>}
+                    {access?.canControlListingVisibility && <Button type="button" variant="outline" className="gap-2 border-destructive/30 text-destructive" disabled={saving||changingVisibility||archivingListing||dirty} onClick={archiveSuperAdminListing}>{archivingListing?<Loader2 className="h-4 w-4 animate-spin"/>:<Trash2 className="h-4 w-4"/>}Archive listing</Button>}
                     <Button onClick={save} disabled={saving || !dirty} className="gap-2 min-w-36">
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : !dirty && saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                       {saving ? 'Saving changes…' : dirty ? 'Save changes' : saved ? 'Saved ✓' : 'All saved'}
