@@ -379,7 +379,10 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
   });
   }
   const delegated = accessRole === 'editor';
-  const recipientName = String(contactName || '').trim().split(/\s+/)[0] || 'there';
+  const fullContactName = String(contactName || '').trim();
+  const recipientName = (!delegated && ['equipment','supplier','suppliers'].includes(String(listing?.listingType || listing?.listing_type || '').toLowerCase()))
+    ? (fullContactName || 'there')
+    : (fullContactName.split(/\s+/)[0] || 'there');
   // Coach invitations are composed ONLY from the owner-approved Communications Centre
   // body. Never fall back to the old hard-coded club copy if a template is missing.
   const coachInvite = !delegated && ['coach','coaching'].includes(String(listing?.listingType || listing?.listing_type || '').toLowerCase());
