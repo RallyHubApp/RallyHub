@@ -1705,6 +1705,37 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, status: 'revoked' });
     }
 
+    if (action === 'coach_invitation_template_get' || action === 'coach_invitation_template_save' || action === 'coach_invitation_template_approve') {
+      if(!authorisedDirectorySuperAdmin(user))return Response.json({error:'Directory super-admin access required'},{status:403});
+      const purpose='directory_claim_coaching';
+      const [approvedRows,draftRows]=await Promise.all([
+        base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose,status:'approved'},'-updated_date',5),
+        base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose,status:'draft'},'-updated_date',5)
+      ]);
+      const approved=approvedRows?.[0]||null;
+      const draft=draftRows?.[0]||null;
+      if(action==='coach_invitation_template_get')return Response.json({success:true,approved:approved?{id:approved.id,version:approved.version,subject:approved.subject_template,body:approved.plain_text_template}:null,draft:draft?{id:draft.id,version:draft.version,subject:draft.subject_template,body:draft.plain_text_template}:null});
+      if(action==='coach_invitation_template_save'){
+        if(!approved)return Response.json({error:'Approved master template missing.'},{status:409});
+        const subject=String(body.subject||'').trim();
+        const message=String(body.message||'').trim();
+        if(!subject||subject.length>180||!message||message.length>11000)return Response.json({error:'Enter a valid subject and message (maximum 180/11000 characters).'},{status:400});
+        for(const token of ['{{CONTACT_NAME}}','{{LISTING_NAME}}','{{CLAIM_LINK}}'])if(!message.includes(token))return Response.json({error:'Required template field missing: '+token},{status:400});
+        if(/\b14 coaches\b/i.test(message))return Response.json({error:'Do not include a fixed audience count.'},{status:400});
+        const fields={subject_template:subject,plain_text_template:message,version:String(Date.now())+'-draft',status:'draft',module:'Directory',name:approved.name,owner_scope:'platform',purpose,channel_templates:approved.channel_templates||{},merge_schema:approved.merge_schema||{}};
+        const stored=draft?await base44.asServiceRole.entities.CommunicationTemplate.update(draft.id,fields):await base44.asServiceRole.entities.CommunicationTemplate.create(fields);
+        const id=stored?.id||draft?.id;
+        return Response.json({success:true,id,status:'draft',message:'Saved as draft in Communications Centre. Nothing sent.'});
+      }
+      if(!draft)return Response.json({error:'Save a draft before approving.'},{status:409});
+      if(String(body.draftId||'')!==String(draft.id))return Response.json({error:'Draft changed. Reload and review the latest version.'},{status:409});
+      for(const token of ['{{CONTACT_NAME}}','{{LISTING_NAME}}','{{CLAIM_LINK}}'])if(!String(draft.plain_text_template||'').includes(token))return Response.json({error:'Draft missing '+token},{status:400});
+      const now=new Date().toISOString();
+      await base44.asServiceRole.entities.CommunicationTemplate.update(draft.id,{status:'approved',approved_at:now,approved_by_user_id:user.id,version:String(draft.version||'reviewed').replace(/-draft$/,'')});
+      if(approved && approved.id!==draft.id)await base44.asServiceRole.entities.CommunicationTemplate.update(approved.id,{status:'retired'});
+      return Response.json({success:true,status:'approved',message:'New approved Communications Centre template is active; previous version retired. No email sent.'});
+    }
+
     if (action === 'preview_coach_invitation') {
       if (!authorisedDirectorySuperAdmin(user)) return Response.json({error:'Directory super-admin access required'},{status:403});
       const listingSlug=String(body.listingSlug||'').trim();
