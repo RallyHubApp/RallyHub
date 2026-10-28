@@ -1,4 +1,5 @@
 import React,{useMemo,useState} from 'react';
+import {Link} from 'react-router-dom';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {base44} from '@/api/base44Client';
 import {Button} from '@/components/ui/button';
@@ -66,6 +67,7 @@ export default function CoachInvitationBatch(){
       <div>
         <h3 className="text-lg font-bold flex items-center gap-2"><Mail className="h-5 w-5 text-primary"/> Coach invitation mailing</h3>
         <p className="mt-1 text-sm text-muted-foreground">Select only the coaches you want in this batch. The other coaches remain unsent. Test profiles are excluded automatically.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Emails use the approved RallyHub branding and coach invitation in the <Link to="/app/communications" className="text-primary font-semibold underline">Communications Centre</Link>.</p>
       </div>
       <Button type="button" size="sm" variant="outline" onClick={()=>{clear();refetch()}} disabled={sending}><RefreshCw className="mr-2 h-4 w-4"/> Refresh</Button>
     </div>
