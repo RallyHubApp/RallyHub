@@ -20,6 +20,7 @@ import DirectoryAnalyticsDashboard from '@/components/admin/DirectoryAnalyticsDa
 import DirectoryEnquiryFollowupEditor from '@/components/admin/DirectoryEnquiryFollowupEditor';
 import DirectoryGovernancePanel from '@/components/admin/DirectoryGovernancePanel';
 import CoachesReview from '@/components/admin/CoachesReview';
+import CoachInvitationBatch from '@/components/admin/CoachInvitationBatch';
 import DirectoryCategoryManager from '@/components/admin/DirectoryCategoryManager';
 import AnnouncementSettingsPanel from '@/components/admin/AnnouncementSettingsPanel';
 import ControlLibraryPanel from '@/components/admin/ControlLibraryPanel';
@@ -1924,6 +1925,7 @@ Brian`;
         <TabsContent value="directory" className="mt-4">
           <div className="mb-5"><a href="?tab=directory&focus=coaches#coaches" className="inline-flex rounded-xl bg-primary px-4 py-3 font-bold text-primary-foreground">Coaches · Review profiles</a></div>
           <CoachesReview />
+          <CoachInvitationBatch />
           <div className="flex flex-col gap-5">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4" data-testid="directory-events-editor-entry">
               <div><p className="text-sm font-bold">Directory Events & poster management</p><p className="text-xs text-muted-foreground">Open the Events editor to discover posters from organiser websites, verify original artwork and manage published events.</p></div>
