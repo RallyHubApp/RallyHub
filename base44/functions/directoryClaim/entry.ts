@@ -409,7 +409,7 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
   const subject = (coachInvite ? String(coachingTemplate.subject_template || '').trim().slice(0,180) : categoryInvitationTemplate ? String(categoryInvitationTemplate.subject_template || '').replace(/{{\s*LISTING_NAME\s*}}/g,String(listing.name)).slice(0,180) : String(customSubject || '').trim().slice(0, 180)) || (delegated
     ? `An invitation to help manage ${listing.name} on the RallyHub Directory`
     : `Your free RallyHub Directory listing – ${listing.name}`);
-  const coachingText=coachInvite ? String(coachingTemplate.plain_text_template).replace(/{{\s*CONTACT_NAME\s*}}/g,recipientName).replace(/{{\s*LISTING_NAME\s*}}/g,String(listing.name)).replace(/{{\s*CLAIM_LINK\s*}}/g,claimUrl) : '';
+  const coachingText=coachInvite ? String(coachingTemplate.plain_text_template).replace(/\\n/g,'\n').replace(/{{\s*CONTACT_NAME\s*}}/g,recipientName).replace(/{{\s*LISTING_NAME\s*}}/g,String(listing.name)).replace(/{{\s*CLAIM_LINK\s*}}/g,claimUrl) : '';
   const categoryText=categoryInvitationTemplate ? String(categoryInvitationTemplate.plain_text_template).replace(/{{\s*CONTACT_NAME\s*}}/g,recipientName).replace(/{{\s*LISTING_NAME\s*}}/g,String(listing.name)).replace(/{{\s*CLAIM_LINK\s*}}/g,claimUrl) : '';
   const textBody = normaliseDirectorySignatureText(coachInvite ? coachingText : categoryInvitationTemplate ? categoryText : String(customText || '').trim() || (delegated ? editorBody : ownerBody));
   const actionLabel = delegated ? 'Open your editor invitation' : 'Claim your free Directory listing';
