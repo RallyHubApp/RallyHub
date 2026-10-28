@@ -22,14 +22,15 @@ test('batch selection defaults empty and cannot send without explicit review and
  assert.match(ui,/Select all available/);
  assert.match(ui,/Clear selection/);
  assert.match(ui,/Review \{selectedReady\.length\} selected invitation/);
- assert.match(ui,/Send only \{selectedReady\.length\} selected/);
+ assert.match(ui,/Send only '\+selectedReady\.length\+' selected/);
  assert.match(ui,/if\(response\.data\?\.sent!==true\)throw/);
  assert.match(ui,/break;/);
 });
 test('non-selectable previously invited or claimed entries and stop-on-failure',()=>{
  assert.match(ui,/c\.inviteStatus==='ready'/);
  assert.match(ui,/disabled=\{!available\|\|sending\}/);
- assert.match(ui,/status:409|status==='pending'|status:'pending'/);
+ assert.match(api,/status:409/);
+ assert.match(api,/inviteStatus=claimed\?'claimed'/);
 });
 test('coach mailing reuses approved Comms template for both HTML and text',()=>{
  assert.match(api,/purpose:'directory_claim_coaching',status:'approved'/);
