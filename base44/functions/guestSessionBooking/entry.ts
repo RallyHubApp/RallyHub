@@ -1312,19 +1312,21 @@ Deno.serve(async(req)=>{
         const sessionDetails=[];
         for(let offset=0;offset<(sessions||[]).length;offset+=8){
           const batch=await Promise.all((sessions||[]).slice(offset,offset+8).map(async s=>{
-          const [host,bookings]=await Promise.all([
+          const [host,bookings,attendanceRows]=await Promise.all([
             resolveSessionHostContact(base44,s),
-            base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:s.id},'-registered_at',200)
+            base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:s.id},'-registered_at',200),
+            base44.asServiceRole.entities.GuestSessionAttendance.filter({session_link_id:s.id,tenant_id:tenantId,club_id:clubId},'-marked_at',250)
           ]);
           const paymentsByBooking=[];
           for(let paymentOffset=0;paymentOffset<(bookings||[]).length;paymentOffset+=12){
             paymentsByBooking.push(...await Promise.all((bookings||[]).slice(paymentOffset,paymentOffset+12).map(b=>base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:b.id},'-created_date',10))));
           }
-          return {s,host,bookings, paymentsByBooking};
+          return {s,host,bookings,attendanceRows,paymentsByBooking};
           }));
           sessionDetails.push(...batch);
         }
-        for(const {s,host,bookings,paymentsByBooking} of sessionDetails){
+        for(const {s,host,bookings,attendanceRows,paymentsByBooking} of sessionDetails){
+          const attendanceByBooking=new Map((attendanceRows||[]).map((a:any)=>[String(a.booking_id),String(a.status||'unconfirmed')]));
           const bookingRows=[];
           for(const [bookingIndex,b] of (bookings||[]).entries()){
             const payments=paymentsByBooking[bookingIndex]||[];
@@ -1332,7 +1334,7 @@ Deno.serve(async(req)=>{
             const originalAmount=Number(payment?.amount||b.amount||0);
             const refundedAmount=Number(payment?.amount_refunded||0);
             bookingRows.push({
-              id:b.id,fullName:b.full_name,email:b.email,mobile:b.mobile,bookingNote:b.booking_note||'',participantType:b.participant_type||'guest',membershipId:b.membership_id||'',memberVerificationMethod:b.member_verification_method||'',previousSports:b.previous_sports||[],sportingBackgroundNote:b.sporting_background_note||'',healthDeclarationApplies:b.health_declaration_applies===true,medicalNote:b.medical_note||'',bookingStatus:b.booking_status,
+              id:b.id,fullName:b.full_name,email:b.email,mobile:b.mobile,attendanceStatus:attendanceByBooking.get(String(b.id))||'unconfirmed',bookingNote:b.booking_note||'',participantType:b.participant_type||'guest',membershipId:b.membership_id||'',memberVerificationMethod:b.member_verification_method||'',previousSports:b.previous_sports||[],sportingBackgroundNote:b.sporting_background_note||'',healthDeclarationApplies:b.health_declaration_applies===true,medicalNote:b.medical_note||'',bookingStatus:b.booking_status,
               paymentMethod:b.payment_method,paymentStatus:b.payment_status,amount:b.amount,
               refundedAmount,refundableAmount:Math.max(0,Math.round((originalAmount-refundedAmount)*100)/100),
               provider:payment?.provider||b.payment_method||'',providerTransactionId:payment?.provider_transaction_id||'',
