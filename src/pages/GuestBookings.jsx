@@ -46,6 +46,7 @@ export default function GuestBookings(){
   const [hostListAddName,setHostListAddName]=useState('');
   const [hostListAddEmail,setHostListAddEmail]=useState('');
   const [hostListAddMobile,setHostListAddMobile]=useState('');
+  const [attendanceBusy,setAttendanceBusy]=useState('');
   const [attendeeTime,setAttendeeTime]=useState('all');
   const [recentOfferLinks,setRecentOfferLinks]=useState({});
   const [approvalSelections,setApprovalSelections]=useState({});
@@ -144,7 +145,7 @@ export default function GuestBookings(){
   const visibleBookingRows=(showPastAttendees?pastBookingRows:currentBookingRows).filter(row=>(attendeeCentre==='all'||row.venueName===attendeeCentre)&&(attendeeTime==='all'||row.start===attendeeTime));
   const hostSession=sessions.find(s=>s.id===hostListSessionId)||null;
   const hostConfirmed=(hostSession?.bookings||[]).filter(b=>b.bookingStatus==='confirmed'||b.bookingStatus==='cash_due')
-    .map(b=>({id:b.id,name:b.fullName||'',mobile:b.mobile||'',email:b.email||'',status:b.paymentStatus==='paid'?'Paid':b.paymentStatus==='cash_due'?'Cash due':'Confirmed'}))
+    .map(b=>({id:b.id,name:b.fullName||'',mobile:b.mobile||'',email:b.email||'',attendanceStatus:b.attendanceStatus||'unconfirmed',status:b.paymentStatus==='paid'?'Paid':b.paymentStatus==='cash_due'?'Cash due':'Confirmed'}))
     .sort((a,b)=>a.name.localeCompare(b.name));
   // Reuse both historic paid booking contacts and old guest requests for this
   // weekly session. Past bookings must never be presented as paid for today.
@@ -153,7 +154,7 @@ export default function GuestBookings(){
     const identity=r=>normalize(r.fullName)+'|'+String(r.mobile||'').replace(/\D/g,'');
     const currentPeople=new Set((hostSession.bookings||[]).map(b=>identity(b)));
     const historicalBookings=sessions.filter(s=>s.id!==hostSession.id&&s.sessionLabel===hostSession.sessionLabel&&s.venueName===hostSession.venueName)
-      .flatMap(s=>(s.bookings||[]).filter(b=>b.bookingStatus!=='cancelled').map(b=>({
+      .flatMap(s=>(s.bookings||[]).filter(b=>b.bookingStatus!=='cancelled'&&b.attendanceStatus!=='attended').map(b=>({
         id:'historical-booking-'+b.id,fullName:b.fullName||'',mobile:b.mobile||'',email:b.email||'',
         status:'historical_booking',previouslyPaid:b.paymentStatus==='paid',previousSessionDate:s.sessionDate
       })));
@@ -175,6 +176,18 @@ export default function GuestBookings(){
       const id=`candidate-${r.id}`;
       return {...old,[hostSession.id]:checked?[...current.filter(x=>x.id!==id),{id,name:r.fullName||'',mobile:r.mobile||'',email:r.email||''}]:current.filter(x=>x.id!==id)};
     });
+  };
+  const saveAttendance=async(bookingId,status)=>{
+    if(!hostSession||attendanceBusy)return;
+    setAttendanceBusy(bookingId);
+    try{
+      const response=await base44.functions.invoke('guestSessionBooking',{action:'attendance_save',sessionId:hostSession.id,bookingId,status});
+      if(response.data?.error||response.data?.success!==true)throw Error(response.data?.error||'Attendance was not saved');
+      qc.setQueryData(['guest-session-admin-list'],old=>old?{...old,sessions:(old.sessions||[]).map(session=>session.id!==hostSession.id?session:{...session,bookings:(session.bookings||[]).map(booking=>booking.id===bookingId?{...booking,attendanceStatus:status}:booking)})}:old);
+      toast.success(status==='attended'?'Marked attended — kept in session history':status==='no_show'?'Marked no-show — payment preserved':status==='cancelled'?'Marked cancelled — review payment or transfer separately':'Attendance reset to unresolved');
+      await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
+    }catch(e){toast.error(e?.response?.data?.error||e.message||'Could not save attendance')}
+    finally{setAttendanceBusy('')}
   };
   const hostExtras=hostListExtras[hostListSessionId]||[];
   const hostSeen=new Set(hostConfirmed.map(r=>(r.name.trim().toLowerCase()+'|'+String(r.mobile).replace(/\D/g,''))));
@@ -620,13 +633,18 @@ export default function GuestBookings(){
 
     <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center"><div><h2 className="text-lg font-black">Session Host List</h2><p className="mt-1 text-xs text-muted-foreground">A compact, screenshot-ready attendee list. Only confirmed/cash-due bookings are counted as recorded. Add expected attendees for a host reminder without creating a payment or booking.</p></div><Button size="sm" variant="outline" disabled={!hostSession} onClick={()=>copy(hostListText,'Host list copied — share only with the authorised host')}><Copy className="mr-1.5 h-4 w-4"/>Copy host list</Button></div>
-      <label className="block text-sm font-semibold">Choose session<select aria-label="Session for host list" className="mt-2 block w-full max-w-xl rounded-lg border bg-background p-3" value={hostListSessionId} onChange={e=>setHostListSessionId(e.target.value)}><option value="">Select venue, date and time</option>{sessions.filter(s=>!s.archivedAt).map(s=><option key={s.id} value={s.id}>{niceDate(s.sessionDate)} · {s.startTime} · {s.venueName}</option>)}</select></label>
+      <label className="block text-sm font-semibold">Choose session<select aria-label="Session for host list" className="mt-2 block w-full max-w-xl rounded-lg border bg-background p-3" value={hostListSessionId} onChange={e=>setHostListSessionId(e.target.value)}><option value="">Select venue, date and time</option>{sessions.map(s=><option key={s.id} value={s.id}>{niceDate(s.sessionDate)} · {s.startTime} · {s.venueName}{s.archivedAt?' (archived)':''}</option>)}</select></label>
       {hostSession&&<>
         <div className="rounded-xl border bg-background p-4" aria-label="Session host screenshot list">
           <h3 className="font-black text-lg">Clare Pickleball · Session Host List</h3>
           <p className="mt-1 text-sm font-semibold">{niceDate(hostSession.sessionDate)} · {hostSession.startTime}{hostSession.endTime?`–${hostSession.endTime}`:''}</p><p className="text-sm">{hostSession.venueName}</p>
           <p className="mt-2 text-xs font-bold text-muted-foreground">{hostConfirmed.length} recorded · {hostExpected.length} host-added (unverified)</p>
           <div className="mt-3 space-y-2">{hostListRows.length?hostListRows.map((r,i)=><div key={r.id} className="flex items-start justify-between gap-2 border-t py-2 text-sm"><div className="min-w-0"><p className="font-bold">{i+1}. {r.name} <span className="font-normal text-muted-foreground">· {r.status}</span></p><p className="break-all text-xs text-muted-foreground">{r.mobile||'No mobile'} · {r.email||'No email'}</p></div>{String(r.id).startsWith('extra-')&&<Button size="sm" variant="ghost" aria-label={`Remove ${r.name} from preview`} onClick={()=>setHostListExtras(old=>({...old,[hostSession.id]:(old[hostSession.id]||[]).filter(x=>x.id!==r.id)}))}><XCircle className="h-4 w-4"/></Button>}</div>):<p className="text-sm text-muted-foreground">No confirmed bookings recorded for this session.</p>}</div>
+        </div>
+        <div className="rounded-lg border p-3 space-y-2"><h4 className="text-sm font-bold">Attendance reconciliation — recorded bookings</h4>
+          <p className="text-xs text-muted-foreground">After the session, mark each booked guest Attended, No-show or Cancelled. A payment is not changed by an attendance update. Attended guests stay in historical records and no longer appear in the historical guest picker.</p>
+          {(hostSession.bookings||[]).filter(b=>b.bookingStatus!=='cancelled').length?<div className="space-y-2">{(hostSession.bookings||[]).filter(b=>b.bookingStatus!=='cancelled').map(b=><div key={b.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-2 text-sm"><span className="font-semibold">{b.fullName} <span className="font-normal text-muted-foreground">· {b.paymentStatus==='paid'?'€'+Number(b.amount||0).toFixed(2)+' paid':b.paymentStatus||'Payment unverified'}</span></span><select aria-label={`Attendance status for ${b.fullName}`} className="rounded-md border bg-background p-2" disabled={!!attendanceBusy} value={b.attendanceStatus||'unconfirmed'} onChange={e=>saveAttendance(b.id,e.target.value)}><option value="unconfirmed">Not reconciled</option><option value="attended">Attended</option><option value="no_show">No-show</option><option value="cancelled">Cancelled</option></select></div>)}</div>:<p className="text-xs text-muted-foreground">No formal bookings to reconcile. Manually included people are preview-only and don't have attendance records.</p>}
+          <p className="text-xs text-muted-foreground">{(hostSession.bookings||[]).filter(b=>b.bookingStatus!=='cancelled'&&b.attendanceStatus==='attended').length} attended · {(hostSession.bookings||[]).filter(b=>b.bookingStatus!=='cancelled'&&b.attendanceStatus==='no_show').length} no-show · {(hostSession.bookings||[]).filter(b=>b.bookingStatus!=='cancelled'&&b.attendanceStatus==='unconfirmed').length} unresolved</p>
         </div>
         <div className="rounded-lg border p-3 space-y-2"><h4 className="text-sm font-bold">Include from existing requests (manual arrangements)</h4><p className="text-xs text-muted-foreground">Tick anyone expected for this date, including guests who paid for an earlier session or were previously approved for this weekly slot. They are added to this host preview only; no payment, approval or booking is changed.</p>
           {hostRequestCandidates.length?hostRequestCandidates.map(r=><label key={r.id} className="flex cursor-pointer items-center gap-3 rounded-md border p-2 text-sm"><input type="checkbox" className="h-4 w-4 shrink-0" checked={hostExtras.some(x=>x.id===`candidate-${r.id}`)} onChange={e=>toggleHostCandidate(r,e.target.checked)}/><span className="min-w-0"><strong>{r.fullName}</strong> <span className="text-xs text-muted-foreground">· {r.previouslyPaid?`Previously paid ${niceDate(r.previousSessionDate)}`:r.status==='pending_approval'?'Pending request':'Previously approved'} — payment not verified for this date</span><span className="block break-all text-xs text-muted-foreground">{r.mobile||'No mobile'} · {r.email||'No email'}</span></span></label>):<p className="text-xs text-muted-foreground">No other requests found for this weekly session. You can add a name below.</p>}
