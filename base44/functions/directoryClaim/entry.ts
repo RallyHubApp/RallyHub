@@ -408,10 +408,10 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
   const sharedStory = `Conall and I started RallyHub as a father-and-son project, originally to solve some of the practical things we needed for Clare Pickleball. It has grown from there, and the first public phase is the RallyHub Club Directory — helping players find clubs, venues and regular sessions around Ireland.`;
   const ownerBody = `Hi ${recipientName},\n\nI’m getting in touch because I’ve put together a free RallyHub Directory listing for ${listing.name} as part of a wider effort to improve information on pickleball clubs around Ireland, following David Molloy’s request for help updating the national club map.\n\n${sharedStory}\n\nI’ve already created the ${listing.name} listing, so most of the work is done. I’d simply like you to have a look, claim the listing and correct or add anything that needs updating.\n\nOnce verified, you’ll become the Primary Directory Owner for ${listing.name}, which means you can manage the club’s public Directory information directly.\n\nThe Directory listing is completely free. There is no subscription, no catch and no obligation to use any other RallyHub services.\n\nRallyHub is also developing other optional club tools around session management, King of the Court, tournaments and events, but those are separate from your free Directory listing.\n\nYour secure claim link:\n${claimUrl}\n\nThe link is personal to you, can only be used once and expires after 14 days.\n\nIf you’d like to have a quick look at RallyHub first:\nAbout RallyHub: https://rallyhub.ie/about\n1-page Directory Explainer: https://rallyhub.ie/directory/story\n\nClub Guide & Help: https://rallyhub.ie/directory/help\nQuick Start Guide: https://rallyhub.ie/directory/quick-start\n\nThere is also a Feedback area inside RallyHub, and I’m always happy to hear suggestions about what would genuinely be useful to clubs.\n\nIf you have any difficulty claiming the listing, just WhatsApp or call me.\n\nYours in sport,\nBrian Moore\n087 810 0333\nrallyhubapp@gmail.com\nhttps://rallyhub.ie`;
   const editorBody = `Hi ${recipientName},\n\nYou’ve been invited as a Directory Editor for ${listing.name} on RallyHub. This gives you access to help maintain the club’s public Directory information only. It does not give access to RallyHub Club, tournaments, players or club administration.\n\nYour secure editor link:\n${claimUrl}\n\nThe link is personal to you, can only be used once and expires after 72 hours.\n\nAbout RallyHub: https://rallyhub.ie/about\nClub Guide & Help: https://rallyhub.ie/directory/help\n\nYours in sport,\nBrian Moore\n087 810 0333\nrallyhubapp@gmail.com\nhttps://rallyhub.ie`;
-  const subject = (coachInvite ? String(coachingTemplate.subject_template || '').trim().slice(0,180) : categoryInvitationTemplate ? String(categoryInvitationTemplate.subject_template || '').replace(/{{\s*LISTING_NAME\s*}}/g,String(listing.name)).slice(0,180) : String(customSubject || '').trim().slice(0, 180)) || (delegated
+  const subject = (coachInvite ? String(customSubject || coachingTemplate.subject_template || '').trim().slice(0,180) : categoryInvitationTemplate ? String(categoryInvitationTemplate.subject_template || '').replace(/{{\s*LISTING_NAME\s*}}/g,String(listing.name)).slice(0,180) : String(customSubject || '').trim().slice(0, 180)) || (delegated
     ? `An invitation to help manage ${listing.name} on the RallyHub Directory`
     : `Your free RallyHub Directory listing – ${listing.name}`);
-  const coachingText=coachInvite ? String(coachingTemplate.plain_text_template).replace(/\\n/g,'\n').replace(/{{\s*CONTACT_NAME\s*}}/g,recipientName).replace(/{{\s*LISTING_NAME\s*}}/g,String(listing.name)).replace(/{{\s*CLAIM_LINK\s*}}/g,claimUrl) : '';
+  const coachingText=coachInvite ? String(customText || coachingTemplate.plain_text_template).replace(/\\n/g,'\n').replace(/{{\s*CONTACT_NAME\s*}}/g,recipientName).replace(/{{\s*LISTING_NAME\s*}}/g,String(listing.name)).replace(/{{\s*CLAIM_LINK\s*}}/g,claimUrl) : '';
   const categoryText=categoryInvitationTemplate ? String(categoryInvitationTemplate.plain_text_template).replace(/{{\s*CONTACT_NAME\s*}}/g,recipientName).replace(/{{\s*LISTING_NAME\s*}}/g,String(listing.name)).replace(/{{\s*CLAIM_LINK\s*}}/g,claimUrl) : '';
   const textBody = normaliseDirectorySignatureText(coachInvite ? coachingText : categoryInvitationTemplate ? categoryText : String(customText || '').trim() || (delegated ? editorBody : ownerBody));
   const actionLabel = delegated ? 'Open your editor invitation' : 'Claim your free Directory listing';
@@ -1410,6 +1410,17 @@ Deno.serve(async (req) => {
       const anyAccess = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' });
       if (anyAccess?.length) return Response.json({ error: 'This listing has already been claimed.' }, { status: 409 });
       if (!contactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) return Response.json({ error: 'A valid club contact email is required' }, { status: 400 });
+      const coachSpecific=['coach','coaching'].includes(String(listing.listingType||listing.listing_type||'').toLowerCase());
+      const coachOverrideText=String(body.coachOverrideText||'').trim();
+      const coachOverrideSubject=String(body.coachOverrideSubject||'').trim();
+      if(coachSpecific){
+        const endpoints=await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({listing_slug:listingSlug,status:'active'},'-updated_date',10);
+        const verified=(endpoints||[]).find((e:any)=>normaliseEmail(e.email)===contactEmail);
+        if(!verified)return Response.json({error:'Coach recipient must match a currently verified private Directory email.'},{status:400});
+        if(coachOverrideText && (!['{{CONTACT_NAME}}','{{LISTING_NAME}}','{{CLAIM_LINK}}'].every(t=>coachOverrideText.includes(t)) || coachOverrideText.length>11000))return Response.json({error:'Personalised message must retain required fields and fit size limits.'},{status:400});
+        if(coachOverrideSubject.length>180)return Response.json({error:'Subject too long'},{status:400});
+      } else if(coachOverrideText||coachOverrideSubject)return Response.json({error:'Coach-only overrides are not permitted on other listings.'},{status:400});
+
 
       if (['coach','coaching'].includes(String(listing.listingType||listing.listing_type||'').toLowerCase())) {
         const outstanding=await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({listing_slug:listingSlug,status:'pending'},'-created_date',30);
@@ -1446,7 +1457,7 @@ Deno.serve(async (req) => {
           channel: 'email',
           accessRole: 'owner',
         });
-        const result = await sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName, claimUrl: invitation.claimUrl });
+        const result = await sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName, claimUrl: invitation.claimUrl, customText:coachSpecific?coachOverrideText:'', customSubject:coachSpecific?coachOverrideSubject:'' });
         if (!result.sent) return Response.json({ error: result.error || 'Could not send claim invitation.' }, { status: result.limited ? 429 : 502 });
         return Response.json({ success: true, sent: true, email: result.to, claimUrl: result.claimUrl, expiresAt: invitation.expiresAt });
       } catch (emailError) {
@@ -1709,8 +1720,12 @@ Deno.serve(async (req) => {
       if(!listing)return Response.json({error:'Listing unavailable'},{status:404});
       const contactName=String(endpoint.contact_name||record.name||'').trim();
       const dummyLink='https://rallyhub.ie/directory/'+encodeURIComponent(listingSlug)+'/claim?invite=PREVIEW-ONLY-NOT-A-REAL-LINK';
-      const result=await sendClaimInviteEmail(base44,{user,listing,contactName,contactEmail:endpoint.email,claimUrl:dummyLink,previewOnly:true});
-      return Response.json({success:true,subject:result.subject,to:result.to,contactName,html:result.htmlBody,text:result.textBody,template:'directory_claim_coaching',previewOnly:true});
+      const customText=String(body.customText||'').trim().slice(0,11000);
+      const customSubject=String(body.customSubject||'').trim().slice(0,180);
+      if(customText && !['{{CONTACT_NAME}}','{{LISTING_NAME}}','{{CLAIM_LINK}}'].every(token=>customText.includes(token)))return Response.json({error:'Preserve {{CONTACT_NAME}}, {{LISTING_NAME}} and {{CLAIM_LINK}} when editing.'},{status:400});
+      const result=await sendClaimInviteEmail(base44,{user,listing,contactName,contactEmail:endpoint.email,claimUrl:dummyLink,customText,customSubject,previewOnly:true});
+      const approved=(await base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose:'directory_claim_coaching',status:'approved'},'-updated_date',5))?.[0];
+      return Response.json({success:true,subject:result.subject,to:result.to,contactName,html:result.htmlBody,text:result.textBody,rawBody:customText||approved?.plain_text_template||'',rawSubject:customSubject||approved?.subject_template||'',templateVersion:approved?.version||'',template:'directory_claim_coaching',previewOnly:true});
     }
 
     if (action === 'list_coach_invitation_candidates') {
