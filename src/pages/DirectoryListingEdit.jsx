@@ -255,6 +255,7 @@ export default function DirectoryListingEdit() {
   const isClaimed = access?.listing?.verificationStatus === 'verified';
   const listingType = String(form?.listingType || baseClub?.listingType || 'club');
   const isClubListing = listingType === 'club';
+  const adminVisibilityHold = setupContext?.adminVisibilityHold === true;
   const blueprint = DIRECTORY_SETUP_BLUEPRINTS[listingType] || DIRECTORY_SETUP_BLUEPRINTS.other;
   const setupProgress = useMemo(() => buildDirectorySetupProgress({ listingType, profile:form || {}, events:setupEvents, visibility:listingVisibility, setup:setupContext }), [listingType, form, setupEvents, listingVisibility, setupContext]);
   const guidedSections = setupProgress.steps.map(step => ({ id:step.id, label:step.label }));
@@ -602,6 +603,7 @@ export default function DirectoryListingEdit() {
 
   const publishListing = async () => {
     if (publishingListing || saving || isClubListing) return;
+    if (adminVisibilityHold && !access?.canControlListingVisibility) { setError('This listing was hidden by Directory administration. Only a Directory super-admin can restore it.'); return; }
     setError('');
     if (dirty) {
       const ok = await save();
@@ -635,6 +637,7 @@ export default function DirectoryListingEdit() {
       const response=await base44.functions.invoke('directoryClaim',{action:'set_visibility',listingSlug:slug,visibility});
       if(response.data?.error||response.data?.success!==true)throw new Error(response.data?.error||'Visibility change was not confirmed');
       setListingVisibility(visibility);
+      setSetupContext(prev=>({...prev,adminVisibilityHold:visibility==='preview_only'}));
       invalidatePublicDirectoryCache();
       setSaved(true);
     } catch(err) {setError(err?.response?.data?.error||err?.message||'Could not update listing visibility.');}
@@ -1430,7 +1433,7 @@ export default function DirectoryListingEdit() {
               <section id="review" style={{ display: guidedSectionVisible('review') ? undefined : 'none' }} className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
                 <div className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-primary"/><h2 className="text-xl font-bold">Preview & finish</h2></div>
                 <p className="text-sm text-muted-foreground">{isClubListing ? 'Check the public listing we already have for your club. You can come back at any time to improve it or add events.' : listingVisibility==='preview_only'?'Your essential details are saved as a private setup draft. Publish when you are happy, or finish your event first. Publishing your first event can also make this organiser listing live.':'Your listing is live. You can view it, manage your event, or come back later to add optional information.'}</p>
-                <div className="flex flex-wrap gap-2">{!isClubListing && listingVisibility==='preview_only'?<Button type="button" onClick={publishListing} disabled={publishingListing||saving}>{publishingListing?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Globe2 className="mr-2 h-4 w-4"/>}{publishingListing?'Publishing…':'Publish listing'}</Button>:<Button type="button" onClick={viewPublicListing}><Globe2 className="mr-2 h-4 w-4"/>View public listing</Button>}{isClubListing?<Link to={`/directory/${slug}/events`}><Button type="button" variant="outline"><CalendarDays className="mr-2 h-4 w-4"/>Manage events</Button></Link>:<Button type="button" variant="outline" onClick={() => openGuidedStep(setupProgress.steps.find(step => step.id === 'events'))}><CalendarDays className="mr-2 h-4 w-4"/>{setupProgress.firstEvent?'Check your event':'Add your event'}</Button>}</div>
+                <div className="flex flex-wrap gap-2">{!isClubListing && listingVisibility==='preview_only'&&!adminVisibilityHold?<Button type="button" onClick={publishListing} disabled={publishingListing||saving}>{publishingListing?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Globe2 className="mr-2 h-4 w-4"/>}{publishingListing?'Publishing…':'Publish listing'}</Button>:<Button type="button" onClick={viewPublicListing}><Globe2 className="mr-2 h-4 w-4"/>View public listing</Button>}{isClubListing?<Link to={`/directory/${slug}/events`}><Button type="button" variant="outline"><CalendarDays className="mr-2 h-4 w-4"/>Manage events</Button></Link>:<Button type="button" variant="outline" onClick={() => openGuidedStep(setupProgress.steps.find(step => step.id === 'events'))}><CalendarDays className="mr-2 h-4 w-4"/>{setupProgress.firstEvent?'Check your event':'Add your event'}</Button>}</div>
               </section>
 
               {isClubListing && showEnhancements && <DirectorySpondPanel listingSlug={slug} clubName={baseClub?.name || ''} onImport={importSpondDirectoryData} onSave={save} saveBusy={saving} hasUnsavedChanges={dirty} saved={saved} existingSessions={form.sessions || []} />}
