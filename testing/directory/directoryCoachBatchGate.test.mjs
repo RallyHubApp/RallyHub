@@ -17,11 +17,11 @@ test('coach candidate API is private and excludes test listings',()=>{
 test('batch selection defaults empty and cannot send without explicit review and confirmation',()=>{
  assert.match(ui,/useState\(\[\]\)/);
  assert.match(ui,/const selectedReady=/);
- assert.match(ui,/selectedReady\.some\(c=>!previews\[c\.slug\]\?\.html\)/);
+ assert.match(ui,/selectedReady\.some\(c=>customBySlug\[c\.slug\]\?\.body&&!previews\[c\.slug\]\?\.html\)/);
  assert.match(ui,/window\.confirm/);
  assert.match(ui,/Select all available/);
  assert.match(ui,/Clear selection/);
- assert.match(ui,/Preview '\+selectedReady\.length/);
+ assert.match(ui,/Preview standard email for '\+selectedReady\.length/);
  assert.match(ui,/Send only '\+selectedReady\.length\+' selected/);
  assert.match(ui,/if\(response\.data\?\.sent!==true\)throw/);
  assert.match(ui,/break;/);
@@ -50,7 +50,7 @@ test('HTML preview is exactly derived from the approved send renderer, without a
  assert.match(api,/if \(!previewOnly\) \{/);
  assert.match(api,/if \(previewOnly\) return \{preview:true,to,subject,textBody,htmlBody\}/);
  assert.match(api,/PREVIEW-ONLY-NOT-A-REAL-LINK/);
- assert.match(ui,/srcDoc=\{previews\[previewSlug\]\.html\}/);
+ assert.match(ui,/srcDoc=\{previews\[previewSlug\]\?\.html\|\|Object\.values\(previews\)\[0\]\?\.html\}/);
  assert.match(ui,/sandbox=""/);
  assert.match(ui,/preview_coach_invitation/);
  assert.match(ui,/loadPreviews/);

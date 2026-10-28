@@ -24,7 +24,7 @@ test('Recipient personalisation is distinct, must be previewed, retains required
  assert.match(backend,/coachOverrideText/);
  assert.match(backend,/Preserve \{\{CONTACT_NAME\}\}/);
  assert.match(backend,/Coach recipient must match a currently verified private Directory email/);
- assert.match(mailing,/selectedReady\.some\(c=>!previews\[c\.slug\]\?\.html\)/);
+ assert.match(mailing,/selectedReady\.some\(c=>customBySlug\[c\.slug\]\?\.body&&!previews\[c\.slug\]\?\.html\)/);
 });
 test('Master changes require rendered preview, saving as draft and separate explicit approval',()=>{
  assert.match(mailing,/Preview edited master HTML/);
@@ -41,4 +41,15 @@ test('Preview only uses same sender rendering and neither creates invite nor sen
  assert.match(backend,/if \(!previewOnly\) \{/);
  assert.match(backend,/if \(previewOnly\) return \{preview:true,to,subject,textBody,htmlBody\}/);
  assert.match(backend,/sendClaimInviteEmail\(base44,\{user,listing,contactName,contactEmail:endpoint\.email,claimUrl:dummyLink,customText,customSubject,previewOnly:true\}\)/);
+});
+
+test('standard batch preview fetches exactly one sample, never a request per coach',()=>{
+ const start=mailing.indexOf('const loadPreviews=async()=>');
+ const end=mailing.indexOf('const personalise=async()=>',start);
+ const block=mailing.slice(start,end);
+ assert.ok(start>0 && end>start);
+ assert.doesNotMatch(block,/for\s*\(const c of selectedReady\)/);
+ assert.match(block,/const sample=selectedReady\.find/);
+ assert.equal((block.match(/preview_coach_invitation/g)||[]).length,1);
+ assert.match(block,/setPreviews\(all\)/);
 });
