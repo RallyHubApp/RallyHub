@@ -2419,20 +2419,15 @@ Deno.serve(async (req) => {
       if (!record) return Response.json({ error: 'Published directory listing not found or cannot be removed here' }, { status: 404 });
 
       const now = new Date().toISOString();
-      await base44.asServiceRole.entities.DirectoryListingRecord.update(record.id, { status: 'archived' });
+      await base44.asServiceRole.entities.DirectoryListingRecord.update(record.id, { status: 'archived',visibility:'preview_only' });
 
       const profiles = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status: 'active' }, '-updated_at', 20);
       for (const profile of profiles || []) {
         await base44.asServiceRole.entities.DirectoryListingProfile.update(profile.id, { status: 'archived', updated_at: now, updated_by_user_id: user.id });
       }
 
-      const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' });
-      for (const access of accesses || []) {
-        await base44.asServiceRole.entities.DirectoryListingAccess.update(access.id, {
-          status: 'revoked', revoked_by_user_id: user.id, revoked_at: now,
-          notes: [access.notes, 'Directory listing removed by RallyHub administrator.'].filter(Boolean).join(' '),
-        });
-      }
+      // Preserve existing owner/editor permissions. Archiving hides content; it
+      // must not silently destroy identity links or access grants.
 
       try {
         await base44.asServiceRole.entities.DirectoryListingAudit.create({
@@ -2448,6 +2443,21 @@ Deno.serve(async (req) => {
       }
 
       return Response.json({ success: true, status: 'archived', listingSlug });
+    }
+
+    if (action === 'restore_listing') {
+      if (!authorisedDirectorySuperAdmin(user)) return Response.json({error:'Directory super-admin access required'},{status:403});
+      const listingSlug=String(body.listingSlug||'').trim();
+      if(!listingSlug)return Response.json({error:'listingSlug required'},{status:400});
+      const rows=await base44.asServiceRole.entities.DirectoryListingRecord.filter({slug:listingSlug,status:'archived'},'-published_at',5);
+      const record=rows?.[0];
+      if(!record)return Response.json({error:'Archived database listing not found'},{status:404});
+      let setup:any={};try{setup=JSON.parse(record.setup_json||'{}')||{}}catch{}
+      await base44.asServiceRole.entities.DirectoryListingRecord.update(record.id,{status:'active',visibility:'preview_only',setup_json:JSON.stringify({...setup,adminVisibilityHold:true})});
+      const profiles=await base44.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:listingSlug,status:'archived'},'-updated_at',30);
+      for(const profile of profiles||[])await base44.asServiceRole.entities.DirectoryListingProfile.update(profile.id,{status:'active',updated_at:new Date().toISOString(),updated_by_user_id:user.id});
+      await base44.asServiceRole.entities.DirectoryListingAudit.create({listing_slug:listingSlug,user_id:user.id,action:'listing_restored_to_hidden',occurred_at:new Date().toISOString(),before_json:JSON.stringify({status:'archived'}),after_json:JSON.stringify({status:'active',visibility:'preview_only'})}).catch(()=>{});
+      return Response.json({success:true,status:'active',visibility:'preview_only',listingSlug});
     }
 
     if (action === 'revoke') {

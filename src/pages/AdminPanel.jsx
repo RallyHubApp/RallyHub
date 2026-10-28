@@ -697,19 +697,31 @@ export default function AdminPanel() {
 
   const removeDirectoryListing = async (listing) => {
     if (!listing?.slug) return;
-    const confirmed = window.confirm(`Remove ${listing.name || listing.slug} from the public directory?\n\nThis will archive the listing, hide it from the public directory and revoke its directory-editor access. Curated RallyHub seed listings cannot be removed with this action.`);
+    const confirmed = window.confirm(`Archive ${listing.name || listing.slug}?\n\nThis removes it from the public directory and retains its listing details and permissions. Only a Directory super-admin can restore it later. Curated RallyHub seed listings cannot be archived here.`);
     if (!confirmed) return;
     setRemovingDirectoryListing(listing.slug);
     try {
       const res = await base44.functions.invoke('directoryClaim', { action: 'archive_listing', listingSlug: listing.slug });
       if (res.data?.error) throw new Error(res.data.error);
       queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
-      toast.success(`${listing.name || 'Directory listing'} removed from the public directory`);
+      toast.success(`${listing.name || 'Directory listing'} archived — not deleted`);
     } catch (error) {
       toast.error(error.message || 'Could not remove directory listing');
     } finally {
       setRemovingDirectoryListing(null);
     }
+  };
+
+  const restoreDirectoryListing = async listing => {
+    if(!listing?.slug || !window.confirm(`Restore archived listing ${listing.name||listing.slug} to a hidden draft? It will NOT be publicly visible until you choose Make Public.`))return;
+    setRemovingDirectoryListing(listing.slug);
+    try{
+      const res=await base44.functions.invoke('directoryClaim',{action:'restore_listing',listingSlug:listing.slug});
+      if(res.data?.error||res.data?.success!==true)throw Error(res.data?.error||'Restore was not confirmed');
+      await queryClient.invalidateQueries({queryKey:['directory-verification']});
+      toast.success('Listing restored internally — still hidden until you publish it');
+    }catch(error){toast.error(error.message||'Could not restore listing')}
+    finally{setRemovingDirectoryListing(null)}
   };
 
   const revokeDirectoryAccess = async (accessId) => {
@@ -2160,22 +2172,23 @@ Brian`;
             </div>
 
             {directoryToolsOpen && <div className="order-80 space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Submitted & test listings</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">All directory listings · public / hidden / archived</p>
               {activeDynamicDirectoryListings.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No active database-backed Directory listings.</p>
               ) : activeDynamicDirectoryListings.map(listing => (
                 <div key={listing.id || listing.slug} className="glass rounded-lg p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-foreground">{listing.name}</p><Badge variant="outline" className={(listing.visibility || 'public') === 'preview_only' ? 'border-amber-400/40 text-amber-500' : 'border-green-400/40 text-green-500'}>{(listing.visibility || 'public') === 'preview_only' ? 'Preview only' : 'Public'}</Badge></div>
-                    <p className="text-sm text-muted-foreground">County {listing.county} · /directory/{listing.slug}</p>
+                    <div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-foreground">{listing.name}</p><Badge variant="outline" className={listing.status==='archived'?'border-slate-400/40':(listing.visibility||'public')==='preview_only'?'border-amber-400/40 text-amber-500':'border-green-400/40 text-green-500'}>{listing.status==='archived'?'Archived':(listing.visibility||'public')==='preview_only'?'Hidden / Preview only':'Public'}</Badge></div>
+                    <p className="text-sm text-muted-foreground">{listing.listing_type||'club'} · {listing.county||listing.service_area||'Ireland'} · /directory/{listing.slug}</p>
                     <p className="text-xs text-muted-foreground mt-1">Preview-only listings stay available for authenticated testing but are excluded from the external Directory.</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <Button size="sm" variant="outline" className="gap-1" onClick={() => window.open(`/directory/${listing.slug}?preview=1`, '_blank', 'noopener,noreferrer')}><Eye className="w-3.5 h-3.5" /> Preview</Button>
-                    <Button size="sm" variant="outline" className="gap-1" disabled={directoryVisibilityBusy === listing.slug} onClick={() => setDirectoryVisibility(listing, (listing.visibility || 'public') === 'preview_only' ? 'public' : 'preview_only')}>{directoryVisibilityBusy === listing.slug ? 'Updating…' : (listing.visibility || 'public') === 'preview_only' ? 'Make Public' : 'Hide from Public'}</Button>
-                    <Button size="sm" variant="outline" className="gap-1 text-destructive border-destructive/30" disabled={removingDirectoryListing === listing.slug} onClick={() => removeDirectoryListing(listing)}>
-                      <Trash2 className="w-3.5 h-3.5" /> {removingDirectoryListing === listing.slug ? 'Removing…' : 'Remove listing'}
-                    </Button>
+                    <Button size="sm" variant="outline" className="gap-1" disabled={directoryVisibilityBusy === listing.slug} onClick={() => setDirectoryVisibility(listing, (listing.visibility || 'public') === 'preview_only' ? 'public' : 'preview_only')}>{directoryVisibilityBusy === listing.slug ? 'Updating…' : (listing.visibility || 'public') === 'preview_only' ? 'Make Public' : 'Hide from Public'}</Button>}
+                    {listing.status==='archived'?
+                      <Button size="sm" variant="outline" disabled={removingDirectoryListing===listing.slug} onClick={()=>restoreDirectoryListing(listing)}>{removingDirectoryListing===listing.slug?'Restoring…':'Restore archived listing'}</Button>:
+                      <Button size="sm" variant="outline" className="gap-1 text-destructive border-destructive/30" disabled={removingDirectoryListing === listing.slug} onClick={() => removeDirectoryListing(listing)}><Trash2 className="w-3.5 h-3.5" /> {removingDirectoryListing === listing.slug ? 'Archiving…' : 'Archive listing'}</Button>}
+
                   </div>
                 </div>
               ))}
