@@ -1389,6 +1389,7 @@ Deno.serve(async (req) => {
         hasAccess: !!access,
         accessRole: access?.role || null,
         canManageAccess: authorisedDirectorySuperAdmin(user) || access?.role === 'owner',
+        canControlListingVisibility: authorisedDirectorySuperAdmin(user),
         secureInvitation,
       });
     }

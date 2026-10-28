@@ -221,6 +221,7 @@ export default function DirectoryListingEdit() {
   const [saving, setSaving] = useState(false);
   const [listingVisibility, setListingVisibility] = useState('public');
   const [publishingListing, setPublishingListing] = useState(false);
+  const [changingVisibility, setChangingVisibility] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoDraft, setLogoDraft] = useState(null);
   const [inviting, setInviting] = useState(false);
@@ -619,6 +620,26 @@ export default function DirectoryListingEdit() {
     }
   };
 
+  const setSuperAdminVisibility = async (visibility) => {
+    if (!access?.canControlListingVisibility || changingVisibility || saving || dirty) {
+      if (dirty) setError('Save listing edits first, then change public visibility.');
+      return;
+    }
+    const hiding=visibility==='preview_only';
+    if (!window.confirm(hiding
+      ? `Hide ${form?.name||baseClub?.name||slug} from the public Directory? The listing will remain saved and can be restored by a Directory super-admin.`
+      : `Restore ${form?.name||baseClub?.name||slug} to the public Directory?`)) return;
+    setChangingVisibility(true);setError('');
+    try {
+      const response=await base44.functions.invoke('directoryClaim',{action:'set_visibility',listingSlug:slug,visibility});
+      if(response.data?.error||response.data?.success!==true)throw new Error(response.data?.error||'Visibility change was not confirmed');
+      setListingVisibility(visibility);
+      invalidatePublicDirectoryCache();
+      setSaved(true);
+    } catch(err) {setError(err?.response?.data?.error||err?.message||'Could not update listing visibility.');}
+    finally {setChangingVisibility(false);}
+  };
+
   const openWhatsAppClaimInvite = async () => {
     setInviteMessage('');
     setError('');
@@ -965,6 +986,10 @@ export default function DirectoryListingEdit() {
                         {inviting ? 'Sending email…' : dirty ? 'Save before email' : 'Email claim invitation'}
                       </Button>}
                     </>}
+                    {access?.canControlListingVisibility && <Button type="button" variant="outline" disabled={saving||changingVisibility||dirty} onClick={()=>setSuperAdminVisibility(listingVisibility==='public'?'preview_only':'public')} className="gap-2">
+                      {changingVisibility?<Loader2 className="h-4 w-4 animate-spin"/>:<Globe2 className="h-4 w-4"/>}
+                      {listingVisibility==='public'?'Hide from Directory':'Restore to Directory'}
+                    </Button>}
                     <Button onClick={save} disabled={saving || !dirty} className="gap-2 min-w-36">
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : !dirty && saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                       {saving ? 'Saving changes…' : dirty ? 'Save changes' : saved ? 'Saved ✓' : 'All saved'}
@@ -982,6 +1007,8 @@ export default function DirectoryListingEdit() {
                   <button type="button" onClick={() => setShowEnhancements(true)} className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Enhance listing</button>
                   <Link to="/directory/help" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40 inline-flex items-center gap-1.5"><HelpCircle className="w-3.5 h-3.5" /> Help</Link>
                 </nav>}
+                {access?.canControlListingVisibility && <p className="mt-3 text-xs text-muted-foreground">Directory super-admin only · {listingVisibility==='preview_only'?'Hidden from public search; listing details and access are preserved.':'Public listing'} · Save any unsaved edits before changing visibility.</p>}
+                {listingVisibility==='preview_only' && <div role="status" className="mt-3 rounded-lg border border-amber-500/30 p-3 text-sm font-semibold text-amber-700">This listing is hidden from public directory search. Only a Directory super-admin can restore it.</div>}
                 {saving && <div aria-live="polite" className="mt-4 rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm text-primary flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin shrink-0" /><span><strong>Saving your changes…</strong> Please wait for confirmation before leaving this page.</span></div>}
                 {!saving && saved && !dirty && <div aria-live="polite" className="mt-4 rounded-xl border border-green-500/40 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300 flex flex-wrap items-center justify-between gap-2"><span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /><strong>Saved successfully.</strong> {listingVisibility === 'preview_only' ? 'Your private setup draft is up to date.' : 'Changes are live in the public directory.'}</span>{listingVisibility === 'public' && <button type="button" onClick={viewPublicListing} className="font-semibold hover:underline">View updated listing</button>}</div>}
                 {inviteMessage && <div aria-live="polite" className="mt-4 rounded-xl border border-green-500/40 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 shrink-0" /><span>{inviteMessage}</span></div>}
