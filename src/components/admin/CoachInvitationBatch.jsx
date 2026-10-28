@@ -26,6 +26,7 @@ export default function CoachInvitationBatch(){
   const [masterSubject,setMasterSubject]=useState('');
   const [masterBody,setMasterBody]=useState('');
   const [masterMessage,setMasterMessage]=useState('');
+  const [masterRendered,setMasterRendered]=useState(null);
   const [sending,setSending]=useState(false);
   const [results,setResults]=useState({});
   const {data,isLoading,isError,error,refetch}=useQuery({
@@ -53,6 +54,7 @@ export default function CoachInvitationBatch(){
       setMaster(templateResult.data);
       setMasterSubject(templateResult.data.draft?.subject||templateResult.data.approved.subject||'');
       setMasterBody(templateResult.data.draft?.body||templateResult.data.approved.body||'');
+      setMasterRendered(null);
       for(const c of selectedReady){
         const override=customBySlug[c.slug]||{};
         const response=await base44.functions.invoke('directoryClaim',{action:'preview_coach_invitation',listingSlug:c.slug,...(override.body?{customText:override.body}:{}),...(override.subject?{customSubject:override.subject}:{})});
@@ -76,6 +78,17 @@ export default function CoachInvitationBatch(){
       setPreviews(v=>({...v,[slug]:data}));setPersonalising(false);
     }catch(e){setPreviews(v=>{const copy={...v};delete copy[slug];return copy});setPreviewError(e?.response?.data?.error||e.message)}
     finally{setPreviewBusy(false)}
+  };
+  const previewMaster=async()=>{
+    if(!previewSlug)return;
+    setMasterBusy(true);setMasterMessage('');setMasterRendered(null);
+    try{
+      const {data}=await base44.functions.invoke('directoryClaim',{action:'preview_coach_invitation',listingSlug:previewSlug,customText:masterBody,customSubject:masterSubject});
+      if(data?.error||!data?.html)throw Error(data?.error||'Could not render master preview');
+      setMasterRendered({html:data.html,subject:masterSubject,body:masterBody});
+      setMasterMessage('This is how the edited master will appear. Save as Draft, then Approve.');
+    }catch(e){setMasterMessage(e?.response?.data?.error||e.message)}
+    finally{setMasterBusy(false)}
   };
   const saveMaster=async()=>{
     setMasterBusy(true);setMasterMessage('');
@@ -185,12 +198,14 @@ export default function CoachInvitationBatch(){
         {masterEditing&&<div className="space-y-2 rounded-lg border border-primary/30 bg-background p-3">
           <p className="text-sm font-bold">Master email template · Communications Centre</p>
           <p className="text-xs text-muted-foreground">Editing this changes the future default only after Save as Draft and Approve. It does not change any individual personalised message or send an email.</p>
-          <label className="block text-sm">Master subject<input className="mt-1 w-full rounded border p-2" value={masterSubject} onChange={e=>setMasterSubject(e.target.value)}/></label>
-          <label className="block text-sm">Master message<textarea rows={14} className="mt-1 w-full rounded border p-2" value={masterBody} onChange={e=>setMasterBody(e.target.value)}/></label>
+          <label className="block text-sm">Master subject<input className="mt-1 w-full rounded border p-2" value={masterSubject} onChange={e=>{setMasterSubject(e.target.value);setMasterRendered(null)}}/></label>
+          <label className="block text-sm">Master message<textarea rows={14} className="mt-1 w-full rounded border p-2" value={masterBody} onChange={e=>{setMasterBody(e.target.value);setMasterRendered(null)}}/></label>
           {masterMessage&&<p role="status" className="text-sm">{masterMessage}</p>}
+          {masterRendered?.html&&<iframe title="Edited master email HTML preview" srcDoc={masterRendered.html} sandbox="" className="h-[600px] w-full rounded-lg border bg-white" data-testid="master-coach-html-preview"/>}
           <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" disabled={masterBusy} onClick={saveMaster}>{masterBusy?'Saving…':'Save as Draft in Comms Centre'}</Button>
-            <Button type="button" disabled={masterBusy||!master?.draft?.id||masterBody!==master.draft.body||masterSubject!==master.draft.subject} onClick={approveMaster}>Approve saved template</Button>
+            <Button type="button" variant="outline" disabled={masterBusy||!masterBody||!masterSubject} onClick={previewMaster}>Preview edited master HTML</Button>
+            <Button type="button" variant="outline" disabled={masterBusy||!masterRendered||masterRendered.body!==masterBody||masterRendered.subject!==masterSubject} onClick={saveMaster}>{masterBusy?'Saving…':'Save as Draft in Comms Centre'}</Button>
+            <Button type="button" disabled={masterBusy||!masterRendered||!master?.draft?.id||masterRendered.body!==masterBody||masterRendered.subject!==masterSubject||masterBody!==master.draft.body||masterSubject!==master.draft.subject} onClick={approveMaster}>Approve saved template</Button>
             <Link to="/app/communications" className="self-center text-sm font-semibold text-primary underline">Open Communications Centre</Link>
           </div>
           <p className="text-xs text-muted-foreground">After approving, generate a fresh personalised HTML preview before sending.</p>
