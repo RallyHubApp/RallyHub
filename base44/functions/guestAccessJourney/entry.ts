@@ -474,6 +474,8 @@ Deno.serve(async(req)=>{
       const date=clean(body.sessionDate,20)||nextDateForDay(String(session.day||''),String(session.start||''),String(session.end||''));
       if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return Response.json({error:'RallyHub could not determine the next session date.'},{status:400});
       if(weekday(date)!==String(session.day||''))return Response.json({error:`That date is not a ${session.day}.`},{status:400});
+      const todayIreland=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Dublin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+      if(date<todayIreland)return Response.json({error:'Choose today or a future session date.'},{status:400});
       // Doora-Barefield evenings are host-approved for experienced guests only.
       // They do not use the automated guest-release window used by daytime venues.
       const isDooraBarefield=/doora\s*[-–]?\s*barefield|st\.?\s*joseph'?s/i.test(String(venue.name||'')) || /\bdb-(?:mon|thu)-/i.test(String(session.id||''));
