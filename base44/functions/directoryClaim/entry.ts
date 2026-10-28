@@ -2387,18 +2387,22 @@ Deno.serve(async (req) => {
       const records = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 5);
       const record = records?.[0];
       if (!record) return Response.json({ error:'Active database-backed listing not found' }, { status:404 });
-      if (!authorisedDirectorySuperAdmin(user)) {
+      const isSuperAdmin=authorisedDirectorySuperAdmin(user);
+      let setup:any={};try{setup=JSON.parse(record.setup_json||'{}')||{}}catch{}
+      if (!isSuperAdmin) {
         const accessRows = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug:listingSlug, user_id:user.id, status:'active' });
         const owner = accessRows?.find((row:any)=>row.role === 'owner');
-        if (!owner || String(record.listing_type || 'club') === 'club' || visibility !== 'public') {
-          return Response.json({ error:'Primary owner access is required to publish this non-club listing.' }, { status:403 });
-        }
+        // Owners may publish their own initial non-club setup, never remove a
+        // listing or reverse a super-admin visibility hold.
+        if (!owner || String(record.listing_type || 'club') === 'club' || visibility !== 'public' || setup.adminVisibilityHold===true)
+          return Response.json({ error:'Only a Directory super-admin can hide or restore this listing.' }, { status:403 });
       }
       const before = record.visibility || 'public';
-      await base44.asServiceRole.entities.DirectoryListingRecord.update(record.id, { visibility });
+      const updatedSetup=isSuperAdmin?{...setup,adminVisibilityHold:visibility==='preview_only'}:setup;
+      await base44.asServiceRole.entities.DirectoryListingRecord.update(record.id, { visibility,setup_json:JSON.stringify(updatedSetup) });
       const now = new Date().toISOString();
       try {
-        await base44.asServiceRole.entities.DirectoryListingAudit.create({ listing_slug:listingSlug, user_id:user.id, action:'listing_visibility_changed', occurred_at:now, before_json:JSON.stringify({ visibility:before }), after_json:JSON.stringify({ visibility }) });
+        await base44.asServiceRole.entities.DirectoryListingAudit.create({ listing_slug:listingSlug, user_id:user.id, action:'listing_visibility_changed', occurred_at:now, before_json:JSON.stringify({ visibility:before }), after_json:JSON.stringify({ visibility,adminVisibilityHold:updatedSetup.adminVisibilityHold===true }) });
       } catch (auditError) { console.warn('Directory visibility audit write failed', auditError?.message || auditError); }
       return Response.json({ success:true, listingSlug, visibility });
     }

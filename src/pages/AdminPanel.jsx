@@ -1661,7 +1661,7 @@ Brian`;
   const pendingDirectoryInvitations = directoryInvitations;
   const directoryInvitationsReadyForApproval = directoryInvitations.filter(invite => !!invite.used_by_user_id).length;
   const directoryInvitationsAwaitingRecipient = Math.max(0, directoryInvitations.length - directoryInvitationsReadyForApproval);
-  const activeDynamicDirectoryListings = directoryVerification.listingRecords.filter(record => record.status === 'active' && record.visibility !== 'preview_only');
+  const activeDynamicDirectoryListings = directoryVerification.listingRecords.filter(record => record.status === 'active' || record.status === 'archived');
   const claimedDirectorySlugs = new Set(activeDirectoryAccesses.map(access => String(access.listing_slug || '')).filter(Boolean));
   const claimedDirectoryListingCount = directoryAdminListings.filter(listing => claimedDirectorySlugs.has(String(listing.slug))).length;
   const unclaimedDirectoryListingCount = Math.max(0, directoryAdminListings.length - claimedDirectoryListingCount);

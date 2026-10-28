@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
         ? await base44.asServiceRole.entities.Tournament.update(existing.id, payload)
         : await base44.asServiceRole.entities.Tournament.create(payload);
       let listingPublished = false;
-      if (mode === 'publish' && String(listing.visibility || 'public') === 'preview_only' && String(listing.listing_type || '') !== 'club' && listing.id) {
+      if (mode === 'publish' && String(listing.visibility || 'public') === 'preview_only' && String(listing.listing_type || '') !== 'club' && listing.id && !JSON.parse(String(listing.setup_json||'{}')).adminVisibilityHold) {
         await base44.asServiceRole.entities.DirectoryListingRecord.update(listing.id, { visibility:'public' });
         listingPublished = true;
       }
