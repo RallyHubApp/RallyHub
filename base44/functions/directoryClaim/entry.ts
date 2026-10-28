@@ -351,7 +351,7 @@ async function grantAccess(base44, { listing, userId, claimId, grantedByUserId =
   return created;
 }
 
-async function sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName, claimUrl, accessRole = 'owner', customText = '', customSubject = '', previewOnly = false }) {
+async function sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName, claimUrl, accessRole = 'owner', customText = '', customSubject = '', previewOnly = false, previewCategoryDraft = false }) {
   const to = normaliseEmail(contactEmail);
   if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
     return { sent: 0, error: 'A valid club contact email is required.' };
@@ -388,7 +388,7 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
   const categoryInvitationPurpose = `directory_${directoryCategory}_invitation`;
   let categoryInvitationTemplate:any = null;
   if(!delegated && !coachInvite && directoryCategory !== 'clubs') {
-    const categoryRows = await base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose:categoryInvitationPurpose,status:'approved'},'-updated_date',5);
+    const categoryRows = await base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose:categoryInvitationPurpose,status:previewOnly&&previewCategoryDraft?'draft':'approved'},'-updated_date',5);
     categoryInvitationTemplate=categoryRows?.[0];
     if(!categoryInvitationTemplate)throw new Error(`Directory ${directoryCategory} invitation blocked: review and approve its category-specific template first.`);
     const raw=String(categoryInvitationTemplate.plain_text_template || '');
@@ -1757,6 +1757,50 @@ Deno.serve(async (req) => {
       const result=await sendClaimInviteEmail(base44,{user,listing,contactName,contactEmail:endpoint.email,claimUrl:dummyLink,customText,customSubject,previewOnly:true});
       const approved=(await base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose:'directory_claim_coaching',status:'approved'},'-updated_date',5))?.[0];
       return Response.json({success:true,subject:result.subject,to:result.to,contactName,html:result.htmlBody,text:result.textBody,rawBody:customText||approved?.plain_text_template||'',rawSubject:customSubject||approved?.subject_template||'',templateVersion:approved?.version||'',template:'directory_claim_coaching',previewOnly:true});
+    }
+
+    if (action === 'list_supplier_invitation_candidates' || action === 'preview_supplier_invitation' || action === 'approve_supplier_invitation_template') {
+      if(!authorisedDirectorySuperAdmin(user))return Response.json({error:'Directory super-admin access required'},{status:403});
+      const allowed=['pickleballeire','celtic-pickleball','prism-pickleball'];
+      const purpose='directory_suppliers_invitation';
+      if(action==='approve_supplier_invitation_template'){
+        const template=(await base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose,status:'draft'},'-updated_date',5))?.[0];
+        if(!template || String(body.templateId||'')!==String(template.id))return Response.json({error:'Supplier draft has changed. Refresh the preview before approval.'},{status:409});
+        if(!['{{CONTACT_NAME}}','{{LISTING_NAME}}','{{CLAIM_LINK}}'].every(token=>String(template.plain_text_template||'').includes(token)))return Response.json({error:'Required invitation placeholders missing'},{status:400});
+        const approvedRows=await base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose,status:'approved'},'-updated_date',5);
+        await base44.asServiceRole.entities.CommunicationTemplate.update(template.id,{status:'approved',approved_at:new Date().toISOString(),approved_by_user_id:user.id});
+        for(const previous of approvedRows||[])if(previous.id!==template.id)await base44.asServiceRole.entities.CommunicationTemplate.update(previous.id,{status:'retired'});
+        return Response.json({success:true,approved:true,message:'Supplier template approved in Communications Centre. No email sent.'});
+      }
+      const [records,endpoints,accesses,invitations,approvedTemplates,drafts]=await Promise.all([
+        base44.asServiceRole.entities.DirectoryListingRecord.filter({listing_type:'equipment',status:'active'},'-updated_date',40),
+        base44.asServiceRole.entities.DirectoryContactEndpoint.filter({status:'active'},'-updated_date',150),
+        base44.asServiceRole.entities.DirectoryListingAccess.filter({status:'active'},'-created_date',200),
+        base44.asServiceRole.entities.DirectoryClaimInvitation.filter({status:'pending'},'-created_date',150),
+        base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose,status:'approved'},'-updated_date',5),
+        base44.asServiceRole.entities.CommunicationTemplate.filter({owner_scope:'platform',purpose,status:'draft'},'-updated_date',5),
+      ]);
+      const approved=approvedTemplates?.[0]||null;
+      const draft=drafts?.[0]||null;
+      const candidates=allowed.map(slug=>{
+        const record=(records||[]).find((r:any)=>r.slug===slug && r.visibility==='public');
+        if(!record)return null;
+        const endpoint=(endpoints||[]).find((r:any)=>r.listing_slug===slug && normaliseEmail(r.email));
+        const claimed=(accesses||[]).some((r:any)=>r.listing_slug===slug);
+        const invited=(invitations||[]).some((r:any)=>r.listing_slug===slug && r.access_role==='owner' && (!r.expires_at||Date.parse(r.expires_at)>Date.now()));
+        return {slug,name:record.name,contactName:String(endpoint?.contact_name||'').trim(),contactEmail:normaliseEmail(endpoint?.email||''),status:claimed?'claimed':invited?'invited':endpoint?'ready':'no_email'};
+      }).filter(Boolean);
+      if(action==='list_supplier_invitation_candidates')return Response.json({success:true,candidates,template:{id:(approved||draft)?.id||null,status:approved?'approved':draft?'draft':'missing',version:(approved||draft)?.version||'',subject:(approved||draft)?.subject_template||''}});
+      const slug=String(body.listingSlug||'');
+      const candidate=candidates.find((c:any)=>c.slug===slug);
+      if(!candidate||candidate.status!=='ready')return Response.json({error:'Supplier invitation is not eligible for preview'},{status:409});
+      const listing=await resolveListing(base44,slug);
+      if(!listing)return Response.json({error:'Supplier listing unavailable'},{status:404});
+      const template=approved||draft;
+      if(!template)return Response.json({error:'Supplier invitation template missing from Communications Centre'},{status:409});
+      const dummyLink='https://rallyhub.ie/directory/'+encodeURIComponent(slug)+'/claim?invite=PREVIEW-ONLY-NOT-A-REAL-LINK';
+      const rendered=await sendClaimInviteEmail(base44,{user,listing,contactEmail:candidate.contactEmail,contactName:candidate.contactName||'there',claimUrl:dummyLink,previewOnly:true,previewCategoryDraft:!approved});
+      return Response.json({success:true,previewOnly:true,to:rendered.to,subject:rendered.subject,html:rendered.htmlBody,text:rendered.textBody,template:{id:template.id,status:approved?'approved':'draft',version:template.version},sampleName:candidate.name});
     }
 
     if (action === 'list_coach_invitation_candidates') {
