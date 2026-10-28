@@ -158,7 +158,7 @@ function textToBrandedHtml(value = '', primaryUrl = '') {
   text = text.replace(/\n*Yours in sport,[\s\S]*$/i, '').trim();
   if (primaryUrl) {
     text = text.replaceAll(primaryUrl, '');
-    text = text.replace(/(^|\n)\s*(Your secure (?:claim|editor) link|Manage your listing):\s*(?=\n|$)/gi, '$1');
+    text = text.replace(/(^|\n)\s*(Your (?:personal secure invitation|secure (?:claim|editor)) link|Manage your listing):\s*(?=\n|$)/gi, '$1');
   }
   const escaped = escapeHtml(text);
   const linked = escaped.replace(/https:\/\/[^\s<]+/g, matched => {
