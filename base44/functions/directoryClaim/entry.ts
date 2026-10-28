@@ -2478,6 +2478,12 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Unknown action' }, { status: 400 });
   } catch (error) {
     console.error('directoryClaim error', error);
-    return Response.json({ error: error?.message || 'Unexpected error' }, { status: 500 });
+    // Entity-list throttling is a transient provider limit, not a server fault.
+    // Give read-only screens a recoverable status; never auto-retry send actions.
+    const detail=String(error?.message||'');
+    if (/rate limit exceeded|too many requests|entity_list allows/i.test(detail)) {
+      return Response.json({error:'Directory data is temporarily busy. Please retry after a short interval.',code:'DIRECTORY_RATE_LIMIT',retryAfterSeconds:5},{status:429,headers:{'Retry-After':'5'}});
+    }
+    return Response.json({ error: 'Directory request failed. Please refresh or contact support.', code:'DIRECTORY_ERROR' }, { status: 500 });
   }
 });

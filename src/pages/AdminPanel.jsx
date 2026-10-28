@@ -368,11 +368,11 @@ export default function AdminPanel() {
       if (res.data?.error) throw new Error(res.data.error);
       return { claims: res.data?.claims || [], accesses: res.data?.accesses || [], listingRequests: res.data?.listingRequests || [], listingRecords: res.data?.listingRecords || [], listingProfiles: res.data?.listingProfiles || [], invitations: res.data?.invitations || [] }; 
     },
-    enabled: canAccessDirectoryAdmin,
-    staleTime: 0,
+    enabled: canAccessDirectoryAdmin && ['directory-command','directory-crm','directory','directory-contacts','directory-analytics','directory-campaigns','directory-governance'].includes(activeAdminTab),
+    staleTime: 60_000,
     retry: false,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always'
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
   });
 
   const { data: directoryPlayerNetwork = { counts: {}, subscribers: [] } } = useQuery({

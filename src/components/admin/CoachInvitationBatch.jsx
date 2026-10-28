@@ -33,10 +33,14 @@ export default function CoachInvitationBatch(){
     queryKey:['directory-coach-invitation-candidates'],
     queryFn:async()=>{
       const {data}=await base44.functions.invoke('directoryClaim',{action:'list_coach_invitation_candidates'});
-      if(data?.error)throw Error(data.error);
+      if(data?.error){const err=new Error(data.error);err.response={status:data.code==='DIRECTORY_RATE_LIMIT'?429:400};throw err;}
       return data;
     },
-    staleTime:0,retry:false,
+    staleTime:60_000,
+    refetchOnWindowFocus:false,
+    refetchOnMount:false,
+    retry:(failures,error)=>failures<3 && (error?.response?.status===429 || /Rate limit exceeded|DIRECTORY_RATE_LIMIT|status code 429/i.test(error?.message||'')),
+    retryDelay:attempt=>Math.min(10_000*(attempt+1),25_000),
   });
   const coaches=data?.candidates||[];
   const ready=coaches.filter(c=>c.inviteStatus==='ready' && !results[c.slug]?.sent);
@@ -154,7 +158,7 @@ export default function CoachInvitationBatch(){
       <Button type="button" size="sm" variant="outline" onClick={()=>{clear();refetch()}} disabled={sending}><RefreshCw className="mr-2 h-4 w-4"/> Refresh</Button>
     </div>
     {isLoading&&<p className="text-sm">Loading the coach contact list…</p>}
-    {isError&&<p role="alert" className="text-sm text-destructive">Could not load the coach mailing list: {error?.message}</p>}
+    {isError&&<p role="alert" className="text-sm text-destructive">Could not load the coach mailing list: {error?.response?.status===429?'Base44 is temporarily rate-limiting Directory requests. Use Refresh in a moment; your previous invitations are safe.':error?.message}</p>}
     {!isLoading&&!isError&&<>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-bold">{coaches.length} coaches · {ready.length} available · {selectedReady.length} selected</span>
