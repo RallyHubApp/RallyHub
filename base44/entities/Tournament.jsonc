@@ -468,6 +468,11 @@
     "dupr_context_enabled": {
       "type": "boolean",
       "description": "Optional event override allowing DUPR context; never changes Club Points."
+    },
+    "event_booking_policy": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Reusable tenant Events booking wizard policy; requires server-side enforcement before activation"
     }
   },
   "required": [],
