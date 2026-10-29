@@ -1,0 +1,247 @@
+{
+  "date": "2026-10-29",
+  "source": "Live public_list + current static seed + 15 October owner approvals",
+  "inventory": {
+    "eligible": 122,
+    "static": 82,
+    "dynamic": 40,
+    "withImage": 80,
+    "hidden": 7,
+    "genuinelyMissing": 35,
+    "attention": 42,
+    "countiesRepresented": 28,
+    "counties": [
+      "Antrim",
+      "Armagh",
+      "Carlow",
+      "Cavan",
+      "Clare",
+      "Cork",
+      "Donegal",
+      "Down",
+      "Dublin",
+      "Galway",
+      "Kerry",
+      "Kildare",
+      "Kilkenny",
+      "Laois",
+      "Leitrim",
+      "Limerick",
+      "Londonderry / Derry",
+      "Longford",
+      "Louth",
+      "Mayo",
+      "Meath",
+      "Monaghan",
+      "Offaly",
+      "Sligo",
+      "Waterford",
+      "Westmeath",
+      "Wexford",
+      "Wicklow"
+    ]
+  },
+  "reviewed": 10,
+  "records": [
+    {
+      "slug": "bluestack-pickleball-club",
+      "name": "Bluestack Pickleball Club",
+      "county": "Donegal",
+      "status": "approved / original JPG or PNG needed",
+      "source": "15 October saved review (original social URL not freshly verified)",
+      "profileLogo": null,
+      "storedLogo": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/52686c7e1_rallyhub-stage-20261015-07-07-bluestack-pickleball-club-saved-from-review.avif",
+      "receipt": null,
+      "stagingUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/52686c7e1_rallyhub-stage-20261015-07-07-bluestack-pickleball-club-saved-from-review.avif",
+      "sha256": "3e6a22c5a44eab543d32fa92635e29abd4179a13a3a3d2c59230928fe9a1d36d",
+      "checksumMatch": true,
+      "bytes": 6332,
+      "transport": {
+        "status": "local verified archive"
+      },
+      "export": "bluestack-pickleball-club.avif",
+      "published": false
+    },
+    {
+      "slug": "cobh-pickleball",
+      "name": "Cobh Pickleball",
+      "county": "Cork",
+      "status": "existing stored / hidden",
+      "source": "Existing RallyHub media; no fresh social verification",
+      "profileLogo": null,
+      "storedLogo": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/5427dc801_rh-logo-20261014-11-62dd4dd12f5810a4.jpg",
+      "receipt": null,
+      "stagingUrl": null,
+      "sha256": "62dd4dd12f5810a47e0bdc2f4ba82b3bd95fd6635a9a97dc2fa7c60969361fc8",
+      "checksumMatch": true,
+      "bytes": 5931,
+      "transport": {
+        "status": "HTTP 200",
+        "mime": "image/jpeg"
+      },
+      "export": "cobh-pickleball.jpg",
+      "published": false
+    },
+    {
+      "slug": "connemara-pickleball-club",
+      "name": "Connemara Pickleball Club",
+      "county": "Galway",
+      "status": "existing stored / hidden",
+      "source": "Existing RallyHub media; no fresh social verification",
+      "profileLogo": null,
+      "storedLogo": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/721b6cf35_rallyhub-review-20261015-11-8432230aafc947b4.jpg",
+      "receipt": null,
+      "stagingUrl": null,
+      "sha256": "8432230aafc947b4a4f1f5302ac55990cd9e7b2ae70fc62f84927451d8c46aa7",
+      "checksumMatch": true,
+      "bytes": 71069,
+      "transport": {
+        "status": "HTTP 200",
+        "mime": "image/jpeg"
+      },
+      "export": "connemara-pickleball-club.jpg",
+      "published": false
+    },
+    {
+      "slug": "multyfarnham-pickleball-club",
+      "name": "Multyfarnham Pickleball Club",
+      "county": "Westmeath",
+      "status": "existing stored / hidden",
+      "source": "Existing RallyHub media; no fresh social verification",
+      "profileLogo": null,
+      "storedLogo": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/b9b000a7f_rh-logo-20261014-25-42db1fba20e07640.jpg",
+      "receipt": null,
+      "stagingUrl": null,
+      "sha256": "42db1fba20e0764002df70873db4a3cbde24cbaf2b0d2e74082ea49ce529c88c",
+      "checksumMatch": true,
+      "bytes": 27838,
+      "transport": {
+        "status": "HTTP 200",
+        "mime": "image/jpeg"
+      },
+      "export": "multyfarnham-pickleball-club.jpg",
+      "published": false
+    },
+    {
+      "slug": "southside-pickleball-club",
+      "name": "Southside Pickleball Club",
+      "county": "Dublin",
+      "status": "existing stored / hidden",
+      "source": "Existing RallyHub media; no fresh social verification",
+      "profileLogo": null,
+      "storedLogo": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/e818d47f7_rh-logo-20261014-36-08fc83e51d6eba26.png",
+      "receipt": null,
+      "stagingUrl": null,
+      "sha256": "08fc83e51d6eba2645133bfe418a08a791172551e24a13b4eb7e9cf0161b7e9f",
+      "checksumMatch": true,
+      "bytes": 36022,
+      "transport": {
+        "status": "HTTP 200",
+        "mime": "image/png"
+      },
+      "export": "southside-pickleball-club.png",
+      "published": false
+    },
+    {
+      "slug": "terenure-pickleball-club",
+      "name": "Terenure Pickleball Club",
+      "county": "Dublin",
+      "status": "existing stored / hidden",
+      "source": "Existing RallyHub media; no fresh social verification",
+      "profileLogo": null,
+      "storedLogo": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/fd38c5a9a_rh-logo-20261014-38-b52f73a956aa5959.jpg",
+      "receipt": null,
+      "stagingUrl": null,
+      "sha256": "b52f73a956aa59595f4b83ed17cd0a45ad63ec899c4ccac56b9330c3215e7456",
+      "checksumMatch": true,
+      "bytes": 50525,
+      "transport": {
+        "status": "HTTP 200",
+        "mime": "image/jpeg"
+      },
+      "export": "terenure-pickleball-club.jpg",
+      "published": false
+    },
+    {
+      "slug": "dalkey-pickkeball-club",
+      "name": "Dalkey Pickleball Club",
+      "county": "Dublin",
+      "status": "15 October approved / hidden",
+      "source": "15 October saved review (original social URL not freshly verified)",
+      "profileLogo": null,
+      "storedLogo": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/ae3a25cc4_rallyhub-stage-20261015-55-55-user-reviewed-20261015.jpg",
+      "receipt": null,
+      "stagingUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/ae3a25cc4_rallyhub-stage-20261015-55-55-user-reviewed-20261015.jpg",
+      "sha256": "af1319ffa6d87c5d3904c78e80a28d32f474b2d8fb7224f04449e0fd899ead60",
+      "checksumMatch": true,
+      "bytes": 7634,
+      "transport": {
+        "status": "HTTP 200",
+        "mime": "image/jpeg"
+      },
+      "export": "dalkey-pickleball-club.jpg",
+      "published": false
+    },
+    {
+      "slug": "coolmine-pickleheads-club",
+      "name": "Coolmine Pickleheads Club",
+      "county": "Dublin",
+      "status": "approved / staged / not published",
+      "source": "Prior archived candidate or approved file",
+      "profileLogo": null,
+      "storedLogo": null,
+      "receipt": "6adc5883f7bd0ef41a39aa03",
+      "stagingUrl": null,
+      "sha256": "068d8267233f41b062bfb1a2cafb5cdfdf67e9ee6473c529f74aa13e6be616cf",
+      "checksumMatch": true,
+      "bytes": 64402,
+      "transport": {
+        "status": "local verified archive"
+      },
+      "export": "coolmine-pickleheads-club.png",
+      "published": false
+    },
+    {
+      "slug": "picklepub-club",
+      "name": "PicklePub Club",
+      "county": "Dublin",
+      "status": "Facebook candidate / approval pending",
+      "source": "Prior archived candidate or approved file",
+      "profileLogo": null,
+      "storedLogo": null,
+      "receipt": null,
+      "stagingUrl": null,
+      "sha256": "b2212bf65feacab895546dd6edd4e6b337ebb0078b522a260c37b28115c7e89c",
+      "checksumMatch": true,
+      "bytes": 60303,
+      "transport": {
+        "status": "local verified archive"
+      },
+      "export": "picklepub-club.jpg",
+      "published": false
+    },
+    {
+      "slug": "shankill-tennis-club",
+      "name": "SHANKILL TENNIS CLUB",
+      "county": "Dublin",
+      "status": "website candidate / approval pending",
+      "source": "Prior archived candidate or approved file",
+      "profileLogo": null,
+      "storedLogo": null,
+      "receipt": null,
+      "stagingUrl": null,
+      "sha256": "e10773e67d816705799a812124d9a6edf1519bd7362cbb667d2c7971595057a2",
+      "checksumMatch": true,
+      "bytes": 3474,
+      "transport": {
+        "status": "local verified archive"
+      },
+      "export": "shankill-tennis-club.webp",
+      "published": false
+    }
+  ],
+  "productionWrites": 0,
+  "newStagingReceipts": 0,
+  "published": false,
+  "complete": false
+}
