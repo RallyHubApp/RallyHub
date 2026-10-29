@@ -16,7 +16,7 @@ const EMPTY_FORM = {
 function membershipError(err, fallback){
   const message=err?.response?.data?.error||err?.data?.error||err?.message||fallback;
   if (/Request failed with status code 404/i.test(String(message)))
-    return 'We could not locate an existing club membership. If you attended as a guest but have not joined Clare Pickleball before, choose New Member rather than Renewal.';
+    return fallback + ' Please check the membership link and try again.';
   return message;
 }
 
@@ -195,7 +195,7 @@ export default function PublicMembershipApplication() {
       setReviewConfirmed(false);
       setStep('details');
     } catch (err) {
-      setError(membershipError(err, 'We could not verify your renewal details.'));
+      setError(err?.response?.data?.error || (err?.response?.status===404?'No previous club membership could be found. A guest booking is not a membership; go Back and choose New Member.':membershipError(err, 'We could not verify your renewal details.')));
     } finally { setBusy(false); }
   };
 
