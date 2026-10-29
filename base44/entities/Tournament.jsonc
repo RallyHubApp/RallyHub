@@ -473,6 +473,18 @@
       "type": "object",
       "additionalProperties": true,
       "description": "Reusable tenant Events booking wizard policy; requires server-side enforcement before activation"
+    },
+    "event_reserved_count": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Atomic count of reserved tenant event places"
+    },
+    "event_booking_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Explicit activation gate for verified tenant booking engine"
     }
   },
   "required": [],
