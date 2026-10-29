@@ -1,6 +1,6 @@
 import {eventNoticeRecipients,eventNoticeBody} from './notificationPolicy.js';
-import {renderBasicBrandedEmail} from '../guestSessionBooking/communicationsBasicRenderer.ts';
-import {sendWithConfiguredEmailTransport} from '../guestSessionBooking/emailRouter.ts';
+import {renderBasicBrandedEmail} from './communicationsBasicRenderer.ts';
+import {sendWithConfiguredEmailTransport} from './emailRouter.ts';
 export async function deliverEventNotice(base44:any,event:any,registration:any,type:string,detail=''){
  const club=(await base44.asServiceRole.entities.Club.filter({id:event.host_club_id},'-created_date',1))?.[0];
  if(!club)throw Error('Event club not found');

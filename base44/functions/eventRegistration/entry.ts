@@ -1,9 +1,9 @@
 /** Tenant Events registration. Explicitly gated until full payment, notice and admin workflows pass UAT. */
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
 import {occupied,duplicate,consentEvidence,canConfirm} from './rules.js';
-import {createCheckout,retrievePayment,providerConfigured} from '../guestSessionBooking/payments.ts';
+import {createCheckout,retrievePayment,providerConfigured} from './payments.ts';
 import {eventNoticeRecipients,eventNoticeBody,EVENT_NOTICE_TYPES} from './notificationPolicy.js';
-import {renderBasicBrandedEmail} from '../guestSessionBooking/communicationsBasicRenderer.ts';
+import {renderBasicBrandedEmail} from './communicationsBasicRenderer.ts';
 import {deliverEventNotice} from './delivery.ts';
 const clean=(v:any,n=200)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,n);
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
