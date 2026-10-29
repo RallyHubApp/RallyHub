@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate,useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
 import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
@@ -8,8 +8,8 @@ import { Crown,RefreshCw,Trophy } from 'lucide-react';
 
 function err(e){return e?.response?.data?.error||e?.data?.error||e?.message||'Your KOTC result is unavailable.';}
 export default function PublicKotcParticipantResult(){
- const {token}=useParams();const [data,setData]=useState(null),[error,setError]=useState('');
- useEffect(()=>{let alive=true;(async()=>{try{const r=await base44.functions.invoke('kotcParticipantResult',{token});if(r.data?.error)throw new Error(r.data.error);if(alive)setData(r.data);}catch(e){if(alive)setError(err(e));}})();return()=>{alive=false;};},[token]);
+ const {token}=useParams();const navigate=useNavigate();const [data,setData]=useState(null),[error,setError]=useState('');
+ useEffect(()=>{let alive=true;(async()=>{try{const r=await base44.functions.invoke('kotcParticipantResult',{token});if(r.data?.error)throw new Error(r.data.error);if(alive&&r.data?.live_url){navigate(r.data.live_url,{replace:true});return;}if(alive)setData(r.data);}catch(e){if(alive)setError(err(e));}})();return()=>{alive=false;};},[token,navigate]);
  if(error)return <div className="min-h-screen bg-background text-foreground grid place-items-center p-4"><AppearanceQuickButton className="fixed top-3 right-3"/><div className="glass rounded-xl p-5 text-center max-w-md"><RallyHubPublicBrand moduleName="King of the Court" pageLabel="My Result"/><h1 className="font-bold mt-4">Personal result unavailable</h1><p className="text-sm text-muted-foreground mt-2">{error}</p></div></div>;
  if(!data)return <div className="min-h-screen bg-background text-foreground grid place-items-center"><RefreshCw className="w-6 h-6 animate-spin"/></div>;
  const p=data.player||{};
