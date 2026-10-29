@@ -2,6 +2,9 @@
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
 import {occupied,duplicate,consentEvidence,canConfirm} from './rules.js';
 import {createCheckout,retrievePayment,providerConfigured} from '../guestSessionBooking/payments.ts';
+import {eventNoticeRecipients,eventNoticeBody,EVENT_NOTICE_TYPES} from './notificationPolicy.js';
+import {renderBasicBrandedEmail} from '../guestSessionBooking/communicationsBasicRenderer.ts';
+import {sendWithConfiguredEmailTransport} from '../guestSessionBooking/emailRouter.ts';
 const clean=(v:any,n=200)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,n);
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
 Deno.serve(async(req)=>{
@@ -11,7 +14,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_approve','admin_verify'];
+  const adminActions=['admin_list','admin_approve','admin_verify','admin_notice_preview'];
   const isAdminAction=adminActions.includes(action);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)))return fail('Bookings are not open for this event',404);
   if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||user.role!=='admin')return fail('Admin access required',403);}
@@ -19,6 +22,17 @@ Deno.serve(async(req)=>{
   const rows=await base44.asServiceRole.entities.EventRegistration.filter({event_id:id,tenant_id:t.tenant_id},'-created_date',500);
   const publicEvent={id:t.id,name:t.name,date:t.start_date,venue:t.location,capacity,placesRemaining:Math.max(0,capacity-occupied(rows)),fee:Number(t.event_fee_amount||0),currency:t.event_currency||'EUR'};
   if(action==='get')return Response.json({success:true,event:publicEvent});
+  if(action==='admin_notice_preview'){
+   const noticeType=clean(b.noticeType||'booking_confirmed',50);
+   if(!EVENT_NOTICE_TYPES.includes(noticeType))return fail('Unknown notice type');
+   const club=(await base44.asServiceRole.entities.Club.filter({id:t.host_club_id},'-created_date',1))?.[0]||{name:'Clare Pickleball'};
+   const kits=await base44.asServiceRole.entities.CommunicationBrandKit.filter({tenant_id:t.tenant_id,owner_scope:'tenant',status:'active'},'-updated_date',30);
+   const kit=kits.find((k:any)=>!k.club_id||k.club_id===t.host_club_id);
+   const body=eventNoticeBody(noticeType,clean(b.firstName||'Participant',60),t.name,clean(b.detail||'',300));
+   const recipients=eventNoticeRecipients(noticeType,clean(b.email||'participant@example.invalid'),t.event_booking_policy||{});
+   const html=renderBasicBrandedEmail('<p style="white-space:pre-line">'+body.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n','<br>')+'</p>',kit,club,club.name||'Clare Pickleball','Event booking update');
+   return Response.json({success:true,noticeType,subject:`${t.name} · ${noticeType.replaceAll('_',' ')}`,body,html,recipients,delivery:'preview_only'});
+  }
   if(action==='admin_list')return Response.json({success:true,event:publicEvent,registrations:rows.map((r:any)=>({id:r.id,name:r.full_name,email:r.email,status:r.registration_status,paymentStatus:r.payment_status,createdAt:r.created_at}))});
   if(action==='admin_approve'||action==='admin_verify'){
    const registration=rows.find((r:any)=>r.id===clean(b.registrationId,100));if(!registration)return fail('Registration not found',404);

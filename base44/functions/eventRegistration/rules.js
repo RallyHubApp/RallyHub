@@ -1,5 +1,5 @@
 // Shared deterministic rules for the real event registration domain and its tests.
-export const ACTIVE = new Set(['approved_payment_hold','confirmed','cash_confirmed']);
+export const ACTIVE = new Set(['pending_approval','approved_payment_hold','confirmed','cash_confirmed']);
 export function occupied(rows,now=Date.now()) {return rows.filter(r=>ACTIVE.has(r.registration_status) && (r.registration_status!=='approved_payment_hold'||Date.parse(r.payment_hold_expires_at)>now)).length;}
 export function nextAvailability(rows,capacity,now=Date.now()){return occupied(rows,now)<capacity;}
 export function duplicate(rows,email){return rows.some(r=>String(r.email_key||r.email).toLowerCase()===email.toLowerCase()&&!['cancelled','declined','expired'].includes(r.registration_status));}
