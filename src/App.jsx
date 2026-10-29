@@ -318,6 +318,7 @@ function App() {
             <Route path="/club-challenge/committee/:token" element={<PublicInterclubCommittee />} />
             <Route path="/guest-session/:token" element={<PublicGuestSessionBooking />} />
             <Route path="/guest/:clubSlug" element={<PublicGuestRequest />} />
+            <Route path="/membership" element={<Navigate to="/membership/clare-pickleball" replace />} />
             <Route path="/membership/:clubSlug" element={<PublicMembershipApplication />} />
             <Route path="/waiting-list/:clubSlug" element={<PublicWaitingList />} />
             <Route path="/book/:token" element={<PublicGuestSessionBooking />} />

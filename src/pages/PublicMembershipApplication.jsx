@@ -13,6 +13,13 @@ const EMPTY_FORM = {
   emergencyContactName:'', emergencyContactRelationship:'', emergencyMobile:'', primaryVenue:'', venueAcknowledged:false
 };
 
+function membershipError(err, fallback){
+  const message=err?.response?.data?.error||err?.data?.error||err?.message||fallback;
+  if (/Request failed with status code 404/i.test(String(message)))
+    return 'We could not locate an existing club membership. If you attended as a guest but have not joined Clare Pickleball before, choose New Member rather than Renewal.';
+  return message;
+}
+
 function money(value,currency='EUR'){
   try { return new Intl.NumberFormat('en-IE',{style:'currency',currency}).format(Number(value||0)); }
   catch { return '€' + Number(value||0).toFixed(2); }
@@ -129,7 +136,7 @@ export default function PublicMembershipApplication() {
           setStep('details');
         }
       })
-      .catch(err => { if (active) setError(err?.message || 'Membership applications are unavailable.'); })
+      .catch(err => { if (active) setError(membershipError(err, 'Membership applications are unavailable.')); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [clubSlug, inviteToken]);
@@ -153,7 +160,7 @@ export default function PublicMembershipApplication() {
             const params = new URLSearchParams(searchParams);
             params.delete('retry');
             setSearchParams(params,{replace:true});
-          } catch(err) { if(active) setError(err?.message || 'Could not prepare a new payment link. Please use Create new payment link.'); }
+          } catch(err) { if(active) setError(membershipError(err, 'Could not prepare a new payment link. Please use Create new payment link.')); }
         }
         if (next) {
           setApplication(next);
@@ -188,7 +195,7 @@ export default function PublicMembershipApplication() {
       setReviewConfirmed(false);
       setStep('details');
     } catch (err) {
-      setError(err?.message || 'We could not verify your renewal details.');
+      setError(membershipError(err, 'We could not verify your renewal details.'));
     } finally { setBusy(false); }
   };
 
@@ -264,7 +271,7 @@ export default function PublicMembershipApplication() {
       setStep(next?.paymentStatus === 'paid' || next?.status === 'approved' ? 'complete' : 'payment');
       window.scrollTo({top:0,behavior:'smooth'});
     } catch (err) {
-      setError(err?.message || 'Your application could not be submitted.');
+      setError(membershipError(err, 'Your application could not be submitted.'));
     } finally { setBusy(false); }
   };
 
@@ -277,7 +284,7 @@ export default function PublicMembershipApplication() {
       if (res.data?.error) throw new Error(res.data.error);
       setApplication(res.data?.application || null);
     } catch (err) {
-      setError(err?.message || 'Could not create a new payment link.');
+      setError(membershipError(err, 'Could not create a new payment link.'));
     } finally { setBusy(false); }
   };
 
@@ -308,16 +315,17 @@ export default function PublicMembershipApplication() {
               <div><h2 className="text-xl font-bold">How are you applying?</h2><p className="mt-1 text-sm text-muted-foreground">Choose the option that applies to you.</p></div>
               <div className="grid gap-3 sm:grid-cols-2">
                 {config.allowNew && <button onClick={() => chooseType('new')} className="rounded-2xl border border-border bg-card p-5 text-left hover:border-primary/50 hover:bg-primary/5 transition"><UserPlus className="w-6 h-6 text-primary" /><div className="mt-3 text-lg font-bold">New Member</div><p className="mt-1 text-sm text-muted-foreground">I am applying to join this club.{!inviteApproved?' New public applications are approved by the club before payment.':''}</p></button>}
-                {config.allowRenewal && <button onClick={() => chooseType('renewal')} className="rounded-2xl border border-border bg-card p-5 text-left hover:border-primary/50 hover:bg-primary/5 transition"><Repeat2 className="w-6 h-6 text-primary" /><div className="mt-3 text-lg font-bold">Renewal</div><p className="mt-1 text-sm text-muted-foreground">I am renewing an existing membership.</p></button>}
+                {config.allowRenewal && <button onClick={() => chooseType('renewal')} className="rounded-2xl border border-border bg-card p-5 text-left hover:border-primary/50 hover:bg-primary/5 transition"><Repeat2 className="w-6 h-6 text-primary" /><div className="mt-3 text-lg font-bold">Renewal</div><p className="mt-1 text-sm text-muted-foreground">I was a paid Clare Pickleball member previously. Guest bookings are not memberships.</p></button>}
               </div>
             </section>
           )}
 
           {step === 'renewal_lookup' && (
             <form onSubmit={verifyRenewal} className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5">
-              <div><h2 className="text-xl font-bold">Find your existing membership</h2><p className="mt-1 text-sm text-muted-foreground">For privacy, enter the email address and date of birth held on your previous membership. We will then show your existing details for you to check and update.</p></div>
+              <div><h2 className="text-xl font-bold">Find your existing membership</h2><p className="mt-1 text-sm text-muted-foreground">Only use Renewal if you previously held Clare Pickleball membership. A guest booking does not count as membership. If you attended as a guest and want to join, go Back and choose New Member. For renewal, enter the email address and date of birth from your previous membership.</p></div>
               <div><Label>Email address</Label><Input type="email" className="mt-1" value={lookup.email} onChange={e => setLookup(p => ({...p,email:e.target.value}))} autoComplete="email" required /></div>
               <div><Label>Date of birth</Label><Input type="date" className="mt-1" value={lookup.dateOfBirth} onChange={e => setLookup(p => ({...p,dateOfBirth:e.target.value}))} required /></div>
+              <button type="button" className="text-sm font-semibold text-primary underline" onClick={()=>{setError('');chooseType('new')}}>I attended as a guest — apply as New Member</button>
               <div className="flex flex-col sm:flex-row gap-2"><Button type="submit" disabled={busy} className="sm:flex-1">{busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Find my membership</Button><Button type="button" variant="outline" onClick={() => setStep('choose')}>Back</Button></div>
             </form>
           )}
