@@ -253,5 +253,14 @@
     "checksumMatch": true,
     "contents": "10-card HTML visual review plus ten exported image files",
     "publication": "review asset only; no Directory listing publication"
+  },
+  "protectedApprovalRecheck": {
+    "kingdomAndAnnascaulSharedSha256": "82868b909e9e10cf2fa1475baaae5642021faa0640d6a0e9bf7199214760a7b1",
+    "kingdomAndAnnascaulRemoteHttp": 200,
+    "eastCorkApprovedSha256": "76bd32d0197c77e136d3b0614081015b25df8d34528941d7b5e53dcd42c9effc",
+    "eastCorkRemoteHttp": 200,
+    "eastCorkOwnerProfileDifferentAndUntouched": true,
+    "midletonDuplicateFound": false,
+    "publicMarkedTestListingStillInFeed": true
   }
 }

@@ -33,3 +33,9 @@ Backlog OPEN. Continue daily; move to monthly only after all eligible listings a
 - 320,544 bytes, HTTP 200, application/zip, readback SHA matches.
 - Browser review rendered 10/10 images. Shankill white transparent image preview uses navy background.
 - Review ZIP uploaded as a media asset only; no logo attached to a listing and no directory publication.
+
+## Protected approvals rechecked
+- Kingdom and Annascaul: shared approved asset HTTP 200, matching SHA-256 `82868b909e9e10cf2fa1475baaae5642021faa0640d6a0e9bf7199214760a7b1`.
+- East Cork: approved asset HTTP 200, matching SHA-256 `76bd32d0197c77e136d3b0614081015b25df8d34528941d7b5e53dcd42c9effc`. The different owner-profile image was left untouched.
+- No Midleton duplicate slug found in static or current public-list records.
+- The public-marked `brian-moore-coach-test` remains a separate visibility issue.
