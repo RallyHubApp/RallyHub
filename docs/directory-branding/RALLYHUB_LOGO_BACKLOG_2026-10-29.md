@@ -25,3 +25,11 @@ Visual review: public/directory/logo-candidates/2026-10-29/review.html
 Image exports: public/directory/logo-candidates/2026-10-29/
 
 Backlog OPEN. Continue daily; move to monthly only after all eligible listings are resolved and 32-county reconciliation is complete.
+
+## Verified review bundle
+- Asset ID / staging receipt: `6ae2fd7341c9f2f4b65c3816`
+- URL: https://media.base44.com/files/public/6a01dc00702b7dd2a2978c28/9da928ab1_rallyhub-logo-review-2026-10-29.zip
+- SHA-256: `eb6894a84209be027aac040ddaa6279002552880660760979cfe661055df1fc4`
+- 320,544 bytes, HTTP 200, application/zip, readback SHA matches.
+- Browser review rendered 10/10 images. Shankill white transparent image preview uses navy background.
+- Review ZIP uploaded as a media asset only; no logo attached to a listing and no directory publication.

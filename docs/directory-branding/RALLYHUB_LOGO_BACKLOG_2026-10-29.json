@@ -243,5 +243,15 @@
   "productionWrites": 0,
   "newStagingReceipts": 0,
   "published": false,
-  "complete": false
+  "complete": false,
+  "reviewBundle": {
+    "assetId": "6ae2fd7341c9f2f4b65c3816",
+    "url": "https://media.base44.com/files/public/6a01dc00702b7dd2a2978c28/9da928ab1_rallyhub-logo-review-2026-10-29.zip",
+    "sha256": "eb6894a84209be027aac040ddaa6279002552880660760979cfe661055df1fc4",
+    "bytes": 320544,
+    "readbackHttp": 200,
+    "checksumMatch": true,
+    "contents": "10-card HTML visual review plus ten exported image files",
+    "publication": "review asset only; no Directory listing publication"
+  }
 }
