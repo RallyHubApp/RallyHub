@@ -1,6 +1,7 @@
 /** Tenant Events registration. Explicitly gated until full payment, notice and admin workflows pass UAT. */
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
-import {occupied,duplicate,nextStatus,consentEvidence} from './rules.js';
+import {occupied,duplicate,consentEvidence,canConfirm} from './rules.js';
+import {createCheckout,retrievePayment,providerConfigured} from '../guestSessionBooking/payments.ts';
 const clean=(v:any,n=200)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,n);
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
 Deno.serve(async(req)=>{
@@ -10,11 +11,36 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  if(!t||!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)return fail('Bookings are not open for this event',404);
+  const adminActions=['admin_list','admin_approve','admin_verify'];
+  const isAdminAction=adminActions.includes(action);
+  if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)))return fail('Bookings are not open for this event',404);
+  if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||user.role!=='admin')return fail('Admin access required',403);}
   const capacity=Number(t.event_capacity||0);if(!Number.isSafeInteger(capacity)||capacity<1)return fail('Event capacity is not configured',503);
   const rows=await base44.asServiceRole.entities.EventRegistration.filter({event_id:id,tenant_id:t.tenant_id},'-created_date',500);
   const publicEvent={id:t.id,name:t.name,date:t.start_date,venue:t.location,capacity,placesRemaining:Math.max(0,capacity-occupied(rows)),fee:Number(t.event_fee_amount||0),currency:t.event_currency||'EUR'};
   if(action==='get')return Response.json({success:true,event:publicEvent});
+  if(action==='admin_list')return Response.json({success:true,event:publicEvent,registrations:rows.map((r:any)=>({id:r.id,name:r.full_name,email:r.email,status:r.registration_status,paymentStatus:r.payment_status,createdAt:r.created_at}))});
+  if(action==='admin_approve'||action==='admin_verify'){
+   const registration=rows.find((r:any)=>r.id===clean(b.registrationId,100));if(!registration)return fail('Registration not found',404);
+   const accountRows=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
+   const accountRow=accountRows?.[0];const account=accountRow?{provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'}:null;
+   if(action==='admin_approve'){
+    if(registration.registration_status!=='pending_approval')return fail('Application is not awaiting approval',409);
+    const amount=Number(t.event_fee_amount||0);
+    if(amount>0&&(!account||!providerConfigured('sumup',account)))return fail('Tenant SumUp is not connected',503);
+    const expires=new Date(Date.now()+Math.min(120,Math.max(1,Number(t.event_booking_policy?.payment_hold_minutes||15)))*60000).toISOString();
+    if(amount===0){await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'confirmed',payment_status:'not_required',approved_at:new Date().toISOString(),confirmed_at:new Date().toISOString()});return Response.json({success:true,status:'confirmed'});}
+    const checkout=await createCheckout({provider:'sumup',account,amount,currency:t.event_currency||'EUR',reference:`ev_${registration.id}`.slice(0,64),description:t.name,redirectUrl:`https://rallyhub.ie/events/${t.event_slug}`});
+    await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'approved_payment_hold',payment_status:'pending',payment_hold_expires_at:expires,payment_checkout_id:checkout.checkoutId,payment_checkout_url:checkout.checkoutUrl,approved_at:new Date().toISOString()});
+    return Response.json({success:true,status:'approved_payment_hold',checkoutUrl:checkout.checkoutUrl,expiresAt:expires});
+   }
+   if(!registration.payment_checkout_id)return fail('No checkout recorded',409);
+   const result=await retrievePayment('sumup',registration.payment_checkout_id,account);
+   if(result.normalizedStatus!=='paid')return Response.json({success:true,status:registration.registration_status,paymentStatus:result.normalizedStatus});
+   if(!canConfirm(registration,Date.now()))return fail('Paid checkout requires manual reconciliation: hold expired or already processed',409);
+   await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'confirmed',payment_status:'paid',payment_transaction_id:result.transactionId,confirmed_at:new Date().toISOString()});
+   return Response.json({success:true,status:'confirmed',paymentStatus:'paid'});
+  }
   if(action!=='apply')return fail('Unsupported action');
   const name=clean(b.fullName,120),email=clean(b.email,180).toLowerCase(),mobile=clean(b.mobile,40),emergencyName=clean(b.emergencyContactName,120),emergencyMobile=clean(b.emergencyContactMobile,40),operationId=clean(b.operationId,100);
   if(name.length<2||!/^\S+@\S+\.\S+$/.test(email)||!mobile||!emergencyName||!emergencyMobile||!operationId)return fail('Name, email, mobile, emergency contact and operation ID required');
