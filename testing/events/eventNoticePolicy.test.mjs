@@ -1,0 +1,4 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {eventNoticeRecipients,eventNoticeBody,EVENT_NOTICE_TYPES} from '../../base44/functions/eventRegistration/notificationPolicy.js';
+test('configurable event CC only on confirmed bookings',()=>{for(const type of EVENT_NOTICE_TYPES){const r=eventNoticeRecipients(type,'person@example.ie',{confirmation_cc:'brona.mcbreen@gmail.com'});assert.deepEqual(r.cc,['booking_confirmed','cash_booking_confirmed'].includes(type)?['brona.mcbreen@gmail.com']:[]);}});
+test('invalid and duplicate CC addresses are excluded',()=>{assert.deepEqual(eventNoticeRecipients('booking_confirmed','a@example.ie',{confirmation_cc:'a@example.ie;invalid;b@example.ie,b@example.ie'}).cc,['b@example.ie'])});
+test('each notice type has an event-specific body',()=>{for(const type of EVENT_NOTICE_TYPES)assert.match(eventNoticeBody(type,'Aoife','Corofin Taster'),/Corofin Taster/)});
