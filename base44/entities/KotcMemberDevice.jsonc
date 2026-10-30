@@ -1,0 +1,89 @@
+{
+  "name": "KotcMemberDevice",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "membership_id": {
+      "type": "string"
+    },
+    "member_id": {
+      "type": "string"
+    },
+    "player_id": {
+      "type": "string"
+    },
+    "client_id": {
+      "type": "string"
+    },
+    "device_token_hash": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "revoked"
+      ],
+      "default": "active"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "approved_by_user_id": {
+      "type": "string"
+    },
+    "verification_method": {
+      "type": "string",
+      "enum": [
+        "email",
+        "sms",
+        "host",
+        "account"
+      ]
+    },
+    "last_used_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "revoked_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "membership_id",
+    "client_id",
+    "device_token_hash",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
