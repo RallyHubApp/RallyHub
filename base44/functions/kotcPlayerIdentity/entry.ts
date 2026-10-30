@@ -23,7 +23,7 @@ async function memberForParticipant(base44:any,session:any,participant:any){
  if(eligible.length!==1)return null;
  const member=eligible[0];
  const membership=(await base44.asServiceRole.entities.ClubMembership.filter({id:member.club_membership_id,tenant_id:session.tenant_id,club_id:session.club_id}))?.[0];
- if(!membership||membership.membership_status!=='paid_active'||membership.relationship_type!=='member'||String(membership.member_id||'')!==String(member.id))return null;
+ if(!membership||membership.membership_status!=='paid_active'||membership.relationship_type!=='member')return null;
  return {member,membership};
 }
 async function verifiedDevice(base44:any,session:any,participant:any,rawToken:string){
@@ -57,6 +57,14 @@ async function handleMemberAction(base44:any,user:any,action:string,body:any,ses
  if(!linked)return Response.json({error:'This player has no uniquely linked active membership record. Ask the host to check the membership link.'},{status:409});
  if(action==='member_state'){
    const verified=await verifiedDevice(base44,session,participant,rawToken);
+   if(verified){
+     const hash=await sha256(rawToken);
+     const access=(await base44.asServiceRole.entities.KotcPlayerDeviceAccess.filter({session_id:session.id,share_id:share.id,participant_id:participant.id,device_token_hash:hash,status:'approved'}))?.[0];
+     if(!access||access.expires_at&&Date.parse(access.expires_at)<Date.now()){
+       const patch={tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,share_id:share.id,participant_id:participant.id,client_id:clean(body.clientId,180)||'member-device',device_token_hash:hash,verification_code:'',status:'approved',requested_at:new Date().toISOString(),approved_at:new Date().toISOString(),expires_at:new Date(Date.now()+VERIFIED_MS).toISOString()};
+       if(access)await base44.asServiceRole.entities.KotcPlayerDeviceAccess.update(access.id,patch);else await base44.asServiceRole.entities.KotcPlayerDeviceAccess.create(patch);
+     }
+   }
    return Response.json({success:true,verified:!!verified,status:verified?'approved':'none',identity:verified?{participant_id:participant.id,player_id:participant.player_id,display_name:participant.display_name}:null});
  }
  if(action==='member_request'){
