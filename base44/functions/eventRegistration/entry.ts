@@ -73,11 +73,20 @@ Deno.serve(async(req)=>{
   const docs=await base44.asServiceRole.entities.ClubLegalDocument.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,active:true},'-effective_from',100);
   stage='consent';
   const now=new Date().toISOString();const evidence=consentEvidence(b,docs,now);
-  // An atomic counter is essential: two simultaneous applicants must never take the last place.
+  // Initialise only when the stored counter is missing; avoid a null-filter
+  // update on every registration (some Base44 runtimes reject null predicates).
   stage='reservation_initialise';
-  await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:null},{$set:{event_reserved_count:occupied(rows)}});
+  if(!Number.isSafeInteger(t.event_reserved_count)){
+   const seeded=await base44.asServiceRole.entities.Tournament.updateMany(
+    {id,tenant_id:t.tenant_id,event_reserved_count:null},
+    {$set:{event_reserved_count:occupied(rows)}});
+   if(typeof seeded?.updated!=='number')throw Error('Reservation counter initialisation returned an invalid result');
+  }
   stage='reservation_claim';
-  const claimed=await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$lt:capacity}},{$inc:{event_reserved_count:1}});
+  const claimed=await base44.asServiceRole.entities.Tournament.updateMany(
+   {id,tenant_id:t.tenant_id,event_reserved_count:{$lt:capacity}},
+   {$inc:{event_reserved_count:1}});
+  if(typeof claimed?.updated!=='number')throw Error('Reservation counter update returned an invalid result');
   const accepted=claimed.updated===1;
   const status=accepted?'pending_approval':'waitlisted';
   if(!accepted&&!t.event_waitlist_enabled)return fail('Event is full',409);
