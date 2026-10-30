@@ -32,6 +32,8 @@
     "previous_experience": {
       "type": "string"
     },
+    "previous_sports": {"type":"array","items":{"type":"string"}},
+    "health_declaration_applies": {"type":"boolean"},
     "medical_note": {
       "type": "string"
     },
