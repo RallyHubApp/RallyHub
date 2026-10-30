@@ -74,7 +74,7 @@ Deno.serve(async(req)=>{
   try{
    await base44.asServiceRole.entities.EventRegistration.create({tenant_id:t.tenant_id,club_id:t.host_club_id,event_id:id,full_name:name,email,email_key:email,mobile,emergency_contact_name:emergencyName,emergency_contact_mobile:emergencyMobile,previous_experience:clean(b.previousExperience,250),previous_sports:Array.isArray(b.previousSports)?b.previousSports.filter((x:any)=>typeof x==='string').slice(0,12):[],health_declaration_applies:b.healthDeclarationApplies===true,medical_note:clean(b.medicalNote,1000),consent_evidence:evidence,photo_video_consent:!!b.consents?.photo_video,registration_status:status,payment_status:'not_required',operation_id:operationId,created_at:now});
   }catch(error){if(accepted)await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$gt:0}},{$inc:{event_reserved_count:-1}});throw error;}
-  await deliverEventNotice(base44,t,{full_name:name,email},accepted?'application_received':'waitlist_joined');
+  try{await deliverEventNotice(base44,t,{full_name:name,email},accepted?'application_received':'waitlist_joined');}catch(noticeError){console.error('Event application saved but notification delivery failed',noticeError);}
   return Response.json({success:true,received:true,status,message:accepted?'Application received. Await organiser approval.':'Event full. You have joined the waiting list.'});
- }catch(e){console.error('event registration error',e);return fail('Registration could not be completed. Please contact the organiser.',503)}
+ }catch(e){const message=String(e?.message||e||'Unknown error');console.error('event registration error',message,e?.stack);if(message.startsWith('Required consent missing:'))return fail('Please accept the required document: '+message.split(':')[1].trim().replaceAll('_',' '),400);return fail('Registration error. Your details remain in the form. Please try again after the organiser resolves the issue.',503)}
 });
