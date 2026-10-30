@@ -143,7 +143,9 @@ Deno.serve(async req=>{try{
       const rows=await base44.asServiceRole.entities.KotcMemberVerification.filter({session_id:session.id},'-requested_at',100);
       const pending=(rows||[]).filter((v:any)=>v.status==='pending'&&Date.parse(v.expires_at)>Date.now());
       const participants=await base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id});
-      return Response.json({success:true,requests:pending.map((v:any)=>({id:v.id,participant_id:v.participant_id,display_name:(participants||[]).find((p:any)=>p.id===v.participant_id)?.display_name||'Player',destination:v.destination_hint,requested_at:v.requested_at}))});
+      const devices:any[]=[];
+      for(const participant of participants||[]){const linked=await memberForParticipant(base44,session,participant);if(!linked)continue;const rows=await base44.asServiceRole.entities.KotcMemberDevice.filter({membership_id:linked.membership.id,status:'active'});for(const d of rows||[])devices.push({id:d.id,participant_id:participant.id,display_name:participant.display_name,approved_at:d.approved_at,verification_method:d.verification_method});}
+      return Response.json({success:true,devices,requests:pending.map((v:any)=>({id:v.id,participant_id:v.participant_id,display_name:(participants||[]).find((p:any)=>p.id===v.participant_id)?.display_name||'Player',destination:v.destination_hint,requested_at:v.requested_at}))});
     }
     if(action==='member_host_approve'||action==='member_host_revoke'){
       const requestId=clean(body.requestId,180);const v=(await base44.asServiceRole.entities.KotcMemberVerification.filter({id:requestId,session_id:session.id}))?.[0];
