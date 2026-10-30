@@ -29,7 +29,7 @@ function Schedule({event}){
 export default function PublicEventDetail(){
   const {slug}=useParams();
   const {isAuthenticated,user}=useAuth();
-  const {data:event,isLoading,error}=useQuery({queryKey:['public-event-detail',slug],queryFn:async()=>{const res=await base44.functions.invoke('publicEvents',{action:'detail',slug});if(res.data?.error)throw new Error(res.data.error);return res.data?.event||null},enabled:!!slug,staleTime:60000,refetchOnWindowFocus:true});
+  const {data:event,isLoading,error}=useQuery({queryKey:['public-event-detail',slug],queryFn:async()=>{const res=await base44.functions.invoke('publicEvents',{action:'detail',slug});if(res.data?.error)throw new Error(res.data.error);return res.data?.event||null},enabled:!!slug,staleTime:15000,refetchInterval:30000,refetchOnWindowFocus:true});
   const {data:editAccess}=useQuery({queryKey:['event-edit-access',event?.id,user?.id],queryFn:async()=>{const r=await base44.functions.invoke('eventEditAccess',{eventId:event.id});return r.data||{}},enabled:!!isAuthenticated&&!!event?.id&&!!user?.id,staleTime:60000});
   const {data:savedRows=[]}=useQuery({queryKey:['event-saved-state',event?.id,user?.id],queryFn:()=>base44.entities.EventSavedItem.filter({user_id:user.id,tournament_id:event.id},'-updated_date',2),enabled:!!isAuthenticated&&!!event?.id&&!!user?.id,staleTime:30000});
 
@@ -69,7 +69,7 @@ export default function PublicEventDetail(){
           <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <div className="rounded-xl bg-[#f7fafb] p-4"><CalendarDays className="h-5 w-5 text-[#078e48]"/><p className="mt-2 text-xs text-[#52627d]">Dates</p><p className="mt-1 text-sm font-black">{prettyEventDateRange(event)}</p>{event.event_start_time&&<p className="mt-1 text-xs text-[#52627d]">{event.event_start_time}{event.event_end_time?`–${event.event_end_time}`:''}</p>}</div>
             <div className="rounded-xl bg-[#f7fafb] p-4"><MapPin className="h-5 w-5 text-[#078e48]"/><p className="mt-2 text-xs text-[#52627d]">Venue</p><p className="mt-1 text-sm font-black">{event.location||'Venue TBC'}</p><p className="mt-1 text-xs text-[#52627d]">{[event.event_county,event.event_country].filter(Boolean).join(', ')}</p></div>
-            <div className="rounded-xl bg-[#f7fafb] p-4"><Ticket className="h-5 w-5 text-[#078e48]"/><p className="mt-2 text-xs text-[#52627d]">Entry</p><p className="mt-1 text-sm font-black">{event.event_fee_text||((event.event_fee_amount??null)!==null?`${event.event_currency||'€'}${event.event_fee_amount}`:'See organiser')}</p>{event.event_capacity&&<p className="mt-1 text-xs text-[#52627d]">Capacity {event.event_capacity}</p>}</div>
+            <div className="rounded-xl bg-[#f7fafb] p-4"><Ticket className="h-5 w-5 text-[#078e48]"/><p className="mt-2 text-xs text-[#52627d]">Entry</p><p className="mt-1 text-sm font-black">{event.event_fee_text||((event.event_fee_amount??null)!==null?`${event.event_currency||'€'}${event.event_fee_amount}`:'See organiser')}</p>{event.event_capacity&&<p className="mt-1 text-xs text-[#52627d]">{typeof event.event_places_remaining==='number'?`${event.event_places_remaining} places remaining · ${event.event_capacity} total`:`Capacity ${event.event_capacity}`}</p>}</div>
           </div>
 
           {event.event_public_summary&&<p className="mt-5 text-sm leading-6 text-[#405270]">{event.event_public_summary}</p>}

@@ -80,7 +80,13 @@ Deno.serve(async (req) => {
       const event = (rows || []).find((row:any)=>row.status !== 'Archived');
       if (!event) return Response.json({ error:'Public event not found' }, { status:404 });
       const hostRows = event.host_club_id ? await base44.asServiceRole.entities.Club.filter({id:event.host_club_id}, '-updated_date', 1).catch(()=>[]) : [];
-      return Response.json({ success:true, event:publicEvent(event, hostRows?.[0] || null) });
+      const output=publicEvent(event,hostRows?.[0]||null);
+      if(event.event_booking_enabled&&event.event_registration_mode==='rallyhub'&&Number(event.event_capacity)>0){
+        const registrations=await base44.asServiceRole.entities.EventRegistration.filter({event_id:event.id,tenant_id:event.tenant_id},'-created_date',500);
+        const occupied=(registrations||[]).filter((r:any)=>['pending_approval','confirmed','cash_confirmed'].includes(r.registration_status)||(r.registration_status==='approved_payment_hold'&&Date.parse(r.payment_hold_expires_at)>Date.now())).length;
+        output.event_places_remaining=Math.max(0,Number(event.event_capacity)-occupied);
+      }
+      return Response.json({ success:true, event:output });
     }
 
     return Response.json({ error:'Unknown public Events action' }, { status:400 });
