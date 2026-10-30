@@ -52,7 +52,7 @@ Deno.serve(async(req)=>{
     if(registration.registration_status!=='pending_approval')return fail('Application is not awaiting approval',409);
     const amount=Number(t.event_fee_amount||0);
     if(amount>0&&(!account||!providerConfigured('sumup',account)))return fail('Tenant SumUp is not connected',503);
-    const expires=new Date(Date.now()+Math.min(120,Math.max(1,Number(t.event_booking_policy?.payment_hold_minutes||15)))*60000).toISOString();
+    const expires=new Date(Date.now()+Math.min(120,Math.max(1,Number(t.event_booking_policy?.payment_hold_minutes??30)))*60000).toISOString();
     if(amount===0){await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'confirmed',payment_status:'not_required',approved_at:new Date().toISOString(),confirmed_at:new Date().toISOString()});await deliverEventNotice(base44,t,registration,'booking_confirmed');return Response.json({success:true,status:'confirmed'});}
     const checkout=await createCheckout({provider:'sumup',account,amount,currency:t.event_currency||'EUR',reference:`ev_${registration.id}`.slice(0,64),description:t.name,redirectUrl:`https://rallyhub.ie/events/${t.event_slug}`});
     await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'approved_payment_hold',payment_status:'pending',payment_hold_expires_at:expires,payment_checkout_id:checkout.checkoutId,payment_checkout_url:checkout.checkoutUrl,approved_at:new Date().toISOString()});
