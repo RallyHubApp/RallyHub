@@ -67,6 +67,13 @@ async function handleMemberAction(base44:any,user:any,action:string,body:any,ses
    }
    return Response.json({success:true,verified:!!verified,status:verified?'approved':'none',identity:verified?{participant_id:participant.id,player_id:participant.player_id,display_name:participant.display_name}:null});
  }
+ if(action==='member_host_request'){
+   const clientId=clean(body.clientId,180);if(!clientId||!rawToken.startsWith('kpd_'))return Response.json({error:'Device credential required.'},{status:400});
+   const recent=await base44.asServiceRole.entities.KotcMemberVerification.filter({membership_id:linked.membership.id,client_id},'-requested_at',10);
+   if((recent||[]).some((v:any)=>v.status==='pending'&&Date.now()-Date.parse(v.requested_at)<60000))return Response.json({error:'Wait one minute before another request.'},{status:429});
+   const now=new Date().toISOString();await base44.asServiceRole.entities.KotcMemberVerification.create({tenant_id:session.tenant_id,club_id:session.club_id,membership_id:linked.membership.id,participant_id:participant.id,session_id:session.id,client_id,device_token_hash:await sha256(rawToken),code_hash:await sha256(randomHex(16)),delivery_channel:'host',destination_hint:'Host identity check',status:'pending',attempts:0,requested_at:now,expires_at:new Date(Date.now()+CODE_MS).toISOString()});
+   return Response.json({success:true,status:'pending',hostApproval:true});
+ }
  if(action==='member_request'){
    const clientId=clean(body.clientId,180);if(!clientId||!rawToken.startsWith('kpd_'))return Response.json({error:'Device credential required.'},{status:400});
    const verified=await verifiedDevice(base44,session,participant,rawToken);
@@ -100,11 +107,23 @@ Deno.serve(async req=>{try{
   const base44=createClientFromRequest(req);const body=await req.json().catch(()=>({}));const action=clean(body.action||'state',40);
   let user:any=null;try{user=await base44.auth.me();}catch{}
 
-  if(['host_list','approve','revoke','member_host_list','member_host_approve','member_host_revoke'].includes(action)){
+  if(['host_list','approve','revoke','member_host_list','member_host_approve','member_host_revoke','member_devices','member_device_revoke'].includes(action)){
     if(!user)return Response.json({error:'Host sign-in required.'},{status:401});
     const sessionId=clean(body.sessionId,180);if(!sessionId)return Response.json({error:'sessionId required'},{status:400});
     const session=(await base44.asServiceRole.entities.KotcSession.filter({id:sessionId}))?.[0];if(!session)return Response.json({error:'KOTC session not found.'},{status:404});
     if(!(await hostAllowed(base44,user,session)))return Response.json({error:'Session Host access required.'},{status:403});
+    if(action==='member_devices'||action==='member_device_revoke'){
+      const participantId=clean(body.participantId,180);
+      const participant=(await base44.asServiceRole.entities.KotcSessionParticipant.filter({id:participantId,session_id:session.id}))?.[0];
+      const linked=participant?await memberForParticipant(base44,session,participant):null;
+      if(!linked)return Response.json({error:'Verified member not found.'},{status:404});
+      const devices=await base44.asServiceRole.entities.KotcMemberDevice.filter({membership_id:linked.membership.id,status:'active'});
+      if(action==='member_devices')return Response.json({success:true,devices:(devices||[]).map((d:any)=>({id:d.id,approved_at:d.approved_at,verification_method:d.verification_method}))});
+      const device=(devices||[]).find((d:any)=>d.id===clean(body.deviceId,180));
+      if(!device)return Response.json({error:'Device not found.'},{status:404});
+      await base44.asServiceRole.entities.KotcMemberDevice.update(device.id,{status:'revoked',revoked_at:new Date().toISOString()});
+      return Response.json({success:true,revoked:true});
+    }
     if(action==='member_host_list'){
       const rows=await base44.asServiceRole.entities.KotcMemberVerification.filter({session_id:session.id},'-requested_at',100);
       const pending=(rows||[]).filter((v:any)=>v.status==='pending'&&Date.parse(v.expires_at)>Date.now());
@@ -140,7 +159,7 @@ Deno.serve(async req=>{try{
 
   const shareToken=clean(body.shareToken||body.token,180);if(!shareToken)return Response.json({error:'Player Link token required.'},{status:400});
   const {share,session}=await resolveShare(base44,shareToken);
-  if(['member_state','member_request','member_verify'].includes(action))return await handleMemberAction(base44,user,action,body,session,share);
+  if(['member_state','member_request','member_verify','member_host_request'].includes(action))return await handleMemberAction(base44,user,action,body,session,share);
 
   if(action==='request'){
     const participantId=clean(body.participantId,180),clientId=clean(body.clientId,180);if(!participantId||!clientId)return Response.json({error:'Choose your name and try again.'},{status:400});
