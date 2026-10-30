@@ -10,7 +10,7 @@ function err(e){return e?.response?.data?.error||e?.data?.error||e?.message||'Ve
 export default function KotcPlayerVerificationPanel({session}){
  const [rows,setRows]=useState([]);const [busy,setBusy]=useState('');const [loading,setLoading]=useState(false);
  const load=async({silent=false}={})=>{if(!session?.id)return;try{if(!silent)setLoading(true);const r=await base44.functions.invoke('kotcPlayerIdentity',{action:'host_list',sessionId:session.id});setRows(r.data?.requests||[]);}catch(e){if(!silent)toast.error(err(e));}finally{if(!silent)setLoading(false);}};
- useEffect(()=>{load();const t=setInterval(()=>load({silent:true}),7000);return()=>clearInterval(t);},[session?.id]);
+ useEffect(()=>{load();const t=setInterval(()=>load({silent:true}),15000);return()=>clearInterval(t);},[session?.id]);
  const act=async(row,action)=>{try{setBusy(row.id);await base44.functions.invoke('kotcPlayerIdentity',{action,sessionId:session.id,requestId:row.id});toast.success(action==='approve'?`${row.display_name} verified`:`${row.display_name} device access revoked`);await load({silent:true});}catch(e){toast.error(err(e));}finally{setBusy('');}};
  const pending=rows.filter(r=>r.status==='pending'),approved=rows.filter(r=>r.status==='approved');
  return <div className="rounded-xl border border-primary/20 p-3 space-y-3" data-testid="kotc-player-verification-panel">

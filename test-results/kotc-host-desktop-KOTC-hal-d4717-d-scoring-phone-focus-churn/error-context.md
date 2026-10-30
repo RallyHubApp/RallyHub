@@ -12,12 +12,10 @@
 # Error details
 
 ```
-Error: 12-round host journey should remain inside a compact API-call budget
+Error: expect(received).toBeLessThanOrEqual(expected)
 
-expect(received).toBeLessThanOrEqual(expected)
-
-Expected: <= 95
-Received:    98
+Expected: <= 250
+Received:    514
 ```
 
 # Page snapshot
@@ -139,6 +137,19 @@ Received:    98
 # Test source
 
 ```ts
+  589 |   const stressProfile={
+  590 |     getKotcV2State:[220,900,350],
+  591 |     createKotcV2Session:[850],
+  592 |     startKotcRound:[1250,420,1750,680,1100,510,1500,760],
+  593 |     saveKotcScore:[900,1650,520,1250,700,1450,430,1050],
+  594 |     prepareKotcNextRound:[1850,620,2250,880,1600,700],
+  595 |     kotcTimer:[70,110,60],
+  596 |     endKotcSession:[1450],
+  597 |   };
+  598 |   const model=createModel({stressProfile});
+  599 |   const report={rounds:12,start_ack_ms:[],start_confirm_ms:[],score_ack_ms:[],score_burst_confirm_ms:[],prepare_ack_ms:[],prepare_confirm_ms:[]};
+  600 |   await installMockBackend(page,model);page.on('dialog',d=>d.accept());
+  601 |   await page.goto('/e2e/kotcHarness.html');
   602 |   await page.getByRole('button',{name:'Player 17',exact:true}).click();
   603 |   await page.getByRole('button',{name:'Player 18',exact:true}).click();
   604 |   await page.getByTestId('kotc-create-session').click();
@@ -226,7 +237,8 @@ Received:    98
   686 |   report.max_prepare_ack_ms=Math.max(...report.prepare_ack_ms);
   687 |   report.max_prepare_confirm_ms=Math.max(...report.prepare_confirm_ms);
   688 | 
-  689 |   expect(report.max_start_ack_ms).toBeLessThanOrEqual(250);
+> 689 |   expect(report.max_start_ack_ms).toBeLessThanOrEqual(250);
+      |                                   ^ Error: expect(received).toBeLessThanOrEqual(expected)
   690 |   expect(report.max_score_ack_ms).toBeLessThanOrEqual(250);
   691 |   expect(report.max_prepare_ack_ms).toBeLessThanOrEqual(250);
   692 |   expect(report.max_start_confirm_ms).toBeLessThanOrEqual(2300);
@@ -239,8 +251,7 @@ Received:    98
   699 |   expect(callsByName.prepareKotcNextRound).toBe(11);
   700 |   expect(callsByName.endKotcSession).toBe(1);
   701 |   console.log('KOTC PRESSURE CALL BREAKDOWN',JSON.stringify(report.calls_by_name));
-> 702 |   expect(report.total_function_calls,'12-round host journey should remain inside a compact API-call budget').toBeLessThanOrEqual(95);
-      |                                                                                                              ^ Error: 12-round host journey should remain inside a compact API-call budget
+  702 |   expect(report.total_function_calls,'12-round host journey should remain inside a compact API-call budget').toBeLessThanOrEqual(95);
   703 | 
   704 |   console.log(`KOTC HALL-PRESSURE SIMULATOR REPORT\n${JSON.stringify(report,null,2)}`);
   705 |   await testInfo.attach('kotc-hall-pressure-report.json',{body:JSON.stringify(report,null,2),contentType:'application/json'});
