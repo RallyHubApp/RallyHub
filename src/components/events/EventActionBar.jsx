@@ -1,3 +1,4 @@
+import EventRegistrationDialog from './EventRegistrationDialog';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Bell, CalendarPlus, Check, Copy, ExternalLink, Mail, MessageCircle, QrCode, Share2, Users, Bookmark, BookmarkCheck } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -13,6 +14,7 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [shareOpen,setShareOpen]=useState(false);
+  const [registrationOpen,setRegistrationOpen]=useState(false);
   const [calendarOpen,setCalendarOpen]=useState(false);
   const [subscribeEmail,setSubscribeEmail]=useState(user?.email||'');
   const [subscribeConsent,setSubscribeConsent]=useState(false);
@@ -75,6 +77,7 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
   };
   const openRegistration=()=>{
     if(state.key==='opening_soon')return saveEvent(true);
+    if(event.event_registration_mode==='rallyhub'){setRegistrationOpen(true);return;}
     if(!state.actionable)return;
     if(event.event_registration_mode==='contact'&&event.event_contact){const subject=state.key==='invite_only'?`Invitation request: ${event.name}`:`Event enquiry: ${event.name}`;const body=state.key==='invite_only'?`Hi,\n\nI would like to be considered for an invitation to ${event.name}.\n\nRallyHub event: ${url}\n\nThank you.`:`Hi,\n\nI have a question about ${event.name}.\n\nRallyHub event: ${url}\n\nThank you.`;window.location.href=`mailto:${event.event_contact}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;return}
     if(bookingDestination){
@@ -84,6 +87,7 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
   };
 
   return <>
+    <EventRegistrationDialog event={event} open={registrationOpen} onOpenChange={setRegistrationOpen}/>
     <div className={`flex flex-wrap gap-2 ${compact?'':'w-full'}`}>
       {futureInvitation&&<Button onClick={()=>setInterestOpen(true)} className="min-h-11 bg-[#078e48] text-white hover:bg-[#067b3f]"><Mail className="mr-2 h-4 w-4"/>Request a future invitation</Button>}
       {(state.actionable||state.key==='opening_soon')&&<Button onClick={openRegistration} className="min-h-11 bg-[#078e48] text-white hover:bg-[#067b3f]" disabled={busy==='remind'}>{state.key==='opening_soon'?<><Bell className="mr-2 h-4 w-4"/>{busy==='remind'?'Saving…':'Remind me'}</>:invitationOnly?<><Mail className="mr-2 h-4 w-4"/>Request invitation</>:whatsAppRegistration?<><MessageCircle className="mr-2 h-4 w-4"/>WhatsApp to register</>:<><ExternalLink className="mr-2 h-4 w-4"/>{!event.event_registration_url&&fallbackInfoUrl?'Event information':'Register / Book'}</>}</Button>}
