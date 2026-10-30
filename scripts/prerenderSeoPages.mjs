@@ -13,10 +13,15 @@ const { directoryClubs:seedClubs=[] }=await import(pathToFileURL(path.join(root,
 
 // Keep search-engine HTML aligned with the public directory and sitemap.
 const base44=createClient({appId:'6a01dc00702b7dd2a2978c28'});
-const response=await base44.functions.invoke('directoryListingProfile',{action:'public_list'});
-if(response?.data?.error) throw new Error(`Public directory unavailable: ${response.data.error}`);
-const publicState=response?.data?.listings;
-if(!publicState || typeof publicState!=='object' || Array.isArray(publicState)) throw new Error('Public directory feed is missing');
+let publicState={};
+try {
+ const response=await base44.functions.invoke('directoryListingProfile',{action:'public_list'});
+ if(response?.data?.error)throw new Error(response.data.error);
+ if(!response?.data?.listings || typeof response.data.listings!=='object' || Array.isArray(response.data.listings))throw new Error('Invalid directory feed');
+ publicState=response.data.listings;
+} catch(error) {
+ console.warn('Public directory feed unavailable during build; retaining seed-based public pages:',error?.message||error);
+}
 const seedSlugs=new Set(seedClubs.map(club=>club.slug));
 const directoryClubs=[
   ...seedClubs.map(club=>{
