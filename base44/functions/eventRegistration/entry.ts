@@ -1,7 +1,7 @@
 /** Tenant Events registration. Explicitly gated until full payment, notice and admin workflows pass UAT. */
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
 import {occupied,duplicate,consentEvidence,canConfirm} from './rules.js';
-import {createCheckout,retrievePayment,providerConfigured} from './payments.ts';
+import {createCheckout,retrievePayment,refundPayment,providerConfigured} from './payments.ts';
 import {eventNoticeRecipients,eventNoticeBody,EVENT_NOTICE_TYPES} from './notificationPolicy.js';
 import {renderBasicBrandedEmail} from './communicationsBasicRenderer.ts';
 import {deliverEventNotice} from './delivery.ts';
@@ -15,7 +15,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_approve','admin_verify','admin_notice_preview'];
+  const adminActions=['admin_list','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview'];
   const isAdminAction=adminActions.includes(action);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)))return fail('Bookings are not open for this event',404);
   if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||user.role!=='admin')return fail('Admin access required',403);}
@@ -43,11 +43,38 @@ Deno.serve(async(req)=>{
    const html=renderBasicBrandedEmail('<p style="white-space:pre-line">'+body.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n','<br>')+'</p>',kit,club,club.name||'Clare Pickleball','Event booking update');
    return Response.json({success:true,noticeType,subject:`${t.name} · ${noticeType.replaceAll('_',' ')}`,body,html,recipients,delivery:'preview_only'});
   }
-  if(action==='admin_list')return Response.json({success:true,event:publicEvent,registrations:rows.map((r:any)=>({id:r.id,name:r.full_name,email:r.email,status:r.registration_status,paymentStatus:r.payment_status,createdAt:r.created_at}))});
-  if(action==='admin_approve'||action==='admin_verify'){
+  if(action==='admin_list'){
+   const payments=await base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,purpose_type:'event'},'-created_date',500);
+   return Response.json({success:true,event:publicEvent,registrations:rows.map((r:any)=>{const p=payments.find((x:any)=>x.purpose_id===r.id);return {id:r.id,name:r.full_name,email:r.email,mobile:r.mobile,emergencyContactName:r.emergency_contact_name,emergencyContactMobile:r.emergency_contact_mobile,status:r.registration_status,paymentStatus:r.payment_status,createdAt:r.created_at,paymentRecordId:p?.id||null,amount:Number(p?.amount||0),refundedAmount:Number(p?.amount_refunded||0),transactionReference:p?.provider_payment_reference||'',refundableAmount:p&&['paid','partially_refunded','refund_failed'].includes(p.payment_status)?Math.max(0,Number(p.amount||0)-Number(p.amount_refunded||0)):0};})});
+  }
+  if(action==='admin_approve'||action==='admin_verify'||action==='admin_refund_payment'){
    const registration=rows.find((r:any)=>r.id===clean(b.registrationId,100));if(!registration)return fail('Registration not found',404);
    const accountRows=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
    const accountRow=accountRows?.[0];const account=accountRow?{provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'}:null;
+   if(action==='admin_refund_payment'){
+    if(b.confirmRefund!==true)return fail('Explicit refund confirmation required');
+    const reason=clean(b.reason,500);if(!reason)return fail('Refund reason required');
+    const payments=await base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,purpose_type:'event',purpose_id:registration.id},'-created_date',10);
+    const payment=payments?.[0];if(!payment||!['paid','partially_refunded','refund_failed'].includes(payment.payment_status))return fail('No refundable event payment record',409);
+    const transactionId=clean(payment.provider_transaction_id||registration.payment_transaction_id,120);
+    if(!transactionId)return fail('SumUp transaction reference missing; verify payment first',409);
+    const previous=await base44.asServiceRole.entities.PaymentRefund.filter({payment_record_id:payment.id},'-requested_at',100);
+    if(previous.some((x:any)=>x.status==='processing'))return fail('A refund is already processing; reconcile before retrying',409);
+    const alreadyRefunded=previous.filter((x:any)=>x.status==='succeeded').reduce((sum:number,x:any)=>sum+Number(x.amount||0),0);
+    const remaining=Math.round((Number(payment.amount||0)-alreadyRefunded)*100)/100;
+    const amount=b.refundAmount===undefined?remaining:Math.round(Number(b.refundAmount)*100)/100;
+    if(!Number.isFinite(amount)||amount<=0||amount>remaining)return fail('Invalid refund amount',400);
+    const now=new Date().toISOString();
+    const refund=await base44.asServiceRole.entities.PaymentRefund.create({tenant_id:t.tenant_id,club_id:t.host_club_id,payment_record_id:payment.id,person_id:payment.person_id||'',purpose_type:'event',purpose_id:registration.id,provider:'sumup',provider_account_id:payment.provider_account_id||'',provider_transaction_id:transactionId,amount,currency:payment.currency||'EUR',status:'processing',reason,requested_by_user_id:(await base44.auth.me()).id,requested_at:now,source_system:'rallyhub_event'});
+    try{
+     const result=await refundPayment({provider:'sumup',account,transactionId,amount:alreadyRefunded===0&&amount===Number(payment.amount)?undefined:amount,currency:payment.currency||'EUR'});
+     const total=Math.round((alreadyRefunded+amount)*100)/100,full=total>=Number(payment.amount)-0.001;
+     await base44.asServiceRole.entities.PaymentRefund.update(refund.id,{status:'succeeded',provider_refund_id:result.refundId||'',provider_status:result.providerStatus||'REFUNDED',completed_at:new Date().toISOString()});
+     await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{payment_status:full?'refunded':'partially_refunded',amount_refunded:total,last_refund_at:new Date().toISOString(),provider_status:result.providerStatus||'REFUNDED'});
+     await base44.asServiceRole.entities.EventRegistration.update(registration.id,{payment_status:full?'refunded':'partially_refunded'});
+     return Response.json({success:true,refundAmount:amount,refundId:refund.id,status:full?'refunded':'partially_refunded',bookingStatus:registration.registration_status});
+    }catch(error){await base44.asServiceRole.entities.PaymentRefund.update(refund.id,{status:'needs_reconciliation',provider_status:'UNKNOWN'});throw error;}
+   }
    if(action==='admin_approve'){
     if(registration.registration_status!=='pending_approval')return fail('Application is not awaiting approval',409);
     const amount=Number(t.event_fee_amount||0);
@@ -62,7 +89,10 @@ Deno.serve(async(req)=>{
    const result=await retrievePayment('sumup',registration.payment_checkout_id,account);
    if(result.normalizedStatus!=='paid')return Response.json({success:true,status:registration.registration_status,paymentStatus:result.normalizedStatus});
    if(!canConfirm(registration,Date.now()))return fail('Paid checkout requires manual reconciliation: hold expired or already processed',409);
-   await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'confirmed',payment_status:'paid',payment_transaction_id:result.transactionId,confirmed_at:new Date().toISOString()});
+   const existingPayments=await base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,purpose_type:'event',purpose_id:registration.id},'-created_date',10);
+   let payment=existingPayments?.[0];
+   if(!payment)payment=await base44.asServiceRole.entities.PaymentRecord.create({tenant_id:t.tenant_id,club_id:t.host_club_id,person_id:registration.person_id||'',purpose_type:'event',purpose_id:registration.id,payment_type:'event_registration',amount:Number(t.event_fee_amount||0),currency:t.event_currency||'EUR',payment_method:'sumup',payment_status:'paid',provider:'sumup',provider_account_id:accountRow?.id||'',provider_checkout_id:registration.payment_checkout_id,provider_checkout_url:registration.payment_checkout_url||'',provider_transaction_id:result.transactionId,provider_payment_reference:result.transactionCode||'',provider_status:result.providerStatus||'PAID',source_system:'rallyhub_event'});
+   await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'confirmed',payment_status:'paid',payment_record_id:payment.id,payment_transaction_id:result.transactionId,confirmed_at:new Date().toISOString()});
    await deliverEventNotice(base44,t,registration,'booking_confirmed');return Response.json({success:true,status:'confirmed',paymentStatus:'paid'});
   }
   if(action!=='apply')return fail('Unsupported action');
