@@ -1,0 +1,10 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert/strict'),esbuild=require('esbuild');
+const src=esbuild.transformSync(fs.readFileSync('base44/functions/kotcPlayerIdentity/smsTransport.ts','utf8'),{loader:'ts',format:'cjs'}).code;
+let config={};let requests=[];let status=200;let payload={accepted:true};
+const ctx={module:{exports:{}},exports:{},Deno:{env:{get:k=>config[k]}},URL,AbortController,setTimeout,clearTimeout,fetch:async(url,options)=>{requests.push({url,options});return{ok:status===200,status,json:async()=>payload}}};ctx.exports=ctx.module.exports;vm.runInNewContext(src,ctx);const sms=ctx.module.exports;
+(async()=>{assert.equal(sms.normalizeIrishMobile('087 810 0333'),'+353878100333');assert.equal(sms.normalizeIrishMobile('+353878100333'),'+353878100333');assert.equal(sms.normalizeIrishMobile('12345'),null);console.log('PASS Irish mobile validation');
+assert.equal(sms.smsAvailable(),false);await assert.rejects(sms.sendSmsCode('+353878100333','1234'),/not configured/);console.log('PASS gateway disabled by default');
+config={KOTC_SMS_GATEWAY_URL:'http://insecure.example/send',KOTC_SMS_GATEWAY_TOKEN:'secret'};await assert.rejects(sms.sendSmsCode('+353878100333','1234'),/HTTPS/);console.log('PASS insecure gateway rejected');
+config.KOTC_SMS_GATEWAY_URL='https://gateway.example/send';await sms.sendSmsCode('+353878100333','1234');assert.equal(requests.length,1);assert.equal(requests[0].options.headers.Authorization,'Bearer secret');assert.equal(JSON.parse(requests[0].options.body).to,'+353878100333');console.log('PASS authenticated HTTPS delivery contract');
+status=500;await assert.rejects(sms.sendSmsCode('+353878100333','1234'),/rejected/);status=200;payload={accepted:false};await assert.rejects(sms.sendSmsCode('+353878100333','1234'),/confirm acceptance/);console.log('PASS transport failure and non-acceptance handled');
+})().catch(e=>{console.error(e);process.exitCode=1});
