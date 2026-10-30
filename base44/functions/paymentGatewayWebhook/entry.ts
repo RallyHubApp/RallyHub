@@ -1,4 +1,4 @@
-import {deliverEventNotice} from '../eventRegistration/delivery.ts';
+import {deliverEventNotice} from './eventDelivery.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
