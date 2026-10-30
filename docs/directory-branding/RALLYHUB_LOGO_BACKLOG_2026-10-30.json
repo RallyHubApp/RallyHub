@@ -1,0 +1,195 @@
+{
+  "date": "2026-10-30",
+  "source": "HTTP 200 current live directoryListingProfile public_list, static directorySeed.js, 15 Oct approval history",
+  "inventory": {
+    "eligible": 122,
+    "static": 82,
+    "dynamic": 40,
+    "effectiveImages": 80,
+    "hidden": 7,
+    "missing": 35,
+    "attention": 42,
+    "counties": 28
+  },
+  "reviewed": 10,
+  "records": [
+    {
+      "slug": "ballyfermot-pickleballers",
+      "name": "Ballyfermot Pickleballers",
+      "county": "Dublin",
+      "source_order": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "finding": "No official logo found in indexed Facebook, Instagram or website results; no source verified.",
+      "reference": null,
+      "status": "unresolved_no_verified_artwork",
+      "staged": false,
+      "sha256": null,
+      "receipt": null,
+      "published": false
+    },
+    {
+      "slug": "bayside-pickleball-club",
+      "name": "Bayside Pickleball Club",
+      "county": "Dublin",
+      "source_order": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "finding": "Australian Bayside clubs surfaced; excluded as incorrect recipients. No Dublin-specific logo verified.",
+      "reference": "https://baysidepickleballclub.com/",
+      "status": "unresolved_no_verified_artwork",
+      "staged": false,
+      "sha256": null,
+      "receipt": null,
+      "published": false
+    },
+    {
+      "slug": "belmayne-pickleball",
+      "name": "Belmayne Pickleball",
+      "county": "Dublin",
+      "source_order": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "finding": "No official logo found in indexed Facebook, Instagram or website results.",
+      "reference": null,
+      "status": "unresolved_no_verified_artwork",
+      "staged": false,
+      "sha256": null,
+      "receipt": null,
+      "published": false
+    },
+    {
+      "slug": "blessington-pickleball-club",
+      "name": "Blessington Pickleball Club",
+      "county": "Wicklow",
+      "source_order": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "finding": "No official logo found in indexed Facebook, Instagram or website results.",
+      "reference": null,
+      "status": "unresolved_no_verified_artwork",
+      "staged": false,
+      "sha256": null,
+      "receipt": null,
+      "published": false
+    },
+    {
+      "slug": "breffni-pickleball-club",
+      "name": "Breffni Pickleball Club",
+      "county": "Cavan",
+      "source_order": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "finding": "Club identity supported by Cavan community grant reporting; no official logo established.",
+      "reference": "https://www.anglocelt.ie/2024/04/27/humphreys-announces-e141k-for-78-local-projects/",
+      "status": "unresolved_no_verified_artwork",
+      "staged": false,
+      "sha256": null,
+      "receipt": null,
+      "published": false
+    },
+    {
+      "slug": "clonakilty-pickleball-club",
+      "name": "Clonakilty Pickleball Club",
+      "county": "Cork",
+      "source_order": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "finding": "No official club-specific logo verified; unrelated Clonakilty sports branding excluded.",
+      "reference": null,
+      "status": "unresolved_no_verified_artwork",
+      "staged": false,
+      "sha256": null,
+      "receipt": null,
+      "published": false
+    },
+    {
+      "slug": "dublin-7-pickleball-club",
+      "name": "Dublin 7 Pickleball Club",
+      "county": "Dublin",
+      "source_order": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "finding": "Independent club listing confirms activity at Inspire Sports Centre; no official logo established.",
+      "reference": "https://www.thepickleballdirectory.co.uk/social-clubs/dublin-7-pickleball-club",
+      "status": "unresolved_no_verified_artwork",
+      "staged": false,
+      "sha256": null,
+      "receipt": null,
+      "published": false
+    },
+    {
+      "slug": "edenderry-pickleball-club",
+      "name": "Edenderry Pickleball Club",
+      "county": "Offaly",
+      "source_order": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "finding": "Offaly Sports Partnership confirms club in May 2026 grants; no official logo established.",
+      "reference": "https://www.offalysports.ie/news/sports-partnership-announces-grant-scheme-allocations-3",
+      "status": "unresolved_no_verified_artwork",
+      "staged": false,
+      "sha256": null,
+      "receipt": null,
+      "published": false
+    },
+    {
+      "slug": "fenside-pickleball",
+      "name": "Fenside Pickleball",
+      "county": "Kilkenny",
+      "source_order": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "finding": "Irish club list confirms group; no official logo verified.",
+      "reference": "https://docs.google.com/spreadsheets/d/1-3gsxh_NURnYlm5TDiaR0tcgYIJ3WIoK3pmZRnojO7k/htmlembed/sheet?gid=0&headers=false",
+      "status": "unresolved_no_verified_artwork",
+      "staged": false,
+      "sha256": null,
+      "receipt": null,
+      "published": false
+    },
+    {
+      "slug": "stepaside-pickleball",
+      "name": "Stepaside Pickleball",
+      "county": "Dublin",
+      "source_order": [
+        "official Facebook",
+        "official Instagram",
+        "official website"
+      ],
+      "finding": "Area venue and other nearby clubs found; no verified artwork for this exact group.",
+      "reference": null,
+      "status": "unresolved_no_verified_artwork",
+      "staged": false,
+      "sha256": null,
+      "receipt": null,
+      "published": false
+    }
+  ],
+  "protectedApprovals": {
+    "kingdomAnnascaul": "HTTP 200 SHA match, shared authorised logo",
+    "eastCork": "HTTP 200 SHA match; owner profile untouched",
+    "coolmine": "HTTP 200 SHA match, staged receipt 6adc5883f7bd0ef41a39aa03",
+    "irishDinks": "HTTP 200 SHA match, staged receipt 6addb8519b2a7380fd49c563",
+    "bluestack": "HTTP 200 SHA match for stored AVIF, application/octet-stream; original JPG/PNG required"
+  },
+  "published": false
+}
