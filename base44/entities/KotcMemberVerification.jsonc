@@ -1,0 +1,104 @@
+{
+  "name": "KotcMemberVerification",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "membership_id": {
+      "type": "string"
+    },
+    "participant_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "client_id": {
+      "type": "string"
+    },
+    "device_token_hash": {
+      "type": "string"
+    },
+    "code_hash": {
+      "type": "string"
+    },
+    "delivery_channel": {
+      "type": "string",
+      "enum": [
+        "email",
+        "sms",
+        "host"
+      ]
+    },
+    "destination_hint": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "verified",
+        "expired",
+        "revoked",
+        "locked"
+      ]
+    },
+    "attempts": {
+      "type": "integer",
+      "default": 0
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "approved_by_user_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "membership_id",
+    "device_token_hash",
+    "code_hash",
+    "delivery_channel",
+    "status",
+    "attempts",
+    "requested_at",
+    "expires_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
