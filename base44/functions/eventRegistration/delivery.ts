@@ -21,5 +21,18 @@ export async function deliverEventNotice(base44:any,event:any,registration:any,t
  const paymentHtml=type==='payment_required'&&paymentButton?templateHtml.replace(/Please complete payment using the secure link below/gi,'Please click the blue payment button below').replace(/\{\{PAYMENT_LINK\}\}/g,paymentButton).replaceAll(paymentUrl,paymentButton):templateHtml;
  const html=renderBasicBrandedEmail(paymentHtml,kit,club,club.name,'Event booking update');
  const recipients=eventNoticeRecipients(type,registration.email,event.event_booking_policy||{});
- return await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant',purpose:'club_comms',tenantId:event.tenant_id,clubId:event.host_club_id},{...recipients,senderName:club.name,subject:approved?.subject||`${event.name} · ${type.replaceAll('_',' ')}`,textBody:body,htmlBody:html});
+ const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:event.tenant_id,clubId:event.host_club_id};
+ const delivery=await sendWithConfiguredEmailTransport(base44,scope,{to:recipients.to,senderName:club.name,subject:approved?.subject||`${event.name} · ${type.replaceAll('_',' ')}`,textBody:body,htmlBody:html});
+ if(['booking_confirmed','cash_booking_confirmed'].includes(type)){
+  const notify=[...new Set(recipients.cc||[])];
+  for(const recipient of notify){
+   const name=String(registration.full_name||'Participant').trim();
+   const notice=`A booking has been confirmed for ${event.name}.\n\nParticipant: ${name}\nEmail: ${registration.email||'—'}\nMobile: ${registration.mobile||'—'}\nDate: ${event.start_date||'—'}\nTime: ${event.event_start_time||'—'}\nPayment: ${type==='cash_booking_confirmed'?'Cash booking confirmed by organiser':'Online booking confirmed'}\n\nThis is an automated Clare Pickleball booking notification.`;
+   const safe=notice.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n','<br>');
+   const noticeHtml=renderBasicBrandedEmail(`<p style="line-height:1.7">${safe}</p>`,kit,club,club.name,'Confirmed event booking');
+   try{await sendWithConfiguredEmailTransport(base44,scope,{to:recipient,senderName:club.name,subject:`Booking confirmed · ${name} · ${event.start_date||event.name}`,textBody:notice,htmlBody:noticeHtml});}
+   catch(error){console.error('Event organiser booking notification failed',recipient,error);}
+  }
+ }
+ return delivery;
 }
