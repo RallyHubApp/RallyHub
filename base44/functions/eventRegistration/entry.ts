@@ -56,7 +56,7 @@ Deno.serve(async(req)=>{
     if(amount===0){await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'confirmed',payment_status:'not_required',approved_at:new Date().toISOString(),confirmed_at:new Date().toISOString()});await deliverEventNotice(base44,t,registration,'booking_confirmed');return Response.json({success:true,status:'confirmed'});}
     const checkout=await createCheckout({provider:'sumup',account,amount,currency:t.event_currency||'EUR',reference:`ev_${registration.id}`.slice(0,64),description:t.name,redirectUrl:`https://rallyhub.ie/events/${t.event_slug}`});
     await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'approved_payment_hold',payment_status:'pending',payment_hold_expires_at:expires,payment_checkout_id:checkout.checkoutId,payment_checkout_url:checkout.checkoutUrl,approved_at:new Date().toISOString()});
-    await deliverEventNotice(base44,t,registration,'payment_required',`Payment link: ${checkout.checkoutUrl}`);return Response.json({success:true,status:'approved_payment_hold',checkoutUrl:checkout.checkoutUrl,expiresAt:expires});
+    await deliverEventNotice(base44,t,{...registration,payment_hold_expires_at:expires},'payment_required',`Payment link: ${checkout.checkoutUrl}`);return Response.json({success:true,status:'approved_payment_hold',checkoutUrl:checkout.checkoutUrl,expiresAt:expires});
    }
    if(!registration.payment_checkout_id)return fail('No checkout recorded',409);
    const result=await retrievePayment('sumup',registration.payment_checkout_id,account);
