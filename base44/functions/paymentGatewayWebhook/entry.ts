@@ -1,3 +1,4 @@
+import {deliverEventNotice} from '../eventRegistration/delivery.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
@@ -341,6 +342,21 @@ Deno.serve(async(req)=>{
         }
       }
       await base44.asServiceRole.entities.PaymentRecord.update(payment.id,update);
+
+      if(payment.purpose_type==='event'&&payment.payment_type==='event_registration'&&payment.purpose_id){
+        if(!Number.isFinite(verified.amount)||Math.round(verified.amount*100)!==Math.round(Number(payment.amount)*100)||verified.currency!==String(payment.currency||'EUR').toUpperCase()){
+          console.error('Event checkout amount/currency mismatch',payment.id);
+          return new Response('',{status:409});
+        }
+        const registrations=await base44.asServiceRole.entities.EventRegistration.filter({id:payment.purpose_id,tenant_id:payment.tenant_id,club_id:payment.club_id},'-created_date',1);
+        const reg=registrations?.[0];
+        if(reg&&reg.payment_status!=='paid'&&reg.registration_status==='approved_payment_hold'){
+          const events=await base44.asServiceRole.entities.Tournament.filter({id:reg.event_id,tenant_id:reg.tenant_id},'-created_date',1);
+          const tournament=events?.[0];
+          await base44.asServiceRole.entities.EventRegistration.update(reg.id,{registration_status:'confirmed',payment_status:'paid',payment_record_id:payment.id,payment_transaction_id:verified.transactionId,confirmed_at:now});
+          if(tournament){try{await deliverEventNotice(base44,tournament,reg,'booking_confirmed')}catch(e){console.error('Event payment confirmed but email failed',e)}}
+        }
+      }
 
       // Tournival event fees: never confirm without verified SumUp checkout and
       // exact amount/currency match. This is independent of sporting state.
