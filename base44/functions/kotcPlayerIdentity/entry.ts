@@ -55,6 +55,21 @@ async function handleMemberAction(base44:any,user:any,action:string,body:any,ses
  if(!participant||['withdrawn','replaced','no_show'].includes(participant.status))return Response.json({error:'Select a current player.'},{status:404});
  const linked=await memberForParticipant(base44,session,participant);
  if(!linked)return Response.json({error:'This player has no uniquely linked active membership record. Ask the host to check the membership link.'},{status:409});
+ if(action==='member_results'){
+   const verified=await verifiedDevice(base44,session,participant,rawToken);
+   if(!verified)return Response.json({error:'Verify this device before viewing personal results.'},{status:403});
+   const [players,matches]=await Promise.all([base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}),base44.asServiceRole.entities.KotcMatch.filter({session_id:session.id},'round_number',500)]);
+   const names=Object.fromEntries((players||[]).map((p:any)=>[p.id,p.display_name]));
+   const standings:any=Object.fromEntries((players||[]).map((p:any)=>[p.id,{id:p.id,wins:0,losses:0,points_for:0,points_against:0,court1_rounds:0}]));
+   for(const m of (matches||[]).filter((x:any)=>x.status==='completed'))for(const side of ['A','B']){
+     const ids=side==='A'?m.team_a_participant_ids||[]:m.team_b_participant_ids||[];
+     for(const id of ids){const row=standings[id];if(!row)continue;row.points_for+=Number(side==='A'?m.team_a_score||0:m.team_b_score||0);row.points_against+=Number(side==='A'?m.team_b_score||0:m.team_a_score||0);if(m.winner_side===side)row.wins++;else row.losses++;if(Number(m.ladder_court_rank)===1)row.court1_rounds++;}
+   }
+   const table=Object.values(standings).sort((a:any,b:any)=>b.wins-a.wins||((b.points_for-b.points_against)-(a.points_for-a.points_against))||b.court1_rounds-a.court1_rounds).map((x:any,i)=>({...x,rank:i+1}));
+   const mine:any=table.find((x:any)=>String(x.id)===String(participant.id));
+   const rounds=(matches||[]).filter((m:any)=>m.status==='completed'&&[...(m.team_a_participant_ids||[]),...(m.team_b_participant_ids||[])].map(String).includes(String(participant.id))).map((m:any)=>{const a=(m.team_a_participant_ids||[]).map(String).includes(String(participant.id));const mineIds=a?m.team_a_participant_ids||[]:m.team_b_participant_ids||[];const theirs=a?m.team_b_participant_ids||[]:m.team_a_participant_ids||[];return{round_number:m.round_number,court:Number(m.ladder_court_rank),partner:mineIds.filter((id:string)=>String(id)!==String(participant.id)).map((id:string)=>names[id]||'Player'),opponents:theirs.map((id:string)=>names[id]||'Player'),my_score:a?m.team_a_score:m.team_b_score,opponent_score:a?m.team_b_score:m.team_a_score,result:m.winner_side===(a?'A':'B')?'W':'L'};});
+   return Response.json({success:true,player:{name:participant.display_name,rank:mine?.rank||null,total_players:table.length,wins:mine?.wins||0,losses:mine?.losses||0,points_for:mine?.points_for||0,points_against:mine?.points_against||0},rounds});
+ }
  if(action==='member_state'){
    const verified=await verifiedDevice(base44,session,participant,rawToken);
    if(verified){
@@ -159,7 +174,7 @@ Deno.serve(async req=>{try{
 
   const shareToken=clean(body.shareToken||body.token,180);if(!shareToken)return Response.json({error:'Player Link token required.'},{status:400});
   const {share,session}=await resolveShare(base44,shareToken);
-  if(['member_state','member_request','member_verify','member_host_request'].includes(action))return await handleMemberAction(base44,user,action,body,session,share);
+  if(['member_state','member_request','member_verify','member_host_request','member_results'].includes(action))return await handleMemberAction(base44,user,action,body,session,share);
 
   if(action==='request'){
     const participantId=clean(body.participantId,180),clientId=clean(body.clientId,180);if(!participantId||!clientId)return Response.json({error:'Choose your name and try again.'},{status:400});
