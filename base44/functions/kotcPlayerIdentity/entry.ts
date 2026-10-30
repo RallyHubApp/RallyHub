@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
-import { sendWithConfiguredEmailTransport } from '../membershipApplication/emailRouter.ts';
-import { renderBasicBrandedEmail } from '../membershipApplication/communicationsBasicRenderer.ts';
+import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
+import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
 import {smsAvailable,normalizeIrishMobile,maskMobile,sendSmsCode} from './smsTransport.ts';
 
 const PENDING_MS = 30 * 60 * 1000;
