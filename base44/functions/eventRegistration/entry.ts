@@ -90,13 +90,13 @@ Deno.serve(async(req)=>{
    if(!registration.payment_checkout_id)return fail('No checkout recorded',409);
    const result=await retrievePayment('sumup',registration.payment_checkout_id,account);
    if(result.normalizedStatus!=='paid')return Response.json({success:true,status:registration.registration_status,paymentStatus:result.normalizedStatus});
-   if(!canConfirm(registration,Date.now()))return fail('Paid checkout requires manual reconciliation: hold expired or already processed',409);
+   if(registration.registration_status!=='confirmed'&&!canConfirm(registration,Date.now()))return fail('Paid checkout requires manual reconciliation: hold expired or already processed',409);
    const existingPayments=await base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,purpose_type:'event',purpose_id:registration.id},'-created_date',10);
    let payment=existingPayments?.[0];
    if(!payment)payment=await base44.asServiceRole.entities.PaymentRecord.create({tenant_id:t.tenant_id,club_id:t.host_club_id,person_id:registration.person_id||'',purpose_type:'event',purpose_id:registration.id,payment_type:'event_registration',amount:Number(t.event_fee_amount||0),currency:t.event_currency||'EUR',payment_method:'sumup',payment_status:'paid',provider:'sumup',provider_account_id:accountRow?.id||'',provider_checkout_id:registration.payment_checkout_id,provider_checkout_url:registration.payment_checkout_url||'',provider_transaction_id:result.transactionId,provider_payment_reference:result.transactionCode||'',provider_status:result.providerStatus||'PAID',source_system:'rallyhub_event'});
    if(payment.payment_status!=='paid')await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{payment_status:'paid',payment_date:new Date().toISOString().slice(0,10),provider_status:result.providerStatus||'PAID',provider_transaction_id:result.transactionId,provider_payment_reference:result.transactionCode||'',external_payment_reference:result.transactionCode||''});
-   await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'confirmed',payment_status:'paid',payment_record_id:payment.id,payment_transaction_id:result.transactionId,confirmed_at:new Date().toISOString()});
-   await deliverEventNotice(base44,t,registration,'booking_confirmed');return Response.json({success:true,status:'confirmed',paymentStatus:'paid'});
+   await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'confirmed',payment_status:'paid',payment_record_id:payment.id,payment_transaction_id:result.transactionId,confirmed_at:registration.confirmed_at||new Date().toISOString()});
+   if(registration.registration_status!=='confirmed')await deliverEventNotice(base44,t,registration,'booking_confirmed');return Response.json({success:true,status:'confirmed',paymentStatus:'paid'});
   }
   if(action!=='apply')return fail('Unsupported action');
   const name=clean(b.fullName,120),email=clean(b.email,180).toLowerCase(),mobile=clean(b.mobile,40),emergencyName=clean(b.emergencyContactName,120),emergencyMobile=clean(b.emergencyContactMobile,40),operationId=clean(b.operationId,100);
