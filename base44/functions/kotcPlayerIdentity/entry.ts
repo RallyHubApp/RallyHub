@@ -86,7 +86,7 @@ async function handleMemberAction(base44:any,user:any,action:string,body:any,ses
    const clientId=clean(body.clientId,180);if(!clientId||!rawToken.startsWith('kpd_'))return Response.json({error:'Device credential required.'},{status:400});
    const recent=await base44.asServiceRole.entities.KotcMemberVerification.filter({membership_id:linked.membership.id},'-requested_at',20);
    if((recent||[]).some((v:any)=>Date.now()-Date.parse(v.requested_at)<60000))return Response.json({error:'Wait one minute before another request.'},{status:429});
-   const now=new Date().toISOString();await base44.asServiceRole.entities.KotcMemberVerification.create({tenant_id:session.tenant_id,club_id:session.club_id,membership_id:linked.membership.id,participant_id:participant.id,session_id:session.id,client_id,device_token_hash:await sha256(rawToken),code_hash:await sha256(randomHex(16)),delivery_channel:'host',destination_hint:'Host identity check',status:'pending',attempts:0,requested_at:now,expires_at:new Date(Date.now()+CODE_MS).toISOString()});
+   const now=new Date().toISOString();await base44.asServiceRole.entities.KotcMemberVerification.create({tenant_id:session.tenant_id,club_id:session.club_id,membership_id:linked.membership.id,participant_id:participant.id,session_id:session.id,client_id:clientId,device_token_hash:await sha256(rawToken),code_hash:await sha256(randomHex(16)),delivery_channel:'host',destination_hint:'Host identity check',status:'pending',attempts:0,requested_at:now,expires_at:new Date(Date.now()+CODE_MS).toISOString()});
    return Response.json({success:true,status:'pending',hostApproval:true});
  }
  if(action==='member_request'){
@@ -98,13 +98,13 @@ async function handleMemberAction(base44:any,user:any,action:string,body:any,ses
    const recent=await base44.asServiceRole.entities.KotcMemberVerification.filter({membership_id:linked.membership.id},'-requested_at',20);
    if((recent||[]).some((v:any)=>Date.now()-Date.parse(v.requested_at)<60000))return Response.json({error:'Please wait one minute before requesting another code.'},{status:429});
    for(const v of recent||[])if(v.status==='pending'&&v.client_id===clientId)await base44.asServiceRole.entities.KotcMemberVerification.update(v.id,{status:'revoked'});
-   const code=code4(),now=new Date().toISOString();const row=await base44.asServiceRole.entities.KotcMemberVerification.create({tenant_id:session.tenant_id,club_id:session.club_id,membership_id:linked.membership.id,participant_id:participant.id,session_id:session.id,client_id,device_token_hash:await sha256(rawToken),code_hash:await sha256(`${rowlessSalt(session)}:${code}`),delivery_channel:'email',destination_hint:maskEmail(email),status:'pending',attempts:0,requested_at:now,expires_at:new Date(Date.now()+CODE_MS).toISOString()});
+   const code=code4(),now=new Date().toISOString();const row=await base44.asServiceRole.entities.KotcMemberVerification.create({tenant_id:session.tenant_id,club_id:session.club_id,membership_id:linked.membership.id,participant_id:participant.id,session_id:session.id,client_id:clientId,device_token_hash:await sha256(rawToken),code_hash:await sha256(`${rowlessSalt(session)}:${code}`),delivery_channel:'email',destination_hint:maskEmail(email),status:'pending',attempts:0,requested_at:now,expires_at:new Date(Date.now()+CODE_MS).toISOString()});
    try{await sendCodeEmail(base44,session,email,participant.display_name,code);}catch(e){await base44.asServiceRole.entities.KotcMemberVerification.update(row.id,{status:'revoked'});throw e;}
    return Response.json({success:true,status:'pending',requestId:row.id,destination:maskEmail(email)});
  }
  if(action==='member_verify'){
    const code=clean(body.code,8),clientId=clean(body.clientId,180);if(!/^\d{4}$/.test(code))return Response.json({error:'Enter the four-digit code.'},{status:400});
-   const rows=await base44.asServiceRole.entities.KotcMemberVerification.filter({membership_id:linked.membership.id,participant_id:participant.id,client_id,device_token_hash:await sha256(rawToken)},'-requested_at',10);
+   const rows=await base44.asServiceRole.entities.KotcMemberVerification.filter({membership_id:linked.membership.id,participant_id:participant.id,client_id:clientId,device_token_hash:await sha256(rawToken)},'-requested_at',10);
    const v=(rows||[]).find((x:any)=>x.status==='pending');if(!v)return Response.json({error:'Request a fresh verification code.'},{status:409});
    if(Date.parse(v.expires_at)<Date.now()){await base44.asServiceRole.entities.KotcMemberVerification.update(v.id,{status:'expired'});return Response.json({error:'Code expired. Request a new code.'},{status:410});}
    if(Number(v.attempts||0)>=MAX_ATTEMPTS)return Response.json({error:'Too many attempts. Contact your host.'},{status:429});
