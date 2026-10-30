@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { sendWithConfiguredEmailTransport } from '../membershipApplication/emailRouter.ts';
 import { renderBasicBrandedEmail } from '../membershipApplication/communicationsBasicRenderer.ts';
+import {smsAvailable,normalizeIrishMobile,maskMobile,sendSmsCode} from './smsTransport.ts';
 
 const PENDING_MS = 30 * 60 * 1000;
 const VERIFIED_MS = 18 * 60 * 60 * 1000;
@@ -80,7 +81,7 @@ async function handleMemberAction(base44:any,user:any,action:string,body:any,ses
        if(access)await base44.asServiceRole.entities.KotcPlayerDeviceAccess.update(access.id,patch);else await base44.asServiceRole.entities.KotcPlayerDeviceAccess.create(patch);
      }
    }
-   return Response.json({success:true,verified:!!verified,status:verified?'approved':'none',identity:verified?{participant_id:participant.id,player_id:participant.player_id,display_name:participant.display_name}:null});
+   return Response.json({success:true,verified:!!verified,sms_available:smsAvailable(),status:verified?'approved':'none',identity:verified?{participant_id:participant.id,player_id:participant.player_id,display_name:participant.display_name}:null});
  }
  if(action==='member_host_request'){
    const clientId=clean(body.clientId,180);if(!clientId||!rawToken.startsWith('kpd_'))return Response.json({error:'Device credential required.'},{status:400});
@@ -93,14 +94,18 @@ async function handleMemberAction(base44:any,user:any,action:string,body:any,ses
    const clientId=clean(body.clientId,180);if(!clientId||!rawToken.startsWith('kpd_'))return Response.json({error:'Device credential required.'},{status:400});
    const verified=await verifiedDevice(base44,session,participant,rawToken);
    if(verified)return Response.json({success:true,verified:true,status:'approved'});
+   const channel=body.channel==='sms'?'sms':'email';
    const email=clean(linked.member.primary_email,240);
-   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return Response.json({error:'No valid membership email. Ask your host for assistance.'},{status:409});
+   const mobile=normalizeIrishMobile(clean(linked.member.mobile,60));
+   if(channel==='sms'&&!smsAvailable())return Response.json({error:'SMS backup is not configured. Use email or ask the host.'},{status:503});
+   if(channel==='sms'&&!mobile)return Response.json({error:'No valid Irish mobile on membership record. Ask the host for assistance.'},{status:409});
+   if(channel==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return Response.json({error:'No valid membership email. Ask your host for assistance.'},{status:409});
    const recent=await base44.asServiceRole.entities.KotcMemberVerification.filter({membership_id:linked.membership.id},'-requested_at',20);
    if((recent||[]).some((v:any)=>Date.now()-Date.parse(v.requested_at)<60000))return Response.json({error:'Please wait one minute before requesting another code.'},{status:429});
    for(const v of recent||[])if(v.status==='pending'&&v.client_id===clientId)await base44.asServiceRole.entities.KotcMemberVerification.update(v.id,{status:'revoked'});
-   const code=code4(),now=new Date().toISOString();const row=await base44.asServiceRole.entities.KotcMemberVerification.create({tenant_id:session.tenant_id,club_id:session.club_id,membership_id:linked.membership.id,participant_id:participant.id,session_id:session.id,client_id:clientId,device_token_hash:await sha256(rawToken),code_hash:await sha256(`${rowlessSalt(session)}:${code}`),delivery_channel:'email',destination_hint:maskEmail(email),status:'pending',attempts:0,requested_at:now,expires_at:new Date(Date.now()+CODE_MS).toISOString()});
-   try{await sendCodeEmail(base44,session,email,participant.display_name,code);}catch(e){await base44.asServiceRole.entities.KotcMemberVerification.update(row.id,{status:'revoked'});throw e;}
-   return Response.json({success:true,status:'pending',requestId:row.id,destination:maskEmail(email)});
+   const code=code4(),now=new Date().toISOString();const row=await base44.asServiceRole.entities.KotcMemberVerification.create({tenant_id:session.tenant_id,club_id:session.club_id,membership_id:linked.membership.id,participant_id:participant.id,session_id:session.id,client_id:clientId,device_token_hash:await sha256(rawToken),code_hash:await sha256(`${rowlessSalt(session)}:${code}`),delivery_channel:channel,destination_hint:channel==='sms'?maskMobile(mobile!):maskEmail(email),status:'pending',attempts:0,requested_at:now,expires_at:new Date(Date.now()+CODE_MS).toISOString()});
+   try{if(channel==='sms')await sendSmsCode(mobile!,code);else await sendCodeEmail(base44,session,email,participant.display_name,code);}catch(e){await base44.asServiceRole.entities.KotcMemberVerification.update(row.id,{status:'revoked'});throw e;}
+   return Response.json({success:true,status:'pending',requestId:row.id,destination:channel==='sms'?maskMobile(mobile!):maskEmail(email),channel});
  }
  if(action==='member_verify'){
    const code=clean(body.code,8),clientId=clean(body.clientId,180);if(!/^\d{4}$/.test(code))return Response.json({error:'Enter the four-digit code.'},{status:400});
@@ -111,7 +116,7 @@ async function handleMemberAction(base44:any,user:any,action:string,body:any,ses
    const attempts=Number(v.attempts||0)+1;
    if(v.code_hash!==await sha256(`${rowlessSalt(session)}:${code}`)){await base44.asServiceRole.entities.KotcMemberVerification.update(v.id,{attempts,status:attempts>=MAX_ATTEMPTS?'locked':'pending'});return Response.json({error:'Incorrect code.'},{status:401});}
    await base44.asServiceRole.entities.KotcMemberVerification.update(v.id,{status:'verified',attempts,verified_at:new Date().toISOString()});
-   await issueDevice(base44,session,participant,rawToken,'email');
+   await issueDevice(base44,session,participant,rawToken,v.delivery_channel==='sms'?'sms':'email');
    return Response.json({success:true,verified:true,status:'approved',identity:{participant_id:participant.id,player_id:participant.player_id,display_name:participant.display_name}});
  }
  return Response.json({error:'Unsupported verification action.'},{status:400});
