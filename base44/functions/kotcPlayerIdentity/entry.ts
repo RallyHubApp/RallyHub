@@ -84,8 +84,8 @@ async function handleMemberAction(base44:any,user:any,action:string,body:any,ses
  }
  if(action==='member_host_request'){
    const clientId=clean(body.clientId,180);if(!clientId||!rawToken.startsWith('kpd_'))return Response.json({error:'Device credential required.'},{status:400});
-   const recent=await base44.asServiceRole.entities.KotcMemberVerification.filter({membership_id:linked.membership.id,client_id},'-requested_at',10);
-   if((recent||[]).some((v:any)=>v.status==='pending'&&Date.now()-Date.parse(v.requested_at)<60000))return Response.json({error:'Wait one minute before another request.'},{status:429});
+   const recent=await base44.asServiceRole.entities.KotcMemberVerification.filter({membership_id:linked.membership.id},'-requested_at',20);
+   if((recent||[]).some((v:any)=>Date.now()-Date.parse(v.requested_at)<60000))return Response.json({error:'Wait one minute before another request.'},{status:429});
    const now=new Date().toISOString();await base44.asServiceRole.entities.KotcMemberVerification.create({tenant_id:session.tenant_id,club_id:session.club_id,membership_id:linked.membership.id,participant_id:participant.id,session_id:session.id,client_id,device_token_hash:await sha256(rawToken),code_hash:await sha256(randomHex(16)),delivery_channel:'host',destination_hint:'Host identity check',status:'pending',attempts:0,requested_at:now,expires_at:new Date(Date.now()+CODE_MS).toISOString()});
    return Response.json({success:true,status:'pending',hostApproval:true});
  }
@@ -95,9 +95,9 @@ async function handleMemberAction(base44:any,user:any,action:string,body:any,ses
    if(verified)return Response.json({success:true,verified:true,status:'approved'});
    const email=clean(linked.member.primary_email,240);
    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return Response.json({error:'No valid membership email. Ask your host for assistance.'},{status:409});
-   const recent=await base44.asServiceRole.entities.KotcMemberVerification.filter({membership_id:linked.membership.id,client_id},'-requested_at',10);
-   if((recent||[]).some((v:any)=>v.status==='pending'&&Date.now()-Date.parse(v.requested_at)<60000))return Response.json({error:'Please wait one minute before requesting another code.'},{status:429});
-   for(const v of recent||[])if(v.status==='pending')await base44.asServiceRole.entities.KotcMemberVerification.update(v.id,{status:'revoked'});
+   const recent=await base44.asServiceRole.entities.KotcMemberVerification.filter({membership_id:linked.membership.id},'-requested_at',20);
+   if((recent||[]).some((v:any)=>Date.now()-Date.parse(v.requested_at)<60000))return Response.json({error:'Please wait one minute before requesting another code.'},{status:429});
+   for(const v of recent||[])if(v.status==='pending'&&v.client_id===clientId)await base44.asServiceRole.entities.KotcMemberVerification.update(v.id,{status:'revoked'});
    const code=code4(),now=new Date().toISOString();const row=await base44.asServiceRole.entities.KotcMemberVerification.create({tenant_id:session.tenant_id,club_id:session.club_id,membership_id:linked.membership.id,participant_id:participant.id,session_id:session.id,client_id,device_token_hash:await sha256(rawToken),code_hash:await sha256(`${rowlessSalt(session)}:${code}`),delivery_channel:'email',destination_hint:maskEmail(email),status:'pending',attempts:0,requested_at:now,expires_at:new Date(Date.now()+CODE_MS).toISOString()});
    try{await sendCodeEmail(base44,session,email,participant.display_name,code);}catch(e){await base44.asServiceRole.entities.KotcMemberVerification.update(row.id,{status:'revoked'});throw e;}
    return Response.json({success:true,status:'pending',requestId:row.id,destination:maskEmail(email)});
