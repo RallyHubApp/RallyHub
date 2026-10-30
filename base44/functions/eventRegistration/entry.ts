@@ -73,14 +73,14 @@ Deno.serve(async(req)=>{
   const docs=await base44.asServiceRole.entities.ClubLegalDocument.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,active:true},'-effective_from',100);
   stage='consent';
   const now=new Date().toISOString();const evidence=consentEvidence(b,docs,now);
-  // Match the proven guest-session booking path: persist the application
-  // directly. The active registrations determine availability.
-  // Capacity is checked again immediately before the write.
+  // Initialise from existing active applications once, then atomically reserve.
   stage='capacity_check';
   const current=await base44.asServiceRole.entities.EventRegistration.filter({event_id:id,tenant_id:t.tenant_id},'-created_date',500);
   if(current.some((r:any)=>r.operation_id===operationId))return Response.json({success:true,received:true,message:'Your application has already been received.'});
   if(duplicate(current,email))return fail('This email may already have an application. Please contact the organiser.',409);
-  const accepted=occupied(current)<capacity;
+  await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:null},{$set:{event_reserved_count:occupied(current)}});
+  const claim=await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$lt:capacity}},{$inc:{event_reserved_count:1}});
+  const accepted=claim.updated===1;
   const status=accepted?'pending_approval':'waitlisted';
   if(!accepted&&!t.event_waitlist_enabled)return fail('Event is full',409);
   stage='record_create';
@@ -89,7 +89,10 @@ Deno.serve(async(req)=>{
    if(!saved?.id)throw Error('Registration create returned no record ID');
    const persisted=await base44.asServiceRole.entities.EventRegistration.get(saved.id);
    if(!persisted||persisted.operation_id!==operationId)throw Error('Registration persistence verification failed');
-  }catch(error){throw error;}
+  }catch(error){
+   if(accepted)await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$gt:0}},{$inc:{event_reserved_count:-1}});
+   throw error;
+  }
   try{await deliverEventNotice(base44,t,{full_name:name,email},accepted?'application_received':'waitlist_joined');}catch(noticeError){console.error('Event application saved but notification delivery failed',noticeError);}
   return Response.json({success:true,received:true,status,message:accepted?'Application received. Await organiser approval.':'Event full. You have joined the waiting list.'});
  }catch(e){const message=String(e?.message||e||'Unknown error');console.error('event registration error',stage,message,e?.stack);if(message.startsWith('Required consent missing:'))return fail('Please accept the required document: '+message.split(':')[1].trim().replaceAll('_',' '),400);return fail(`Registration could not be saved (stage: ${stage}). Your details remain in the form. Please contact the organiser.`,503)}
