@@ -1,3 +1,4 @@
+import {resolveEventTemplate,eventTemplateValues,EVENT_TEMPLATE_PURPOSES} from './templateResolver.js';
 import {eventNoticeRecipients,eventNoticeBody} from './notificationPolicy.js';
 import {renderBasicBrandedEmail} from './communicationsBasicRenderer.ts';
 import {sendWithConfiguredEmailTransport} from './emailRouter.ts';
@@ -8,9 +9,12 @@ export async function deliverEventNotice(base44:any,event:any,registration:any,t
  const kit=kits.find((k:any)=>!k.club_id||k.club_id===event.host_club_id);
  if(!kit)throw Error('Active tenant email brand kit missing');
  const first=String(registration.full_name||'there').trim().split(' ')[0];
- const body=eventNoticeBody(type,first,event.name,detail);
+ const purpose=EVENT_TEMPLATE_PURPOSES[type];
+ const templates=purpose?await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:event.tenant_id,purpose,status:'approved'},'-updated_date',20):[];
+ const approved=resolveEventTemplate(templates,type,eventTemplateValues(event,registration,detail));
+ const body=approved?.body||eventNoticeBody(type,first,event.name,detail);
  const escaped=body.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n','<br>');
- const html=renderBasicBrandedEmail('<p style="line-height:1.7">'+escaped+'</p>',kit,club,club.name,'Event booking update');
+ const html=renderBasicBrandedEmail(approved?.html||'<p style="line-height:1.7">'+escaped+'</p>',kit,club,club.name,'Event booking update');
  const recipients=eventNoticeRecipients(type,registration.email,event.event_booking_policy||{});
- return await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant',purpose:'club_comms',tenantId:event.tenant_id,clubId:event.host_club_id},{...recipients,senderName:club.name,subject:`${event.name} · ${type.replaceAll('_',' ')}`,textBody:body,htmlBody:html});
+ return await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant',purpose:'club_comms',tenantId:event.tenant_id,clubId:event.host_club_id},{...recipients,senderName:club.name,subject:approved?.subject||`${event.name} · ${type.replaceAll('_',' ')}`,textBody:body,htmlBody:html});
 }
