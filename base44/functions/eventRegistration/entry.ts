@@ -7,6 +7,7 @@ import {renderBasicBrandedEmail} from './communicationsBasicRenderer.ts';
 import {deliverEventNotice} from './delivery.ts';
 import {readBookingRegistrations} from './scopedRegistrationReader.mjs';
 import {readAdminEventPayments} from './scopedPaymentReader.mjs';
+import {selectRefundableEventPayment,selectCheckoutPayment} from './paymentSelection.mjs';
 const clean=(v:any,n=200)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,n);
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
 Deno.serve(async(req)=>{
@@ -52,7 +53,7 @@ Deno.serve(async(req)=>{
   }
   if(action==='admin_list'){
    const payments=await readAdminEventPayments(base44.asServiceRole.entities.PaymentRecord,{tenantId:t.tenant_id,clubId:t.host_club_id,registrationIds:rows.map((r:any)=>r.id)});
-   return Response.json({success:true,event:publicEvent,registrations:rows.map((r:any)=>{const p=payments.find((x:any)=>x.purpose_id===r.id);return {id:r.id,name:r.full_name,email:r.email,mobile:r.mobile,emergencyContactName:r.emergency_contact_name,emergencyContactMobile:r.emergency_contact_mobile,status:r.registration_status,paymentStatus:r.payment_status,createdAt:r.created_at,paymentRecordId:p?.id||null,paymentRecordStatus:p?.payment_status||null,amount:Number(p?.amount||0),refundedAmount:Number(p?.amount_refunded||0),transactionReference:p?.provider_payment_reference||'',refundableAmount:p&&['paid','partially_refunded','refund_failed'].includes(p.payment_status)?Math.max(0,Number(p.amount||0)-Number(p.amount_refunded||0)):0};})});
+   return Response.json({success:true,event:publicEvent,registrations:rows.map((r:any)=>{const group=payments.filter((x:any)=>x.purpose_id===r.id);const selected=selectRefundableEventPayment(group,r);const p=selected.payment||selectCheckoutPayment(group,r).payment||null;return {id:r.id,name:r.full_name,email:r.email,mobile:r.mobile,emergencyContactName:r.emergency_contact_name,emergencyContactMobile:r.emergency_contact_mobile,status:r.registration_status,paymentStatus:r.payment_status,createdAt:r.created_at,paymentRecordId:p?.id||null,paymentRecordStatus:p?.payment_status||null,amount:Number(p?.amount||0),refundedAmount:Number(p?.amount_refunded||0),transactionReference:p?.provider_payment_reference||'',refundableAmount:selected.payment?Math.max(0,Number(selected.payment.amount||0)-Number(selected.payment.amount_refunded||0)):0,refundReviewRequired:selected.reason==='ambiguous_refundable_payments'||selected.reason==='checkout_mismatch'};})});
   }
   if(action==='admin_approve'||action==='admin_verify'||action==='admin_refund_payment'){
    const registration=rows.find((r:any)=>r.id===clean(b.registrationId,100));if(!registration)return fail('Registration not found',404);
