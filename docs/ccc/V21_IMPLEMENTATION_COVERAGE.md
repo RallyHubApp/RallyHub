@@ -7,9 +7,9 @@
 | Multi-tenant / club / sport boundary | Existing Base44 hierarchy, `src/lib/ccc/activityContracts.js`, scoped dashboard queries | Partial; prove cross-club, cross-tenant and club-admin access end-to-end |
 | Canonical Person / membership identity | `memberIdentity.js`; optional explicit `EventRegistration.person_id` | Partial; admin-confirmed linking not wired into all workflows |
 | Command Centre overview/navigation | `ClubCommandOverview.jsx` in Dashboard; overview counts use existing backend | Partial; full People / Activities / Operations / Management navigation not delivered |
-| Activity types and lifecycle | `activityContracts.js`, `activityReadiness.js`, `activityWorkflow.js`, `activityWizard.js`, `ClubActivityPlanner.jsx` | Four-step admin planning preview now connected to Dashboard; draft and transition preflight tested. **No persistence, verified IDs, backend permissions or published activity yet** |
+| Activity types and lifecycle | `activityContracts.js`, `activityReadiness.js`, `activityWorkflow.js`, `activityWizard.js`, `ClubActivityPlanner.jsx` | Four-step planner has `ClubActivity` entity, `cccActivity` draft save/list, revision-checked staging transitions and scoped venue selection. **Persistence and backend permissions have not been independently exercised in a live Base44 runtime; no activity publication or end-to-end activation verified** |
 | Sessions / calendar | `sessionCalendar.js`, `ClubSchedulePanel.jsx` | Read-only; verify date coverage, recurrence, capacity and real host assignments |
-| Registration / booking | Existing guest/membership functions; `bookingPolicy.js`, `registrationEligibility.js` | Existing workflows retained; pure policies not authoritative backend enforcement |
+| Registration / booking | Existing guest/membership functions; `bookingPolicy.js`, `registrationEligibility.js` | Existing `eventRegistration` backend includes atomic capacity counter, approval, SumUp checkout/verification/refunds and notice delivery. `registrationBridge.js` and `cccActivity.link_event` provide explicit same-club event linking; **no end-to-end bridge activation or payment/notice verification** |
 | Guest / beginner / experienced access | Existing guest-access backend and `registrationEligibility.js` | Test actual venue restrictions, approvals and rescheduling on mobile |
 | Membership and payment journeys | Existing membership backend; batched payment lookups and read resilience | Performance improvements committed; no measured Base44 first-load or end-to-end acceptance yet |
 | Attendance and post-session | `attendanceProjection.js`, `postEventQueue.js`, `ClubPostEventPanel.jsx` | Read-only; full attendance and follow-up send reconciliation not accepted |
@@ -22,9 +22,18 @@
 | Base44 performance / resilience | `readResilience.js`; guest/membership backend query batching and indexing | Source-level improvements; load/429/timeout tests and actual latency benchmarks outstanding |
 | Release gates A01–A20 | Focused `testing/ccc` tests and existing regression scripts | **Not passed**; requires full mapping to master spec, browser/mobile/role and failure-injection evidence |
 
+## Current evidence and next implementation order
+
+- **Implemented in source:** `ClubActivity` schema; `cccActivity` save/list/transition/preflight/link operations; activity planner controls; `registrationBridge.js` policy; existing `eventRegistration` booking, SumUp and notification workflows.
+- **Verified in sandbox:** 101 focused CCC tests passing in the most recent run, plus a successful frontend build in the preceding run. These tests do not establish backend deployment or integration acceptance.
+- **Priority 1:** Test Base44 SDK/entity semantics, user tenant/club authority and concurrency for `cccActivity`; repair any failures.
+- **Priority 2:** Link existing tenant events via an admin-selectable event list and check venue, host, capacity, eligibility, communications and payment consistency server-side. Keep public registration closed until fully verified.
+- **Priority 3:** Exercise booking, approval, payment holds, webhook reconciliation, waitlist, notices and refunds through the existing event service in an isolated test environment.
+- **Priority 4:** Complete attendance, host workspace, finance, communications and remaining CCC journeys; execute A01–A20 and protected sporting regressions.
+
 ## Release blockers
 1. Locate and check the exact signed-off v2.1 specification against this inventory; do not infer missing requirements from existing helpers.
-2. Implement server-authorised activity persistence and lifecycle transitions, connect real venue/host/template selectors and bookings; the current dashboard wizard is a no-write planning preview, not a completed creation flow.
+2. Verify `cccActivity` draft save/list, scoped access, revision-checked transitions and linked-event persistence against real Base44 backend; add validated host/template selectors and connect registration without duplicating the existing event service.
 3. Validate actual Base44 schema, record limits and query completeness; avoid treating truncated snapshots as full totals.
 4. Test initial loading, repeat navigation, stale cache, 429, slow response, lost response and simultaneous actions for membership and booking.
 5. Verify permissions for super-admin, club admin, host, member, guest and cross-tenant access without weakening backend RLS.
