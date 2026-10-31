@@ -21,3 +21,10 @@ test('SMS/WhatsApp do not silently fall back to unconfigured providers',()=>{
  assert.deepEqual(providerSelection({channel:'sms'}),{available:false,reason:'provider_not_configured'});
  assert.deepEqual(providerSelection({channel:'whatsapp',configuredProviders:{whatsapp:{enabled:true,providerId:'approved-wa'}}}),{available:true,providerId:'approved-wa'});
 });
+test('actual CommunicationSuppression active field controls blocking, not legacy status',()=>{
+ const active={owner_scope:'tenant',tenant_id:'t',person_id:'p',channel:'email',active:true};
+ assert.ok(communicationPreflight({...base,suppressions:[active]}).errors.includes('recipient_suppressed'));
+ assert.equal(communicationPreflight({...base,suppressions:[{...active,active:false}]}).errors.includes('recipient_suppressed'),false);
+ assert.ok(communicationPreflight({...base,suppressions:[{...active,owner_scope:'platform',tenant_id:'other'}]}).errors.includes('recipient_suppressed'));
+ assert.equal(communicationPreflight({...base,suppressions:[{...active,tenant_id:'other'}]}).errors.includes('recipient_suppressed'),false);
+});
