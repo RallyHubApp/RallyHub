@@ -54,6 +54,16 @@ Deno.serve(async req=>{
     const templates=await sdk.asServiceRole.entities.CommunicationTemplate.filter({id:record.communication_template_id,tenant_id,owner_scope:'tenant',status:'approved'},'-created_date',1);
     if(!templates?.length||(templates[0].club_id&&templates[0].club_id!==club_id))issues.push('approved_template_not_found');
    }
+   if(!record.linked_event_id)issues.push('event_link_missing');
+   else {
+    const linked=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
+    if(!linked)issues.push('linked_event_not_found');
+    else {
+     if(linked.event_registration_mode!=='rallyhub')issues.push('event_registration_mode_invalid');
+     if(!linked.event_booking_enabled||linked.event_publish_status!=='published'||!linked.event_public_visible)issues.push('event_not_bookable');
+     if(Number(linked.event_capacity)!==Number(record.capacity))issues.push('event_capacity_mismatch');
+    }
+   }
    issues.push('booking_capacity_payment_and_notification_integration_pending');
    return Response.json({success:true,ready:false,issues,activityId:id,revision:record.revision});
   }
