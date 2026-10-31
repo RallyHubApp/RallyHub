@@ -2,6 +2,7 @@ import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
+const audit=async(sdk:any,tenant_id:string,club_id:string,user_id:string,action:string,entity_type:string,entity_id:string,before:any,after:any)=>{try{await sdk.asServiceRole.entities.AuditLog.create({tenant_id,club_id,user_id,action,entity_type,entity_id,scope_type:'club',scope_id:club_id,before_state:JSON.stringify(before),after_state:JSON.stringify(after)})}catch(_){/* A successful CAS must not be reported as failed after an audit transport error. */}};
 Deno.serve(async req=>{
  if(req.method!=='POST')return fail('POST required',405);
  try{
@@ -31,6 +32,7 @@ Deno.serve(async req=>{
    if(Number(event.event_capacity)!==Number(record.capacity))return fail('Event capacity differs from activity',409);
    const update=await entity.updateMany({id,tenant_id,club_id,revision},{$set:{linked_event_id:event_id,bridge_status:'linked_unverified',revision:revision+1,updated_by_user_id:user.id}});
    if(update.updated!==1)return fail('Activity changed; reload',409);
+   await audit(sdk,tenant_id,club_id,user.id,'ccc.activity.link_event','ClubActivity',id,{linked_event_id:record.linked_event_id||'',revision},{linked_event_id:event_id,revision:revision+1});
    return Response.json({success:true,id,eventId:event_id,bridgeStatus:'linked_unverified',revision:revision+1});
   }
   if(body.action==='mark_attendance'){
@@ -50,6 +52,7 @@ Deno.serve(async req=>{
    const prior=registration.attendance_revision===undefined?{$exists:false}:registration.attendance_revision;
    const result=await sdk.asServiceRole.entities.EventRegistration.updateMany({id:registrationId,event_id:event.id,tenant_id,club_id,attendance_revision:prior},{$set:{attendance_status:attendance,attendance_revision:current+1,attendance_marked_at:new Date().toISOString(),attendance_marked_by_user_id:user.id}});
    if(result.updated!==1)return fail('Attendance changed; reload',409);
+   await audit(sdk,tenant_id,club_id,user.id,'ccc.attendance.mark','EventRegistration',registrationId,{status:registration.attendance_status||'not_marked',revision:current},{status:attendance,revision:current+1});
    return Response.json({success:true,registrationId,attendance,revision:current+1});
   }
   if(body.action==='registration_overview'){
@@ -124,6 +127,7 @@ Deno.serve(async req=>{
    }
    const updated=await entity.updateMany({id,tenant_id,club_id,status:record.status,revision},{$set:{status:to,revision:revision+1,updated_by_user_id:user.id}});
    if(updated.updated!==1)return fail('Activity changed; reload',409);
+   await audit(sdk,tenant_id,club_id,user.id,'ccc.activity.transition','ClubActivity',id,{status:record.status,revision},{status:to,revision:revision+1});
    return Response.json({success:true,id,status:to,revision:revision+1});
   }
   if(body.action!=='save_draft')return fail('Unsupported action');
