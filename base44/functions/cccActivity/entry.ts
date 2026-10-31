@@ -377,6 +377,12 @@ Deno.serve(async req=>{
    issues.push('booking_capacity_payment_and_notification_integration_pending');
    return Response.json({success:true,ready:false,issues,activityId:id,revision:record.revision});
   }
+  if(body.action==='cancellation_review'){
+   const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!record)return fail('Activity not found',404);
+   const linked=record.linked_event_id?(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0]:null;
+   return Response.json({success:true,activityId:id,...reviewActivityCancellation(record,{linkedEvent:linked})});
+  }
   if(body.action==='transition'){
    const id=s(body.id),to=s(body.to),revision=Number(body.expectedRevision);
    const record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
