@@ -20,6 +20,7 @@ export default function ClubActivityPlanner({tenantId,clubId}){
  const [saved,setSaved]=useState(null);
  const [savedStatus,setSavedStatus]=useState('draft');
  const [serverPreflight,setServerPreflight]=useState(null);
+ const [cancellationReview,setCancellationReview]=useState(null);
  const [scheduleReview,setScheduleReview]=useState(null);
  const [eventId,setEventId]=useState('');
  const [saving,setSaving]=useState(false);
