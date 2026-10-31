@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { createCheckout, retrievePayment, providerConfigured, type ProviderAccount } from './payments.ts';
 import {assessMemberAccountLink} from './accountLinkGuard.ts';
+import {assessMembershipIdentityHealth} from './identityHealth.ts';
 
 const clean=(v:any,max=500)=>String(v??'').trim().slice(0,max);
 const lower=(v:any)=>clean(v,240).toLowerCase();
@@ -664,6 +665,23 @@ Deno.serve(async(req)=>{
       const users=await base44.asServiceRole.entities.User.filter({email},'-updated_date',20);
       const candidates=(users||[]).map((u:any)=>({id:u.id,email:u.email||null,full_name:u.full_name||u.display_name||null,approval_status:u.approval_status||null}));
       return Response.json({success:true,alreadyLinked:false,candidates});
+    }
+
+    if(action==='admin_identity_health'){
+      const personId=clean(body.personId,180);
+      if(!personId)return Response.json({error:'personId required'},{status:400});
+      const person=await first(base44,'Person',{id:personId,tenant_id:tenantId});
+      const membership=person?await first(base44,'ClubMembership',{tenant_id:tenantId,club_id:clubId,person_id:personId}):null;
+      if(!person||!membership)return Response.json({error:'Member not found in active club'},{status:404});
+      const player=await first(base44,'Player',{tenant_id:tenantId,club_id:clubId,person_id:personId});
+      const linkedUserId=person.linked_user_id||player?.user_id||'';
+      const [personAccess,userAccess]=await Promise.all([
+        base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:tenantId,club_id:clubId,person_id:personId},'-updated_date',20),
+        linkedUserId?base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:tenantId,club_id:clubId,user_id:linkedUserId},'-updated_date',20):Promise.resolve([])
+      ]);
+      const accessRows=[...new Map([...(personAccess||[]),...(userAccess||[])].map((a:any)=>[a.id,a])).values()];
+      const identity=assessMembershipIdentityHealth({tenantId,clubId,person,membership,player,accessRows});
+      return Response.json({success:true,identity});
     }
 
     if(action==='admin_connect_account'){
