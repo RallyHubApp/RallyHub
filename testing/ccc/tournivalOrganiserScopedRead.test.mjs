@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readScopedTournivalRecords as read} from '../../base44/functions/tournivalOrganiserHealth/scopedRead.mjs';
+const rows=Array.from({length:1250},(_,i)=>({id:`s${i}`,tenant_id:'t',tournament_id:'e'}));
+const entity=(items)=>({filter:async(_q,o)=>{const start=Number(o.cursor||0);return {items:items.slice(start,start+o.limit),has_more:start+o.limit<items.length,next_cursor:String(start+o.limit)};}});
+test('reads 1250 records without truncation',async()=>assert.equal((await read(entity(rows),{tenant_id:'t',tournament_id:'e'})).length,1250));
+test('fails closed on missing cursor support',async()=>assert.rejects(()=>read({filter:async()=>rows},{tenant_id:'t'}),/unavailable/));
+test('fails closed on cross-tenant record',async()=>assert.rejects(()=>read(entity([{id:'x',tenant_id:'other'}]),{tenant_id:'t'}),/scope mismatch/));
+test('fails closed on repeated cursor',async()=>assert.rejects(()=>read({filter:async()=>({items:[],has_more:true,next_cursor:'repeat'})},{tenant_id:'t'}),/stalled/));
+test('fails closed on page cap',async()=>assert.rejects(()=>read(entity(rows),{tenant_id:'t',tournament_id:'e'},{pageSize:100,maxPages:2}),/safe read limit/));
+test('fails closed on conflicting duplicate IDs',async()=>assert.rejects(()=>read(entity([{id:'x',tenant_id:'t',n:1},{id:'x',tenant_id:'t',n:2}]),{tenant_id:'t'}),/Conflicting/));
