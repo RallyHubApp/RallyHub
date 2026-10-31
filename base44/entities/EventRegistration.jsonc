@@ -2,6 +2,10 @@
   "name": "EventRegistration",
   "type": "object",
   "properties": {
+    "person_id": {
+      "type": "string",
+      "description": "Optional explicit link to the canonical tenant Person; never infer or auto-merge from contact fields."
+    },
     "tenant_id": {
       "type": "string"
     },
