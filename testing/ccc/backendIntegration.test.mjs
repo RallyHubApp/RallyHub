@@ -472,6 +472,18 @@ test('weekly recurrence preview requires admin grant and does not write activiti
  assert.equal(r.data.mutationPerformed,false);assert.equal(JSON.stringify(h.db),before);
  assert.equal((await makeHarness().call('recurrence_review',{weeks:4})).status,403);
 });
+test('schedule and weekly preview include scoped legacy guest sessions without writing',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.GuestSessionLink.push({id:'gs1',tenant_id:'t1',club_id:'c1',session_date:'2026-11-02',start_time:'19:30',end_time:'20:00',venue_name:'Ennistymon',active:true});
+ h.db.GuestSessionLink.push({id:'gs2',tenant_id:'t1',club_id:'c2',session_date:'2026-11-02',start_time:'19:30',end_time:'20:00',venue_name:'Ennistymon',active:true});
+ const before=JSON.stringify(h.db);
+ const draft={venue_id:'v1',court_id:'court1',starts_at:'2026-11-02T19:00',ends_at:'2026-11-02T20:30'};
+ const single=await h.call('schedule_review',{draft});
+ assert.equal(single.status,200);assert.equal(single.data.ready,false);assert.deepEqual(single.data.legacyOverlaps.map(x=>x.sessionId),['gs1']);
+ const weekly=await h.call('recurrence_review',{draft,weeks:2});
+ assert.equal(weekly.status,200);assert.equal(weekly.data.legacyConflictedWeeks,1);assert.equal(weekly.data.ready,false);
+ assert.equal(JSON.stringify(h.db),before);
+});
 test('weekly recurrence preview rejects court outside the selected venue',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  const r=await h.call('recurrence_review',{weeks:4,draft:{venue_id:'v1',court_id:'foreign',starts_at:'2026-11-02T19:00',ends_at:'2026-11-02T20:30'}});
