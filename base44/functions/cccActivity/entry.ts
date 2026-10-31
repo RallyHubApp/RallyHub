@@ -6,6 +6,7 @@ import {readEventRegistrations} from './registrationReader.mjs';
 import {readScopedActivities} from './activityReader.mjs';
 import {buildFollowupReview} from './followupReview.mjs';
 import {validateEventLink} from './eventLinkPolicy.mjs';
+import {readActivityAudit} from './activityAuditReader.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -87,9 +88,8 @@ Deno.serve(async req=>{
    const id=s(body.id);
    const record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!record)return fail('Activity not found',404);
-   const logs=await sdk.asServiceRole.entities.AuditLog.filter({tenant_id,club_id,entity_type:'ClubActivity',entity_id:id},'-created_date',100);
-   const allowed=new Set(['ccc.activity.link_event','ccc.activity.transition','ccc.activity.save_draft']);
-   return Response.json({success:true,activityId:id,entries:(logs||[]).filter((log:any)=>allowed.has(log.action)).map((log:any)=>({id:log.id,action:log.action,userId:log.user_id,createdAt:log.created_date||''})),resultsMayBeTruncated:(logs||[]).length===100,auditIsBestEffort:true});
+   const history=await readActivityAudit(sdk.asServiceRole.entities.AuditLog,{tenantId:tenant_id,clubId:club_id,activityId:id});
+   return Response.json({success:true,activityId:id,...history});
   }
   if(body.action==='link_event'){
    const id=s(body.id),event_id=s(body.eventId),revision=Number(body.expectedRevision);
