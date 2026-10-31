@@ -11,6 +11,22 @@ Deno.serve(async req=>{
   if(!tenant_id||!club_id)return fail('Select a club',409);
   const body=await req.json().catch(()=>({})),entity=sdk.asServiceRole.entities.ClubActivity;
   if(body.action==='list')return Response.json({success:true,activities:await entity.filter({tenant_id,club_id},'-created_date',100)});
+  if(body.action==='transition'){
+   const id=s(body.id),to=s(body.to),revision=Number(body.expectedRevision);
+   const record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!record)return fail('Activity not found',404);
+   if(!Number.isSafeInteger(revision)||record.revision!==revision)return fail('Activity changed; reload',409);
+   const allowed:any={draft:['ready','cancelled'],ready:['draft','scheduled','cancelled'],scheduled:['cancelled'],cancelled:['archived']};
+   if(!allowed[record.status]?.includes(to))return fail('Transition unavailable until downstream workflows are connected',409);
+   if(to==='ready'||to==='scheduled'){
+    const venue=(await sdk.asServiceRole.entities.Venue.filter({id:record.venue_id,tenant_id,club_id,status:'active'},'-created_date',1))?.[0];
+    if(!venue)return fail('Club venue is no longer active',409);
+    if(!Number.isFinite(Date.parse(record.starts_at))||Date.parse(record.ends_at)<=Date.parse(record.starts_at))return fail('Invalid schedule',409);
+   }
+   const updated=await entity.updateMany({id,tenant_id,club_id,status:record.status,revision},{$set:{status:to,revision:revision+1,updated_by_user_id:user.id}});
+   if(updated.updated!==1)return fail('Activity changed; reload',409);
+   return Response.json({success:true,id,status:to,revision:revision+1});
+  }
   if(body.action!=='save_draft')return fail('Unsupported action');
   const f=body.draft||{},type=s(f.type),title=s(f.title,200),sport=s(f.sport),venue_id=s(f.venue_id);
   const starts_at=s(f.starts_at),ends_at=s(f.ends_at),capacity=Number(f.capacity);
