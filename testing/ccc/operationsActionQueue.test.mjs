@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {buildOperationsActionQueue} from '../../src/lib/ccc/operationsActionQueue.mjs';
+const a=(activityId,code)=>({activityId,activityTitle:'Club event',code});
+test('urgent operational failures sort before lower-priority review',()=>{const r=buildOperationsActionQueue([a('1','missing_event_link'),a('2','invalid_schedule')]);assert.equal(r.rows[0].code,'invalid_schedule');assert.equal(r.urgent,1)});
+test('repeated identical alerts do not double-count',()=>{const r=buildOperationsActionQueue([a('1','invalid_schedule'),a('1','invalid_schedule')]);assert.equal(r.total,1)});
+test('incomplete activity reads never imply a complete action queue',()=>{const r=buildOperationsActionQueue([a('1','invalid_schedule')]);assert.equal(r.complete,false);assert.equal(r.mayBePartial,true)});
+test('unrecognised alert types remain visible for investigation',()=>{const r=buildOperationsActionQueue([a('1','new_issue')],{complete:true});assert.equal(r.rows[0].owner,'Club admin');assert.equal(r.total,1)});
+test('operational queue is read-only and integrated with scoped summary',()=>{const board=readFileSync(new URL('../../src/components/ccc/ClubOperationsBoard.jsx',import.meta.url),'utf8');const ui=readFileSync(new URL('../../src/components/ccc/ClubOperationsActionQueue.jsx',import.meta.url),'utf8');assert.match(board,/ClubOperationsActionQueue/);assert.match(ui,/buildOperationsActionQueue/);assert.doesNotMatch(ui,/base44\.functions|sendEmail|\.create\(/)});
