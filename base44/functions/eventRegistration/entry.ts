@@ -32,6 +32,12 @@ Deno.serve(async(req)=>{
    const page=await readEventAdminPage(base44.asServiceRole.entities.EventRegistration,base44.asServiceRole.entities.PaymentRecord,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id,cursor});
    return Response.json({success:true,event:{id:t.id,name:t.name,capacity},...page,summaryIsPartial:page.hasMore||!!cursor});
   }
+  if(action==='check'){
+   const operationId=clean(b.operationId,100);
+   if(!operationId)return fail('Application reference required');
+   const matches=await base44.asServiceRole.entities.EventRegistration.filter({event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,operation_id:operationId},'-created_date',2);
+   return Response.json({success:true,saved:matches.length>0});
+  }
   stage='roster_verification';
   const rows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
   const publicEvent={id:t.id,name:t.name,date:t.start_date,venue:t.location,capacity,placesRemaining:Math.max(0,capacity-occupied(rows)),fee:Number(t.event_fee_amount||0),currency:t.event_currency||'EUR'};
