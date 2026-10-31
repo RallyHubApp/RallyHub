@@ -485,6 +485,19 @@ test('schedule and weekly preview include scoped legacy guest sessions without w
  assert.equal(weekly.status,200);assert.equal(weekly.data.legacyConflictedWeeks,1);assert.equal(weekly.data.ready,false);
  assert.equal(JSON.stringify(h.db),before);
 });
+test('transition to ready rejects legacy guest-session overlap before any status write',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.ClubActivity[0].status='draft';h.db.ClubActivity[0].ends_at='2026-11-04T20:30:00';
+ h.db.GuestSessionLink.push({id:'gs-block',tenant_id:'t1',club_id:'c1',session_date:'2026-11-04',start_time:'19:30',end_time:'20:00',venue_name:'Ennistymon',active:true});
+ const result=await h.call('transition',{id:'a1',to:'ready',expectedRevision:1});
+ assert.equal(result.status,409);assert.equal(h.db.ClubActivity[0].status,'draft');assert.equal(h.db.ClubActivity[0].revision,1);
+});
+test('transition to ready rejects ambiguous Dublin local time',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.ClubActivity[0].status='draft';h.db.ClubActivity[0].starts_at='2026-10-25T01:30';h.db.ClubActivity[0].ends_at='2026-10-25T02:30';
+ const result=await h.call('transition',{id:'a1',to:'ready',expectedRevision:1});
+ assert.equal(result.status,409);assert.equal(h.db.ClubActivity[0].status,'draft');
+});
 test('Dublin daylight-saving gaps and repeated times block schedule readiness',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  const base={venue_id:'v1',court_id:'court1'};
