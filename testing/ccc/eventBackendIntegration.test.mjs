@@ -132,3 +132,14 @@ test('provider refund failure retains lock and records reconciliation requiremen
  assert.equal(h.db.PaymentRefund[0].status,'needs_reconciliation');
  assert.equal(h.calls.refund,1);
 });
+test('event admin role alone cannot read bookings or trigger refunds after grant revocation',async()=>{
+ const h=harness();h.db.TenantUserAccess[0].status='revoked';
+ assert.equal((await h.call('admin_list')).status,403);
+ assert.equal((await h.call('admin_refund_payment',{registrationId:'r1',confirmRefund:true,reason:'Cancelled'})).status,403);
+ assert.equal(h.calls.refund,0);assert.equal(h.calls.notice,0);
+});
+test('active club admin grant authorises event admin even without platform role',async()=>{
+ const h=harness({user:{id:'admin',role:'user',approval_status:'approved',active_tenant_id:'t1',active_club_id:'c1'}});
+ h.db.ClubUserAccess.push({id:'club-admin',tenant_id:'t1',club_id:'c1',user_id:'admin',permission_bundle:'club_admin',status:'active'});
+ const result=await h.call('admin_list');assert.equal(result.status,200);
+});
