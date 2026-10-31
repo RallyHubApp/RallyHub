@@ -515,6 +515,26 @@ test('unlinked draft cancellation remains available with audit',async()=>{
  const transition=await h.call('transition',{id:'a1',to:'cancelled',expectedRevision:1});
  assert.equal(transition.status,200);assert.equal(h.db.ClubActivity[0].status,'cancelled');
 });
+test('recurrence manifest is scoped, stable and read-only for a saved draft',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ Object.assign(h.db.ClubActivity[0],{status:'draft',linked_event_id:'',starts_at:'2026-11-04T19:00',ends_at:'2026-11-04T20:30'});
+ const before=JSON.stringify(h.db);
+ const first=await h.call('recurrence_manifest',{id:'a1',expectedRevision:1,weeks:3});
+ const second=await h.call('recurrence_manifest',{id:'a1',expectedRevision:1,weeks:3});
+ assert.equal(first.status,200);assert.equal(first.data.valid,true);assert.equal(first.data.rows.length,3);
+ assert.equal(first.data.readyToCreate,false);assert.deepEqual(first.data.rows,second.data.rows);
+ assert.equal(JSON.stringify(h.db),before);
+ assert.equal((await h.call('recurrence_manifest',{id:'a1',expectedRevision:2,weeks:3})).status,409);
+});
+test('recurrence manifest rejects a linked source and existing venue clashes',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ Object.assign(h.db.ClubActivity[0],{status:'draft',starts_at:'2026-11-04T19:00',ends_at:'2026-11-04T20:30'});
+ assert.equal((await h.call('recurrence_manifest',{id:'a1',expectedRevision:1,weeks:2})).data.valid,false);
+ h.db.ClubActivity[0].linked_event_id='';
+ h.db.GuestSessionLink.push({id:'gs',tenant_id:'t1',club_id:'c1',session_date:'2026-11-04',start_time:'19:15',end_time:'20:00',venue_name:'Ennistymon',active:true});
+ const review=await h.call('recurrence_manifest',{id:'a1',expectedRevision:1,weeks:2});
+ assert.equal(review.data.valid,false);assert.equal(review.data.rows.length,0);
+});
 test('Dublin daylight-saving gaps and repeated times block schedule readiness',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  const base={venue_id:'v1',court_id:'court1'};
