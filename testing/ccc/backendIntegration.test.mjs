@@ -32,6 +32,7 @@ import {buildRecurrenceManifest} from '../../base44/functions/cccActivity/recurr
 import {createScopedRecurrenceDrafts} from '../../base44/functions/cccActivity/recurrenceService.mjs';
 import {inspectRecurrenceBatch} from '../../base44/functions/cccActivity/recurrenceRecovery.mjs';
 import {reviewRecurrenceCompletion} from '../../base44/functions/cccActivity/recurrenceRecoveryDecision.mjs';
+import {readRecurrenceQueue} from '../../base44/functions/cccActivity/recurrenceQueue.mjs';
 const source=readFileSync(new URL('../../base44/functions/cccActivity/entry.ts',import.meta.url),'utf8').replace(/^import .*;\s*$/gm,'');
 const js=transformSync(source,{loader:'ts',format:'cjs'}).code;
 const records={
@@ -60,7 +61,7 @@ function makeHarness(user=records.User[0]){
  }]));
  let handler;
  const sdk={auth:{me:async()=>user},asServiceRole:{entities}};
- vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,readEventRegistrations,readScopedActivities,buildFollowupReview,validateEventLink,readActivityAudit,summariseClubOperations,readScopedInventory,summarisePeopleInventory,summariseManagementInventory,validateHostVenueMapping,validatePersonAccessLink,communicationReadiness,reviewHostRevocation,activityScheduleConflicts,reviewPersonCommunications,readPersonInventory,refundRecoveryQueue,identityIntegrity,readCccAccess,cccAccessDecision,guestVenueReview,membershipReadiness,reviewWeeklyRecurrence,reviewLegacySessionOverlaps,reviewDublinOccurrences,reviewActivityCancellation,buildRecurrenceManifest,createScopedRecurrenceDrafts,inspectRecurrenceBatch,reviewRecurrenceCompletion,Response,Date,console});
+ vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,readEventRegistrations,readScopedActivities,buildFollowupReview,validateEventLink,readActivityAudit,summariseClubOperations,readScopedInventory,summarisePeopleInventory,summariseManagementInventory,validateHostVenueMapping,validatePersonAccessLink,communicationReadiness,reviewHostRevocation,activityScheduleConflicts,reviewPersonCommunications,readPersonInventory,refundRecoveryQueue,identityIntegrity,readCccAccess,cccAccessDecision,guestVenueReview,membershipReadiness,reviewWeeklyRecurrence,reviewLegacySessionOverlaps,reviewDublinOccurrences,reviewActivityCancellation,buildRecurrenceManifest,createScopedRecurrenceDrafts,inspectRecurrenceBatch,reviewRecurrenceCompletion,readRecurrenceQueue,Response,Date,console});
  const call=async(action,fields={})=>{const response=await handler({method:'POST',json:async()=>({action,...fields})});return {status:response.status,data:await response.json()}};
  return {call,db,reads};
 }
@@ -573,6 +574,15 @@ test('recovery completion blocks incomplete child batch without mutations',async
  Object.assign(h.db.ClubActivity[0],{recurrence_batch_key:'ccc-batch-12345678',recurrence_batch_state:'needs_recovery',recurrence_expected_count:2});
  const r=await h.call('recurrence_recovery_complete',{id:'a1',expectedRevision:1,batchKey:'ccc-batch-12345678',confirm:true});
  assert.equal(r.status,409);assert.equal(h.db.ClubActivity[0].recurrence_batch_state,'needs_recovery');
+});
+test('recurrence queue is tenant scoped, read only and reports incomplete batches',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ Object.assign(h.db.ClubActivity[0],{recurrence_batch_key:'ccc-batch-12345678',recurrence_batch_state:'needs_recovery',recurrence_expected_count:3});
+ h.db.ClubActivity.push({id:'other',tenant_id:'other',club_id:'other',recurrence_batch_key:'ccc-batch-other123',recurrence_batch_state:'complete'});
+ const before=JSON.stringify(h.db);
+ const r=await h.call('recurrence_queue',{});
+ assert.equal(r.status,200);assert.equal(r.data.total,1);assert.equal(r.data.counts.needs_recovery,1);
+ assert.equal(JSON.stringify(h.db),before);
 });
 test('Dublin daylight-saving gaps and repeated times block schedule readiness',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
