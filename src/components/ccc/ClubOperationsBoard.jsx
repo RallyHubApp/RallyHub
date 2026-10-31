@@ -1,6 +1,7 @@
 import React from 'react';
 import {useQuery} from '@tanstack/react-query';
 import {base44} from '@/api/base44Client';
+import ClubRefundRecoveryQueue from './ClubRefundRecoveryQueue';
 
 /** Read-only operational status; no hidden publishing, booking or payment mutations. */
 export default function ClubOperationsBoard({tenantId,clubId}){
@@ -22,5 +23,6 @@ export default function ClubOperationsBoard({tenantId,clubId}){
    <h3 className="mt-4 text-sm font-semibold">Upcoming and active activities</h3>{!data.upcoming?.length?<p className="mt-2 text-sm text-muted-foreground">No upcoming activities in the current records.</p>:<div className="mt-2 space-y-2">{data.upcoming.slice(0,12).map(a=><div key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"><div><div className="text-sm font-medium">{a.title}</div><div className="text-xs text-muted-foreground">{new Date(a.startsAt).toLocaleString('en-IE',{dateStyle:'medium',timeStyle:'short'})}</div></div><span className="rounded-full border px-2 py-1 text-xs">{labels[a.status]||a.status}</span></div>)}</div>}
    <p className="mt-3 text-xs text-muted-foreground">Counts cover Club Command Centre activities only. No payment, registration or provider settlement totals are included.</p>
   </>}
+  <ClubRefundRecoveryQueue tenantId={tenantId} clubId={clubId}/>
  </section>;
 }
