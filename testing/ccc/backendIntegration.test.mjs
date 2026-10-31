@@ -403,3 +403,13 @@ test('refund recovery queue is scoped, read-only, and flags unresolved refund lo
  assert.equal(JSON.stringify(h.db),before);
  assert.equal((await makeHarness().call('refund_recovery_queue')).status,403);
 });
+test('court selection requires exact tenant, club and venue; separate courts avoid false conflict',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ const draft={type:'session',title:'Court booking',sport:'pickleball',venue_id:'v1',court_id:'court1',starts_at:'2026-11-04T19:00:00Z',ends_at:'2026-11-04T20:30:00Z',capacity:4};
+ assert.equal((await h.call('save_draft',{draft:{...draft,court_id:'missing'},operationId:'bad'})).status,409);
+ assert.equal((await h.call('save_draft',{draft,operationId:'valid-court'})).status,200);
+ const options=await h.call('options',{venueId:'v1'});assert.equal(options.data.courts.length,2);
+ h.db.ClubActivity[0].court_id='court2';h.db.ClubActivity[0].ends_at='2026-11-04T20:30:00Z';
+ const check=await h.call('schedule_review',{draft});assert.equal(check.status,200);assert.equal(check.data.ready,true);
+ const whole=await h.call('schedule_review',{draft:{...draft,court_id:''}});assert.equal(whole.data.ready,false);
+});
