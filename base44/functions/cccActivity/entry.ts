@@ -390,6 +390,12 @@ Deno.serve(async req=>{
     const checked=activityScheduleConflicts(record,schedule.activities);
     if(!checked.valid)return fail('Invalid schedule',409);
     if(checked.conflicts.length)return fail('Venue has an overlapping active activity',409);
+    const local=reviewDublinOccurrences([{week:1,startsAt:record.starts_at,endsAt:record.ends_at}]);
+    if(!local.ready)return fail('Schedule contains an invalid or ambiguous Irish local time',409);
+    const [legacy,venueRows]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.GuestSessionLink,{tenant_id,club_id},{pageSize:200,maxPages:20}),sdk.asServiceRole.entities.Venue.filter({id:record.venue_id,tenant_id,club_id,status:'active'},'-created_date',1)]);
+    if(!venueRows?.length)return fail('Club venue is no longer active',409);
+    const legacyReview=reviewLegacySessionOverlaps(local.occurrences,legacy.rows,{tenantId:tenant_id,clubId:club_id,venueName:venueRows[0].name,complete:legacy.complete});
+    if(!legacyReview.ready)return fail('Legacy guest-session overlap or incomplete venue inventory; cannot advance activity',409);
    }
    if(['ready','scheduled','registration_open','in_progress'].includes(to)){
     const venue=(await sdk.asServiceRole.entities.Venue.filter({id:record.venue_id,tenant_id,club_id,status:'active'},'-created_date',1))?.[0];
