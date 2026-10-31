@@ -13,7 +13,7 @@ export default function ClubOperationsBoard({tenantId,clubId}){
   retry:false,staleTime:30000
  });
  const labels={draft:'Draft',ready:'Ready',scheduled:'Scheduled',registration_open:'Registration open',registration_closed:'Registration closed',in_progress:'In progress',completed:'Completed',cancelled:'Cancelled',archived:'Archived'};
- const alerts={unknown_activity_status:'Unrecognised status',invalid_schedule:'Invalid activity dates',missing_event_link:'Event not linked',event_link_not_verified:'Linked event not verified',past_activity_not_closed:'Past activity still open'};
+ const alerts={unknown_activity_status:'Unrecognised status',invalid_schedule:'Invalid activity dates',missing_event_link:'Event not linked',event_link_not_verified:'Linked event not verified',past_activity_not_closed:'Past activity still open',recurrence_batch_needs_recovery:'Recurring drafts need reconciliation',recurrence_batch_creation_unverified:'Recurring draft creation unfinished',recurrence_expected_count_invalid:'Recurring batch expected count invalid'};
  return <section className="rounded-2xl border bg-card p-4 sm:p-5" aria-label="Club operations board">
   <div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-lg font-bold">Operations board</h2><p className="text-xs text-muted-foreground">Club activities · Read-only operational review</p></div><button type="button" onClick={()=>refetch()} disabled={isFetching||!tenantId||!clubId} className="rounded-lg border px-3 py-1 text-sm disabled:opacity-50">{isFetching?'Refreshing…':'Refresh'}</button></div>
   {isLoading&&<p className="mt-3 text-sm">Loading operational activity…</p>}
