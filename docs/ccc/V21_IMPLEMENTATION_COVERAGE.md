@@ -62,3 +62,10 @@
 
 ## Verification language
 A green unit test, lint or Vite build proves only that particular sandbox check. It does not prove Base44 function deployment, live page performance, full specification completion, or production behaviour.
+
+## 60% implementation pass — isolated development only
+- Added `person_communication_review`: active ClubUserAccess-to-Person verification, scoped cursor-paged ConsentRecord, CommunicationPreference and CommunicationSuppression evidence, no message delivery and explicit endpoint-hash suppression gap. Marketing consent cannot be inferred from contact details.
+- Added `identityIntegrity.mjs` to flag conflicting active Person/User links and unlinked active access records; no automatic merge or identity mutation.
+- Added `refund_recovery_queue` and Operations UI for stuck `refund_pending` locks, unresolved refund operations, ledger mismatches and orphan refunds. Added `needs_reconciliation` to PaymentRefund schema because the existing event refund handler already writes that status. No SumUp calls, automatic retries or provider settlement verification.
+- Added optional exact `court_id` to ClubActivity with scoped Court validation and planner selector. Separate assigned courts may overlap; whole-venue/unspecified-court activities block conflicting time slots. The guard checks CCC activities only, not hall availability or external bookings.
+- Added focused tests for these policies, scoped mocked backend actions, schema contracts and wizard court persistence. All percentage increases are engineering estimates; formal A01–A20 acceptance and live runtime verification remain outstanding.
