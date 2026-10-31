@@ -72,6 +72,20 @@ test('non-confirmed registrations cannot be checked in',async()=>{
  assert.equal((await h.call('host_roster',{id:'a1'})).data.participants.length,0);
  assert.equal((await h.call('host_checkin',{id:'a1',registrationId:'r1',attendance:'attended',expectedRevision:0})).status,409);
 });
+test('activity audit history is scoped and strips before/after snapshots',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.AuditLog.push({id:'audit-1',tenant_id:'t1',club_id:'c1',entity_type:'ClubActivity',entity_id:'a1',action:'ccc.activity.transition',user_id:'admin',created_date:'2026-10-31',before_state:'private',after_state:'private'});
+ h.db.AuditLog.push({id:'audit-2',tenant_id:'t1',club_id:'c2',entity_type:'ClubActivity',entity_id:'a1',action:'ccc.activity.transition',user_id:'other'});
+ const result=await h.call('activity_audit',{id:'a1'});
+ assert.equal(result.status,200);assert.equal(result.data.entries.length,1);
+ assert.equal(result.data.entries[0].action,'ccc.activity.transition');
+ assert.equal(JSON.stringify(result.data).includes('private'),false);
+ assert.equal(result.data.auditIsBestEffort,true);
+});
+test('delegated host cannot access activity audit history',async()=>{
+ const h=makeHarness();
+ assert.equal((await h.call('activity_audit',{id:'a1'})).status,403);
+});
 test('event overview only counts payments linked to selected registrations',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  h.db.PaymentRecord.push({id:'p1',tenant_id:'t1',club_id:'c1',purpose_type:'event',purpose_id:'r1',amount:12.5,amount_refunded:2.5,payment_status:'partially_refunded'});
