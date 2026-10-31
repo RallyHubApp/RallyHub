@@ -11,6 +11,7 @@ import {summariseClubOperations} from './operationsSummary.mjs';
 import {readScopedInventory,summarisePeopleInventory,summariseManagementInventory} from './managementReaders.mjs';
 import {validateHostVenueMapping,validatePersonAccessLink} from './managementActions.mjs';
 import {communicationReadiness} from './communicationReadiness.mjs';
+import {reviewHostRevocation} from './hostRevocation.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -98,6 +99,19 @@ Deno.serve(async req=>{
    if(result.updated!==1)return fail('Access link changed; reload review',409);
    await audit(sdk,tenant_id,club_id,user.id,'ccc.person.link','ClubUserAccess',accessId,{person_id:null},{person_id:personId,verification_confirmed:true});
    return Response.json({success:true,accessId,personId,mutationPerformed:true});
+  }
+  if(body.action==='host_revoke_review'||body.action==='host_revoke_confirm'){
+   const configId=s(body.configId),reason=s(body.reason,500);
+   if(!configId)return fail('Host configuration ID required');
+   const configs=await sdk.asServiceRole.entities.MembershipVenueHostConfig.filter({id:configId,tenant_id,club_id},'-created_date',1);
+   const review=reviewHostRevocation(configs?.[0],{tenantId:tenant_id,clubId:club_id});
+   if(!review.allowed)return fail(review.error,409);
+   if(body.action==='host_revoke_review')return Response.json({success:true,...review,mutationPerformed:false});
+   if(body.confirmRevocation!==true||reason.length<12)return fail('Confirm host revocation and provide a reason (at least 12 characters)');
+   const updated=await sdk.asServiceRole.entities.MembershipVenueHostConfig.updateMany({id:configId,tenant_id,club_id,active:true},{$set:{active:false,updated_by_user_id:user.id,updated_at:new Date().toISOString()}});
+   if(updated.updated!==1)return fail('Host configuration changed; reload review',409);
+   await audit(sdk,tenant_id,club_id,user.id,'ccc.host.revoke','MembershipVenueHostConfig',configId,{active:true},{active:false,affectedHostCount:review.affectedHostCount});
+   return Response.json({success:true,configId,mutationPerformed:true,affectedHostCount:review.affectedHostCount});
   }
   if(body.action==='host_venue_review'||body.action==='host_venue_confirm'){
    const configId=s(body.configId),venueId=s(body.venueId),reason=s(body.reason,500);
