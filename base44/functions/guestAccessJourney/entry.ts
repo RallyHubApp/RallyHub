@@ -1,3 +1,4 @@
+import {assessGuestApprovalPolicy} from './guestApprovalPolicy.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
@@ -187,7 +188,7 @@ async function sendPendingApprovalEmail(base44:any,club:any,row:any,selected:any
   const subject=`Action required · ${club.name} guest session request · ${row.full_name}`;
   const sessionText=`${selected?.day||''} ${selected?.start||''}${selected?.end?`–${selected.end}`:''}`.trim();
   const textBody=`A new guest session request is waiting for approval in RallyHub.\n\nGuest: ${row.full_name}\nEmail: ${row.email}\nMobile: ${row.mobile}\nExperience: ${row.experience_level||''}\nSession: ${sessionText}\nVenue: ${selected?.venueName||row.preferred_venue_key||''}\n${row.home_club?`Home club: ${row.home_club}\n`:''}${row.dupr_id?`DUPR: ${row.dupr_id}\n`:''}${row.health_declaration_applies===true?'Health/medical details were supplied — review them securely inside RallyHub.\n':''}\nOpen Session Bookings to review and approve or decline:\n${manageUrl}\n\nRallyHub`;
-  // All club notifications use the approved tenant Basic email renderer.
+  // All club notifications use the approved tenant Basic ****** renderer.
   // Never embed a legacy RallyHub logo, signature or footer in a workflow email.
   const brandKit=await tenantEmailBrandKit(base44,club.tenant_id,club.id);
   if(!brandKit)throw new Error('Approved Clare Pickleball email brand kit is unavailable; notification not sent.');
@@ -499,6 +500,10 @@ Deno.serve(async(req)=>{
       if(weekday(date)!==String(session.day||''))return Response.json({error:`That date is not a ${session.day}.`},{status:400});
       const todayIreland=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Dublin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
       if(date<todayIreland)return Response.json({error:'Choose today or a future session date.'},{status:400});
+      const currentGuestConfig=await loadConfig(base44,tenantId,clubId);
+      const guestPolicy=assessGuestApprovalPolicy({experienceLevel:row.experience_level,session,venue,
+       beginnerSessionKeys:currentGuestConfig?.beginner_session_keys||[]});
+      if(!guestPolicy.allowed)return Response.json({error:'The current session is not eligible for this guest experience level.',code:'GUEST_SESSION_ELIGIBILITY_CHANGED',issues:guestPolicy.issues},{status:409});
       // Doora-Barefield evenings are host-approved for experienced guests only.
       // They do not use the automated guest-release window used by daytime venues.
       const isDooraBarefield=/doora\s*[-–]?\s*barefield|st\.?\s*joseph'?s/i.test(String(venue.name||'')) || /\bdb-(?:mon|thu)-/i.test(String(session.id||''));
