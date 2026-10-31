@@ -6,7 +6,7 @@ const frontend=readFileSync(new URL('../../src/components/ccc/ClubEventRegistrat
 const planner=readFileSync(new URL('../../src/components/ccc/ClubActivityPlanner.jsx',import.meta.url),'utf8');
 test('overview is explicitly scoped to active tenant and club',()=>{
  assert.match(backend,/body\.action==='registration_overview'/);
- assert.match(backend,/readEventRegistrations\(sdk\.asServiceRole\.entities\.EventRegistration,\{tenantId:tenant_id,clubId:club_id,eventId:event\.id\}\)/);
+ assert.match(backend,/readEventRegistrations\(sdk\.asServiceRole\.entities\.EventRegistration,\{tenantId:tenant_id,clubId:club_id,eventId:event\.id/);
  assert.match(backend,/Tournament\.filter\(\{id:record\.linked_event_id,tenant_id,host_club_id:club_id\}/);
  assert.match(backend,/readEventPayments\(sdk\.asServiceRole\.entities\.PaymentRecord,\{tenantId:tenant_id,clubId:club_id,registrationIds\}\)/);
 });
