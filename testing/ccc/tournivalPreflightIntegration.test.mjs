@@ -68,3 +68,22 @@ test('completed matches cannot be silently reopened',()=>{
  const done=applyTournivalMatchChange(started,{matches:[completed]});
  assert.throws(()=>applyTournivalMatchChange(done,{matches:[fixture('m1',['a','b','c','d'],'waiting')]}),/Completed match cannot be reopened/);
 });
+
+test('court update rejects duplicate match IDs even if count matches',()=>{
+ const started=startTournival(eventWithPlayers(),{matches:[fixture('m1',['a','b','c','d']),fixture('m2',['e','f','g','h'])]});
+ assert.throws(()=>applyTournivalMatchChange(started,{matches:[started.matches[0],started.matches[0]]}),/Duplicate match in update/);
+});
+test('court update rejects revision rollback',()=>{
+ const started=startTournival(eventWithPlayers(),{matches:[fixture('m1',['a','b','c','d'])]});
+ const changed=applyTournivalMatchChange(started,{matches:[{...started.matches[0],status:'playing',court:1,revision:1}]});
+ assert.throws(()=>applyTournivalMatchChange(changed,{matches:[{...changed.matches[0],revision:0}]}),/Invalid match revision transition/);
+});
+test('court update rejects cancelled match reopening',()=>{
+ const started=startTournival(eventWithPlayers(),{matches:[fixture('m1',['a','b','c','d'])]});
+ const cancelled=applyTournivalMatchChange(started,{matches:[{...started.matches[0],status:'cancelled',revision:1}]});
+ assert.throws(()=>applyTournivalMatchChange(cancelled,{matches:[{...cancelled.matches[0],status:'waiting',revision:2}]}),/Cancelled match cannot be reopened/);
+});
+test('court update rejects completion without a result',()=>{
+ const started=startTournival(eventWithPlayers(),{matches:[fixture('m1',['a','b','c','d'])]});
+ assert.throws(()=>applyTournivalMatchChange(started,{matches:[{...started.matches[0],status:'completed',result:null}]}),/completed_result_missing/);
+});
