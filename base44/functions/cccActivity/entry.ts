@@ -254,7 +254,8 @@ Deno.serve(async req=>{
   if(body.action==='recurrence_recovery_review'){
    const id=s(body.id),source=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!source)return fail('Activity not found',404);
-   return Response.json({success:true,...await inspectRecurrenceBatch(entity,source,{tenantId:tenant_id,clubId:club_id})});
+   const review=await inspectRecurrenceBatch(entity,source,{tenantId:tenant_id,clubId:club_id});
+   return Response.json({success:true,...review,completionDecision:reviewRecurrenceCompletion(source,review),sourceRevision:source.revision});
   }
   if(body.action==='recurrence_create_drafts'){
    const id=s(body.id),revision=Number(body.expectedRevision),batchKey=s(body.batchKey,120);
