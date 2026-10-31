@@ -24,6 +24,7 @@ import {identityIntegrity} from '../../base44/functions/cccActivity/identityInte
 import {readCccAccess,cccAccessDecision} from '../../base44/functions/cccActivity/accessGate.mjs';
 import {guestVenueReview} from '../../base44/functions/cccActivity/guestPolicy.mjs';
 import {membershipReadiness} from '../../base44/functions/cccActivity/membershipReadiness.mjs';
+import {reviewWeeklyRecurrence} from '../../base44/functions/cccActivity/recurrenceReview.mjs';
 const source=readFileSync(new URL('../../base44/functions/cccActivity/entry.ts',import.meta.url),'utf8').replace(/^import .*;\s*$/gm,'');
 const js=transformSync(source,{loader:'ts',format:'cjs'}).code;
 const records={
@@ -52,7 +53,7 @@ function makeHarness(user=records.User[0]){
  }]));
  let handler;
  const sdk={auth:{me:async()=>user},asServiceRole:{entities}};
- vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,readEventRegistrations,readScopedActivities,buildFollowupReview,validateEventLink,readActivityAudit,summariseClubOperations,readScopedInventory,summarisePeopleInventory,summariseManagementInventory,validateHostVenueMapping,validatePersonAccessLink,communicationReadiness,reviewHostRevocation,activityScheduleConflicts,reviewPersonCommunications,readPersonInventory,refundRecoveryQueue,identityIntegrity,readCccAccess,cccAccessDecision,guestVenueReview,membershipReadiness,Response,Date,console});
+ vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,readEventRegistrations,readScopedActivities,buildFollowupReview,validateEventLink,readActivityAudit,summariseClubOperations,readScopedInventory,summarisePeopleInventory,summariseManagementInventory,validateHostVenueMapping,validatePersonAccessLink,communicationReadiness,reviewHostRevocation,activityScheduleConflicts,reviewPersonCommunications,readPersonInventory,refundRecoveryQueue,identityIntegrity,readCccAccess,cccAccessDecision,guestVenueReview,membershipReadiness,reviewWeeklyRecurrence,Response,Date,console});
  const call=async(action,fields={})=>{const response=await handler({method:'POST',json:async()=>({action,...fields})});return {status:response.status,data:await response.json()}};
  return {call,db,reads};
 }
