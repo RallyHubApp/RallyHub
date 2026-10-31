@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { Zap, Users, UserPlus, X, List, BarChart2, Trophy, ClipboardList, Link2, Check, FileSpreadsheet } from 'lucide-react';
+import { Zap, Users, UserPlus, X, List, BarChart2, Trophy, ClipboardList, Link2, Check, FileSpreadsheet, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   generateGroupFixtures,
@@ -174,6 +174,22 @@ function PlayerPanel({ players, tournament, isAdmin, queryClient, onAddPlayer, o
 export default function TournivalView({ tournament, players, allPlayers, queryClient, isAdmin }) {
   const [activeTab, setActiveTab] = useState('setup');
   const [xlsxOpen, setXlsxOpen] = useState(false);
+  const [organiserHealth, setOrganiserHealth] = useState(null);
+  const [organiserHealthBusy, setOrganiserHealthBusy] = useState(false);
+  useEffect(() => { setOrganiserHealth(null); }, [tournament.id]);
+  const reviewOrganiserHealth = async () => {
+    if (organiserHealthBusy || !isAdmin) return;
+    setOrganiserHealthBusy(true);
+    setOrganiserHealth(null);
+    try {
+      const response = await base44.functions.invoke('tournivalOrganiserHealth', {
+        action:'review', tenantId:tournament.tenant_id, clubId:tournament.host_club_id, tournamentId:tournament.id
+      });
+      if (!response?.data?.success) throw Error(response?.data?.error || 'Organiser health review unavailable');
+      setOrganiserHealth(response.data.review);
+    } catch (error) { toast.error(error?.message || 'Unable to review Tournival integrity'); }
+    finally { setOrganiserHealthBusy(false); }
+  };
 
   // Parse state from tournament
   const state = useMemo(() => {
@@ -409,6 +425,19 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
 
   return (
     <div className="space-y-4">
+      {isAdmin && <section className="rounded-xl border border-border p-3 space-y-2" aria-label="Tournival organiser integrity">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div><p className="text-sm font-semibold">Tournament integrity</p><p className="text-xs text-muted-foreground">Read-only check of the authoritative session and live results mirror.</p></div>
+          <Button variant="outline" size="sm" disabled={organiserHealthBusy} onClick={reviewOrganiserHealth}>
+            <ShieldCheck className="w-4 h-4 mr-1.5" />{organiserHealthBusy ? 'Checking…' : 'Review integrity'}
+          </Button>
+        </div>
+        {organiserHealth && <div role="status" className={`text-sm rounded-lg p-2 ${organiserHealth.healthy ? 'bg-green-500/10' : 'bg-amber-500/10'}`}>
+          <strong>{organiserHealth.healthy ? 'Session and results are consistent' : 'Organiser review required'}</strong>
+          <p className="mt-1">{organiserHealth.healthy ? 'No session or results mirror conflicts detected.' : `Issues: ${(organiserHealth.issues || []).join(', ')}. Host scoring must remain paused until reviewed.`}</p>
+          {!organiserHealth.healthy && <p className="mt-1 text-xs">Session revision: {organiserHealth.sessionRevision ?? 'unknown'}; mirror revision: {organiserHealth.mirrorRevision ?? 'unknown'}. No repair or score changes have been made.</p>}
+        </div>}
+      </section>}
       {/* Tab bar */}
       <div className="flex overflow-x-auto gap-1 pb-1">
         {/* Players always visible */}
