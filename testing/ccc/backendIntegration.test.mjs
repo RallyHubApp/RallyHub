@@ -98,6 +98,15 @@ test('event overview only counts payments linked to selected registrations',asyn
  assert.equal(result.data.registrations[0].name,'Player One');
  assert.equal(JSON.stringify(result.data).includes('medical_note'),false);
 });
+test('financial review flags incomplete registration snapshots',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ for(let i=0;i<499;i++)h.db.EventRegistration.push({...h.db.EventRegistration[0],id:'extra-'+i});
+ const result=await h.call('registration_overview',{id:'a1'});
+ assert.equal(result.status,200);assert.equal(result.data.registrations.length,500);
+ assert.equal(result.data.finance.complete,false);
+ assert.equal(result.data.finance.requiresReview,true);
+ assert.equal(result.data.resultsMayBeTruncated,true);
+});
 test('event overview and roster enforce linked event tenant and club',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  h.db.Tournament[0].host_club_id='other';
