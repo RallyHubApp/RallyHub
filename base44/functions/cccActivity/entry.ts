@@ -187,7 +187,8 @@ Deno.serve(async req=>{
   }
   if(body.action==='schedule_review'){
    const draft=body.draft||{};
-   const candidate={id:s(body.id),tenant_id,club_id,venue_id:s(draft.venue_id),starts_at:s(draft.starts_at),ends_at:s(draft.ends_at)};
+   const candidate={id:s(body.id),tenant_id,club_id,venue_id:s(draft.venue_id),court_id:s(draft.court_id),starts_at:s(draft.starts_at),ends_at:s(draft.ends_at)};
+   if(candidate.court_id){const courts=await sdk.asServiceRole.entities.Court.filter({id:candidate.court_id,tenant_id,club_id,venue_id:candidate.venue_id},'-created_date',1);if(!courts?.length||courts[0].status==='Maintenance')return fail('Court not available in selected venue',409)}
    const schedule=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});
    const checked=activityScheduleConflicts(candidate,schedule.activities);
    return Response.json({success:true,valid:checked.valid,conflicts:checked.conflicts,complete:schedule.complete,ready:checked.valid&&schedule.complete&&checked.conflicts.length===0,mutationPerformed:false});
@@ -364,6 +365,8 @@ Deno.serve(async req=>{
   if(!Number.isFinite(Date.parse(starts_at))||!Number.isFinite(Date.parse(ends_at))||Date.parse(ends_at)<=Date.parse(starts_at))return fail('Invalid activity dates');
   const venues=await sdk.asServiceRole.entities.Venue.filter({id:venue_id,tenant_id,club_id,status:'active'},'-created_date',1);
   if(!venues?.length)return fail('Venue not in active club',403);
+  const court_id=s(f.court_id);
+  if(court_id){const courts=await sdk.asServiceRole.entities.Court.filter({id:court_id,tenant_id,club_id,venue_id},'-created_date',1);if(!courts?.length||courts[0].status==='Maintenance')return fail('Court not available in selected venue',409)}
   const registration_mode=s(f.registration_mode||'approval'),payment_method=s(f.payment_method||'none');
   if(!['approval','automatic','closed'].includes(registration_mode)||!['none','cash','online'].includes(payment_method))return fail('Invalid policy');
   const host_user_id=s(f.host_user_id),communication_template_id=s(f.communication_template_id);
@@ -374,7 +377,7 @@ Deno.serve(async req=>{
    const templates=await sdk.asServiceRole.entities.CommunicationTemplate.filter({id:communication_template_id,tenant_id,owner_scope:'tenant',status:'approved'},'-created_date',1);
    if(!templates?.length||(templates[0].club_id&&templates[0].club_id!==club_id))return fail('Select an approved club template',403);
   }
-  const payload={tenant_id,club_id,sport,type,title,venue_id,starts_at,ends_at,capacity,registration_mode,payment_method,host_user_id,communication_template_id,updated_by_user_id:user.id};
+  const payload={tenant_id,club_id,sport,type,title,venue_id,court_id,starts_at,ends_at,capacity,registration_mode,payment_method,host_user_id,communication_template_id,updated_by_user_id:user.id};
   const id=s(body.id),revision=Number(body.expectedRevision);
   if(id){
    const existing=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
