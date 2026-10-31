@@ -27,7 +27,7 @@ Deno.serve(async req=>{
   const tenant_id=s(user.active_tenant_id),club_id=s(user.active_club_id);
   if(!tenant_id||!club_id)return fail('Select a club',409);
   const body=await req.json().catch(()=>({})),entity=sdk.asServiceRole.entities.ClubActivity;
-  const hostAction=['host_activities','host_roster','host_checkin'].includes(body.action);
+  const hostAction=['host_activities','host_roster','host_roster_page','host_checkin'].includes(body.action);
   if(user.role!=='admin'&&!hostAction)return fail('Admin access required',403);
   if(body.action==='host_activities'){
    if(user.role!=='admin'&&user.approval_status!=='approved')return fail('Host access denied',403);
@@ -51,9 +51,11 @@ Deno.serve(async req=>{
    if(user.role!=='admin'&&(user.approval_status!=='approved'||!await isClubHost(sdk,tenant_id,club_id,record.venue_id,user.id)))return fail('Host access denied',403);
    const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
    if(!event)return fail('Linked event unavailable',404);
-   if(body.action==='host_roster'){
-    const registrationRead=await readEventRegistrations(sdk.asServiceRole.entities.EventRegistration,{tenantId:tenant_id,clubId:club_id,eventId:event.id});const registrations=registrationRead.registrations;
-    return Response.json({success:true,activityId:id,eventName:event.name||record.title,participants:(registrations||[]).filter((r:any)=>['confirmed','cash_confirmed'].includes(r.registration_status)).map((r:any)=>({id:r.id,name:r.full_name||'',bookingStatus:r.registration_status||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)})),resultsMayBeTruncated:!registrationRead.complete});
+   if(body.action==='host_roster'||body.action==='host_roster_page'){
+    const continuation=body.action==='host_roster_page',cursor=s(body.cursor,1024);
+    if(continuation&&!cursor)return fail('Roster continuation cursor required');
+    const registrationRead=await readEventRegistrations(sdk.asServiceRole.entities.EventRegistration,{tenantId:tenant_id,clubId:club_id,eventId:event.id,startCursor:continuation?cursor:'',maxPages:1});const registrations=registrationRead.registrations;
+    return Response.json({success:true,activityId:id,eventName:event.name||record.title,participants:(registrations||[]).filter((r:any)=>['confirmed','cash_confirmed'].includes(r.registration_status)).map((r:any)=>({id:r.id,name:r.full_name||'',bookingStatus:r.registration_status||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)})),nextCursor:registrationRead.nextCursor,resultsMayBeTruncated:!registrationRead.complete});
    }
    if(!['scheduled','registration_open','registration_closed','in_progress','completed'].includes(record.status))return fail('Check-in unavailable for this activity',409);
    const registrationId=s(body.registrationId),attendance=s(body.attendance),revision=Number(body.expectedRevision);
