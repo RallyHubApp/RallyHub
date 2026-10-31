@@ -1,0 +1,14 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {reviewTournivalRecovery} from '../../src/lib/ccc/tournivalRecoveryReview.mjs';
+const match=(id,players,status='waiting',court=null,result=null)=>({id,teamA:players.slice(0,2),teamB:players.slice(2),status,court,result,revision:0});
+const event=matches=>({id:'e',tenantId:'t',clubId:'c',revision:3,phase:'qualification',matches});
+const codes=x=>x.issues.map(i=>i.code);
+test('waiting fixtures are reviewable but not auto-recovered',()=>{const x=reviewTournivalRecovery(event([match('m1',['a','b','c','d'])]));assert.equal(x.safeToResume,true);assert.equal(x.automatedRecovery,false);});
+test('active match requires host review',()=>assert.equal(reviewTournivalRecovery(event([match('m1',['a','b','c','d'],'playing',1)])).safeToResume,false));
+test('stale event revision fails closed',()=>assert.ok(codes(reviewTournivalRecovery(event([]),{expectedRevision:2})).includes('stale_event_revision')));
+test('court collisions and overlapping players identified',()=>{const x=reviewTournivalRecovery(event([match('m1',['a','b','c','d'],'playing',1),match('m2',['a','e','f','g'],'playing',1)]));assert.ok(codes(x).includes('court_collision'));assert.ok(codes(x).includes('overlapping_players'));});
+test('missing result fails closed',()=>assert.ok(codes(reviewTournivalRecovery(event([match('m1',['a','b','c','d'],'completed')]))).includes('missing_result')));
+test('duplicate match ID fails closed',()=>assert.ok(codes(reviewTournivalRecovery(event([match('m1',['a','b','c','d']),match('m1',['e','f','g','h'])]))).includes('invalid_match_id')));
+test('malformed teams fail closed without throwing',()=>assert.ok(codes(reviewTournivalRecovery(event([{id:'m',teamA:null,teamB:[],status:'waiting',revision:0}]))).includes('invalid_team')));
+test('missing event fails closed',()=>assert.equal(reviewTournivalRecovery(null).safeToResume,false));
