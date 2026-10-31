@@ -176,13 +176,16 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
   const [xlsxOpen, setXlsxOpen] = useState(false);
   const [organiserHealth, setOrganiserHealth] = useState(null);
   const [organiserHealthBusy, setOrganiserHealthBusy] = useState(false);
+  const [recoveryPreview, setRecoveryPreview] = useState(null);
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
   const integrityRequest = useRef(0);
-  useEffect(() => { integrityRequest.current += 1; setOrganiserHealth(null); setOrganiserHealthBusy(false); }, [tournament.id]);
+  useEffect(() => { integrityRequest.current += 1; setOrganiserHealth(null); setRecoveryPreview(null); setOrganiserHealthBusy(false); setRecoveryBusy(false); }, [tournament.id]);
   const reviewOrganiserHealth = async () => {
     if (organiserHealthBusy || !isAdmin) return;
     const requestId = ++integrityRequest.current;
     setOrganiserHealthBusy(true);
     setOrganiserHealth(null);
+    setRecoveryPreview(null);
     try {
       const response = await base44.functions.invoke('tournivalOrganiserHealth', {
         action:'review', tenantId:tournament.tenant_id, clubId:tournament.host_club_id, tournamentId:tournament.id
@@ -191,6 +194,20 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
       if (integrityRequest.current === requestId) setOrganiserHealth(response.data.review);
     } catch (error) { if (integrityRequest.current === requestId) toast.error(error?.message || 'Unable to review Tournival integrity'); }
     finally { if (integrityRequest.current === requestId) setOrganiserHealthBusy(false); }
+  };
+
+  const previewRecovery = async () => {
+    if (!isAdmin || recoveryBusy || !organiserHealth?.readyForOrganiserReview) return;
+    const requestId = ++integrityRequest.current;
+    setRecoveryBusy(true);
+    try {
+      const response = await base44.functions.invoke('tournivalOrganiserHealth', {
+        action:'preview_recovery', tenantId:tournament.tenant_id, clubId:tournament.host_club_id, tournamentId:tournament.id
+      });
+      if (!response?.data?.success) throw Error(response?.data?.error || 'Preview unavailable');
+      if (integrityRequest.current === requestId) setRecoveryPreview(response.data.preview);
+    } catch (error) { if (integrityRequest.current === requestId) toast.error(error?.message || 'Preview unavailable'); }
+    finally { if (integrityRequest.current === requestId) setRecoveryBusy(false); }
   };
 
   // Parse state from tournament
@@ -434,6 +451,11 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
             <ShieldCheck className="w-4 h-4 mr-1.5" />{organiserHealthBusy ? 'Checking…' : 'Review integrity'}
           </Button>
         </div>
+        {organiserHealth?.readyForOrganiserReview && <Button size="sm" variant="outline" disabled={recoveryBusy} onClick={previewRecovery}>{recoveryBusy ? 'Checking…' : 'Preview recovery'}</Button>}
+        {recoveryPreview && <div role="status" className="rounded-lg border border-amber-500/40 p-3 text-sm">
+          <strong>{recoveryPreview.available ? 'Manual recovery candidate' : 'Recovery unavailable'}</strong>
+          {recoveryPreview.available && <p>Session revision {recoveryPreview.toRevision}; mirror revision {recoveryPreview.fromRevision}. No records were changed.</p>}
+        </div>}
         {organiserHealth && <div role="status" className={`text-sm rounded-lg p-2 ${organiserHealth.healthy ? 'bg-green-500/10' : 'bg-amber-500/10'}`}>
           <strong>{organiserHealth.healthy ? 'Session and results are consistent' : 'Organiser review required'}</strong>
           <p className="mt-1">{organiserHealth.healthy ? 'No session or results mirror conflicts detected.' : `Issues: ${(organiserHealth.issues || []).join(', ')}. Host scoring must remain paused until reviewed.`}</p>
