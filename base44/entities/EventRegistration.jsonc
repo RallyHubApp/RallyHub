@@ -36,8 +36,15 @@
     "previous_experience": {
       "type": "string"
     },
-    "previous_sports": {"type":"array","items":{"type":"string"}},
-    "health_declaration_applies": {"type":"boolean"},
+    "previous_sports": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "health_declaration_applies": {
+      "type": "boolean"
+    },
     "medical_note": {
       "type": "string"
     },
@@ -53,6 +60,25 @@
         "expired",
         "declined"
       ]
+    },
+    "attendance_status": {
+      "type": "string",
+      "enum": [
+        "not_marked",
+        "attended",
+        "no_show",
+        "excused"
+      ]
+    },
+    "attendance_marked_at": {
+      "type": "string"
+    },
+    "attendance_marked_by_user_id": {
+      "type": "string"
+    },
+    "attendance_revision": {
+      "type": "integer",
+      "default": 0
     },
     "payment_status": {
       "type": "string"
