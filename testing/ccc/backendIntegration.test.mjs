@@ -174,3 +174,28 @@ test('missing authentication and tenant context are denied',async()=>{
  assert.equal((await makeHarness(null).call('host_activities')).status,403);
  assert.equal((await makeHarness({id:'host',role:'user'}).call('host_activities')).status,409);
 });
+test('event link requires approved template, authorised host and exact venue match',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ Object.assign(h.db.ClubActivity[0],{status:'draft',capacity:16,registration_mode:'approval',payment_method:'none',host_user_id:'host',communication_template_id:'template1'});
+ Object.assign(h.db.Tournament[0],{event_capacity:16,event_fee_amount:0,venue_id:'v1',start_date:'2026-11-04'});
+ const first=await h.call('link_event',{id:'a1',eventId:'e1',expectedRevision:1});
+ assert.equal(first.status,200);assert.equal(first.data.bridgeStatus,'linked_unverified');
+ assert.equal(h.db.ClubActivity[0].revision,2);
+ assert.equal(h.db.AuditLog.length,1);
+});
+test('event link fails closed if approved template or venue ID is missing',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ Object.assign(h.db.ClubActivity[0],{status:'draft',capacity:16,registration_mode:'approval',payment_method:'none',host_user_id:'host',communication_template_id:'template1'});
+ Object.assign(h.db.Tournament[0],{event_capacity:16,event_fee_amount:0,start_date:'2026-11-04'});
+ const missingVenue=await h.call('link_event',{id:'a1',eventId:'e1',expectedRevision:1});
+ assert.equal(missingVenue.status,409);assert.equal(h.db.ClubActivity[0].revision,1);
+ h.db.Tournament[0].venue_id='v1';h.db.CommunicationTemplate[0].status='draft';
+ const missingTemplate=await h.call('link_event',{id:'a1',eventId:'e1',expectedRevision:1});
+ assert.equal(missingTemplate.status,409);assert.equal(h.db.ClubActivity[0].revision,1);
+});
+test('activity list reads more than 100 drafts without silently truncating',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ for(let i=2;i<=305;i++)h.db.ClubActivity.push({...h.db.ClubActivity[0],id:'a'+i});
+ const result=await h.call('list');assert.equal(result.status,200);
+ assert.equal(result.data.activities.length,305);assert.equal(result.data.resultsMayBeTruncated,false);
+});
