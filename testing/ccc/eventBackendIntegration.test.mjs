@@ -47,6 +47,32 @@ test('admin page denies cross-club users before reading private data',async()=>{
  assert.equal((await h.call('admin_list')).status,403);
  assert.equal((await h.call('admin_page',{cursor:'200'})).status,403);
 });
+function setupApply(h,capacity=700){
+ h.db.Tournament[0].event_capacity=capacity;h.db.Tournament[0].event_reserved_count=0;
+ for(const type of ['liability_waiver','code_of_conduct','health_declaration','privacy_data'])h.db.ClubLegalDocument.push({id:type,tenant_id:'t1',club_id:'c1',active:true,document_type:type,version:'v1',consent_label:type});
+ return {fullName:'New Guest',email:'newguest@example.ie',mobile:'0870000000',emergencyContactName:'Emergency',emergencyContactMobile:'0871111111',operationId:'new-op',consents:Object.fromEntries(['liability_waiver','code_of_conduct','health_declaration','privacy_data'].map(t=>[t,'v1']))};
+}
+test('booking corrects stale under-counted capacity counter before accepting applications',async()=>{
+ const h=harness(),payload=setupApply(h,600);
+ for(let i=2;i<=600;i++)h.db.EventRegistration.push({...h.db.EventRegistration[0],id:'r'+i,email:'guest'+i+'@example.ie'});
+ const result=await h.call('apply',payload);
+ assert.equal(result.status,409);assert.equal(h.db.Tournament[0].event_reserved_count,600);
+ assert.equal(h.db.EventRegistration.length,600);assert.equal(h.calls.notice,0);
+});
+test('booking accepts one application after full-roster capacity verification',async()=>{
+ const h=harness(),payload=setupApply(h,700);
+ for(let i=2;i<=600;i++)h.db.EventRegistration.push({...h.db.EventRegistration[0],id:'r'+i,email:'guest'+i+'@example.ie'});
+ const result=await h.call('apply',payload);
+ assert.equal(result.status,200);assert.equal(result.data.status,'pending_approval');
+ assert.equal(h.db.EventRegistration.length,601);assert.equal(h.db.Tournament[0].event_reserved_count,601);
+ assert.equal(h.calls.notice,1);
+});
+test('booking rejects duplicate email beyond the old 500-record boundary',async()=>{
+ const h=harness(),payload=setupApply(h,700);
+ for(let i=2;i<=600;i++)h.db.EventRegistration.push({...h.db.EventRegistration[0],id:'r'+i,email:i===600?'newguest@example.ie':'guest'+i+'@example.ie'});
+ const result=await h.call('apply',payload);
+ assert.equal(result.status,409);assert.equal(h.db.EventRegistration.length,600);
+});
 test('booking verification uses operation ID lookup without reading full roster',async()=>{
  const h=harness();
  h.db.EventRegistration[0].operation_id='operation1';
