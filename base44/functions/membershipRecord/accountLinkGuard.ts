@@ -9,6 +9,7 @@ export function assessMemberAccountLink({tenantId,clubId,userId,person,membershi
  if(target?.id!==userId)issues.push('user_identity_mismatch');
  if(person?.linked_user_id&&person.linked_user_id!==userId)issues.push('person_already_linked');
  if(player?.user_id&&player.user_id!==userId)issues.push('player_already_linked');
+ if(Boolean(person?.linked_user_id)!==Boolean(player?.user_id))issues.push('partial_account_link_requires_review');
  if(otherPerson?.id&&otherPerson.id!==person?.id)issues.push('user_linked_to_other_person');
  if(otherPlayer?.id&&otherPlayer.id!==player?.id)issues.push('user_linked_to_other_player');
  if(!Array.isArray(accessRows))issues.push('access_records_invalid');
