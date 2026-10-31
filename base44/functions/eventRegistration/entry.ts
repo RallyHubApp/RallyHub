@@ -11,6 +11,7 @@ import {selectRefundableEventPayment,selectCheckoutPayment} from './paymentSelec
 import {readPaymentRefundHistory,refundRemaining} from './scopedRefundReader.mjs';
 import {readEventAdminPage} from './adminPage.mjs';
 import {countActiveEventRegistrations} from './availabilityCount.mjs';
+import {requireEventAdminGrant} from './adminAccess.mjs';
 const clean=(v:any,n=200)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,n);
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
 Deno.serve(async(req)=>{
@@ -24,7 +25,7 @@ Deno.serve(async(req)=>{
   const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview'];
   const isAdminAction=adminActions.includes(action);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)))return fail('Bookings are not open for this event',404);
-  if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||user.role!=='admin')return fail('Admin access required',403);if(!t.tenant_id||!t.host_club_id||String(user.active_tenant_id||'')!==String(t.tenant_id)||String(user.active_club_id||'')!==String(t.host_club_id))return fail('Event outside selected tenant or club',403);}
+  if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||!t.tenant_id||!t.host_club_id||!await requireEventAdminGrant(base44,user,t))return fail('Active tenant or club administrator grant required',403);}
   const capacity=Number(t.event_capacity||0);if(!Number.isSafeInteger(capacity)||capacity<1)return fail('Event capacity is not configured',503);
   if(action==='admin_list'||action==='admin_page'){
    const cursor=action==='admin_page'?clean(b.cursor,2048):'';
