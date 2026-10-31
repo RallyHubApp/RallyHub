@@ -15,6 +15,9 @@ export async function inspectRecurrenceBatch(entity,source,{tenantId,clubId}={})
   if(!a.idempotency_key?.startsWith('ccc-rec-'+source.id+'-'))issues.push('unexpected_operation_id');
  }
  if(!inventory.complete)issues.push('inventory_incomplete');
+ const expected=source.recurrence_expected_count;
+ if(!Number.isSafeInteger(expected)||expected<1||expected>12)issues.push('expected_count_unknown');
+ else if(children.length!==expected)issues.push('child_count_mismatch');
  if(!['creating','complete','needs_recovery'].includes(source.recurrence_batch_state))issues.push('unknown_batch_state');
- return {valid:true,sourceActivityId:source.id,batchKey:source.recurrence_batch_key,batchState:source.recurrence_batch_state,complete:inventory.complete,childCount:children.length,children:children.map(a=>({id:a.id,week:a.configuration?.recurrence_week,status:a.status,startsAt:a.starts_at,endsAt:a.ends_at})).sort((a,b)=>a.week-b.week),issues:[...new Set(issues)],requiresManualReview:source.recurrence_batch_state!=='complete'||issues.length>0,safeToAutoRetry:false,mutationPerformed:false};
+ return {valid:true,sourceActivityId:source.id,batchKey:source.recurrence_batch_key,batchState:source.recurrence_batch_state,complete:inventory.complete,expectedCount:source.recurrence_expected_count??null,childCount:children.length,children:children.map(a=>({id:a.id,week:a.configuration?.recurrence_week,status:a.status,startsAt:a.starts_at,endsAt:a.ends_at})).sort((a,b)=>a.week-b.week),issues:[...new Set(issues)],requiresManualReview:source.recurrence_batch_state!=='complete'||issues.length>0,safeToAutoRetry:false,mutationPerformed:false};
 }
