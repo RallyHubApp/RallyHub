@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from 'react';
+import React,{useEffect,useRef,useState} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {base44} from '@/api/base44Client';
 import ClubEventFollowupCandidates from './ClubEventFollowupCandidates';
@@ -18,6 +18,8 @@ export default function ClubEventRegistrationOverview({activityId,tenantId,clubI
  const [paging,setPaging]=useState(false);
  const [extraPaymentReview,setExtraPaymentReview]=useState(false);
  const [extraPages,setExtraPages]=useState([]);
+ const activeScope=useRef('');
+ activeScope.current=[tenantId,clubId,activityId].join('|');
  useEffect(()=>{setExtraRows([]);setPageCursor(undefined);setExtraPaymentReview(false);setExtraPages([]);setSelected(null);setActionError('');setActionResult('')},[activityId,tenantId,clubId]);
  const queryClient=useQueryClient();
  const {data,isLoading,isError,error,refetch,isFetching}=useQuery({
@@ -29,7 +31,7 @@ export default function ClubEventRegistrationOverview({activityId,tenantId,clubI
  const runAction=async()=>{if(!selected||busy||!data?.event?.id)return;setBusy(true);setActionError('');setActionResult('');try{const res=await base44.functions.invoke('eventRegistration',{action:selected.action,eventId:data.event.id,registrationId:selected.id});if(!res.data?.success)throw Error(res.data?.error||'Action failed');setActionResult(selected.action==='admin_approve'?'Approval processed. Check payment and message delivery records.':'Payment verification checked: '+String(res.data.paymentStatus||res.data.status||'unknown'));setSelected(null);setExtraRows([]);setPageCursor(undefined);setExtraPaymentReview(false);setExtraPages([]);await queryClient.invalidateQueries({queryKey:['ccc-event-registration-overview',tenantId,clubId,activityId]});}catch(e){setActionError(e?.response?.data?.error||e?.message||'Action failed')}finally{setBusy(false)}};
  if(!activityId)return null;
  const nextCursor=pageCursor===undefined?data?.registrationNextCursor:pageCursor;
- const loadMore=async()=>{if(!nextCursor||paging||busy)return;setPaging(true);setActionError('');try{const result=await base44.functions.invoke('cccActivity',{action:'registration_page',id:activityId,cursor:nextCursor});if(!result.data?.success)throw Error(result.data?.error||'Unable to load next page');setExtraRows(current=>{const ids=new Set([...data.registrations,...current].map(r=>r.id));return [...current,...result.data.registrations.filter(r=>!ids.has(r.id))]});setPageCursor(result.data.nextCursor||null);setExtraPages(current=>[...current,{cursor:nextCursor,finance:result.data.finance||null}]);if(result.data.paymentReviewRequired)setExtraPaymentReview(true)}catch(e){setActionError(e?.response?.data?.error||e?.message||'Unable to load next page')}finally{setPaging(false)}};
+ const loadMore=async()=>{if(!nextCursor||paging||busy)return;const requestScope=activeScope.current;setPaging(true);setActionError('');try{const result=await base44.functions.invoke('cccActivity',{action:'registration_page',id:activityId,cursor:nextCursor});if(!result.data?.success)throw Error(result.data?.error||'Unable to load next page');if(activeScope.current!==requestScope)return;setExtraRows(current=>{const ids=new Set([...data.registrations,...current].map(r=>r.id));return [...current,...result.data.registrations.filter(r=>!ids.has(r.id))]});setPageCursor(result.data.nextCursor||null);setExtraPages(current=>[...current,{cursor:nextCursor,finance:result.data.finance||null}]);if(result.data.paymentReviewRequired)setExtraPaymentReview(true)}catch(e){setActionError(e?.response?.data?.error||e?.message||'Unable to load next page')}finally{setPaging(false)}};
  const loaded=[...(data?.registrations||[]),...extraRows];
  const rollup=data?summariseLoadedRegistrations(loaded,extraPages,{hasMore:!!nextCursor,initialPaymentReadComplete:data.initialPaymentReadComplete,initialFinance:data.finance,extraReview:extraPaymentReview}):null;
  const rows=loaded.filter(r=>(status==='all'||r.status===status)&&(attendanceFilter==='all'||r.attendance===attendanceFilter)&&(!search||[r.name,r.email,r.mobile].some(v=>String(v||'').toLowerCase().includes(search.toLowerCase().trim()))));
