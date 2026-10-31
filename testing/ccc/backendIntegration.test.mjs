@@ -548,6 +548,13 @@ test('recurrence creation is draft-only and blocks a repeated batch',async()=>{
  assert.equal(h.db.ClubActivity[0].recurrence_batch_state,'complete');
  assert.equal((await h.call('recurrence_create_drafts',payload)).status,409);
 });
+test('recurring child cannot become ready until its source batch is complete',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ Object.assign(h.db.ClubActivity[0],{status:'draft',linked_event_id:'',recurrence_batch_key:'ccc-batch-abcdefgh',recurrence_batch_state:'needs_recovery'});
+ h.db.ClubActivity.push({id:'child',tenant_id:'t1',club_id:'c1',venue_id:'v1',starts_at:'2026-11-11T19:00',ends_at:'2026-11-11T20:30',status:'draft',revision:1,idempotency_key:'ccc-rec-a1-1-2',configuration:{recurrence_source_activity_id:'a1',recurrence_source_revision:1,recurrence_week:2}});
+ const response=await h.call('transition',{id:'child',to:'ready',expectedRevision:1});
+ assert.equal(response.status,409);assert.equal(h.db.ClubActivity.at(-1).status,'draft');
+});
 test('recurrence recovery review is scoped and never changes records',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  Object.assign(h.db.ClubActivity[0],{status:'draft',linked_event_id:'',recurrence_batch_key:'ccc-batch-12345678',recurrence_batch_state:'needs_recovery'});
