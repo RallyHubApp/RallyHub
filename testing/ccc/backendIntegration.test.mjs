@@ -24,6 +24,7 @@ const source=readFileSync(new URL('../../base44/functions/cccActivity/entry.ts',
 const js=transformSync(source,{loader:'ts',format:'cjs'}).code;
 const records={
  User:[{id:'host',email:'host@example.ie',active_tenant_id:'t1',active_club_id:'c1',approval_status:'approved',role:'user',active_club_role:'member'}],
+ Court:[{id:'court1',tenant_id:'t1',club_id:'c1',venue_id:'v1',name:'Court 1',status:'Available'},{id:'court2',tenant_id:'t1',club_id:'c1',venue_id:'v1',name:'Court 2',status:'Available'}],
  Venue:[{id:'v1',tenant_id:'t1',club_id:'c1',name:'Ennistymon',status:'active'}],
  MembershipVenueHostConfig:[{id:'cfg',tenant_id:'t1',club_id:'c1',venue_key:'ennistymon',active:true,host_emails:['host@example.ie']}],
  Person:[{id:'p1',tenant_id:'t1',full_name:'Player One'}],
