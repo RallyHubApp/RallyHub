@@ -548,6 +548,12 @@ test('recurrence creation is draft-only and blocks a repeated batch',async()=>{
  assert.equal(h.db.ClubActivity[0].recurrence_batch_state,'complete');
  assert.equal((await h.call('recurrence_create_drafts',payload)).status,409);
 });
+test('recurrence source template cannot transition or cancel after claiming a batch',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ Object.assign(h.db.ClubActivity[0],{status:'draft',linked_event_id:'',recurrence_batch_key:'ccc-batch-abcdefgh',recurrence_batch_state:'complete'});
+ for(const to of ['ready','cancelled'])assert.equal((await h.call('transition',{id:'a1',to,expectedRevision:1})).status,409);
+ assert.equal(h.db.ClubActivity[0].status,'draft');
+});
 test('recurring child cannot become ready until its source batch is complete',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  Object.assign(h.db.ClubActivity[0],{status:'draft',linked_event_id:'',recurrence_batch_key:'ccc-batch-abcdefgh',recurrence_batch_state:'needs_recovery'});
