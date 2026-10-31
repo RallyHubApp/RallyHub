@@ -13,3 +13,6 @@ Deno.test('already linked consistent records are identified',()=>assert.equal(as
 Deno.test('target user ID mismatch fails closed',()=>assert.equal(assess({...fixture(),target:{id:'other'}}).allowed,false));
 
 Deno.test('duplicate access grants require manual review',()=>assert.equal(assess({...fixture(),accessRows:[{tenant_id:'t',club_id:'c',user_id:'u'},{tenant_id:'t',club_id:'c',user_id:'u'}]}).issues.includes('duplicate_access_records'),true));
+
+Deno.test('partially linked person cannot be silently completed',()=>assert.equal(assess({...fixture(),person:{...fixture().person,linked_user_id:'u'}}).issues.includes('partial_account_link_requires_review'),true));
+Deno.test('partially linked player cannot be silently completed',()=>assert.equal(assess({...fixture(),player:{...fixture().player,user_id:'u'}}).allowed,false));
