@@ -1,0 +1,89 @@
+{
+  "name": "GuestSessionWalkIn",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "session_link_id": {
+      "type": "string"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "mobile": {
+      "type": "string"
+    },
+    "attendance_status": {
+      "type": "string",
+      "enum": [
+        "attended"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual_host_entry"
+      ]
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "unverified"
+      ]
+    },
+    "consent_status": {
+      "type": "string",
+      "enum": [
+        "not_verified"
+      ]
+    },
+    "entered_by_user_id": {
+      "type": "string"
+    },
+    "entered_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "session_link_id",
+    "full_name",
+    "attendance_status",
+    "source",
+    "payment_status",
+    "consent_status",
+    "entered_by_user_id",
+    "entered_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
