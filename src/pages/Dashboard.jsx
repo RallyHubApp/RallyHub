@@ -14,6 +14,7 @@ import ClubCommandOverview from '@/components/ccc/ClubCommandOverview';
 import ClubSchedulePanel from '@/components/ccc/ClubSchedulePanel';
 import ClubPaymentPanel from '@/components/ccc/ClubPaymentPanel';
 import ClubPostEventPanel from '@/components/ccc/ClubPostEventPanel';
+import { READ_STALE_MS, READ_GC_MS, shouldRetryRead, readRetryDelay } from '@/lib/ccc/readResilience';
 
 export default function Dashboard() {
   const { data: currentUser = null } = useQuery({
@@ -124,43 +125,63 @@ export default function Dashboard() {
 
   const { data: clubSessions = [], isLoading: sessionsLoading, isError: sessionsError } = useQuery({
     queryKey: ['ccc-club-session-links', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    retry: shouldRetryRead,
+    retryDelay: readRetryDelay,
+    staleTime: READ_STALE_MS,
+    gcTime: READ_GC_MS,
+    refetchOnWindowFocus: false,
     queryFn: () => base44.entities.GuestSessionLink.filter({
       tenant_id: currentUser.active_tenant_id,
       club_id: currentUser.active_club_id
     }, '-session_date', 250),
     enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && currentUser?.role === 'admin',
-    refetchInterval: 60_000,
     refetchOnWindowFocus: true
   });
 
   const { data: clubPayments = [], isLoading: paymentsLoading, isError: paymentsError } = useQuery({
     queryKey: ['ccc-club-payment-records', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    retry: shouldRetryRead,
+    retryDelay: readRetryDelay,
+    staleTime: READ_STALE_MS,
+    gcTime: READ_GC_MS,
+    refetchOnWindowFocus: false,
     queryFn: () => base44.entities.PaymentRecord.filter({
       tenant_id: currentUser.active_tenant_id,
       club_id: currentUser.active_club_id
     }, '-created_date', 250),
     enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && currentUser?.role === 'admin',
-    refetchInterval: 60_000,
     refetchOnWindowFocus: true
   });
 
   const { data: guestBookings = [], isLoading: bookingsLoading, isError: bookingsError } = useQuery({
     queryKey: ['ccc-guest-bookings', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    retry: shouldRetryRead,
+    retryDelay: readRetryDelay,
+    staleTime: READ_STALE_MS,
+    gcTime: READ_GC_MS,
+    refetchOnWindowFocus: false,
     queryFn: () => base44.entities.GuestSessionBooking.filter({tenant_id:currentUser.active_tenant_id,club_id:currentUser.active_club_id}, '-created_date', 500),
     enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && currentUser?.role === 'admin',
-    refetchInterval: 60_000
   });
   const { data: guestAttendance = [], isLoading: attendanceLoading, isError: attendanceError } = useQuery({
     queryKey: ['ccc-guest-attendance', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    retry: shouldRetryRead,
+    retryDelay: readRetryDelay,
+    staleTime: READ_STALE_MS,
+    gcTime: READ_GC_MS,
+    refetchOnWindowFocus: false,
     queryFn: () => base44.entities.GuestSessionAttendance.filter({tenant_id:currentUser.active_tenant_id,club_id:currentUser.active_club_id}, '-created_date', 500),
     enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && currentUser?.role === 'admin',
-    refetchInterval: 60_000
   });
   const { data: followupAttempts = [], isLoading: followupLoading, isError: followupError } = useQuery({
     queryKey: ['ccc-followup-attempts', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    retry: shouldRetryRead,
+    retryDelay: readRetryDelay,
+    staleTime: READ_STALE_MS,
+    gcTime: READ_GC_MS,
+    refetchOnWindowFocus: false,
     queryFn: () => base44.entities.CommunicationDeliveryAttempt.filter({tenant_id:currentUser.active_tenant_id}, '-created_date', 500),
     enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && currentUser?.role === 'admin',
-    refetchInterval: 60_000
   });
 
   const scheduleFrom = format(new Date(), 'yyyy-MM-dd');
