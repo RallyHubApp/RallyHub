@@ -240,7 +240,7 @@ Deno.serve(async req=>{
    const valid=checked.valid&&!!venueRows?.[0];
    const local=reviewDublinOccurrences([{week:1,startsAt:candidate.starts_at,endsAt:candidate.ends_at}]);
    const legacyReview=reviewLegacySessionOverlaps(local.occurrences,legacy.rows,{tenantId:tenant_id,clubId:club_id,venueName:venueRows?.[0]?.name,complete:legacy.complete});
-   return Response.json({success:true,valid,conflicts:checked.conflicts,legacyOverlaps:legacyReview.occurrences[0]?.legacyOverlaps||[],legacyUnmapped:legacyReview.occurrences[0]?.legacyUnmapped||[],complete:schedule.complete&&legacy.complete,ready:valid&&schedule.complete&&checked.conflicts.length===0&&legacyReview.ready,mutationPerformed:false,legacySessionCheckAdvisory:true});
+   return Response.json({success:true,valid:valid&&local.ready,conflicts:checked.conflicts,localTimeIssues:local.issues,timezone:local.timezone,daylightSavingChecked:true,legacyOverlaps:legacyReview.occurrences[0]?.legacyOverlaps||[],legacyUnmapped:legacyReview.occurrences[0]?.legacyUnmapped||[],complete:schedule.complete&&legacy.complete,ready:valid&&local.ready&&schedule.complete&&checked.conflicts.length===0&&legacyReview.ready,mutationPerformed:false,legacySessionCheckAdvisory:true});
   }
   if(body.action==='operations_summary'){
    const result=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});
