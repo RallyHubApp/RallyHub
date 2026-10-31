@@ -1,0 +1,112 @@
+{
+  "name": "ClubActivity",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "centre_id": {
+      "type": "string"
+    },
+    "sport": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "venue_id": {
+      "type": "string"
+    },
+    "starts_at": {
+      "type": "string"
+    },
+    "ends_at": {
+      "type": "string"
+    },
+    "registration_mode": {
+      "type": "string"
+    },
+    "payment_method": {
+      "type": "string"
+    },
+    "host_user_id": {
+      "type": "string"
+    },
+    "communication_template_id": {
+      "type": "string"
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "updated_by_user_id": {
+      "type": "string"
+    },
+    "idempotency_key": {
+      "type": "string"
+    },
+    "capacity": {
+      "type": "integer"
+    },
+    "revision": {
+      "type": "integer"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready",
+        "scheduled",
+        "registration_open",
+        "registration_closed",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "archived"
+      ]
+    },
+    "configuration": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "sport",
+    "type",
+    "title",
+    "venue_id",
+    "starts_at",
+    "ends_at",
+    "capacity",
+    "revision",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
