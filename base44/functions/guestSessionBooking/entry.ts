@@ -1282,7 +1282,7 @@ Deno.serve(async(req)=>{
       const sumupGateway=await gatewayAccount(base44,tenantId,clubId,'sumup');
       let sumupConfigured=providerConfigured('sumup',sumupGateway?.account||null);
       let sumupMerchantName='';
-      if(sumupConfigured){
+      if(sumupConfigured&&action==='admin_templates'){
         const verification=await verifyProviderConnection('sumup',sumupGateway?.account||null);
         sumupConfigured=verification.ok===true;
         sumupMerchantName=clean(verification.merchantName,160);
