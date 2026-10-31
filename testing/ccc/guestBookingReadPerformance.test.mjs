@@ -28,3 +28,19 @@ test('admin list starts independent session, payment and offer reads concurrentl
  assert.match(section,/GuestBookingChangeOffer\.filter\(\{tenant_id:tenantId,club_id:clubId\}/);
  assert.equal((section.match(/GuestBookingChangeOffer\.filter/g)||[]).length,1);
 });
+
+test('admin list resolves hosts from one scoped directory snapshot, not per-session network reads',()=>{
+ const start=src.indexOf("if(action==='admin_list')");
+ const end=src.indexOf("if(action==='admin_archive_session'",start);
+ const section=src.slice(start,end);
+ assert.match(section,/const \[profiles,people\]=await Promise\.all\(\[/);
+ assert.match(section,/Person\.filter\(\{tenant_id:tenantId\},'full_name',500\)/);
+ assert.match(section,/sessionHostFromSnapshot\(s,hostProfile,hostPeople\)/);
+ assert.doesNotMatch(section,/resolveSessionHostContact\(base44,s\)/);
+});
+test('host snapshot retains existing venue, weekday, start and host-name matching',()=>{
+ assert.match(src,/function sessionHostFromSnapshot\(/);
+ assert.match(src,/String\(s\.venueId\|\|''\)===String\(session\.venue_key\|\|''\)/);
+ assert.match(src,/String\(s\.day\|\|''\)===String\(session\.weekday\|\|''\)/);
+ assert.match(src,/nameKey\(p\.full_name\)===wanted/);
+});
