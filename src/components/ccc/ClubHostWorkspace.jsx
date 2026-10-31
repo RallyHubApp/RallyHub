@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from 'react';
-import {useQuery,useQueryClient} from '@tanstack/react-query';
+import {useQuery} from '@tanstack/react-query';
 import {base44} from '@/api/base44Client';
 
 /** Delegated host check-in. Never exposes financial, medical or contact details. */
@@ -12,7 +12,6 @@ export default function ClubHostWorkspace({tenantId,clubId}){
  const [extraRows,setExtraRows]=useState([]);
  const [cursor,setCursor]=useState(undefined);
  const [paging,setPaging]=useState(false);
- const client=useQueryClient();
  const enabled=!!tenantId&&!!clubId;
  const activities=useQuery({queryKey:['ccc-host-activities',tenantId,clubId],queryFn:async()=>{const r=await base44.functions.invoke('cccActivity',{action:'host_activities'});if(!r.data?.success)throw Error(r.data?.error||'Host activities unavailable');return r.data},enabled,retry:false,staleTime:30000});
  const selected=activityId&&activities.data?.activities?.some(a=>a.id===activityId)?activityId:'';
