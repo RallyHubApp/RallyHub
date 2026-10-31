@@ -72,6 +72,19 @@
     },
     "configuration": {
       "type": "object"
+    },
+    "linked_event_id": {
+      "type": "string",
+      "description": "Explicit same-tenant same-club legacy event link; never auto-created"
+    },
+    "bridge_status": {
+      "type": "string",
+      "enum": [
+        "unlinked",
+        "linked_unverified",
+        "verified",
+        "blocked"
+      ]
     }
   },
   "required": [

@@ -11,6 +11,20 @@ Deno.serve(async req=>{
   if(!tenant_id||!club_id)return fail('Select a club',409);
   const body=await req.json().catch(()=>({})),entity=sdk.asServiceRole.entities.ClubActivity;
   if(body.action==='list')return Response.json({success:true,activities:await entity.filter({tenant_id,club_id},'-created_date',100)});
+  if(body.action==='link_event'){
+   const id=s(body.id),event_id=s(body.eventId),revision=Number(body.expectedRevision);
+   const record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!record)return fail('Activity not found',404);
+   if(record.revision!==revision||!Number.isSafeInteger(revision))return fail('Activity changed; reload',409);
+   if(!['draft','ready','scheduled'].includes(record.status))return fail('Cannot link activity in current state',409);
+   const event=(await sdk.asServiceRole.entities.Tournament.filter({id:event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
+   if(!event)return fail('Event not found in selected club',404);
+   if(event.event_registration_mode!=='rallyhub')return fail('Event does not use RallyHub registration',409);
+   if(Number(event.event_capacity)!==Number(record.capacity))return fail('Event capacity differs from activity',409);
+   const update=await entity.updateMany({id,tenant_id,club_id,revision},{$set:{linked_event_id:event_id,bridge_status:'linked_unverified',revision:revision+1,updated_by_user_id:user.id}});
+   if(update.updated!==1)return fail('Activity changed; reload',409);
+   return Response.json({success:true,id,eventId:event_id,bridgeStatus:'linked_unverified',revision:revision+1});
+  }
   if(body.action==='registration_preflight'){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!record)return fail('Activity not found',404);
