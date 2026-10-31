@@ -13,7 +13,7 @@ test('cross-event grant blocked',()=>assert.equal(run(event(),{...options(),gran
 test('wrong actor blocked',()=>assert.equal(run(event(),{...options(),actorId:'other'}).reason,'actor_grant_mismatch'));
 test('stale revision blocked',()=>assert.equal(run(event(),{...options(),expectedRevision:3}).reason,'stale_event_revision'));
 test('missing host confirmation blocked',()=>assert.equal(run(event(),{...options(),confirmedMatchIds:[]}).reason,'recovery_review_failed'));
-test('duplicate operation returns unchanged event',()=>{const e=event();e.audit=[{operationId:'op1'}];const r=run(e,options());assert.equal(r.duplicate,true);assert.equal(r.proposedEvent,e);});
+test('duplicate operation returns unchanged event',()=>{const e=event();e.audit=[{operationId:'op1',actor:'host',type:'host_recovery_acknowledged'}];const r=run(e,options());assert.equal(r.duplicate,true);assert.equal(r.proposedEvent,e);});
 test('read-only DUPR review cannot submit externally',()=>{const r=run(event(),{...options(),action:'dupr_review'});assert.equal(r.allowed,true);assert.equal(r.review.submissionAttempted,false);assert.equal(r.proposedEvent,null);});
 test('unsupported actions denied',()=>assert.equal(run(event(),{...options(),action:'delete_event'}).reason,'unsupported_action'));
 test('missing operation id denied',()=>assert.equal(run(event(),{...options(),operationId:''}).reason,'actor_or_operation_missing'));
