@@ -11,3 +11,7 @@ test('rejects stalled cursor',async()=>assert.rejects(()=>read({filter:async()=>
 test('fails closed when maxPages reached',async()=>assert.rejects(()=>read(entity(make(20)),{tenant_id:'t',club_id:'c'},{pageSize:5,maxPages:2}),/verified pagination limit/));
 test('rejects absent tenant scope',async()=>assert.rejects(()=>read(entity([]),{club_id:'c'}),/tenant scope/));
 test('rejects missing row IDs',async()=>assert.rejects(()=>read(entity([{tenant_id:'t'}]),{tenant_id:'t'}),/scope violation/));
+
+test('rejects conflicting duplicate record versions across pages',async()=>assert.rejects(()=>read(entity([{id:'a',tenant_id:'t',club_id:'c',status:'paid'},{id:'a',tenant_id:'t',club_id:'c',status:'pending'}]),{tenant_id:'t',club_id:'c'},{pageSize:1}),/conflicting duplicate/));
+test('rejects cursor cycles that return to an earlier cursor',async()=>{let count=0;await assert.rejects(()=>read({filter:async()=>({items:[],has_more:true,next_cursor:count++%2?'first':'second'})},{tenant_id:'t'}),/cursor stalled/)});
+test('rejects invalid page sizes and excessive pages',async()=>{await assert.rejects(()=>read(entity([]),{tenant_id:'t'},{pageSize:501}),/pagination limits/);await assert.rejects(()=>read(entity([]),{tenant_id:'t'},{maxPages:0}),/pagination limits/)});
