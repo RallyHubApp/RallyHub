@@ -676,11 +676,14 @@ Deno.serve(async(req)=>{
       if(!person||!membership)return Response.json({error:'Member not found in active club'},{status:404});
       const player=await first(base44,'Player',{tenant_id:tenantId,club_id:clubId,person_id:personId});
       const linkedUserId=person.linked_user_id||player?.user_id||'';
-      const [personAccess,userAccess]=await Promise.all([
-        base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:tenantId,club_id:clubId,person_id:personId},'-updated_date',20),
-        linkedUserId?base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:tenantId,club_id:clubId,user_id:linkedUserId},'-updated_date',20):Promise.resolve([])
-      ]);
-      const accessRows=[...new Map([...(personAccess||[]),...(userAccess||[])].map((a:any)=>[a.id,a])).values()];
+      let personAccess,userAccess;
+      try{
+        [personAccess,userAccess]=await Promise.all([
+          readScopedMembershipLedger(base44.asServiceRole.entities.ClubUserAccess,{tenant_id:tenantId,club_id:clubId,person_id:personId}),
+          linkedUserId?readScopedMembershipLedger(base44.asServiceRole.entities.ClubUserAccess,{tenant_id:tenantId,club_id:clubId,user_id:linkedUserId}):Promise.resolve({rows:[]})
+        ]);
+      }catch{return Response.json({error:'Identity access review incomplete',code:'IDENTITY_ACCESS_INCOMPLETE'},{status:503});}
+      const accessRows=[...new Map([...personAccess.rows,...userAccess.rows].map((a:any)=>[a.id,a])).values()];
       const identity=assessMembershipIdentityHealth({tenantId,clubId,person,membership,player,accessRows});
       return Response.json({success:true,identity});
     }
@@ -716,7 +719,11 @@ Deno.serve(async(req)=>{
       const otherPlayer=await first(base44,'Player',{user_id:userId});
       if(otherPlayer&&String(otherPlayer.id)!==String(player.id)) return Response.json({error:'This user account is already linked to a different player record.'},{status:409});
       if(player.user_id&&String(player.user_id)!==String(userId)) return Response.json({error:'This player record is already linked to another user.'},{status:409});
-      const accessRows=await base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:tenantId,club_id:clubId,user_id:userId},'-updated_date',20);
+      let accessRows;
+      try{
+        const userAccess=await readScopedMembershipLedger(base44.asServiceRole.entities.ClubUserAccess,{tenant_id:tenantId,club_id:clubId,user_id:userId});
+        accessRows=userAccess.rows;
+      }catch{return Response.json({error:'Cannot verify all existing account access grants',code:'ACCOUNT_ACCESS_INCOMPLETE'},{status:503});}
       const linkGuard=assessMemberAccountLink({tenantId,clubId,userId,person,membership,player,target,otherPerson,otherPlayer,accessRows});
       if(!linkGuard.allowed)return Response.json({error:'Member identity or access requires administrator review before linking.',code:'MEMBER_IDENTITY_INTEGRITY',issues:linkGuard.issues},{status:409});
       await base44.asServiceRole.entities.Person.update(person.id,{linked_user_id:userId});
@@ -749,7 +756,11 @@ Deno.serve(async(req)=>{
         return Response.json({error:'Complete membership totals could not be verified; please retry.',code:'MEMBERSHIP_LEDGER_INCOMPLETE',details:String(error instanceof Error?error.message:'pagination failed')},{status:503});
       }
       const memberships=membershipRead.rows,people=peopleRead.rows,accesses=accessRead.rows;
-      const membershipConfigs=await base44.asServiceRole.entities.MembershipApplicationConfig.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',50);
+      let membershipConfigs;
+      try{
+        const configRead=await readScopedMembershipLedger(base44.asServiceRole.entities.MembershipApplicationConfig,{tenant_id:tenantId,club_id:clubId},{sort:'-updated_date'});
+        membershipConfigs=configRead.rows;
+      }catch{return Response.json({error:'Membership configuration could not be fully verified',code:'MEMBERSHIP_CONFIG_INCOMPLETE'},{status:503});}
       const ledgerCompleteness={complete:true,issues:[],source:'ClubMembership',requiresPagination:false,pages:{memberships:membershipRead.pages,people:peopleRead.pages,accesses:accessRead.pages}};
       const membershipConfig=(membershipConfigs||[]).find((c:any)=>c.status==='active')||(membershipConfigs||[])[0]||null;
       const currentSeason=membershipConfig?.season_label||null;
@@ -780,13 +791,17 @@ Deno.serve(async(req)=>{
         return Response.json({error:'Complete membership directory could not be verified; please retry.',code:'MEMBERSHIP_DIRECTORY_INCOMPLETE',details:String(error instanceof Error?error.message:'pagination failed')},{status:503});
       }
       const [membersRaw,people,players,sportProfiles,relationshipsRaw]=memberReads.map((result:any)=>result.rows);
-      const [clubSports,allSports,membershipConfigs]=await Promise.all([
-        base44.asServiceRole.entities.ClubSport.filter({tenant_id:tenantId,club_id:clubId,status:'active'},'-is_primary',100),
-        base44.asServiceRole.entities.Sport.filter({status:'active'},'name',100),
-        base44.asServiceRole.entities.MembershipApplicationConfig.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',50)
-      ]);
-      if(!Array.isArray(clubSports)||!Array.isArray(allSports)||!Array.isArray(membershipConfigs)||clubSports.length>=100||allSports.length>=100||membershipConfigs.length>=50)
-        return Response.json({error:'Membership configuration inventory is incomplete.',code:'MEMBERSHIP_CONFIG_INCOMPLETE'},{status:503});
+      let clubSports,membershipConfigs;
+      try{
+        const [clubSportRead,configRead]=await Promise.all([
+          readScopedMembershipLedger(base44.asServiceRole.entities.ClubSport,{tenant_id:tenantId,club_id:clubId,status:'active'},{sort:'-is_primary'}),
+          readScopedMembershipLedger(base44.asServiceRole.entities.MembershipApplicationConfig,{tenant_id:tenantId,club_id:clubId},{sort:'-updated_date'})
+        ]);
+        clubSports=clubSportRead.rows;membershipConfigs=configRead.rows;
+      }catch{return Response.json({error:'Membership configuration inventory is incomplete.',code:'MEMBERSHIP_CONFIG_INCOMPLETE'},{status:503});}
+      const allSports=await base44.asServiceRole.entities.Sport.filter({status:'active'},'name',100);
+      if(!Array.isArray(allSports)||allSports.length>=100)
+        return Response.json({error:'Global sports inventory is incomplete.',code:'GLOBAL_SPORT_INVENTORY_INCOMPLETE'},{status:503});
       const qaPersonIds=new Set((people||[]).filter((p:any)=>String(p.source_system||'').includes('membership_qa')||(p.data_quality_flags||[]).includes('qa_test_record')).map((p:any)=>String(p.id)));
       const members=(membersRaw||[]).filter((m:any)=>!qaPersonIds.has(String(m.person_id))&&!String(m.source_system||'').includes('membership_qa')&&!(m.data_quality_flags||[]).includes('qa_test_record'));
       const relationships=(relationshipsRaw||[]).filter((r:any)=>!qaPersonIds.has(String(r.person_id))&&!String(r.source_system||'').includes('membership_qa'));
