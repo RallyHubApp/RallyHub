@@ -169,7 +169,7 @@ export default function MembershipConsole() {
     const emails=value.split(/[,;\n]+/).map(s=>s.trim()).filter(Boolean);
     setVenueHostBusy(venue);
     try{
-      const res=await membershipRead('membershipApplication',{action:'admin_venue_hosts_set',venue,emails});
+      const res=await base44.functions.invoke('membershipApplication',{action:'admin_venue_hosts_set',venue,emails});
       if(res.data?.error)throw new Error(res.data.error);
       await queryClient.invalidateQueries({queryKey:['membership-venue-hosts']});
       toast.success(label(venue)+' host recipients saved');
@@ -1289,7 +1289,7 @@ export default function MembershipConsole() {
                           {waiting && !noResponse ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_send_reminder','email')} disabled={busy}><Mail className="w-3.5 h-3.5 mr-1.5" />Send email</Button> : null}
                           {waiting && !noResponse ? <Button size="sm" variant="outline" onClick={() => previewApplicationReminder(application,'whatsapp')} disabled={busy}><MessageCircle className="w-3.5 h-3.5 mr-1.5" />WhatsApp</Button> : null}
                           {waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_verify_payment')} disabled={busy}><RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${busy ? 'animate-spin' : ''}`} />Verify</Button> : null}
-                          {paid&&application.applicationType==='new'&&application.primaryVenue&&application.hostNotificationStatus!=='sent'?<Button size="sm" variant="outline" disabled={busy} onClick={async()=>{try{const r=await membershipRead('membershipApplication',{action:'admin_retry_host_notification',applicationId:application.id});if(r.data?.error)throw new Error(r.data.error);toast.info('Host notification: '+(r.data?.status||'unknown'));queryClient.invalidateQueries({queryKey:['membership-applications']});}catch(e){toast.error(e?.response?.data?.error||e.message)}}}>Retry host notice</Button>:null}
+                          {paid&&application.applicationType==='new'&&application.primaryVenue&&application.hostNotificationStatus!=='sent'?<Button size="sm" variant="outline" disabled={busy} onClick={async()=>{try{const r=await base44.functions.invoke('membershipApplication',{action:'admin_retry_host_notification',applicationId:application.id});if(r.data?.error)throw new Error(r.data.error);toast.info('Host notification: '+(r.data?.status||'unknown'));queryClient.invalidateQueries({queryKey:['membership-applications']});}catch(e){toast.error(e?.response?.data?.error||e.message)}}}>Retry host notice</Button>:null}
                           {paid ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_resend_confirmation')} disabled={busy}><Mail className="w-3.5 h-3.5 mr-1.5" />Resend confirmation</Button> : null}
                           {waiting && application.followUpStatus !== 'no_response' ? <Button size="sm" variant="ghost" onClick={() => runApplicationAction(application,'admin_mark_no_response')} disabled={busy}>No response</Button> : null}
                         </div>
