@@ -1306,14 +1306,18 @@ Deno.serve(async(req)=>{
       }
 
       if(action==='admin_list'){
-        const sessions=await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId},'-session_date',200);
+        // Independent club reads run concurrently, not in a serial waterfall.
+        // The response shape and all downstream booking/attendance checks stay unchanged.
+        const [sessions,paymentPage,offers]=await Promise.all([
+          base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId},'-session_date',200),
+          base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:tenantId,club_id:clubId,purpose_type:'booking'},'-created_date',500),
+          base44.asServiceRole.entities.GuestBookingChangeOffer.filter({tenant_id:tenantId,club_id:clubId},'-created_at',500)
+        ]);
         const rows=[];
         // Read-only listing: never archive sessions while someone is loading attendees.
-        // Fetch independent session data concurrently to avoid a long serial waterfall.
         // Reconcile payment records in one scoped read for the common case.
         // If the 500-record page is full, retain the original per-booking lookup
         // to avoid silently missing older transactions.
-        const paymentPage=await base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:tenantId,club_id:clubId,purpose_type:'booking'},'-created_date',500);
         const paymentIndex=new Map<string,any[]>();
         for(const payment of paymentPage||[]){
           const key=String(payment.purpose_id||'');
@@ -1360,7 +1364,7 @@ Deno.serve(async(req)=>{
           }
           rows.push({...safeSession(s),notificationEmail:s.notification_email||'',hostName:host?.name||'',hostEmail:host?.email||'',hostMobile:host?.mobile||'',bookings:bookingRows});
         }
-        const offers=await base44.asServiceRole.entities.GuestBookingChangeOffer.filter({tenant_id:tenantId,club_id:clubId},'-created_at',500);
+
         const latestOffers:Record<string,any>={};
         for(const o of offers||[]){if(!latestOffers[o.booking_id])latestOffers[o.booking_id]={status:o.status,targetSessionId:o.target_session_id,targetLabel:o.target_label||'',respondedAt:o.responded_at||'',expiresAt:o.expires_at||''};}
         return Response.json({success:true,sessions:rows,changeOffers:latestOffers,sumupConfigured});
