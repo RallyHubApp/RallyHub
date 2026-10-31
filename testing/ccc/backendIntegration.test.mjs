@@ -541,7 +541,7 @@ test('recurrence creation is draft-only and blocks a repeated batch',async()=>{
  Object.assign(h.db.ClubActivity[0],{status:'draft',linked_event_id:'',starts_at:'2026-11-04T19:00',ends_at:'2026-11-04T20:30'});
  const payload={id:'a1',expectedRevision:1,weeks:2,batchKey:'ccc-batch-integration01'};
  const result=await h.call('recurrence_create_drafts',payload);
- assert.equal(result.status,200);assert.equal(result.data.createdIds.length,2);
+ assert.equal(result.status,200,JSON.stringify(result.data));assert.equal(result.data.createdIds.length,2);
  assert.equal(h.db.ClubActivity[0].recurrence_batch_state,'complete');
  assert.equal((await h.call('recurrence_create_drafts',payload)).status,409);
 });
