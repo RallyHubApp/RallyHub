@@ -61,7 +61,7 @@ export default function GuestBookings(){
   const invokeWithTimeout=(name,payload)=>invokeReadWithDeadline((service,args)=>base44.functions.invoke(service,args),name,payload);
 
   const {data:templateData={templates:[],sumupConfigured:false},isLoading:templatesLoading,isError:templatesError,refetch:retryTemplates}=useQuery({
-    queryKey:['guest-session-templates'],
+    queryKey:['guest-session-templates',user?.active_tenant_id,user?.active_club_id],
     retry:shouldRetryRead,
     retryDelay:readRetryDelay,
     staleTime:READ_STALE_MS,
@@ -76,7 +76,7 @@ export default function GuestBookings(){
   });
 
   const {data:listData={sessions:[],sumupConfigured:false},isLoading:listLoading,isError:listError,refetch:retryList}=useQuery({
-    queryKey:['guest-session-admin-list'],
+    queryKey:['guest-session-admin-list',user?.active_tenant_id,user?.active_club_id],
     retry:shouldRetryRead,
     retryDelay:readRetryDelay,
     staleTime:READ_STALE_MS,
@@ -91,7 +91,7 @@ export default function GuestBookings(){
   });
 
   const {data:requestData={requests:[]},isLoading:requestsLoading,isError:requestsError,refetch:retryRequests}=useQuery({
-    queryKey:['guest-access-requests'],
+    queryKey:['guest-access-requests',user?.active_tenant_id,user?.active_club_id],
     retry:shouldRetryRead,
     retryDelay:readRetryDelay,
     staleTime:READ_STALE_MS,
