@@ -4,6 +4,8 @@ import {useAuth} from '@/lib/AuthContext';
 import ClubActivityPlanner from '@/components/ccc/ClubActivityPlanner';
 import ClubOperationsBoard from '@/components/ccc/ClubOperationsBoard';
 import ClubHostWorkspace from '@/components/ccc/ClubHostWorkspace';
+import ClubPeopleBoard from '@/components/ccc/ClubPeopleBoard';
+import ClubManagementBoard from '@/components/ccc/ClubManagementBoard';
 
 const sections=[
  {id:'people',name:'People',description:'Membership, guests, players and club access',links:[['Membership applications','/app/membership'],['Guest booking approvals','/app/guest-bookings'],['Players','/app/players'],['Waiting list','/app/waiting-list']]},
@@ -30,8 +32,10 @@ export default function ClubCommandCentre(){
     {active==='activities'&&admin&&<ClubActivityPlanner tenantId={tenantId} clubId={clubId}/>}
     {active==='activities'&&!admin&&<p className="text-sm text-muted-foreground">Activity planning requires an authorised administrator. Existing event and booking tools remain available above.</p>}
     {active==='operations'&&<><ClubHostWorkspace tenantId={tenantId} clubId={clubId}/>{admin&&<ClubOperationsBoard tenantId={tenantId} clubId={clubId}/>}</>}
-    {active==='management'&&<p className="rounded-lg border p-3 text-sm text-muted-foreground">Communication sending and production configuration remain controlled by their existing authorised modules. This workspace does not bypass approvals.</p>}
-    {active==='people'&&<p className="rounded-lg border p-3 text-sm text-muted-foreground">Membership and person records remain independent unless explicitly linked. Use the authoritative membership and guest booking workflows above; no automatic contact-based merges are performed.</p>}
+    {active==='management'&&admin&&<ClubManagementBoard tenantId={tenantId} clubId={clubId}/>}
+    {active==='management'&&!admin&&<p className="rounded-lg border p-3 text-sm text-muted-foreground">Management configuration inventory requires administrator access. Existing authorised tools remain available above.</p>}
+    {active==='people'&&admin&&<ClubPeopleBoard tenantId={tenantId} clubId={clubId}/>}
+    {active==='people'&&!admin&&<p className="rounded-lg border p-3 text-sm text-muted-foreground">Membership and person records remain independent unless explicitly linked. Use the authoritative membership and guest booking workflows above; no automatic contact-based merges are performed.</p>}
    </section>
   </>}
  </main>;
