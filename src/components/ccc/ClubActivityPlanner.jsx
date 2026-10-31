@@ -1,4 +1,5 @@
-import React,{useState} from 'react';
+import React,{useEffect,useState} from 'react';
+import {useSearchParams} from 'react-router-dom';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {base44} from '@/api/base44Client';
 import {activityTypes} from '@/lib/ccc/activityContracts';
@@ -18,6 +19,7 @@ export default function ClubActivityPlanner({tenantId,clubId}){
  const [templateId,setTemplateId]=useState('');
  const [copied,setCopied]=useState(false);
  const [draftSearch,setDraftSearch]=useState('');
+ const [routeParams,setRouteParams]=useSearchParams();
  const [saved,setSaved]=useState(null);
  const [savedStatus,setSavedStatus]=useState('draft');
  const [serverPreflight,setServerPreflight]=useState(null);
