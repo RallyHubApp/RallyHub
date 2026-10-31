@@ -35,7 +35,7 @@ Deno.serve(async req=>{
    if(!event)return fail('Linked event unavailable',404);
    if(body.action==='host_roster'){
     const registrations=await sdk.asServiceRole.entities.EventRegistration.filter({event_id:event.id,tenant_id,club_id},'-created_date',500);
-    return Response.json({success:true,activityId:id,eventName:event.name||record.title,participants:(registrations||[]).map((r:any)=>({id:r.id,name:r.full_name||'',bookingStatus:r.registration_status||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)})),resultsMayBeTruncated:(registrations||[]).length===500});
+    return Response.json({success:true,activityId:id,eventName:event.name||record.title,participants:(registrations||[]).filter((r:any)=>['confirmed','cash_confirmed'].includes(r.registration_status)).map((r:any)=>({id:r.id,name:r.full_name||'',bookingStatus:r.registration_status||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)})),resultsMayBeTruncated:(registrations||[]).length===500});
    }
    if(!['scheduled','registration_open','registration_closed','in_progress','completed'].includes(record.status))return fail('Check-in unavailable for this activity',409);
    const registrationId=s(body.registrationId),attendance=s(body.attendance),revision=Number(body.expectedRevision);
