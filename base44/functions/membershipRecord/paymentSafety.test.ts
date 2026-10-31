@@ -27,3 +27,8 @@ Deno.test('one pending checkout selected',()=>assert.equal(selectCheckout({membe
 Deno.test('multiple pending checkouts require explicit review',()=>assert.equal(selectCheckout({membership:member(),payments:[{...payment(),purpose_type:'membership'},{...payment({id:'p2'}),purpose_type:'membership'}]}).payment,null));
 Deno.test('already paid payment with stale membership requires reconciliation',()=>assert.ok(selectCheckout({membership:member(),payments:[{...payment({payment_status:'paid'}),purpose_type:'membership'}]}).issues.includes('paid_record_membership_out_of_sync')));
 Deno.test('different purpose payment ignored',()=>assert.equal(selectCheckout({membership:member(),payments:[{...payment(),purpose_type:'event'}]}).payment,null));
+import {assessMembershipPaymentHealth as health} from './paymentSafety.ts';
+Deno.test('empty unpaid membership payment history is consistent',()=>assert.equal(health({membership:member(),payments:[]}).healthy,true));
+Deno.test('settled payment with stale membership is flagged',()=>assert.equal(health({membership:member(),payments:[{...payment({payment_status:'paid'}),purpose_type:'membership'}]}).healthy,false));
+Deno.test('paid member without settled payment flagged for review',()=>assert.ok(health({membership:{...member(),payment_status:'paid'},payments:[]}).issues.includes('paid_membership_without_settled_payment_record')));
+Deno.test('duplicate paid payment records flagged',()=>assert.ok(health({membership:{...member(),payment_status:'paid'},payments:[{...payment({payment_status:'paid'}),purpose_type:'membership'},{...payment({id:'p2',payment_status:'paid'}),purpose_type:'membership'}]}).issues.includes('multiple_settled_payments')));
