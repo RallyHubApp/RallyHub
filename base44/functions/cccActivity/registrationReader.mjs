@@ -1,7 +1,7 @@
 /** Base44 v2 cursor pagination: no offset drift or fixed 500-row cut-off. */
-export async function readEventRegistrations(entity,{tenantId,clubId,eventId,extraFilters={},pageSize=250,maxPages=40}){
+export async function readEventRegistrations(entity,{tenantId,clubId,eventId,extraFilters={},startCursor='',pageSize=250,maxPages=40}){
  const query={...extraFilters,event_id:eventId,tenant_id:tenantId,club_id:clubId};
- const rows=[];let cursor,hasMore=false,pages=0;
+ const rows=[];let cursor=startCursor||undefined,hasMore=false,pages=0;
  const seen=new Set();
  do{
   const options={sort:'-created_date',limit:pageSize};
@@ -15,5 +15,5 @@ export async function readEventRegistrations(entity,{tenantId,clubId,eventId,ext
   if(!page.next_cursor||page.next_cursor===cursor)throw Error('Base44 cursor did not advance');
   cursor=page.next_cursor;
  }while(pages<maxPages);
- return {registrations:rows,pages,hasMore,complete:!hasMore};
+ return {registrations:rows,pages,hasMore,complete:!hasMore,nextCursor:hasMore?cursor:null};
 }
