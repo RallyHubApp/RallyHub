@@ -13,6 +13,10 @@ test('refund blocks ambiguous settled payments when no authoritative payment lin
  const result=selectRefundableEventPayment([paid('p1'),paid('p2')],{id:'r1',payment_checkout_id:'checkout1'});
  assert.equal(result.payment,null);assert.equal(result.reason,'ambiguous_refundable_payments');
 });
+test('refund blocks another refund when any linked payment is in progress',()=>{
+ const result=selectRefundableEventPayment([paid(),{id:'pending',purpose_id:'r1',payment_status:'refund_pending'}],reg);
+ assert.equal(result.payment,null);assert.equal(result.reason,'refund_in_progress');
+});
 test('refund selects the registration-linked settled payment among retries',()=>{
  const result=selectRefundableEventPayment([paid('p2'),paid('p1')],reg);
  assert.equal(result.payment.id,'p1');
