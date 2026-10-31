@@ -16,6 +16,7 @@ import {readScopedInventory,summarisePeopleInventory,summariseManagementInventor
 import {validateHostVenueMapping,validatePersonAccessLink} from '../../base44/functions/cccActivity/managementActions.mjs';
 import {communicationReadiness} from '../../base44/functions/cccActivity/communicationReadiness.mjs';
 import {reviewHostRevocation} from '../../base44/functions/cccActivity/hostRevocation.mjs';
+import {activityScheduleConflicts} from '../../base44/functions/cccActivity/activitySchedulePolicy.mjs';
 const source=readFileSync(new URL('../../base44/functions/cccActivity/entry.ts',import.meta.url),'utf8').replace(/^import .*;\s*$/gm,'');
 const js=transformSync(source,{loader:'ts',format:'cjs'}).code;
 const records={
@@ -38,7 +39,7 @@ function makeHarness(user=records.User[0]){
  }]));
  let handler;
  const sdk={auth:{me:async()=>user},asServiceRole:{entities}};
- vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,readEventRegistrations,readScopedActivities,buildFollowupReview,validateEventLink,readActivityAudit,summariseClubOperations,readScopedInventory,summarisePeopleInventory,summariseManagementInventory,validateHostVenueMapping,validatePersonAccessLink,communicationReadiness,reviewHostRevocation,Response,Date,console});
+ vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,readEventRegistrations,readScopedActivities,buildFollowupReview,validateEventLink,readActivityAudit,summariseClubOperations,readScopedInventory,summarisePeopleInventory,summariseManagementInventory,validateHostVenueMapping,validatePersonAccessLink,communicationReadiness,reviewHostRevocation,activityScheduleConflicts,Response,Date,console});
  const call=async(action,fields={})=>{const response=await handler({method:'POST',json:async()=>({action,...fields})});return {status:response.status,data:await response.json()}};
  return {call,db,reads};
 }
