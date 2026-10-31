@@ -12,7 +12,7 @@ Each of the 17 workstreams below receives equal weight (1/17). Each score is an 
 | Canonical Person / membership identity | 55 | Active club identity-link integrity diagnostics and read-only person consent evidence added; cross-module identity lifecycle and real delivery consent still missing |
 | Command Centre overview/navigation | 90 | People guest policy and Management membership readiness panels added; mobile UAT and broader actions remain |
 | Activity types and lifecycle | 75 | Exact court allocation, scoped schedule preflight and transition conflict checks added; activation, recurrence and live persistence remain |
-| Sessions / calendar | 75 | Whole-venue vs exact-court overlapping allocation and UI preview added; recurrence, external hall calendars and live capacity controls remain |
+| Sessions / calendar | 85 | Weekly recurrence preview and scoped court conflicts; publication and external calendars remain |
 | Registration / booking | 75 | Event admin listing, approval, verification and refunds now require authoritative active grants, with mocked denial tests; live provider/runtime and concurrency acceptance remain |
 | Guest eligibility | 65 | Clare venue policy preflight and review UI added, cross-checked against existing guestAccessJourney rules; authoritative booking/host acceptance still requires live UAT |
 | Membership and payment journeys | 70 | Read-only membership config, legal document, adult policy and scoped SumUp account checks; real checkout, callback and member lifecycle UAT remain |
