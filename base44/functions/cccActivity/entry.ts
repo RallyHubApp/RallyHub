@@ -76,6 +76,14 @@ Deno.serve(async req=>{
    return Response.json({success:true,hosts,templates:(templates||[]).filter((t:any)=>!t.club_id||t.club_id===club_id).map((t:any)=>({id:t.id,name:t.name,purpose:t.purpose,version:t.version})),events:(events||[]).map((e:any)=>({id:e.id,name:e.name||e.title||e.id,start_date:e.start_date,capacity:e.event_capacity}))});
   }
   if(body.action==='list')return Response.json({success:true,activities:await entity.filter({tenant_id,club_id},'-created_date',100)});
+  if(body.action==='activity_audit'){
+   const id=s(body.id);
+   const record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!record)return fail('Activity not found',404);
+   const logs=await sdk.asServiceRole.entities.AuditLog.filter({tenant_id,club_id,entity_type:'ClubActivity',entity_id:id},'-created_date',100);
+   const allowed=new Set(['ccc.activity.link_event','ccc.activity.transition','ccc.activity.save_draft']);
+   return Response.json({success:true,activityId:id,entries:(logs||[]).filter((log:any)=>allowed.has(log.action)).map((log:any)=>({id:log.id,action:log.action,userId:log.user_id,createdAt:log.created_date||''})),resultsMayBeTruncated:(logs||[]).length===100,auditIsBestEffort:true});
+  }
   if(body.action==='link_event'){
    const id=s(body.id),event_id=s(body.eventId),revision=Number(body.expectedRevision);
    const record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
