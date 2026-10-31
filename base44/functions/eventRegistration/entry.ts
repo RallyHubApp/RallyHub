@@ -74,6 +74,10 @@ Deno.serve(async(req)=>{
     const remaining=refundBalance.remaining;
     const amount=b.refundAmount===undefined?remaining:Math.round(Number(b.refundAmount)*100)/100;
     if(!Number.isFinite(amount)||amount<=0||amount>remaining)return fail('Invalid refund amount',400);
+    // Atomically reserve this payment for one refund operation before calling SumUp.
+    // If an operation fails or times out, leave refund_pending for manual reconciliation; never blindly retry.
+    const refundLock=await base44.asServiceRole.entities.PaymentRecord.updateMany({id:payment.id,tenant_id:t.tenant_id,club_id:t.host_club_id,payment_status:payment.payment_status,amount_refunded:Number(payment.amount_refunded||0)},{$set:{payment_status:'refund_pending'}});
+    if(refundLock?.updated!==1)return fail('Refund already in progress or payment changed. Refresh and reconcile.',409);
     const now=new Date().toISOString();
     const refund=await base44.asServiceRole.entities.PaymentRefund.create({tenant_id:t.tenant_id,club_id:t.host_club_id,payment_record_id:payment.id,person_id:payment.person_id||'',purpose_type:'event',purpose_id:registration.id,provider:'sumup',provider_account_id:payment.provider_account_id||'',provider_transaction_id:transactionId,amount,currency:payment.currency||'EUR',status:'processing',reason,requested_by_user_id:(await base44.auth.me()).id,requested_at:now,source_system:'rallyhub_event'});
     try{
