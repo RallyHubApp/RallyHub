@@ -1,6 +1,6 @@
 # Club Command Centre v2.1 — provisional implementation progress scorecard
 
-**Assessment date:** 31 October 2026. **Updated after authoritative tenant/club grants were also enforced for existing event registration administration and refunds, with mocked backend denial tests.** **Scope:** CCC v2.1 workstreams as tracked in `V21_IMPLEMENTATION_COVERAGE.md`. This is a source-implementation estimate, **not** a passed specification acceptance percentage or a production readiness certificate.
+**Assessment date:** 31 October 2026. **Updated after weekly recurrence preview and paginated linked-event finance rollups were integrated with the planner and registration overview.** **Scope:** CCC v2.1 workstreams as tracked in `V21_IMPLEMENTATION_COVERAGE.md`. This is a source-implementation estimate, **not** a passed specification acceptance percentage or a production readiness certificate.
 
 ## Method
 
