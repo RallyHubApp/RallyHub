@@ -1,6 +1,7 @@
 /** Pick only a provably refundable event payment. Never refund a pending/failed retry. */
 const REFUNDABLE=new Set(['paid','partially_refunded','refund_failed']);
 export function selectRefundableEventPayment(payments,registration){
+ if((payments||[]).some(p=>p?.purpose_id===registration.id&&p.payment_status==='refund_pending'))return {payment:null,reason:'refund_in_progress'};
  const rows=(payments||[]).filter(p=>p&&p.purpose_id===registration.id&&REFUNDABLE.has(p.payment_status));
  if(!rows.length)return {payment:null,reason:'no_refundable_payment'};
  const exact=rows.filter(p=>registration.payment_record_id&&p.id===registration.payment_record_id);
