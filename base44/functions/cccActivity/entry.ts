@@ -47,7 +47,7 @@ Deno.serve(async req=>{
    if(!['confirmed','cash_confirmed'].includes(registration.registration_status))return fail('Only confirmed participants can be checked in',409);
    const current=Number(registration.attendance_revision||0);
    if(current!==expectedRevision)return fail('Attendance changed; reload',409);
-   const prior=registration.attendance_revision===undefined?null:registration.attendance_revision;
+   const prior=registration.attendance_revision===undefined?{$exists:false}:registration.attendance_revision;
    const result=await sdk.asServiceRole.entities.EventRegistration.updateMany({id:registrationId,event_id:event.id,tenant_id,club_id,attendance_revision:prior},{$set:{attendance_status:attendance,attendance_revision:current+1,attendance_marked_at:new Date().toISOString(),attendance_marked_by_user_id:user.id}});
    if(result.updated!==1)return fail('Attendance changed; reload',409);
    return Response.json({success:true,registrationId,attendance,revision:current+1});
@@ -107,12 +107,20 @@ Deno.serve(async req=>{
    const record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!record)return fail('Activity not found',404);
    if(!Number.isSafeInteger(revision)||record.revision!==revision)return fail('Activity changed; reload',409);
-   const allowed:any={draft:['ready','cancelled'],ready:['draft','scheduled','cancelled'],scheduled:['cancelled'],cancelled:['archived']};
+   const allowed:any={draft:['ready','cancelled'],ready:['draft','scheduled','cancelled'],scheduled:['registration_open','registration_closed','in_progress','cancelled'],registration_open:['registration_closed','in_progress','cancelled'],registration_closed:['registration_open','in_progress','cancelled'],in_progress:['completed','cancelled'],completed:['archived'],cancelled:['archived']};
    if(!allowed[record.status]?.includes(to))return fail('Transition unavailable until downstream workflows are connected',409);
-   if(to==='ready'||to==='scheduled'){
+   if(['ready','scheduled','registration_open','in_progress'].includes(to)){
     const venue=(await sdk.asServiceRole.entities.Venue.filter({id:record.venue_id,tenant_id,club_id,status:'active'},'-created_date',1))?.[0];
     if(!venue)return fail('Club venue is no longer active',409);
     if(!Number.isFinite(Date.parse(record.starts_at))||Date.parse(record.ends_at)<=Date.parse(record.starts_at))return fail('Invalid schedule',409);
+   }
+   if(['registration_open','registration_closed','in_progress','completed'].includes(to)){
+    if(!record.linked_event_id)return fail('Link an existing event before advancing',409);
+    const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
+    if(!event||event.event_registration_mode!=='rallyhub'||Number(event.event_capacity)!==Number(record.capacity))return fail('Linked event does not match activity',409);
+    if(to==='registration_open'&&(!event.event_booking_enabled||!event.event_public_visible||event.event_publish_status!=='published'))return fail('Existing event is not open for registration',409);
+    if(to==='registration_closed'&&event.event_booking_enabled)return fail('Close registration in the existing event service first',409);
+    if(to==='completed'&&Date.parse(record.ends_at)>Date.now())return fail('Cannot complete activity before scheduled end',409);
    }
    const updated=await entity.updateMany({id,tenant_id,club_id,status:record.status,revision},{$set:{status:to,revision:revision+1,updated_by_user_id:user.id}});
    if(updated.updated!==1)return fail('Activity changed; reload',409);
