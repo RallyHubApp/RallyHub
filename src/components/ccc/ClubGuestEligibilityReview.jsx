@@ -1,0 +1,17 @@
+import React,{useEffect,useState} from 'react';
+import {useQuery} from '@tanstack/react-query';
+import {base44} from '@/api/base44Client';
+const labels={venue_outside_active_club:'Venue is not active in this club',experience_required:'Select an experience level',session_closed:'Session is closed',venue_policy_unmapped:'Venue needs an approved guest policy mapping',beginner_ennis_restricted:'Beginners cannot request Ennis/Doora-Barefield sessions'};
+/** Policy preflight only. Guest booking and host approval remain in their authoritative journey. */
+export default function ClubGuestEligibilityReview({tenantId,clubId}){
+ const [venueId,setVenueId]=useState(''),[experience,setExperience]=useState('beginner'),[result,setResult]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+ const {data:venues=[],isLoading,isError}=useQuery({queryKey:['ccc-guest-policy-venues',tenantId,clubId],enabled:!!tenantId&&!!clubId,queryFn:()=>base44.entities.Venue.filter({tenant_id:tenantId,club_id:clubId,status:'active'},'name',200),retry:false});
+ useEffect(()=>{setVenueId('');setResult(null)},[tenantId,clubId]);
+ useEffect(()=>{setResult(null);setError('')},[venueId,experience]);
+ const review=async()=>{setBusy(true);setError('');try{const res=await base44.functions.invoke('cccActivity',{action:'guest_eligibility_review',venueId,experience});if(!res.data?.success)throw Error(res.data?.error||'Guest review unavailable');setResult(res.data)}catch(e){setError(e?.response?.data?.error||e?.message||'Guest review unavailable')}finally{setBusy(false)}};
+ return <section className="mt-4 rounded-xl border bg-card p-4" aria-label="Guest venue eligibility review"><h3 className="font-semibold">Guest eligibility review</h3><p className="mt-1 text-xs text-muted-foreground">Preview beginner/experienced venue access. No booking or payment is created.</p>
+ <div className="mt-3 grid gap-2 sm:grid-cols-2"><label className="text-sm">Venue<select className="mt-1 w-full rounded-lg border bg-background p-2" value={venueId} onChange={e=>setVenueId(e.target.value)}><option value="">Choose venue</option>{venues.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label><label className="text-sm">Guest experience<select className="mt-1 w-full rounded-lg border bg-background p-2" value={experience} onChange={e=>setExperience(e.target.value)}><option value="beginner">Beginner</option><option value="experienced">Experienced</option></select></label></div>
+ {isLoading&&<p className="mt-2 text-xs">Loading venues…</p>}{isError&&<p role="alert" className="mt-2 text-xs text-destructive">Venue list unavailable.</p>}
+ <button type="button" className="mt-3 rounded-lg border px-3 py-2 text-sm disabled:opacity-50" disabled={!venueId||busy} onClick={review}>{busy?'Checking…':'Check venue policy'}</button>
+ {error&&<p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}{result&&<div className="mt-3 rounded-lg border p-3 text-sm" role="status"><p className="font-semibold">{result.eligible?'Eligible to request host approval':'Not eligible under current venue policy'}</p>{result.issues.length>0&&<ul className="mt-2 list-inside list-disc text-xs text-amber-700">{result.issues.map(i=><li key={i}>{labels[i]||i}</li>)}</ul>}<p className="mt-2 text-xs text-muted-foreground">This preview is advisory. The actual guest booking service must independently enforce eligibility and host approval.</p></div>}</section>;
+}
