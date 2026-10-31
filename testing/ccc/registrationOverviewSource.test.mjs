@@ -8,7 +8,7 @@ test('overview is explicitly scoped to active tenant and club',()=>{
  assert.match(backend,/body\.action==='registration_overview'/);
  assert.match(backend,/EventRegistration\.filter\(\{event_id:event\.id,tenant_id,club_id\}/);
  assert.match(backend,/Tournament\.filter\(\{id:record\.linked_event_id,tenant_id,host_club_id:club_id\}/);
- assert.match(backend,/PaymentRecord\.filter\(\{tenant_id,club_id,purpose_type:'event'\}/);
+ assert.match(backend,/PaymentRecord\.filter\(\{tenant_id,club_id,purpose_type:'event',purpose_id:\{\$in:registrationIds\}\}/);
 });
 test('overview exposes only selected participant fields and no medical notes',()=>{
  const action=backend.slice(backend.indexOf("if(body.action==='registration_overview')"),backend.indexOf("if(body.action==='registration_preflight')"));
