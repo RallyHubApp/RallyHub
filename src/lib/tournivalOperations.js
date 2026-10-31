@@ -2,6 +2,7 @@
  * Pure Tournival operational model, usable in the Base44 backend and sandbox.
  * No network, payments, customer messaging, DUPR submission or KOTC dependencies.
  */
+import {inspectSportingFixtures} from './ccc/sportingFixturePreflight.mjs';
 export const TOURNIVAL_V1='tournival-v1';
 export function createTournivalEvent({id,tenantId,clubId,capacity=32,fee=0,rehearsal=false,duprEnabled=false}) {
  if(!id||!tenantId||!clubId||!Number.isInteger(capacity)||capacity<4)throw Error('Invalid event');
@@ -92,19 +93,21 @@ export function assertRehearsalIsolation(event) {
  return true;
 }
 
-export function startTournival(event,{matches,actor='host',scoring='timed_10'}) {
+export function startTournival(event,{matches,actor='host',scoring='timed_10',courts=4}) {
  if(event.phase!=='registration')throw Error('Already started');
  if(!Array.isArray(matches)||matches.length<1)throw Error('Fixtures required');
  const checked=new Set(event.registrations.filter(r=>r.checkedIn&&r.status==='confirmed').map(r=>r.playerId));
- if(matches.some(m=>[...m.teamA,...m.teamB].some(id=>!checked.has(id))))
-   throw Error('Fixture contains player not checked in');
+ const preflight=inspectSportingFixtures(matches,{courts,checkedInIds:[...checked]});
+ if(!preflight.valid)throw Error('Fixture preflight failed: '+preflight.issues.map(issue=>issue.code).join(', '));
  return update(event,'tournament_start',actor,{phase:'qualification',matches:matches.map(m=>({...m,matchFormat:scoring}))});
 }
-export function applyTournivalMatchChange(event,{matches,actor='host',action='court_update'}) {
+export function applyTournivalMatchChange(event,{matches,actor='host',action='court_update',courts=4}) {
  if(!['qualification','knockout'].includes(event.phase))throw Error('Event is not playing');
  if(!Array.isArray(matches)||matches.length!==event.matches.length)throw Error('Match count changed unexpectedly');
  const byId=new Map(event.matches.map(m=>[m.id,m]));
  if(matches.some(m=>!byId.has(m.id)))throw Error('Unknown match');
+ const preflight=inspectSportingFixtures(matches,{courts,requireCheckIn:false});
+ if(!preflight.valid)throw Error('Fixture preflight failed: '+preflight.issues.map(issue=>issue.code).join(', '));
  if(event.matches.some(m=>m.status==='completed' && JSON.stringify(matches.find(n=>n.id===m.id)?.result)!==JSON.stringify(m.result)))
    throw Error('Completed result cannot be silently changed');
  return update(event,action,actor,{matches});
