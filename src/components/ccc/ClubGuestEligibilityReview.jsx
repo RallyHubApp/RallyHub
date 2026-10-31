@@ -6,7 +6,7 @@ const labels={venue_outside_active_club:'Venue is not active in this club',exper
 export default function ClubGuestEligibilityReview({tenantId,clubId}){
  const [venueId,setVenueId]=useState(''),[experience,setExperience]=useState('beginner'),[result,setResult]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
  const requestVersion=useRef(0);
- const invalidate=()=>{requestVersion.current++;setResult(null);setError('')};
+ const invalidate=()=>{requestVersion.current++;setResult(null);setError('');setBusy(false)};
  const {data:venues=[],isLoading,isError}=useQuery({queryKey:['ccc-guest-policy-venues',tenantId,clubId],enabled:!!tenantId&&!!clubId,queryFn:()=>base44.entities.Venue.filter({tenant_id:tenantId,club_id:clubId,status:'active'},'name',200),retry:false});
  useEffect(()=>{requestVersion.current++;setVenueId('');setResult(null)},[tenantId,clubId]);
  useEffect(()=>{setResult(null);setError('')},[venueId,experience]);

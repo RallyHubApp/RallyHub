@@ -4,7 +4,7 @@ const readable={active_suppression:'Active person-level suppression',preference_
 /** No send control: this is an evidence review, not delivery authorisation. */
 export default function ClubPersonConsentReview({tenantId,clubId}){
  const requestVersion=useRef(0);
- const invalidate=()=>{requestVersion.current++;setResult(null);setError('')};
+ const invalidate=()=>{requestVersion.current++;setResult(null);setError('');setBusy(false)};
  const [personId,setPersonId]=useState(''),[channel,setChannel]=useState('email'),[purpose,setPurpose]=useState('marketing'),[result,setResult]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
  useEffect(()=>{setResult(null);setError('')},[tenantId,clubId,personId,channel,purpose]);
  const check=async()=>{const version=++requestVersion.current;setBusy(true);setResult(null);setError('');try{const r=await base44.functions.invoke('cccActivity',{action:'person_communication_review',personId:personId.trim(),channel,purpose});if(version!==requestVersion.current)return;if(!r.data?.success)throw Error(r.data?.error||'Review unavailable');setResult(r.data)}catch(e){if(version===requestVersion.current)setError(e?.response?.data?.error||e?.message||'Review unavailable')}finally{if(version===requestVersion.current)setBusy(false)}};
