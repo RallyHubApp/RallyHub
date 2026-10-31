@@ -24,7 +24,9 @@ const fail=(error:string,status=400)=>Response.json({success:false,error},{statu
 const isClubHost=async(sdk:any,tenant_id:string,club_id:string,venue_id:string,host_user_id:string)=>{
  const [users,venues]=await Promise.all([sdk.asServiceRole.entities.User.filter({id:host_user_id,active_tenant_id:tenant_id,active_club_id:club_id,approval_status:'approved'},'-created_date',1),sdk.asServiceRole.entities.Venue.filter({id:venue_id,tenant_id,club_id,status:'active'},'-created_date',1)]);
  const host=users?.[0],venue=venues?.[0];if(!host||!venue)return false;
- if(host.role==='admin'||host.active_club_role==='club_admin')return true;
+ const grant=await readCccAccess(sdk,host,tenant_id,club_id);
+ if(grant.admin)return true;
+ if(!grant.member)return false;
  const configs=await sdk.asServiceRole.entities.MembershipVenueHostConfig.filter({tenant_id,club_id,active:true},'-updated_date',100);
  return isConfiguredHost(configs,venue,host.email);
 };
@@ -53,7 +55,7 @@ Deno.serve(async req=>{
      sdk.asServiceRole.entities.MembershipVenueHostConfig.filter({tenant_id,club_id,active:true},'-updated_date',100)
     ]);
     const host=users?.[0],byVenue=new Map((venues||[]).map((v:any)=>[v.id,v]));
-    allowed=host?active.filter((a:any)=>{const venue=byVenue.get(a.venue_id);return venue&&(host.active_club_role==='club_admin'||isConfiguredHost(configs,venue,host.email));}):[];
+    allowed=host?active.filter((a:any)=>{const venue=byVenue.get(a.venue_id);return venue&&isConfiguredHost(configs,venue,host.email);}):[];
    }
    return Response.json({success:true,activities:allowed.map((a:any)=>({id:a.id,title:a.title,startsAt:a.starts_at,status:a.status,venueId:a.venue_id})),resultsMayBeTruncated:!activityRead.complete});
   }
