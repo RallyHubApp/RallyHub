@@ -24,6 +24,7 @@ test('non-admins can only use explicitly authorised host actions',()=>{
 test('host roster excludes contact, payment, health and consent fields',()=>{
  const section=backend.slice(backend.indexOf("if(body.action==='host_roster')"),backend.indexOf("if(!['scheduled'"));
  assert.match(section,/name:r\.full_name/);
+ assert.match(section,/\['confirmed','cash_confirmed'\]\.includes\(r\.registration_status\)/);
  assert.doesNotMatch(section,/email:r\.email|mobile:r\.mobile|medical_note|payment_status|consent_evidence/);
  assert.match(workspace,/No payment, approval or customer messaging controls/);
  assert.match(dashboard,/ClubHostWorkspace/);
