@@ -18,7 +18,7 @@ const initial={
  PaymentRecord:[{id:'p1',tenant_id:'t1',club_id:'c1',purpose_type:'event',purpose_id:'r1',payment_status:'paid',amount:10,amount_refunded:0,provider:'sumup',provider_transaction_id:'tx1',provider_checkout_id:'checkout1'}],
  PaymentRefund:[],PaymentGatewayAccount:[{id:'gateway',tenant_id:'t1',club_id:'c1',provider:'sumup',status:'connected',is_default:true}],ClubLegalDocument:[],CommunicationBrandKit:[],Club:[]
 };
-const matches=(row,query)=>Object.entries(query||{}).every(([key,value])=>value&&typeof value==='object'&&'$in'in value?value.$in.includes(row[key]):value&&typeof value==='object'&&'$lt'in value?Number(row[key])<value.$lt:value&&typeof value==='object'&&'$gt'in value?Number(row[key])>value.$gt:value===null?row[key]==null:row[key]===value);
+const matches=(row,query)=>Object.entries(query||{}).every(([key,value])=>value&&typeof value==='object'&&'$in'in value?value.$in.includes(row[key]):value&&typeof value==='object'&&'$lt'in value?row[key]<value.$lt:value&&typeof value==='object'&&'$gt'in value?row[key]>value.$gt:value===null?row[key]==null:row[key]===value);
 function harness({user={id:'admin',role:'admin',active_tenant_id:'t1',active_club_id:'c1'},refundResult={refundId:'provider-refund',providerStatus:'REFUNDED'},lockAllowed=true}={}){
  const db=structuredClone(initial),calls={refund:0,notice:0,locks:0,reads:{}};
  const entities=Object.fromEntries(Object.entries(db).map(([name,records])=>[name,{
