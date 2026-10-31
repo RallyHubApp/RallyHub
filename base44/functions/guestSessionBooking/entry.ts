@@ -1174,7 +1174,7 @@ Deno.serve(async(req)=>{
       const approved=await base44.asServiceRole.entities.CommunicationTemplate.update(draft.id,{status:'approved',approved_by_user_id:user.id,approved_at:new Date().toISOString()});
       return Response.json({success:true,template:{id:approved.id,status:'approved',subject:approved.subject_template,body:approved.plain_text_template,html:approved.html_template}});
     }
-    if(['attendance_list','attendance_save','followup_preview','followup_send','followup_history','followup_template','followup_test'].includes(action)){
+    if(['attendance_list','attendance_save','walkin_list','walkin_add','followup_preview','followup_send','followup_history','followup_template','followup_test'].includes(action)){
       const user=await base44.auth.me();
       if(!user||user.role!=='admin')return Response.json({error:'Admin access required'},{status:403});
       const tenantId=clean(user.active_tenant_id,100),clubId=clean(user.active_club_id,100),sessionId=clean(body.sessionId,100);
@@ -1185,6 +1185,23 @@ Deno.serve(async(req)=>{
       const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:sessionId,tenant_id:tenantId,club_id:clubId});
       const records=await base44.asServiceRole.entities.GuestSessionAttendance.filter({session_link_id:sessionId,tenant_id:tenantId,club_id:clubId});
       if(action==='attendance_list')return Response.json({success:true,attendance:records.map((r:any)=>({bookingId:r.booking_id,status:r.status}))});
+      if(action==='walkin_list'){
+        const rows=await base44.asServiceRole.entities.GuestSessionWalkIn.filter({tenant_id:tenantId,club_id:clubId,session_link_id:sessionId},'-entered_at',250);
+        return Response.json({success:true,walkIns:rows.map((r:any)=>({id:r.id,name:r.full_name,email:r.email||'',mobile:r.mobile||'',attendance:r.attendance_status,paymentStatus:r.payment_status,consentStatus:r.consent_status})),resultsMayBeTruncated:rows.length>=250});
+      }
+      if(action==='walkin_add'){
+        const name=clean(body.fullName,120),email=emailKey(body.email),mobile=clean(body.mobile,40);
+        if(name.length<2||(!email&&!mobile))return Response.json({error:'Name and email or mobile required'},{status:400});
+        if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return Response.json({error:'Invalid email address'},{status:400});
+        if(mobile&&mobileKey(mobile).length<7)return Response.json({error:'Invalid mobile number'},{status:400});
+        const walkIns=await base44.asServiceRole.entities.GuestSessionWalkIn.filter({tenant_id:tenantId,club_id:clubId,session_link_id:sessionId},'-entered_at',250);
+        const duplicate=[...bookings,...walkIns].some((b:any)=>(email&&sameEmail(b.email,email))||(mobile&&sameMobile(b.mobile,mobile)));
+        if(duplicate)return Response.json({error:'A participant with this email or mobile is already recorded for this session. Review the existing booking or manual entry.'},{status:409});
+        const restriction=await clubRestrictionCheck(base44,tenantId,clubId,{fullName:name,email,mobile});
+        if(restriction!=='clear')return clubRestrictionResponse(restriction);
+        const row=await base44.asServiceRole.entities.GuestSessionWalkIn.create({tenant_id:tenantId,club_id:clubId,session_link_id:sessionId,full_name:name,email,mobile,attendance_status:'attended',source:'manual_host_entry',payment_status:'unverified',consent_status:'not_verified',entered_by_user_id:user.id,entered_at:new Date().toISOString()});
+        return Response.json({success:true,id:row.id,attendance:'attended',paymentStatus:'unverified',consentStatus:'not_verified'});
+      }
       const bookingId=clean(body.bookingId,100);
       if(action==='followup_template'){
         const rows=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
