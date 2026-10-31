@@ -54,7 +54,7 @@ function makeHarness(user=records.User[0]){
  const entities=Object.fromEntries(Object.keys(db).map(name=>[name,{
   filter:async(query={},sort,limit)=>{reads[name]=(reads[name]||0)+1;const rows=db[name].filter(row=>matches(row,query));if(sort&&typeof sort==='object'){const start=Number(sort.cursor||0),size=sort.limit||250;return {items:rows.slice(start,start+size),has_more:start+size<rows.length,next_cursor:start+size<rows.length?String(start+size):null}}return rows.slice(0,limit||1000)},
   updateMany:async(query,patch)=>{let updated=0;for(const row of db[name])if(matches(row,query)){Object.assign(row,patch.$set||{});updated++}return {updated}},
-  create:async(record)=>{db[name].push(record);return record}
+  create:async(record)=>{record.id ||= 'mock-'+(db[name].length+1);db[name].push(record);return record}
  }]));
  let handler;
  const sdk={auth:{me:async()=>user},asServiceRole:{entities}};
