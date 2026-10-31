@@ -1273,7 +1273,9 @@ Deno.serve(async(req)=>{
       if(action==='attendance_save'){
         const status=clean(body.status,20);
         if(!['attended','no_show','cancelled','unconfirmed'].includes(status))return Response.json({error:'Invalid attendance status'},{status:400});
-        if(!bookings.some((b:any)=>b.id===bookingId))return Response.json({error:'Booking does not belong to session'},{status:404});
+        const booking=bookings.find((b:any)=>b.id===bookingId);
+        if(!booking)return Response.json({error:'Booking does not belong to session'},{status:404});
+        if(!['confirmed','cash_due'].includes(booking.booking_status))return Response.json({error:'Only confirmed or cash-due bookings can have attendance recorded'},{status:409});
         const existing=records.find((r:any)=>r.booking_id===bookingId);
         const data={tenant_id:tenantId,club_id:clubId,session_link_id:sessionId,booking_id:bookingId,status,marked_by_user_id:user.id,marked_at:new Date().toISOString()};
         if(existing)await base44.asServiceRole.entities.GuestSessionAttendance.update(existing.id,data);
