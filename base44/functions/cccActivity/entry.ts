@@ -11,11 +11,12 @@ Deno.serve(async req=>{
   if(!tenant_id||!club_id)return fail('Select a club',409);
   const body=await req.json().catch(()=>({})),entity=sdk.asServiceRole.entities.ClubActivity;
   if(body.action==='options'){
-   const [users,templates]=await Promise.all([
+   const [users,templates,events]=await Promise.all([
     sdk.asServiceRole.entities.User.filter({active_tenant_id:tenant_id,active_club_id:club_id,approval_status:'approved'},'full_name',200),
-    sdk.asServiceRole.entities.CommunicationTemplate.filter({tenant_id,status:'approved',owner_scope:'tenant'},'-updated_date',200)
+    sdk.asServiceRole.entities.CommunicationTemplate.filter({tenant_id,status:'approved',owner_scope:'tenant'},'-updated_date',200),
+    sdk.asServiceRole.entities.Tournament.filter({tenant_id,host_club_id:club_id,event_registration_mode:'rallyhub'},'-created_date',100)
    ]);
-   return Response.json({success:true,hosts:(users||[]).filter((u:any)=>u.role==='admin'||u.active_club_role==='club_admin').map((u:any)=>({id:u.id,name:u.full_name||u.name||u.email||u.id})),templates:(templates||[]).filter((t:any)=>!t.club_id||t.club_id===club_id).map((t:any)=>({id:t.id,name:t.name,purpose:t.purpose,version:t.version}))});
+   return Response.json({success:true,hosts:(users||[]).filter((u:any)=>u.role==='admin'||u.active_club_role==='club_admin').map((u:any)=>({id:u.id,name:u.full_name||u.name||u.email||u.id})),templates:(templates||[]).filter((t:any)=>!t.club_id||t.club_id===club_id).map((t:any)=>({id:t.id,name:t.name,purpose:t.purpose,version:t.version})),events:(events||[]).map((e:any)=>({id:e.id,name:e.name||e.title||e.id,start_date:e.start_date,capacity:e.event_capacity}))});
   }
   if(body.action==='list')return Response.json({success:true,activities:await entity.filter({tenant_id,club_id},'-created_date',100)});
   if(body.action==='link_event'){
