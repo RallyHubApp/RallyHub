@@ -26,7 +26,7 @@ Each of the 17 workstreams below receives equal weight (1/17). Each score is an 
 | Base44 performance and resilience | 75 | Bounded recurrence preview, paginated finance and stale response guard; live concurrency/load remain |
 | A01–A20 acceptance and release gates | 35 | Added recurrence boundary and paginated finance tests; formal A01–A20 traceability and live acceptance remain unpassed |
 
-**Arithmetic:** 1137/17 = **66.9%, rounded to 67% provisional implementation estimate**.
+**Arithmetic:** 1190/17 = **70.0% provisional implementation estimate**.
 
 **Critical distinction:** This is an estimate of implementation coverage, not verified feature completion. **A01–A20 full acceptance has not passed.** The current changes are development code only; there has been no authorised production deploy or live SumUp verification.
 
