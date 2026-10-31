@@ -13,9 +13,9 @@
 | Guest / beginner / experienced access | Existing guest-access backend and `registrationEligibility.js` | Test actual venue restrictions, approvals and rescheduling on mobile |
 | Membership and payment journeys | Existing membership backend; batched payment lookups and read resilience | Performance improvements committed; no measured Base44 first-load or end-to-end acceptance yet |
 | Attendance and post-session | `attendanceProjection.js`, `postEventQueue.js`, `ClubPostEventPanel.jsx`, `cccActivity.mark_attendance`, `ClubEventFollowupCandidates.jsx` | Source-level scoped check-in, no-show/excused tracking, audit attempts and attendee-based follow-up candidate review; consent/suppression, live CAS behaviour and follow-up sending not verified |
-| Hosts and delegated access | `hostAccessPolicy.js`, existing host flows | Policy helper only; backend grants/expiry/revocation and host UI not integrated |
+| Hosts and delegated access | `hostAccessPolicy.js`, `MembershipVenueHostConfig`, `cccActivity.host_activities/host_roster/host_checkin`, `ClubHostWorkspace.jsx` | Venue-scoped, approved-host roster/check-in UI added to Dashboard, with restricted fields and attendance CAS. Venue-key/name mapping, runtime role access, revocation and mobile UAT remain unverified. |
 | Communications and branding | `communicationPolicy.js`; existing Comms Centre | Preflight helper only; all outbound routes/approved templates need audit |
-| Financial reconciliation | `paymentReconciliation.js`, `ClubPaymentPanel.jsx` | Read-only last-250-record snapshot; no authoritative full ledger/revenue reconciliation |
+| Financial reconciliation | `paymentReconciliation.js`, `ClubPaymentPanel.jsx`, `cccActivity/reconciliation.mjs` and event-scoped payment lookup | Event-scoped gross/refunded/pending/net and discrepancy review, with behavioural unit tests; capped at 500 rows, not an authoritative SumUp settlement or full ledger. |
 | Audit and operational health | `auditTrail.js`, `operationalHealth.js`, `AuditLog` writes from CCC link/transition/attendance | Source-level operational audit added for selected mutations; durability, monitoring, coverage and read interface not verified |
 | Analytics and reporting | `clubMetrics.js`, existing dashboards | Partial; canonical reporting definitions and completeness checks required |
 | Sporting formats | Existing KOTC / Tournival / Interclub / DUPR modules preserved | Run protected regressions; no claims of CCC integration completion |
@@ -25,11 +25,11 @@
 ## Current evidence and next implementation order
 
 - **Implemented in source:** `ClubActivity` schema; `cccActivity` save/list/transition/preflight/link operations; activity planner controls; `registrationBridge.js` policy; existing `eventRegistration` booking, SumUp and notification workflows.
-- **Verified in sandbox:** 114 focused CCC tests passing and frontend build successful in the most recent sandbox run (subject to rerun after final edits). These tests do not establish backend deployment or integration acceptance.
+- **Verified in sandbox:** 122 focused CCC tests passing and frontend build successful in the latest sandbox run (including four behavioural reconciliation tests). These tests do not establish backend deployment or integration acceptance.
 - **Priority 1:** Test Base44 SDK/entity semantics, user tenant/club authority and concurrency for `cccActivity`; repair any failures.
 - **Priority 2:** Link existing tenant events via an admin-selectable event list and check venue, host, capacity, eligibility, communications and payment consistency server-side. Keep public registration closed until fully verified.
 - **Priority 3:** Validate `cccActivity.registration_overview` and `mark_attendance` against an isolated test tenant, including first-write attendance CAS and concurrent updates; validate delegated approval/verification actions, tenant scope, SumUp payment holds, webhooks, email delivery, waitlists and refunds without live transactions. Implement pagination (currently capped at 500 records).
-- **Priority 4:** Verify expanded internal lifecycle (registration open/closed, in progress, completed), linked-event date/venue/capacity/payment guards and AuditLog durability; complete delegated-host workspace, finance, communications and remaining CCC journeys; execute A01–A20 and protected sporting regressions.
+- **Priority 4:** Verify expanded internal lifecycle (registration open/closed, in progress, completed), linked-event date/venue/capacity/payment guards and AuditLog durability; validate delegated-host workspace and venue-key mapping, complete pagination, finance, communications and remaining CCC journeys; execute A01–A20 and protected sporting regressions.
 
 ## Release blockers
 1. Locate and check the exact signed-off v2.1 specification against this inventory; do not infer missing requirements from existing helpers.
