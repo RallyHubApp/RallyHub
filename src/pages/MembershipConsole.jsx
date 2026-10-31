@@ -255,9 +255,7 @@ export default function MembershipConsole() {
       if (response.data?.error) throw new Error(response.data.error);
       return response.data || { applications: [], counts: {} };
     },
-    enabled: canManage,
-    staleTime: READ_STALE_MS,
-    refetchOnWindowFocus: false
+    enabled: canManage
   });
 
   const { data: waitingListData = { counts: {} } } = useQuery({
