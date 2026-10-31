@@ -177,15 +177,17 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
   const [organiserHealth, setOrganiserHealth] = useState(null);
   const [organiserHealthBusy, setOrganiserHealthBusy] = useState(false);
   const [recoveryPreview, setRecoveryPreview] = useState(null);
+  const [recoveryEvidence, setRecoveryEvidence] = useState(null);
   const [recoveryBusy, setRecoveryBusy] = useState(false);
   const integrityRequest = useRef(0);
-  useEffect(() => { integrityRequest.current += 1; setOrganiserHealth(null); setRecoveryPreview(null); setOrganiserHealthBusy(false); setRecoveryBusy(false); }, [tournament.id]);
+  useEffect(() => { integrityRequest.current += 1; setOrganiserHealth(null); setRecoveryPreview(null); setRecoveryEvidence(null); setOrganiserHealthBusy(false); setRecoveryBusy(false); }, [tournament.id]);
   const reviewOrganiserHealth = async () => {
     if (organiserHealthBusy || !isAdmin) return;
     const requestId = ++integrityRequest.current;
     setOrganiserHealthBusy(true);
     setOrganiserHealth(null);
     setRecoveryPreview(null);
+    setRecoveryEvidence(null);
     try {
       const response = await base44.functions.invoke('tournivalOrganiserHealth', {
         action:'review', tenantId:tournament.tenant_id, clubId:tournament.host_club_id, tournamentId:tournament.id
@@ -205,7 +207,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
         action:'preview_recovery', tenantId:tournament.tenant_id, clubId:tournament.host_club_id, tournamentId:tournament.id
       });
       if (!response?.data?.success) throw Error(response?.data?.error || 'Preview unavailable');
-      if (integrityRequest.current === requestId) setRecoveryPreview(response.data.preview);
+      if (integrityRequest.current === requestId) { setRecoveryPreview(response.data.preview); setRecoveryEvidence(response.data.evidence); }
     } catch (error) { if (integrityRequest.current === requestId) toast.error(error?.message || 'Preview unavailable'); }
     finally { if (integrityRequest.current === requestId) setRecoveryBusy(false); }
   };
@@ -455,6 +457,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
         {recoveryPreview && <div role="status" className="rounded-lg border border-amber-500/40 p-3 text-sm">
           <strong>{recoveryPreview.available ? 'Manual recovery candidate' : 'Recovery unavailable'}</strong>
           {recoveryPreview.available && <p>Session revision {recoveryPreview.toRevision}; mirror revision {recoveryPreview.fromRevision}. No records were changed.</p>}
+          {recoveryEvidence?.valid && <p className="mt-1 text-xs">Revision gap: {recoveryEvidence.revisionGap}; matches: {recoveryEvidence.matchCount}; results: {recoveryEvidence.resultCount}. Manual approval is required before any repair.</p>}
         </div>}
         {organiserHealth && <div role="status" className={`text-sm rounded-lg p-2 ${organiserHealth.healthy ? 'bg-green-500/10' : 'bg-amber-500/10'}`}>
           <strong>{organiserHealth.healthy ? 'Session and results are consistent' : 'Organiser review required'}</strong>
