@@ -25,7 +25,7 @@
 ## Current evidence and next implementation order
 
 - **Implemented in source:** `ClubActivity` schema; `cccActivity` save/list/transition/preflight/link operations; activity planner controls; `registrationBridge.js` policy; existing `eventRegistration` booking, SumUp and notification workflows.
-- **Verified in sandbox:** 101 focused CCC tests passing in the most recent run, plus a successful frontend build in the preceding run. These tests do not establish backend deployment or integration acceptance.
+- **Verified in sandbox:** 105 focused CCC tests passing and frontend build successful in the most recent sandbox run. These tests do not establish backend deployment or integration acceptance.
 - **Priority 1:** Test Base44 SDK/entity semantics, user tenant/club authority and concurrency for `cccActivity`; repair any failures.
 - **Priority 2:** Link existing tenant events via an admin-selectable event list and check venue, host, capacity, eligibility, communications and payment consistency server-side. Keep public registration closed until fully verified.
 - **Priority 3:** Validate new `cccActivity.registration_overview` against a test tenant and event; verify booking statuses, linked payment attribution and pagination (currently capped at 500 records). Exercise booking, approval, payment holds, webhook reconciliation, waitlist, notices and refunds through the existing event service in an isolated test environment.
