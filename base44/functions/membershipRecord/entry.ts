@@ -1,4 +1,4 @@
-import {assessMembershipPaymentLink,assessMembershipPaymentVerification,selectMembershipCheckoutForVerification} from './paymentSafety.ts';
+import {assessMembershipPaymentLink,assessMembershipPaymentVerification,selectMembershipCheckoutForVerification,assessMembershipPaymentHealth} from './paymentSafety.ts';
 import {readActiveSportCatalogue} from './sportCatalogueReader.mjs';
 import {readScopedMembershipLedger} from './scopedLedgerReader.mjs';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
@@ -631,6 +631,19 @@ Deno.serve(async(req)=>{
         after_state:JSON.stringify({provider,amount,currency}),reason:'Created from Membership Console'
       });}catch{}
       return Response.json({success:true,reused:false,payment:{id:payment.id,provider,amount,currency,checkout_url:checkout.checkoutUrl,status:'pending'}});
+    }
+
+    if(action==='admin_payment_health'){
+      const personId=clean(body.personId,180);
+      if(!personId)return Response.json({error:'personId required'},{status:400});
+      const membership=await first(base44,'ClubMembership',{tenant_id:tenantId,club_id:clubId,person_id:personId});
+      if(!membership)return Response.json({error:'Membership not found in active club'},{status:404});
+      let payments;
+      try{payments=(await readScopedMembershipLedger(base44.asServiceRole.entities.PaymentRecord,{
+        tenant_id:tenantId,club_id:clubId,person_id:personId,club_membership_id:membership.id,purpose_type:'membership'
+      })).rows;}
+      catch{return Response.json({error:'Complete payment history unavailable',code:'MEMBERSHIP_PAYMENT_HISTORY_INCOMPLETE'},{status:503});}
+      return Response.json({success:true,health:assessMembershipPaymentHealth({membership,payments})});
     }
 
     if(action==='admin_verify_membership_payment'){
