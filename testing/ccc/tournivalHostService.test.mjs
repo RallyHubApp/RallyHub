@@ -1,0 +1,17 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createTournivalHostService} from '../../src/lib/ccc/tournivalHostService.mjs';
+const now='2026-10-31T20:00:00Z';
+const event=()=>({id:'e',tenantId:'t',clubId:'c',revision:1,phase:'qualification',audit:[],matches:[{id:'m',teamA:['a','b'],teamB:['c','d'],status:'playing',court:1,revision:1,result:null}]});
+const grant=()=>({tenant_id:'t',club_id:'c',session_id:'e',user_id:'host',expires_at:'2026-11-01T20:00:00Z',allowed_actions:['manage_session','view_roster']});
+const command=()=>({action:'recovery_acknowledge',expectedRevision:1,operationId:'op',now:'2026-01-01T00:00:00Z',confirmedMatchIds:['m']});
+const request=()=>({eventId:'e',tenantId:'t',clubId:'c',command:command(),actorId:'imposter'});
+const setup=(overrides={})=>{let stored=event(),writes=0;const repository={loadEvent:async()=>structuredClone(stored),loadGrant:async()=>grant(),compareAndSwap:async({expectedRevision,nextEvent})=>{if(stored.revision!==expectedRevision)return false;stored=structuredClone(nextEvent);writes++;return true;},...overrides};const handler=createTournivalHostService({authenticate:async()=>({id:'host'}),clock:()=>now,repository});return {handler,read:()=>stored,writes:()=>writes};};
+test('server identity and time override untrusted request fields',async()=>{const s=setup();const r=await s.handler(request());assert.equal(r.ok,true);assert.equal(s.read().audit[0].actor,'host');assert.equal(s.writes(),1);});
+test('repeated operation is idempotent and not rewritten',async()=>{const s=setup();assert.equal((await s.handler(request())).ok,true);const second=await s.handler(request());assert.equal(second.duplicate,true);assert.equal(s.writes(),1);});
+test('concurrent operations only one wins atomic CAS',async()=>{const s=setup();const a=request(),b=request();b.command.operationId='other';const result=await Promise.all([s.handler(a),s.handler(b)]);assert.equal(result.filter(r=>r.ok).length,1);assert.equal(s.writes(),1);});
+test('read-only DUPR review never writes',async()=>{const s=setup();const req=request();req.command.action='dupr_review';const r=await s.handler(req);assert.equal(r.readOnly,true);assert.equal(s.writes(),0);});
+test('authentication failure blocks repository access',async()=>{const s=createTournivalHostService({authenticate:async()=>null,clock:()=>now,repository:{loadEvent:async()=>{throw Error('should not load');},loadGrant:async()=>null,compareAndSwap:async()=>false}});await assert.rejects(()=>s(request()),/Authentication required/);});
+test('revoked grant blocks writes',async()=>{const s=setup({loadGrant:async()=>({...grant(),revoked_at:now})});const r=await s.handler(request());assert.equal(r.ok,false);assert.equal(s.writes(),0);});
+test('missing trusted clock blocked',async()=>{const s=createTournivalHostService({authenticate:async()=>({id:'host'}),clock:()=>null,repository:{loadEvent:async()=>event(),loadGrant:async()=>grant(),compareAndSwap:async()=>true}});await assert.rejects(()=>s(request()),/Trusted server clock invalid/);});
+test('operation key length bounded',async()=>{const s=setup();const req=request();req.command.operationId='x'.repeat(129);await assert.rejects(()=>s.handler(req),/Operation key required/);});
