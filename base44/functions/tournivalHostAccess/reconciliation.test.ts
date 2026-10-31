@@ -1,0 +1,11 @@
+import {strict as assert} from 'node:assert';
+import {planTournivalHostReconciliation as plan} from './reconciliation.ts';
+const state={revision:5,matches:[{id:'m1'}]};
+const session=()=>({id:'s',tenant_id:'t',tournament_id:'e',state_revision:5,state_json:JSON.stringify(state)});
+const tournament=(revision:number)=>({id:'e',tenant_id:'t',tournival_state:JSON.stringify({...state,revision})});
+Deno.test('stale mirror produces organiser-only review proposal',()=>{const p=plan(session(),tournament(4));assert.equal(p.readyForOrganiserReview,true);assert.equal(p.automaticRepair,false);});
+Deno.test('healthy mirror needs no recovery',()=>assert.equal(plan(session(),tournament(5)).readyForOrganiserReview,false));
+Deno.test('newer mirror cannot be overwritten',()=>assert.equal(plan(session(),tournament(6)).readyForOrganiserReview,false));
+Deno.test('invalid session revision blocks recovery',()=>assert.equal(plan({...session(),state_revision:4},tournament(3)).readyForOrganiserReview,false));
+Deno.test('cross-tenant mirror blocks recovery',()=>assert.equal(plan(session(),{...tournament(4),tenant_id:'other'}).readyForOrganiserReview,false));
+Deno.test('missing mirror blocks recovery',()=>assert.equal(plan(session(),{...tournament(4),tournival_state:''}).readyForOrganiserReview,false));
