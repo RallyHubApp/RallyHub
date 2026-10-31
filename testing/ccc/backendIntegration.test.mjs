@@ -21,6 +21,7 @@ import {reviewPersonCommunications} from '../../base44/functions/cccActivity/con
 import {readPersonInventory} from '../../base44/functions/cccActivity/personInventory.mjs';
 import {refundRecoveryQueue} from '../../base44/functions/cccActivity/refundRecovery.mjs';
 import {identityIntegrity} from '../../base44/functions/cccActivity/identityIntegrity.mjs';
+import {readCccAccess} from '../../base44/functions/cccActivity/accessGate.mjs';
 const source=readFileSync(new URL('../../base44/functions/cccActivity/entry.ts',import.meta.url),'utf8').replace(/^import .*;\s*$/gm,'');
 const js=transformSync(source,{loader:'ts',format:'cjs'}).code;
 const records={
@@ -29,6 +30,7 @@ const records={
  Venue:[{id:'v1',tenant_id:'t1',club_id:'c1',name:'Ennistymon',status:'active'}],
  MembershipVenueHostConfig:[{id:'cfg',tenant_id:'t1',club_id:'c1',venue_key:'ennistymon',active:true,host_emails:['host@example.ie']}],
  Person:[{id:'p1',tenant_id:'t1',full_name:'Player One'}],
+ TenantUserAccess:[{id:'tenant-grant',tenant_id:'t1',user_id:'host',role:'admin',status:'active'}],
  ClubActivity:[{id:'a1',tenant_id:'t1',club_id:'c1',venue_id:'v1',title:'Wednesday play',starts_at:'2026-11-04T19:00:00',status:'scheduled',linked_event_id:'e1',revision:1}],
  Tournament:[{id:'e1',tenant_id:'t1',host_club_id:'c1',name:'Wednesday play',event_capacity:16,event_registration_mode:'rallyhub'}],
  EventRegistration:[{id:'r1',event_id:'e1',tenant_id:'t1',club_id:'c1',full_name:'Player One',email:'private@example.ie',medical_note:'private',registration_status:'confirmed',attendance_status:'not_marked'}],
@@ -45,7 +47,7 @@ function makeHarness(user=records.User[0]){
  }]));
  let handler;
  const sdk={auth:{me:async()=>user},asServiceRole:{entities}};
- vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,readEventRegistrations,readScopedActivities,buildFollowupReview,validateEventLink,readActivityAudit,summariseClubOperations,readScopedInventory,summarisePeopleInventory,summariseManagementInventory,validateHostVenueMapping,validatePersonAccessLink,communicationReadiness,reviewHostRevocation,activityScheduleConflicts,reviewPersonCommunications,readPersonInventory,refundRecoveryQueue,identityIntegrity,Response,Date,console});
+ vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,readEventRegistrations,readScopedActivities,buildFollowupReview,validateEventLink,readActivityAudit,summariseClubOperations,readScopedInventory,summarisePeopleInventory,summariseManagementInventory,validateHostVenueMapping,validatePersonAccessLink,communicationReadiness,reviewHostRevocation,activityScheduleConflicts,reviewPersonCommunications,readPersonInventory,refundRecoveryQueue,identityIntegrity,readCccAccess,Response,Date,console});
  const call=async(action,fields={})=>{const response=await handler({method:'POST',json:async()=>({action,...fields})});return {status:response.status,data:await response.json()}};
  return {call,db,reads};
 }
