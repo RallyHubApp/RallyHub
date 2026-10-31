@@ -21,6 +21,7 @@ export function reviewLegacySessionOverlaps(occurrences=[],sessions=[],{tenantId
    const name=normalise(s.venue_name),key=normalise(s.venue_key);
    if(venue&&(name===venue||key===venue))overlaps.push({sessionId:s.id,status:s.active===false?'closed':'active'});
    else if(!name&&!key)unmapped.push(s.id);
+   else if(!venue)unmapped.push(s.id);
   }
   if(overlaps.length)conflicted++;
   if(unmapped.length)ambiguous++;
