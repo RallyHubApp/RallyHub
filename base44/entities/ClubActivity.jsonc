@@ -55,6 +55,10 @@
       "type": "string",
       "description": "Source draft batch operation key; prevents overlapping creation attempts"
     },
+    "recurrence_expected_count": {
+      "type": "integer",
+      "description": "Number of draft occurrences expected from the claimed batch"
+    },
     "recurrence_batch_state": {
       "type": "string",
       "enum": [
