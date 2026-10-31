@@ -6,14 +6,14 @@ export const REGISTRATION_MODES=Object.freeze(['approval','automatic','closed'])
 export const PAYMENT_METHODS=Object.freeze(['none','cash','online']);
 
 export function newActivityDraft({tenantId,clubId,sport='pickleball'}={}){
- return {tenant_id:tenantId||'',club_id:clubId||'',sport,type:'session',title:'',venue_id:'',starts_at:'',ends_at:'',capacity:16,status:'draft',revision:0};
+ return {tenant_id:tenantId||'',club_id:clubId||'',sport,type:'session',title:'',venue_id:'',court_id:'',starts_at:'',ends_at:'',capacity:16,status:'draft',revision:0};
 }
 export function normaliseActivityForm(form={},scope={}){
  const capacity=Number(form.capacity);
  return {
   tenant_id:String(scope.tenant_id||''),club_id:String(scope.club_id||''),
   sport:String(form.sport||'').trim(),type:String(form.type||'').trim(),
-  title:String(form.title||'').trim(),venue_id:String(form.venue_id||'').trim(),
+  title:String(form.title||'').trim(),venue_id:String(form.venue_id||'').trim(),court_id:String(form.court_id||'').trim(),
   starts_at:String(form.starts_at||''),ends_at:String(form.ends_at||''),
   capacity:Number.isSafeInteger(capacity)?capacity:0,status:'draft',revision:0
  };
