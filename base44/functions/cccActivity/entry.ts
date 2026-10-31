@@ -14,6 +14,7 @@ import {communicationReadiness} from './communicationReadiness.mjs';
 import {reviewHostRevocation} from './hostRevocation.mjs';
 import {activityScheduleConflicts} from './activitySchedulePolicy.mjs';
 import {reviewPersonCommunications} from './consentReview.mjs';
+import {readPersonInventory} from './personInventory.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -147,8 +148,8 @@ Deno.serve(async req=>{
    if(!people?.length||!access.complete||!access.rows.some((a:any)=>a.status==='active'))return fail('Active club Person link not verified',409);
    const [consents,preferences,suppressions]=await Promise.all([
     readScopedInventory(sdk.asServiceRole.entities.ConsentRecord,{tenant_id,club_id,person_id:personId},{pageSize:100,maxPages:5}),
-    readScopedInventory(sdk.asServiceRole.entities.CommunicationPreference,{person_id:personId},{pageSize:100,maxPages:5}),
-    readScopedInventory(sdk.asServiceRole.entities.CommunicationSuppression,{person_id:personId,channel},{pageSize:100,maxPages:5})
+    readPersonInventory(sdk.asServiceRole.entities.CommunicationPreference,{personId,pageSize:100,maxPages:5}),
+    readPersonInventory(sdk.asServiceRole.entities.CommunicationSuppression,{personId,channel,pageSize:100,maxPages:5})
    ]);
    return Response.json({success:true,...reviewPersonCommunications({tenantId:tenant_id,clubId:club_id,personId,channel,purpose,consents:consents.rows,preferences:preferences.rows,suppressions:suppressions.rows,complete:consents.complete&&preferences.complete&&suppressions.complete})});
   }
