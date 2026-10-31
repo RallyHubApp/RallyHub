@@ -48,7 +48,8 @@
         "requested",
         "processing",
         "succeeded",
-        "failed"
+        "failed",
+        "needs_reconciliation"
       ],
       "default": "requested"
     },
