@@ -3,7 +3,7 @@ const inWindow=(record,now)=>{const start=record?.starts_at?Date.parse(record.st
 export function cccAccessDecision({user,tenantId,clubId,tenantGrants=[],clubGrants=[],now=Date.now()}={}){
  const deny=(reason)=>({admin:false,member:false,reason});
  if(!user?.id||!tenantId||!clubId||user.active_tenant_id!==tenantId||user.active_club_id!==clubId)return deny('context_mismatch');
- if(user.approval_status!=='approved')return deny('user_not_approved');
+ if(user.approval_status&&user.approval_status!=='approved')return deny('user_not_approved');
  const tenant=tenantGrants.some(g=>g?.user_id===user.id&&g.tenant_id===tenantId&&g.status==='active'&&['owner','admin'].includes(g.role)&&inWindow(g,now));
  const club=clubGrants.some(g=>g?.user_id===user.id&&g.tenant_id===tenantId&&g.club_id===clubId&&g.status==='active'&&inWindow(g,now));
  const clubAdmin=clubGrants.some(g=>g?.user_id===user.id&&g.tenant_id===tenantId&&g.club_id===clubId&&g.status==='active'&&g.permission_bundle==='club_admin'&&inWindow(g,now));
