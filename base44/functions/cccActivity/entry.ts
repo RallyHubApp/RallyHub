@@ -2,6 +2,7 @@ import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
 import {summariseEventFinance} from './reconciliation.mjs';
 import {isConfiguredHost} from './hostPolicy.mjs';
 import {readEventPayments} from './eventPaymentReader.mjs';
+import {readEventRegistrations} from './registrationReader.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -46,8 +47,8 @@ Deno.serve(async req=>{
    const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
    if(!event)return fail('Linked event unavailable',404);
    if(body.action==='host_roster'){
-    const registrations=await sdk.asServiceRole.entities.EventRegistration.filter({event_id:event.id,tenant_id,club_id},'-created_date',500);
-    return Response.json({success:true,activityId:id,eventName:event.name||record.title,participants:(registrations||[]).filter((r:any)=>['confirmed','cash_confirmed'].includes(r.registration_status)).map((r:any)=>({id:r.id,name:r.full_name||'',bookingStatus:r.registration_status||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)})),resultsMayBeTruncated:(registrations||[]).length===500});
+    const registrationRead=await readEventRegistrations(sdk.asServiceRole.entities.EventRegistration,{tenantId:tenant_id,clubId:club_id,eventId:event.id});const registrations=registrationRead.registrations;
+    return Response.json({success:true,activityId:id,eventName:event.name||record.title,participants:(registrations||[]).filter((r:any)=>['confirmed','cash_confirmed'].includes(r.registration_status)).map((r:any)=>({id:r.id,name:r.full_name||'',bookingStatus:r.registration_status||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)})),resultsMayBeTruncated:!registrationRead.complete});
    }
    if(!['scheduled','registration_open','registration_closed','in_progress','completed'].includes(record.status))return fail('Check-in unavailable for this activity',409);
    const registrationId=s(body.registrationId),attendance=s(body.attendance),revision=Number(body.expectedRevision);
@@ -128,23 +129,23 @@ Deno.serve(async req=>{
    if(!record.linked_event_id)return fail('Link an existing event first',409);
    const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
    if(!event)return fail('Linked event unavailable for this club',404);
-   const registrations=await sdk.asServiceRole.entities.EventRegistration.filter({event_id:event.id,tenant_id,club_id},'-created_date',500);
+   const registrationRead=await readEventRegistrations(sdk.asServiceRole.entities.EventRegistration,{tenantId:tenant_id,clubId:club_id,eventId:event.id});const registrations=registrationRead.registrations;
    const registrationIds=(registrations||[]).map((r:any)=>r.id).filter(Boolean);
    const paymentRead=await readEventPayments(sdk.asServiceRole.entities.PaymentRecord,{tenantId:tenant_id,clubId:club_id,registrationIds});const payments=paymentRead.payments;
-   const financeResult=summariseEventFinance(registrations||[],payments||[]);const byRegistration=financeResult.byRegistration;const {byRegistration:_,...finance}=financeResult;finance.complete=(registrations||[]).length<500&&!paymentRead.possiblyTruncated;finance.requiresReview=!finance.complete||finance.anomalies.length>0;
+   const financeResult=summariseEventFinance(registrations||[],payments||[]);const byRegistration=financeResult.byRegistration;const {byRegistration:_,...finance}=financeResult;finance.complete=registrationRead.complete&&!paymentRead.possiblyTruncated;finance.requiresReview=!finance.complete||finance.anomalies.length>0;
    const rows=(registrations||[]).map((r:any)=>{const p:any=byRegistration.get(r.id);return {id:r.id,name:r.full_name||'',email:r.email||'',mobile:r.mobile||'',status:r.registration_status||'',paymentStatus:p?.payment_status||r.payment_status||'unknown',amount:Number(p?.amount||0),refundedAmount:Number(p?.amount_refunded||0),createdAt:r.created_at||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)}});
    const count=(status:string)=>rows.filter((r:any)=>r.status===status).length;
 
-   return Response.json({success:true,activityId:id,event:{id:event.id,name:event.name||record.title,capacity:Number(event.event_capacity||0),fee:Number(event.event_fee_amount||0),bookingEnabled:!!event.event_booking_enabled},summary:{total:rows.length,pending:count('pending_approval'),confirmed:count('confirmed')+count('cash_confirmed'),waitlisted:count('waitlisted'),cancelled:count('cancelled'),paymentHolds:count('approved_payment_hold'),attended:rows.filter((r:any)=>r.attendance==='attended').length,noShows:rows.filter((r:any)=>r.attendance==='no_show').length,unmarked:rows.filter((r:any)=>['confirmed','cash_confirmed'].includes(r.status)&&r.attendance==='not_marked').length,netCollected:finance.net},finance,registrations:rows,overviewReadOnly:true,resultsMayBeTruncated:(registrations||[]).length===500||paymentRead.possiblyTruncated});
+   return Response.json({success:true,activityId:id,event:{id:event.id,name:event.name||record.title,capacity:Number(event.event_capacity||0),fee:Number(event.event_fee_amount||0),bookingEnabled:!!event.event_booking_enabled},summary:{total:rows.length,pending:count('pending_approval'),confirmed:count('confirmed')+count('cash_confirmed'),waitlisted:count('waitlisted'),cancelled:count('cancelled'),paymentHolds:count('approved_payment_hold'),attended:rows.filter((r:any)=>r.attendance==='attended').length,noShows:rows.filter((r:any)=>r.attendance==='no_show').length,unmarked:rows.filter((r:any)=>['confirmed','cash_confirmed'].includes(r.status)&&r.attendance==='not_marked').length,netCollected:finance.net},finance,registrations:rows,overviewReadOnly:true,resultsMayBeTruncated:!registrationRead.complete||paymentRead.possiblyTruncated});
   }
   if(body.action==='followup_candidates'){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!record||!record.linked_event_id)return fail('Linked activity not found',404);
    const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
    if(!event)return fail('Linked event unavailable',404);
-   const registrations=await sdk.asServiceRole.entities.EventRegistration.filter({event_id:event.id,tenant_id,club_id,attendance_status:'attended'},'-created_date',500);
+   const registrationRead=await readEventRegistrations(sdk.asServiceRole.entities.EventRegistration,{tenantId:tenant_id,clubId:club_id,eventId:event.id,extraFilters:{attendance_status:'attended'}});const registrations=registrationRead.registrations;
    const candidates=(registrations||[]).filter((r:any)=>['confirmed','cash_confirmed'].includes(r.registration_status)).map((r:any)=>({registrationId:r.id,name:r.full_name||'',email:r.email||'',hasEmail:!!r.email,attendance:r.attendance_status}));
-   return Response.json({success:true,activityId:id,candidates,reviewRequired:true,deliveryEnabled:false,consentAndSuppressionNotChecked:true,resultsMayBeTruncated:(registrations||[]).length===500});
+   return Response.json({success:true,activityId:id,candidates,reviewRequired:true,deliveryEnabled:false,consentAndSuppressionNotChecked:true,resultsMayBeTruncated:!registrationRead.complete});
   }
   if(body.action==='registration_preflight'){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
