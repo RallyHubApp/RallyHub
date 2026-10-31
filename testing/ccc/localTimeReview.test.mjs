@@ -11,6 +11,10 @@ test('spring-forward missing time and autumn repeated time are blocked',()=>{
  const repeated=reviewDublinWallTime('2026-10-25T01:30');
  assert.equal(repeated.valid,false);assert.equal(repeated.issue,'ambiguous_local_time');assert.equal(repeated.possibleInstants.length,2);
 });
+test('existing explicitly offset timestamps remain valid without guessing their timezone',()=>{
+ assert.deepEqual(reviewDublinWallTime('2026-11-04T19:00:00Z').possibleInstants,['2026-11-04T19:00:00.000Z']);
+ assert.deepEqual(reviewDublinWallTime('2026-07-13T19:00:00+01:00').possibleInstants,['2026-07-13T18:00:00.000Z']);
+});
 test('invalid dates and actual duration are rejected',()=>{
  assert.equal(reviewDublinWallTime('2026-02-30T19:00').valid,false);
  const r=reviewDublinOccurrences([{week:1,startsAt:'2026-11-02T20:00',endsAt:'2026-11-02T19:00'}]);
