@@ -21,10 +21,10 @@ Each of the 17 workstreams below receives equal weight (1/17). Each score is an 
 | Communications and branding | 70 | Person-scoped consent, preference and suppression evidence review with explicit endpoint-hash gap; eight-purpose template readiness; delivery and provider verification remain |
 | Financial reconciliation | 82 | Refund recovery and paginated linked payment rollups; SumUp settlement remains unverified |
 | Audit and operational health | 60 | Host revocation audit, refund reconciliation alerts and identity-integrity flags; durable audit and monitoring remain |
-| Analytics and reporting | 60 | Added membership readiness and guest eligibility indicators alongside identity/refund counts; canonical metrics and settlement totals remain |
+| Analytics and reporting | 70 | Registration, attendance and payment totals aggregate loaded continuation pages; canonical settlement reporting remains |
 | Sporting formats | 45 | Protected module integration and regression |
-| Base44 performance and resilience | 70 | Cursor-bounded grants and scoped event admin authorisation with mocked isolation tests; live concurrent requests and load remain |
-| A01–A20 acceptance and release gates | 27 | Event admin grant revocation, cross-club and payment denial tests added; formal A01–A20 traceability and live acceptance remain unpassed |
+| Base44 performance and resilience | 75 | Bounded recurrence preview, paginated finance and stale response guard; live concurrency/load remain |
+| A01–A20 acceptance and release gates | 35 | Added recurrence boundary and paginated finance tests; formal A01–A20 traceability and live acceptance remain unpassed |
 
 **Arithmetic:** 1137/17 = **66.9%, rounded to 67% provisional implementation estimate**.
 
