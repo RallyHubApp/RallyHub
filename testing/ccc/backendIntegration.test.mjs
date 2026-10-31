@@ -64,6 +64,34 @@ test('non-confirmed registrations cannot be checked in',async()=>{
  assert.equal((await h.call('host_roster',{id:'a1'})).data.participants.length,0);
  assert.equal((await h.call('host_checkin',{id:'a1',registrationId:'r1',attendance:'attended',expectedRevision:0})).status,409);
 });
+test('event overview only counts payments linked to selected registrations',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.PaymentRecord.push({id:'p1',tenant_id:'t1',club_id:'c1',purpose_type:'event',purpose_id:'r1',amount:12.5,amount_refunded:2.5,payment_status:'partially_refunded'});
+ h.db.PaymentRecord.push({id:'p2',tenant_id:'t1',club_id:'c1',purpose_type:'event',purpose_id:'other',amount:999,payment_status:'paid'});
+ const result=await h.call('registration_overview',{id:'a1'});
+ assert.equal(result.status,200);assert.equal(result.data.finance.gross,12.5);
+ assert.equal(result.data.finance.refunded,2.5);assert.equal(result.data.finance.net,10);
+ assert.equal(result.data.finance.authoritative,false);
+ assert.equal(result.data.registrations.length,1);
+ assert.equal(result.data.registrations[0].name,'Player One');
+ assert.equal(JSON.stringify(result.data).includes('medical_note'),false);
+});
+test('event overview and roster enforce linked event tenant and club',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.Tournament[0].host_club_id='other';
+ assert.equal((await h.call('registration_overview',{id:'a1'})).status,404);
+ assert.equal((await h.call('host_roster',{id:'a1'})).status,404);
+});
+test('host cannot check in participants from another event',async()=>{
+ const h=makeHarness();
+ h.db.EventRegistration[0].event_id='other-event';
+ assert.equal((await h.call('host_checkin',{id:'a1',registrationId:'r1',attendance:'attended',expectedRevision:0})).status,404);
+});
+test('invalid attendance values and revisions are rejected',async()=>{
+ const h=makeHarness();
+ assert.equal((await h.call('host_checkin',{id:'a1',registrationId:'r1',attendance:'approved',expectedRevision:0})).status,400);
+ assert.equal((await h.call('host_checkin',{id:'a1',registrationId:'r1',attendance:'attended',expectedRevision:-1})).status,400);
+});
 test('missing authentication and tenant context are denied',async()=>{
  assert.equal((await makeHarness(null).call('host_activities')).status,403);
  assert.equal((await makeHarness({id:'host',role:'user'}).call('host_activities')).status,409);
