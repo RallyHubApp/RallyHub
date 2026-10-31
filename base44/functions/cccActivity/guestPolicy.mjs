@@ -1,6 +1,6 @@
 /** Advisory Clare guest venue access; booking backend remains authoritative. */
 const aliases=new Map([
- ['ennis','ennis'],['doorabarefield','ennis'],['doora','ennis'],['stjosephsdoorabarefieldgaaclub','ennis'],
+ ['ennis','ennis'],['doorabarefield','ennis'],['doora','ennis'],['stjosephsdoorabarefield','ennis'],['stjosephsdoorabarefieldgaaclub','ennis'],
  ['ennistymon','ennistymon'],['ennistymoncommunitycentre','ennistymon'],
  ['shannon','shannon'],['clarecastle','clarecastle'],['corofin','corofin'],['corofinclaregaasportshall','corofin']
 ]);
