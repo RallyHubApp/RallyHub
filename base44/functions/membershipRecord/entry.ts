@@ -1,4 +1,4 @@
-import {assessMembershipPaymentLink,assessMembershipPaymentVerification} from './paymentSafety.ts';
+import {assessMembershipPaymentLink,assessMembershipPaymentVerification,selectMembershipCheckoutForVerification} from './paymentSafety.ts';
 import {readActiveSportCatalogue} from './sportCatalogueReader.mjs';
 import {readScopedMembershipLedger} from './scopedLedgerReader.mjs';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
@@ -642,8 +642,9 @@ Deno.serve(async(req)=>{
         tenant_id:tenantId,club_id:clubId,person_id:personId,club_membership_id:membership.id,purpose_type:'membership'
       })).rows;}
       catch{return Response.json({error:'Cannot verify complete membership payment history',code:'MEMBERSHIP_PAYMENT_HISTORY_INCOMPLETE'},{status:503});}
-      const payment=(payments||[]).find((p:any)=>p.provider_checkout_id&&p.provider)||null;
-      if(!payment) return Response.json({error:'No online membership payment checkout is attached to this membership.'},{status:409});
+      const selection=selectMembershipCheckoutForVerification({membership,payments});
+      if(selection.issues.length)return Response.json({error:'Membership payment history requires finance review before verification',code:'MEMBERSHIP_PAYMENT_SELECTION_REVIEW',issues:selection.issues},{status:409});
+      const payment=selection.payment;
       const gateway=await resolvePaymentGateway(base44,tenantId,clubId,payment.provider);
       if(!gateway) return Response.json({error:'The payment gateway for this membership is not configured.'},{status:409});
       const result=await retrievePayment(payment.provider,payment.provider_checkout_id,gateway.account);
