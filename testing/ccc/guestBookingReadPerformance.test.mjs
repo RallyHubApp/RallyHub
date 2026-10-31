@@ -11,3 +11,10 @@ test('gateway connection verification remains available in template settings',()
  assert.match(src,/if\(action==='admin_templates'\)/);
  assert.match(src,/last_verified_at:new Date\(\)\.toISOString\(\)/);
 });
+
+test('booking payment lookups use one club-scoped page with fallback on full page',()=>{
+ assert.match(src,/PaymentRecord\.filter\(\{tenant_id:tenantId,club_id:clubId,purpose_type:'booking'\},'-created_date',500\)/);
+ assert.match(src,/const paymentPageComplete=\(paymentPage\|\|\[\]\)\.length<500/);
+ assert.match(src,/paymentPageComplete\|\|indexed\.length/);
+ assert.match(src,/PaymentRecord\.filter\(\{tenant_id:tenantId,club_id:clubId,purpose_type:'booking',purpose_id:b\.id\}/);
+});
