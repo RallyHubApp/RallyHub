@@ -27,7 +27,7 @@ export default function ClubActivityPlanner({tenantId,clubId}){
  const queryClient=useQueryClient();
  const {data:venues=[],isLoading:venuesLoading,isError:venuesError}=useQuery({queryKey:['ccc-venues',tenantId,clubId],queryFn:()=>base44.entities.Venue.filter({tenant_id:tenantId,club_id:clubId,status:'active'},'name',100),enabled:!!tenantId&&!!clubId});
  const {data:savedDrafts=[]}=useQuery({queryKey:['ccc-activity-drafts',tenantId,clubId],queryFn:async()=>{const res=await base44.functions.invoke('cccActivity',{action:'list'});if(!res.data?.success)throw Error(res.data?.error||'Unable to load drafts');return res.data.activities||[]},enabled:!!tenantId&&!!clubId,retry:false});
- const {data:options={hosts:[],templates:[],events:[]},isLoading:optionsLoading,isError:optionsError}=useQuery({queryKey:['ccc-activity-options',tenantId,clubId,form.venue_id],queryFn:async()=>{const res=await base44.functions.invoke('cccActivity',{action:'options',venueId:form.venue_id||''});if(!res.data?.success)throw Error(res.data?.error||'Options unavailable');return res.data},enabled:!!tenantId&&!!clubId,retry:false});
+ const {data:options={hosts:[],templates:[],events:[],courts:[]},isLoading:optionsLoading,isError:optionsError}=useQuery({queryKey:['ccc-activity-options',tenantId,clubId,form.venue_id],queryFn:async()=>{const res=await base44.functions.invoke('cccActivity',{action:'options',venueId:form.venue_id||''});if(!res.data?.success)throw Error(res.data?.error||'Options unavailable');return res.data},enabled:!!tenantId&&!!clubId,retry:false});
  const scope={tenant_id:tenantId,club_id:clubId};
  const activity={...form,tenant_id:tenantId||'',club_id:clubId||''};
  const venue=venues.find(v=>v.id===activity.venue_id)||null;
