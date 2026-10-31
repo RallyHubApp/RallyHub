@@ -8,6 +8,7 @@ import {deliverEventNotice} from './delivery.ts';
 import {readBookingRegistrations} from './scopedRegistrationReader.mjs';
 import {readAdminEventPayments} from './scopedPaymentReader.mjs';
 import {selectRefundableEventPayment,selectCheckoutPayment} from './paymentSelection.mjs';
+import {readPaymentRefundHistory,refundRemaining} from './scopedRefundReader.mjs';
 const clean=(v:any,n=200)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,n);
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
 Deno.serve(async(req)=>{
@@ -67,10 +68,10 @@ Deno.serve(async(req)=>{
     const payment=selection.payment;
     const transactionId=clean(payment.provider_transaction_id||registration.payment_transaction_id,120);
     if(!transactionId)return fail('SumUp transaction reference missing; verify payment first',409);
-    const previous=await base44.asServiceRole.entities.PaymentRefund.filter({payment_record_id:payment.id},'-requested_at',100);
-    if(previous.some((x:any)=>x.status==='processing'))return fail('A refund is already processing; reconcile before retrying',409);
-    const alreadyRefunded=previous.filter((x:any)=>x.status==='succeeded').reduce((sum:number,x:any)=>sum+Number(x.amount||0),0);
-    const remaining=Math.round((Number(payment.amount||0)-alreadyRefunded)*100)/100;
+    const previous=await readPaymentRefundHistory(base44.asServiceRole.entities.PaymentRefund,{paymentId:payment.id,tenantId:t.tenant_id,clubId:t.host_club_id});
+    const refundBalance=refundRemaining(payment,previous);if(refundBalance.blocked)return fail('Refund requires reconciliation: '+refundBalance.blocked,409);
+    const alreadyRefunded=Number(payment.amount||0)-refundBalance.remaining;
+    const remaining=refundBalance.remaining;
     const amount=b.refundAmount===undefined?remaining:Math.round(Number(b.refundAmount)*100)/100;
     if(!Number.isFinite(amount)||amount<=0||amount>remaining)return fail('Invalid refund amount',400);
     const now=new Date().toISOString();
