@@ -307,3 +307,10 @@ test('host venue mapping fails closed for cross-club or inactive venues and revo
  assert.equal((await h.call('host_venue_review',{configId:'cfg',venueId:'v1'})).status,409);
  assert.equal((await makeHarness().call('host_venue_review',{configId:'cfg',venueId:'v1'})).status,403);
 });
+test('Person link cannot claim an identity already linked to another club user',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.ClubUserAccess.push({id:'a',tenant_id:'t1',club_id:'c1',user_id:'host',status:'active'});
+ h.db.ClubUserAccess.push({id:'b',tenant_id:'t1',club_id:'c1',user_id:'other',person_id:'p1',status:'active'});
+ assert.equal((await h.call('person_link_review',{accessId:'a',personId:'p1'})).status,409);
+ assert.equal(h.db.ClubUserAccess[0].person_id,undefined);
+});
