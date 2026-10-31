@@ -7,3 +7,4 @@ test('integrity review is visible only to organisers',()=>assert.match(src,/\{is
 test('review reports drift without invoking repair or save',()=>{assert.match(src,/No repair or score changes have been made/);assert.match(src,/organiserHealth\.issues/);});
 
 test('stale integrity results from prior tournament are ignored',()=>{assert.match(src,/integrityRequest\.current === requestId/);assert.match(src,/integrityRequest\.current \+= 1/);});
+test('recovery preview is separate and read-only',()=>{assert.match(src,/action:'preview_recovery'/);assert.match(src,/Preview recovery/);assert.match(src,/No records were changed/);});
