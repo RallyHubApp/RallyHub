@@ -8,6 +8,8 @@ export function activityScheduleConflicts(candidate,activities=[]){
   if(!a?.id||a.id===candidate.id||a.tenant_id!==candidate.tenant_id||a.club_id!==candidate.club_id||a.venue_id!==candidate.venue_id||!blockingStatuses.has(a.status))continue;
   const otherStart=Date.parse(a.starts_at),otherEnd=Date.parse(a.ends_at);
   if(!Number.isFinite(otherStart)||!Number.isFinite(otherEnd))continue;
+  // An unassigned court reserves the entire venue. Distinct explicit courts may overlap.
+  if(candidate.court_id&&a.court_id&&candidate.court_id!==a.court_id)continue;
   if(start<otherEnd&&otherStart<end)conflicts.push({activityId:a.id,status:a.status});
  }
  return {valid:true,conflicts};
