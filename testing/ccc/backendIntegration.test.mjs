@@ -499,6 +499,21 @@ test('transition to ready rejects ambiguous Dublin local time',async()=>{
  const result=await h.call('transition',{id:'a1',to:'ready',expectedRevision:1});
  assert.equal(result.status,409);assert.equal(h.db.ClubActivity[0].status,'draft');
 });
+test('linked event cancellation requires authoritative booking workflow',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ const review=await h.call('cancellation_review',{id:'a1'});
+ assert.equal(review.status,200);assert.equal(review.data.allowed,false);
+ assert.equal(review.data.requiresPaymentReview,true);
+ const transition=await h.call('transition',{id:'a1',to:'cancelled',expectedRevision:1});
+ assert.equal(transition.status,409);assert.equal(h.db.ClubActivity[0].status,'scheduled');
+});
+test('unlinked draft cancellation remains available with audit',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.ClubActivity[0].status='draft';h.db.ClubActivity[0].linked_event_id='';
+ assert.equal((await h.call('cancellation_review',{id:'a1'})).data.allowed,true);
+ const transition=await h.call('transition',{id:'a1',to:'cancelled',expectedRevision:1});
+ assert.equal(transition.status,200);assert.equal(h.db.ClubActivity[0].status,'cancelled');
+});
 test('Dublin daylight-saving gaps and repeated times block schedule readiness',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  const base={venue_id:'v1',court_id:'court1'};
