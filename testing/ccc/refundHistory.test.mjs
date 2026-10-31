@@ -28,6 +28,14 @@ test('refund balance detects over-refunds and invalid amounts',()=>{
  assert.equal(refundRemaining({amount:10,amount_refunded:11},[]).blocked,'over_refunded');
  assert.equal(refundRemaining({amount:NaN,amount_refunded:0},[]).blocked,'invalid_refund_amount');
 });
+test('refund locks the payment atomically before calling SumUp and fails closed on contention',()=>{
+ const lock=source.indexOf('const refundLock=await base44.asServiceRole.entities.PaymentRecord.updateMany');
+ const refund=source.indexOf('const refund=await base44.asServiceRole.entities.PaymentRefund.create');
+ const provider=source.indexOf('const result=await refundPayment(');
+ assert.ok(lock>0&&lock<refund&&refund<provider);
+ assert.match(source,/payment_status:'refund_pending'/);
+ assert.match(source,/refundLock\?\.updated!==1/);
+});
 test('event refund action uses scoped complete refund history and ledger validation',()=>{
  assert.match(source,/readPaymentRefundHistory\(base44\.asServiceRole\.entities\.PaymentRefund/);
  assert.match(source,/const refundBalance=refundRemaining\(payment,previous\)/);
