@@ -30,6 +30,9 @@ Deno.serve(async req=>{
    if(!event)return fail('Event not found in selected club',404);
    if(event.event_registration_mode!=='rallyhub')return fail('Event does not use RallyHub registration',409);
    if(Number(event.event_capacity)!==Number(record.capacity))return fail('Event capacity differs from activity',409);
+   if(event.venue_id&&event.venue_id!==record.venue_id)return fail('Event venue differs from activity',409);
+   if(event.start_date&&String(event.start_date).slice(0,10)!==String(record.starts_at).slice(0,10))return fail('Event date differs from activity',409);
+   if(Number(event.event_fee_amount||0)>0&&record.payment_method!=='online')return fail('Paid event requires online payment policy',409);
    const update=await entity.updateMany({id,tenant_id,club_id,revision},{$set:{linked_event_id:event_id,bridge_status:'linked_unverified',revision:revision+1,updated_by_user_id:user.id}});
    if(update.updated!==1)return fail('Activity changed; reload',409);
    await audit(sdk,tenant_id,club_id,user.id,'ccc.activity.link_event','ClubActivity',id,{linked_event_id:record.linked_event_id||'',revision},{linked_event_id:event_id,revision:revision+1});
@@ -109,6 +112,9 @@ Deno.serve(async req=>{
      if(linked.event_registration_mode!=='rallyhub')issues.push('event_registration_mode_invalid');
      if(!linked.event_booking_enabled||linked.event_publish_status!=='published'||!linked.event_public_visible)issues.push('event_not_bookable');
      if(Number(linked.event_capacity)!==Number(record.capacity))issues.push('event_capacity_mismatch');
+     if(linked.venue_id&&linked.venue_id!==record.venue_id)issues.push('event_venue_mismatch');
+     if(linked.start_date&&String(linked.start_date).slice(0,10)!==String(record.starts_at).slice(0,10))issues.push('event_date_mismatch');
+     if(Number(linked.event_fee_amount||0)>0&&record.payment_method!=='online')issues.push('paid_event_requires_online_payment');
     }
    }
    issues.push('booking_capacity_payment_and_notification_integration_pending');
@@ -129,7 +135,7 @@ Deno.serve(async req=>{
    if(['registration_open','registration_closed','in_progress','completed'].includes(to)){
     if(!record.linked_event_id)return fail('Link an existing event before advancing',409);
     const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
-    if(!event||event.event_registration_mode!=='rallyhub'||Number(event.event_capacity)!==Number(record.capacity))return fail('Linked event does not match activity',409);
+    if(!event||event.event_registration_mode!=='rallyhub'||Number(event.event_capacity)!==Number(record.capacity)||event.venue_id&&event.venue_id!==record.venue_id||event.start_date&&String(event.start_date).slice(0,10)!==String(record.starts_at).slice(0,10))return fail('Linked event does not match activity',409);
     if(to==='registration_open'&&(!event.event_booking_enabled||!event.event_public_visible||event.event_publish_status!=='published'))return fail('Existing event is not open for registration',409);
     if(to==='registration_closed'&&event.event_booking_enabled)return fail('Close registration in the existing event service first',409);
     if(to==='completed'&&Date.parse(record.ends_at)>Date.now())return fail('Cannot complete activity before scheduled end',409);
