@@ -1,0 +1,14 @@
+import React from 'react';
+import {useQuery} from '@tanstack/react-query';
+import {base44} from '@/api/base44Client';
+import {Link} from 'react-router-dom';
+export default function ClubPeopleBoard({tenantId,clubId}){
+ const {data,isLoading,isError,refetch,isFetching}=useQuery({queryKey:['ccc-people',tenantId,clubId],enabled:!!tenantId&&!!clubId,queryFn:async()=>{const response=await base44.functions.invoke('cccActivity',{action:'people_summary'});if(!response.data?.success)throw Error(response.data?.error||'People summary unavailable');return response.data},retry:false,staleTime:30000});
+ return <section className="rounded-xl border bg-card p-4" aria-label="People overview"><div className="flex items-center justify-between gap-2"><h3 className="font-semibold">People and membership overview</h3><button className="rounded-lg border px-3 py-1 text-sm" disabled={isFetching} onClick={()=>refetch()}>Refresh</button></div>
+ {isLoading&&<p className="mt-2 text-sm">Loading membership overview…</p>}{isError&&<p role="alert" className="mt-2 text-sm text-destructive">People data unavailable. Membership records have not been changed.</p>}
+ {data&&<><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">{[['Club access records',data.access.total],['Active access',data.access.statuses?.active||0],['Applications',data.applications.total],['Unlinked access',data.access.unlinkedPeople]].map(([label,value])=><div key={label} className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">{label}</div><div className="text-xl font-bold tabular-nums">{value}</div></div>)}</div>
+ {!data.complete&&<p role="alert" className="mt-2 text-sm text-amber-700">The underlying read was incomplete. All counts are partial.</p>}
+ <div className="mt-3 grid gap-3 sm:grid-cols-2"><div className="rounded-lg border p-3"><h4 className="text-sm font-semibold">Club access status</h4><ul className="mt-2 text-sm">{Object.entries(data.access.statuses||{}).map(([status,count])=><li key={status} className="flex justify-between"><span>{status.replaceAll('_',' ')}</span><span className="tabular-nums">{count}</span></li>)}</ul></div><div className="rounded-lg border p-3"><h4 className="text-sm font-semibold">Membership applications</h4><ul className="mt-2 text-sm">{Object.entries(data.applications.statuses||{}).map(([status,count])=><li key={status} className="flex justify-between"><span>{status.replaceAll('_',' ')}</span><span className="tabular-nums">{count}</span></li>)}</ul></div></div>
+ <p className="mt-3 text-xs text-muted-foreground">Access records and applications are different datasets; their totals must not be added together as unique people. Missing Person links require explicit authorised review, not automatic matching.</p><Link className="mt-2 inline-block text-sm text-primary underline" to="/app/membership">Open authoritative membership console</Link></>}
+ </section>;
+}
