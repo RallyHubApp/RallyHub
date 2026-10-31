@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const src=readFileSync(new URL('../../base44/functions/membershipRecord/entry.ts',import.meta.url),'utf8');
+const checkout=src.slice(src.indexOf("if(action==='admin_create_membership_payment')"),src.indexOf("if(action==='admin_verify_membership_payment')"));
+const verify=src.slice(src.indexOf("if(action==='admin_verify_membership_payment')"),src.indexOf("if(action==='admin_account_candidate')"));
+test('checkout checks all scoped payments before provider checkout creation',()=>{const history=checkout.indexOf('readScopedMembershipLedger('),review=checkout.indexOf('assessMembershipPaymentLink('),provider=checkout.indexOf('createCheckout(');assert.ok(history>0&&review>history&&provider>review);});
+test('checkout returns conflict for existing payment requiring review',()=>{assert.match(checkout,/MEMBERSHIP_PAYMENT_REVIEW_REQUIRED/);assert.match(checkout,/status:409/);});
+test('payment verification reads complete scoped history',()=>assert.match(verify,/readScopedMembershipLedger\(base44\.asServiceRole\.entities\.PaymentRecord/));
+test('payment verification validates transition before writing payment or membership',()=>{const review=verify.indexOf('assessMembershipPaymentVerification('),write=verify.indexOf('PaymentRecord.update(');assert.ok(review>0&&write>review);assert.match(verify,/verification\.markMemberPaid/);});
+test('incomplete payment inventory fails closed',()=>{assert.match(checkout,/MEMBERSHIP_PAYMENT_HISTORY_INCOMPLETE/);assert.match(verify,/MEMBERSHIP_PAYMENT_HISTORY_INCOMPLETE/);});
