@@ -449,6 +449,12 @@ Deno.serve(async req=>{
    if(!allowed[record.status]?.includes(to))return fail('Transition unavailable until downstream workflows are connected',409);
    if(to==='cancelled' && !reviewActivityCancellation(record).allowed) return fail('Cancel the linked event first',409);
    if(['ready','scheduled'].includes(to)){
+    if(record.configuration?.recurrence_source_activity_id){
+     const parentId=s(record.configuration.recurrence_source_activity_id);
+     const parent=(await entity.filter({id:parentId,tenant_id,club_id},'-created_date',1))?.[0];
+     if(!parent||parent.recurrence_batch_state!=='complete')return fail('Recurring source batch must be reconciled before scheduling',409);
+     if(!record.idempotency_key?.startsWith('ccc-rec-'+parentId+'-'))return fail('Recurring draft operation ID invalid',409);
+    }
     if(record.court_id){const courts=await sdk.asServiceRole.entities.Court.filter({id:record.court_id,tenant_id,club_id,venue_id:record.venue_id},'-created_date',1);if(!courts?.length||courts[0].status==='Maintenance')return fail('Court unavailable',409)}
     const schedule=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});
     if(!schedule.complete)return fail('Schedule review incomplete; cannot advance activity',503);
