@@ -363,3 +363,13 @@ test('Ready transition allows an adjacent session and ignores cancelled activity
  const result=await h.call('transition',{id:'a1',to:'ready',expectedRevision:1});
  assert.equal(result.status,200);assert.equal(h.db.ClubActivity[0].status,'ready');
 });
+test('schedule review returns scoped conflict details without mutating any activity',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.ClubActivity.push({...h.db.ClubActivity[0],id:'otherclub',club_id:'c2'});
+ const before=JSON.stringify(h.db.ClubActivity);
+ const review=await h.call('schedule_review',{draft:{venue_id:'v1',starts_at:'2026-11-04T19:30:00Z',ends_at:'2026-11-04T20:30:00Z'}});
+ assert.equal(review.status,200);assert.equal(review.data.ready,false);
+ assert.equal(review.data.conflicts.length,1);assert.equal(review.data.conflicts[0].activityId,'a1');
+ assert.equal(review.data.mutationPerformed,false);assert.equal(JSON.stringify(h.db.ClubActivity),before);
+ assert.equal((await makeHarness().call('schedule_review',{draft:{venue_id:'v1',starts_at:'2026-11-04T19:30:00Z',ends_at:'2026-11-04T20:30:00Z'}})).status,403);
+});
