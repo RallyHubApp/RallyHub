@@ -1,6 +1,7 @@
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.29';
 import {validateTournivalStateTransition} from './tournivalStateValidation.ts';
 import {validateDelegatedTournivalHostEdit} from './permissions.ts';
+import {assessTournivalHostStateHealth} from './stateHealth.ts';
 const clean=(v:any,max=160)=>String(v??'').trim().slice(0,max);
 const SPORT_FIELDS=['rounds','seedOrder','playerIds','numCourts','numRounds','matchFormat',
   'knockoutPairs','knockoutState','duprEnabled','venueMinutes','matchMinutes','changeoverMinutes'];
@@ -33,6 +34,8 @@ Deno.serve(async(req)=>{
   if(sessions?.length!==1)return Response.json({error:'Tournival session not ready or requires reconciliation'},{status:409});
   const session=sessions[0];
   if(session.rehearsal)return Response.json({error:'Delegated live host access cannot control rehearsal'},{status:409});
+  const health=assessTournivalHostStateHealth(session,tournament);
+  if(!health.healthy&&action!=='get')return Response.json({error:'Tournival state requires reconciliation before host writes',health},{status:409});
   const state=JSON.parse(session.state_json||'{}');
   if(action==='get'){
    const ids=Array.isArray(state.playerIds)?state.playerIds:[];
@@ -44,7 +47,7 @@ Deno.serve(async(req)=>{
    ]));
    return Response.json({success:true,event:{id:tournament.id,name:tournament.name,
     location:tournament.location,start_date:tournament.start_date,status:tournament.status},
-    state,playerMap,role:'delegated_host',permissions:{
+    state,playerMap,health,role:'delegated_host',permissions:{
      score:true,courts:true,announcements:true,timing:true,finance:false,configuration:false,dupr:false
     }});
   }
