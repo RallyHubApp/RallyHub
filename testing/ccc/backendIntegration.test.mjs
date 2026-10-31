@@ -238,3 +238,29 @@ test('event cannot be linked to a second activity within the same club',async()=
  assert.equal(result.status,409);assert.match(result.data.error,/already linked/);
  assert.equal(h.db.ClubActivity[0].revision,1);
 });
+test('People inventory is scoped to the active club and excludes personal details',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.ClubUserAccess.push({id:'access1',tenant_id:'t1',club_id:'c1',status:'active',person_id:'p1',email:'private@example.ie'});
+ h.db.ClubUserAccess.push({id:'access2',tenant_id:'t1',club_id:'c2',status:'active'});
+ h.db.MembershipApplication.push({id:'app1',tenant_id:'t1',club_id:'c1',status:'submitted',full_name:'Private Person'});
+ h.db.MembershipApplication.push({id:'app2',tenant_id:'t2',club_id:'c1',status:'submitted'});
+ const response=await h.call('people_summary');
+ assert.equal(response.status,200);assert.equal(response.data.access.total,1);assert.equal(response.data.applications.total,1);
+ assert.equal(response.data.access.linkedPeople,1);assert.equal(response.data.identityLinksAreExplicit,true);
+ assert.equal(JSON.stringify(response.data).includes('private@example.ie'),false);
+ assert.equal(JSON.stringify(response.data).includes('Private Person'),false);
+ assert.equal((await makeHarness().call('people_summary')).status,403);
+});
+test('Management inventory filters templates to tenant and club, hides host emails and HTML',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.CommunicationTemplate.push({id:'wrong-club',tenant_id:'t1',club_id:'c2',owner_scope:'tenant',name:'Wrong club',html_template:'SECRET'});
+ h.db.CommunicationTemplate.push({id:'wrong-tenant',tenant_id:'t2',club_id:'c1',owner_scope:'tenant',name:'Wrong tenant'});
+ h.db.CommunicationTemplate[0].html_template='PRIVATE BODY';
+ const response=await h.call('management_summary');
+ assert.equal(response.status,200);assert.equal(response.data.templates.length,1);
+ assert.equal(response.data.hosts.length,1);assert.equal(response.data.hosts[0].configuredHosts,1);
+ assert.equal(JSON.stringify(response.data).includes('host@example.ie'),false);
+ assert.equal(JSON.stringify(response.data).includes('PRIVATE BODY'),false);
+ assert.equal(response.data.sendingEnabled,false);
+ assert.equal((await makeHarness().call('management_summary')).status,403);
+});
