@@ -107,6 +107,10 @@ Deno.serve(async req=>{
    const template=templateRows?.[0],templateVerified=!!template&&(!template.club_id||template.club_id===club_id);
    const issues=validateEventLink(record,event,{venue:venueRows?.[0],hostVerified,templateVerified});
    if(issues.length)return fail('Event link requires review: '+issues.join(', '),409);
+   const existingLinks=await entity.filter({tenant_id,club_id,linked_event_id:event_id},{sort:'-created_date',limit:2});
+   if(!existingLinks||!Array.isArray(existingLinks.items))return fail('Unable to verify existing event links',503);
+   if(existingLinks.items.some((a:any)=>a.id!==id))return fail('Event is already linked to another activity',409);
+   if(existingLinks.has_more===true)return fail('Event link review incomplete',503);
    const update=await entity.updateMany({id,tenant_id,club_id,revision},{$set:{linked_event_id:event_id,bridge_status:'linked_unverified',revision:revision+1,updated_by_user_id:user.id}});
    if(update.updated!==1)return fail('Activity changed; reload',409);
    await audit(sdk,tenant_id,club_id,user.id,'ccc.activity.link_event','ClubActivity',id,{linked_event_id:record.linked_event_id||'',revision},{linked_event_id:event_id,revision:revision+1});
