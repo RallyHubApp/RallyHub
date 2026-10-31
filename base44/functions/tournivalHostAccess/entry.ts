@@ -4,6 +4,7 @@ import {validateDelegatedTournivalHostEdit} from './permissions.ts';
 import {assessTournivalHostStateHealth} from './stateHealth.ts';
 import {loadTournivalHostPlayerMap} from './playerRead.ts';
 import {planTournivalHostReconciliation} from './reconciliation.ts';
+import {mirrorCommittedTournivalHostState} from './mirrorWrite.ts';
 const clean=(v:any,max=160)=>String(v??'').trim().slice(0,max);
 const SPORT_FIELDS=['rounds','seedOrder','playerIds','numCourts','numRounds','matchFormat',
   'knockoutPairs','knockoutState','duprEnabled','venueMinutes','matchMinutes','changeoverMinutes'];
@@ -103,10 +104,8 @@ Deno.serve(async(req)=>{
   if(save.updated!==1)return Response.json({
    error:'Host state changed during save; refresh before retrying',revision:expectedRevision
   },{status:409});
-  await base44.asServiceRole.entities.Tournament.update(tournament.id,{
-   tournival_state:JSON.stringify(next),
-   status:next.status==='Group Complete'?'In Progress':tournament.status
-  });
+  const mirror=await mirrorCommittedTournivalHostState(
+   (id:string,patch:any)=>base44.asServiceRole.entities.Tournament.update(id,patch),tournament,next);
   try{
    await base44.asServiceRole.entities.AuditLog.create({
     tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||undefined,
@@ -116,7 +115,8 @@ Deno.serve(async(req)=>{
     after_state:JSON.stringify({revision:next.revision,operationId})
    });
   }catch(e){console.warn('Tournival host audit deferred',(e as any)?.message||e);}
-  return Response.json({success:true,revision:next.revision});
+  return Response.json({success:true,revision:next.revision,mirrorSynced:mirror.mirrorSynced,
+   requiresReconciliation:mirror.requiresReconciliation});
  }catch(e){
   console.error('tournivalHostAccess failed',(e as any)?.message||e);
   return Response.json({error:'Unable to process host action safely'},{status:500});
