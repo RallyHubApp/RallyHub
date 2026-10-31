@@ -19,6 +19,7 @@ import {refundRecoveryQueue} from './refundRecovery.mjs';
 import {identityIntegrity} from './identityIntegrity.mjs';
 import {readCccAccess} from './accessGate.mjs';
 import {guestVenueReview} from './guestPolicy.mjs';
+import {membershipReadiness} from './membershipReadiness.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -141,6 +142,15 @@ Deno.serve(async req=>{
    if(result.updated!==1)return fail('Venue mapping changed; reload review',409);
    await audit(sdk,tenant_id,club_id,user.id,'ccc.host.venue_map','MembershipVenueHostConfig',configId,{venue_id:null,venue_key:config.venue_key},{venue_id:venueId,verification_confirmed:true});
    return Response.json({success:true,configId,venueId,mutationPerformed:true});
+  }
+  if(body.action==='membership_readiness'){
+   const [configs,policies,documents,gateways]=await Promise.all([
+    readScopedInventory(sdk.asServiceRole.entities.MembershipApplicationConfig,{tenant_id,club_id},{maxPages:10}),
+    readScopedInventory(sdk.asServiceRole.entities.ClubPolicy,{tenant_id,club_id},{maxPages:10}),
+    readScopedInventory(sdk.asServiceRole.entities.ClubLegalDocument,{tenant_id,club_id},{maxPages:10}),
+    readScopedInventory(sdk.asServiceRole.entities.PaymentGatewayAccount,{tenant_id,club_id},{maxPages:10})
+   ]);
+   return Response.json({success:true,...membershipReadiness(configs.rows,policies.rows,documents.rows,gateways.rows,{tenantId:tenant_id,clubId:club_id,complete:configs.complete&&policies.complete&&documents.complete&&gateways.complete})});
   }
   if(body.action==='people_summary'){
    const [access,applications]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.ClubUserAccess,{tenant_id,club_id}),readScopedInventory(sdk.asServiceRole.entities.MembershipApplication,{tenant_id,club_id})]);
