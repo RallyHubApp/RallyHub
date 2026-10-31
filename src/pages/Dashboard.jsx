@@ -134,8 +134,7 @@ export default function Dashboard() {
       tenant_id: currentUser.active_tenant_id,
       club_id: currentUser.active_club_id
     }, '-session_date', 250),
-    enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && currentUser?.role === 'admin',
-    refetchOnWindowFocus: true
+    enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && currentUser?.role === 'admin'
   });
 
   const { data: clubPayments = [], isLoading: paymentsLoading, isError: paymentsError } = useQuery({
@@ -149,8 +148,7 @@ export default function Dashboard() {
       tenant_id: currentUser.active_tenant_id,
       club_id: currentUser.active_club_id
     }, '-created_date', 250),
-    enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && currentUser?.role === 'admin',
-    refetchOnWindowFocus: true
+    enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && currentUser?.role === 'admin'
   });
 
   const { data: guestBookings = [], isLoading: bookingsLoading, isError: bookingsError } = useQuery({
