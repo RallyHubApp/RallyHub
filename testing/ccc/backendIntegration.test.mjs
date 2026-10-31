@@ -108,6 +108,26 @@ test('financial overview fetches all 500 registrations via cursor pages',async()
  assert.equal(result.data.resultsMayBeTruncated,false);
  assert.equal(h.reads.EventRegistration,2);
 });
+test('registration continuation loads beyond 10,000 without losing tenant scope',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ for(let i=1;i<10005;i++)h.db.EventRegistration.push({...h.db.EventRegistration[0],id:'r'+i});
+ const first=await h.call('registration_overview',{id:'a1'});
+ assert.equal(first.status,200);assert.equal(first.data.registrations.length,10000);
+ assert.equal(first.data.resultsMayBeTruncated,true);
+ assert.equal(first.data.finance.complete,false);
+ assert.ok(first.data.registrationNextCursor);
+ const second=await h.call('registration_page',{id:'a1',cursor:first.data.registrationNextCursor});
+ assert.equal(second.status,200);assert.equal(second.data.registrations.length,5);
+ assert.equal(second.data.hasMore,false);
+ assert.equal(second.data.financeNotIncluded,true);
+ assert.equal(second.data.registrations[0].email,'private@example.ie');
+});
+test('continuation denies missing cursor and cross-club event',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ assert.equal((await h.call('registration_page',{id:'a1',cursor:''})).status,400);
+ h.db.Tournament[0].host_club_id='other';
+ assert.equal((await h.call('registration_page',{id:'a1',cursor:'250'})).status,404);
+});
 test('event overview and roster enforce linked event tenant and club',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  h.db.Tournament[0].host_club_id='other';
