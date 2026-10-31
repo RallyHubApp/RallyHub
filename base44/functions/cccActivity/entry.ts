@@ -2,6 +2,13 @@ import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
+const isClubHost=async(sdk:any,tenant_id:string,club_id:string,venue_id:string,host_user_id:string)=>{
+ const [users,venues]=await Promise.all([sdk.asServiceRole.entities.User.filter({id:host_user_id,active_tenant_id:tenant_id,active_club_id:club_id,approval_status:'approved'},'-created_date',1),sdk.asServiceRole.entities.Venue.filter({id:venue_id,tenant_id,club_id,status:'active'},'-created_date',1)]);
+ const host=users?.[0],venue=venues?.[0];if(!host||!venue)return false;
+ if(host.role==='admin'||host.active_club_role==='club_admin')return true;
+ const norm=(v:any)=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');const configs=await sdk.asServiceRole.entities.MembershipVenueHostConfig.filter({tenant_id,club_id,active:true},'-updated_date',100);
+ return (configs||[]).some((c:any)=>norm(c.venue_key)===norm(venue.name)&&(c.host_emails||[]).some((email:any)=>String(email||'').trim().toLowerCase()===String(host.email||'').trim().toLowerCase()));
+};
 const audit=async(sdk:any,tenant_id:string,club_id:string,user_id:string,action:string,entity_type:string,entity_id:string,before:any,after:any)=>{try{await sdk.asServiceRole.entities.AuditLog.create({tenant_id,club_id,user_id,action,entity_type,entity_id,scope_type:'club',scope_id:club_id,before_state:JSON.stringify(before),after_state:JSON.stringify(after)})}catch(_){/* A successful CAS must not be reported as failed after an audit transport error. */}};
 Deno.serve(async req=>{
  if(req.method!=='POST')return fail('POST required',405);
@@ -99,8 +106,7 @@ Deno.serve(async req=>{
    if(!venue)issues.push('venue_not_active');
    if(!record.host_user_id)issues.push('host_required');
    else {
-    const hosts=await sdk.asServiceRole.entities.User.filter({id:record.host_user_id},'-created_date',1);
-    if(!hosts?.length||hosts[0].approval_status!=='approved'||hosts[0].active_tenant_id!==tenant_id||hosts[0].active_club_id!==club_id||!(hosts[0].role==='admin'||hosts[0].active_club_role==='club_admin'))issues.push('host_not_verified_for_club');
+    if(!await isClubHost(sdk,tenant_id,club_id,record.venue_id,record.host_user_id))issues.push('host_not_verified_for_club');
    }
    if(!['approval','automatic','closed'].includes(record.registration_mode)||record.registration_mode==='closed')issues.push('registration_policy_closed');
    if(!['none','cash','online'].includes(record.payment_method))issues.push('payment_policy_invalid');
@@ -161,8 +167,7 @@ Deno.serve(async req=>{
   if(!['approval','automatic','closed'].includes(registration_mode)||!['none','cash','online'].includes(payment_method))return fail('Invalid policy');
   const host_user_id=s(f.host_user_id),communication_template_id=s(f.communication_template_id);
   if(host_user_id){
-   const hosts=await sdk.asServiceRole.entities.User.filter({id:host_user_id,active_tenant_id:tenant_id,active_club_id:club_id,approval_status:'approved'},'-created_date',1);
-   if(!hosts?.length||!(hosts[0].role==='admin'||hosts[0].active_club_role==='club_admin'))return fail('Select an authorised club host',403);
+   if(!await isClubHost(sdk,tenant_id,club_id,venue_id,host_user_id))return fail('Select an authorised club host',403);
   }
   if(communication_template_id){
    const templates=await sdk.asServiceRole.entities.CommunicationTemplate.filter({id:communication_template_id,tenant_id,owner_scope:'tenant',status:'approved'},'-created_date',1);
