@@ -58,7 +58,8 @@ export default function ClubActivityPlanner({tenantId,clubId}){
  useEffect(()=>{
   const requested=routeParams.get('activityId');if(!requested||!savedDrafts.length)return;
   const match=savedDrafts.find(d=>d.id===requested);
-  if(match){loadDraft(match);setStep(1);setDraftSearch(requested)}
+  if(!match){setDraftSearch(requested);return}
+  loadDraft(match);setStep(1);setDraftSearch(requested);
   setRouteParams({section:'activities'},{replace:true});
  },[routeParams,savedDrafts,setRouteParams]);
  const linkEvent=async()=>{if(!saved||!eventId.trim()||saving)return;setSaving(true);setSaveError('');try{const res=await base44.functions.invoke('cccActivity',{action:'link_event',id:saved.id,eventId:eventId.trim(),expectedRevision:saved.revision});if(!res.data?.success)throw Error(res.data?.error||'Link failed');setSaved({id:saved.id,revision:res.data.revision});setServerPreflight(null);queryClient.invalidateQueries({queryKey:['ccc-activity-drafts',tenantId,clubId]})}catch(e){setSaveError(e?.response?.data?.error||e?.message||'Link failed')}finally{setSaving(false)}};
