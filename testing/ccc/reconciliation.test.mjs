@@ -37,3 +37,26 @@ test('empty records produce zero values and no anomalies',()=>{
  const result=summariseEventFinance([],[]);
  assert.equal(result.net,0);assert.deepEqual(result.anomalies,[]);
 });
+test('invalid negative or excessive precision amounts never enter financial totals',()=>{
+ const result=summariseEventFinance([registration('a')],[payment('a',-5,'paid',{amount_refunded:6}),payment('a','4.999','paid'),payment('a',3.5,'paid')]);
+ assert.equal(result.gross,3.5);assert.equal(result.net,3.5);assert.equal(result.excludedPaymentRecords,2);
+});
+test('non-EUR payment records are excluded from euro reporting',()=>{
+ const result=summariseEventFinance([registration('a')],[payment('a',100,'paid',{currency:'USD'}),payment('a',5,'paid',{currency:'EUR'})]);
+ assert.equal(result.gross,5);assert.equal(result.excludedPaymentRecords,1);
+ assert.ok(result.anomalies.some(x=>x.code==='currency_mismatch'));
+});
+test('identical provider transaction IDs are not counted twice',()=>{
+ const result=summariseEventFinance([registration('a')],[payment('a',5,'paid',{provider_transaction_id:'txn1'}),payment('a',5,'paid',{provider_transaction_id:'txn1'})]);
+ assert.equal(result.gross,5);assert.equal(result.excludedPaymentRecords,1);
+ assert.ok(result.anomalies.some(x=>x.code==='duplicate_provider_transaction'));
+});
+test('separate provider transactions are both counted but flagged for review',()=>{
+ const result=summariseEventFinance([registration('a')],[payment('a',5,'paid',{provider_transaction_id:'txn1'}),payment('a',2,'paid',{provider_transaction_id:'txn2'})]);
+ assert.equal(result.gross,7);assert.equal(result.excludedPaymentRecords,0);
+ assert.ok(result.anomalies.some(x=>x.code==='multiple_payment_records'));
+});
+test('refund exceeding payment is excluded from totals',()=>{
+ const result=summariseEventFinance([registration('a')],[payment('a',5,'refunded',{amount_refunded:8})]);
+ assert.equal(result.gross,0);assert.equal(result.refunded,0);assert.equal(result.excludedPaymentRecords,1);
+});
