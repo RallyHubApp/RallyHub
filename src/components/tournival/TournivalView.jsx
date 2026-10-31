@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
@@ -176,9 +176,11 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
   const [xlsxOpen, setXlsxOpen] = useState(false);
   const [organiserHealth, setOrganiserHealth] = useState(null);
   const [organiserHealthBusy, setOrganiserHealthBusy] = useState(false);
-  useEffect(() => { setOrganiserHealth(null); }, [tournament.id]);
+  const integrityRequest = useRef(0);
+  useEffect(() => { integrityRequest.current += 1; setOrganiserHealth(null); setOrganiserHealthBusy(false); }, [tournament.id]);
   const reviewOrganiserHealth = async () => {
     if (organiserHealthBusy || !isAdmin) return;
+    const requestId = ++integrityRequest.current;
     setOrganiserHealthBusy(true);
     setOrganiserHealth(null);
     try {
@@ -186,9 +188,9 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
         action:'review', tenantId:tournament.tenant_id, clubId:tournament.host_club_id, tournamentId:tournament.id
       });
       if (!response?.data?.success) throw Error(response?.data?.error || 'Organiser health review unavailable');
-      setOrganiserHealth(response.data.review);
-    } catch (error) { toast.error(error?.message || 'Unable to review Tournival integrity'); }
-    finally { setOrganiserHealthBusy(false); }
+      if (integrityRequest.current === requestId) setOrganiserHealth(response.data.review);
+    } catch (error) { if (integrityRequest.current === requestId) toast.error(error?.message || 'Unable to review Tournival integrity'); }
+    finally { if (integrityRequest.current === requestId) setOrganiserHealthBusy(false); }
   };
 
   // Parse state from tournament
