@@ -30,6 +30,7 @@ import {createRecurrenceDraftBatch} from './recurrenceBatch.mjs';
 import {createScopedRecurrenceDrafts} from './recurrenceService.mjs';
 import {inspectRecurrenceBatch} from './recurrenceRecovery.mjs';
 import {reviewRecurrenceCompletion} from './recurrenceRecoveryDecision.mjs';
+import {readRecurrenceQueue} from './recurrenceQueue.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -237,6 +238,9 @@ Deno.serve(async req=>{
    const local=reviewDublinOccurrences(ccc.occurrences);
    const occurrences=local.occurrences.map((o:any,i:number)=>({...o,legacyOverlaps:legacyReview.occurrences[i]?.legacyOverlaps||[],legacyUnmapped:legacyReview.occurrences[i]?.legacyUnmapped||[]}));
    return Response.json({success:true,...ccc,occurrences,ready:ccc.ready&&legacyReview.ready&&local.ready,localTimeIssues:local.issues,timezone:local.timezone,daylightSavingChecked:true,legacySessionInventoryComplete:legacy.complete,legacyConflictedWeeks:legacyReview.conflictedWeeks,legacyUnmappedWeeks:legacyReview.unmappedWeeks,legacySessionCheckAdvisory:true});
+  }
+  if(body.action==='recurrence_queue'){
+   return Response.json({success:true,...await readRecurrenceQueue(entity,{tenantId:tenant_id,clubId:club_id})});
   }
   if(body.action==='recurrence_recovery_complete'){
    const id=s(body.id),revision=Number(body.expectedRevision),batchKey=s(body.batchKey,120);
