@@ -1310,6 +1310,18 @@ Deno.serve(async(req)=>{
         const rows=[];
         // Read-only listing: never archive sessions while someone is loading attendees.
         // Fetch independent session data concurrently to avoid a long serial waterfall.
+        // Reconcile payment records in one scoped read for the common case.
+        // If the 500-record page is full, retain the original per-booking lookup
+        // to avoid silently missing older transactions.
+        const paymentPage=await base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:tenantId,club_id:clubId,purpose_type:'booking'},'-created_date',500);
+        const paymentIndex=new Map<string,any[]>();
+        for(const payment of paymentPage||[]){
+          const key=String(payment.purpose_id||'');
+          if(!key)continue;
+          if(!paymentIndex.has(key))paymentIndex.set(key,[]);
+          paymentIndex.get(key)!.push(payment);
+        }
+        const paymentPageComplete=(paymentPage||[]).length<500;
         const sessionDetails=[];
         for(let offset=0;offset<(sessions||[]).length;offset+=8){
           const batch=await Promise.all((sessions||[]).slice(offset,offset+8).map(async s=>{
@@ -1320,7 +1332,10 @@ Deno.serve(async(req)=>{
           ]);
           const paymentsByBooking=[];
           for(let paymentOffset=0;paymentOffset<(bookings||[]).length;paymentOffset+=12){
-            paymentsByBooking.push(...await Promise.all((bookings||[]).slice(paymentOffset,paymentOffset+12).map(b=>base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:b.id},'-created_date',10))));
+            paymentsByBooking.push(...await Promise.all((bookings||[]).slice(paymentOffset,paymentOffset+12).map(b=>{
+              const indexed=paymentIndex.get(String(b.id))||[];
+              return paymentPageComplete||indexed.length?Promise.resolve(indexed.slice(0,10)):base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:tenantId,club_id:clubId,purpose_type:'booking',purpose_id:b.id},'-created_date',10);
+            })));
           }
           return {s,host,bookings,attendanceRows,paymentsByBooking};
           }));
