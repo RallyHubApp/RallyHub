@@ -29,11 +29,13 @@ test('invalid capacity and unsupported registration modes fail closed',()=>{
  assert.ok(activityWizardReview({...base,form:{...form,capacity:0}}).issues.includes('capacity_invalid'));
  assert.ok(activityWizardReview({...base,registrationMode:'public_anyone'}).issues.includes('registration_mode_required'));
 });
-test('planner UI is admin gated, scoped by club key, and explicitly has no persistence',()=>{
+test('planner UI is admin gated, scoped by club key, and saves drafts only through backend',()=>{
  const dashboard=readFileSync(new URL('../../src/pages/Dashboard.jsx',import.meta.url),'utf8');
  const ui=readFileSync(new URL('../../src/components/ccc/ClubActivityPlanner.jsx',import.meta.url),'utf8');
  assert.match(dashboard,/currentUser\?\.role === 'admin' && <ClubActivityPlanner/);
  assert.match(dashboard,/key=\{\x60\$\{currentUser\?\.active_tenant_id/);
- assert.match(ui,/Preview only · No changes saved/);
- assert.doesNotMatch(ui,/base44\.entities\.|base44\.functions\.invoke/);
+ assert.match(ui,/Draft only · No publication or messages/);
+ assert.match(ui,/base44\.functions\.invoke\('cccActivity'/);
+ assert.match(ui,/action:'save_draft'/);
+ assert.doesNotMatch(ui,/action:'activate'|action:'publish'/);
 });
