@@ -53,6 +53,8 @@ Deno.serve(async(req)=>{
     }});
   }
   if(action!=='save')return Response.json({error:'Action not permitted for delegated host'},{status:403});
+  const rosterGuard=await loadTournivalHostPlayerMap(base44.asServiceRole.entities.Player,tournament.tenant_id,Array.isArray(state.playerIds)?state.playerIds:[]);
+  if(rosterGuard.error||rosterGuard.missingPlayerIds.length)return Response.json({error:'Tournament player roster requires organiser review before saving scores',code:'TOURNIVAL_ROSTER_INCOMPLETE',missingPlayerIds:rosterGuard.missingPlayerIds},{status:409});
   const expectedRevision=Number(body.expectedRevision);
   const operationId=clean(body.operationId,120);
   if(!operationId||!Number.isInteger(expectedRevision)||expectedRevision<0)
