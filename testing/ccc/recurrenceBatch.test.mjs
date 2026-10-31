@@ -28,6 +28,11 @@ test('partial failure retains source claim and exposes created IDs for manual re
  assert.equal(r.success,false);assert.equal(r.reason,'manual_reconciliation_required');assert.equal(r.createdIds.length,1);
  assert.equal(h.rows[0].recurrence_batch_state,'needs_recovery');assert.equal(h.rows.length,2);
 });
+test('audit failure retains all drafts and flags source for reconciliation',async()=>{
+ const h=setup();const r=await createRecurrenceDraftBatch(h.entity,{source,manifest,batchKey,userId:'admin',drafts,audit:async()=>{throw Error('audit down')}});
+ assert.equal(r.success,false);assert.equal(r.reason,'audit_reconciliation_required');assert.equal(h.rows.length,3);
+ assert.equal(h.rows[0].recurrence_batch_state,'needs_recovery');
+});
 test('invalid manifest or mismatched source cannot create',async()=>{
  assert.throws(()=>recurrenceDraftPayloads({...source,linked_event_id:'e1'},manifest,{userId:'admin'}));
  assert.throws(()=>recurrenceDraftPayloads({...source,revision:3},manifest,{userId:'admin'}));
