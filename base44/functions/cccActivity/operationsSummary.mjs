@@ -19,5 +19,5 @@ export function summariseClubOperations(activities=[],{complete=true,now=new Dat
  }
  upcoming.sort((a,b)=>a.startsAt.localeCompare(b.startsAt)||a.id.localeCompare(b.id));
  recent.sort((a,b)=>b.startsAt.localeCompare(a.startsAt)||a.id.localeCompare(b.id));
- return {counts,total:seen.size,upcoming:upcoming.slice(0,20),recent:recent.slice(0,10),alerts:alerts.slice(0,100),alertCount:alerts.length,complete,resultsMayBeTruncated:!complete,financialTotalsIncluded:false,bookingTotalsIncluded:false};
+ return {counts,total:seen.size,upcomingCount:upcoming.length,recentCount:recent.length,upcoming:upcoming.slice(0,20),recent:recent.slice(0,10),alerts:alerts.slice(0,100),alertCount:alerts.length,complete,resultsMayBeTruncated:!complete,financialTotalsIncluded:false,bookingTotalsIncluded:false};
 }
