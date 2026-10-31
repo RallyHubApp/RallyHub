@@ -19,3 +19,15 @@ test('dashboard remains read-only and uses existing entity filter API',()=>{
  assert.match(dashboard,/CommunicationDeliveryAttempt\.filter/);
  assert.doesNotMatch(dashboard,/GuestSessionAttendance\.(create|update|delete)/);
 });
+
+test('CCC dashboard operational reads honour focus cache settings without duplicate overrides',()=>{
+ const src=readFileSync(new URL('../../src/pages/Dashboard.jsx',import.meta.url),'utf8');
+ for(const key of ['ccc-club-session-links','ccc-club-payment-records','ccc-guest-bookings','ccc-guest-attendance','ccc-followup-attempts']){
+  const start=src.indexOf("queryKey: ['"+key+"'");
+  const end=src.indexOf('  });',start);
+  assert.ok(start>=0&&end>start,key);
+  const section=src.slice(start,end);
+  assert.equal((section.match(/refetchOnWindowFocus: false/g)||[]).length,1,key);
+  assert.doesNotMatch(section,/refetchOnWindowFocus: true/,key);
+ }
+});
