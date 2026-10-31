@@ -347,3 +347,19 @@ test('revocation is scoped and non-admins cannot disable host configurations',as
  assert.equal((await h.call('host_revoke_review',{configId:'other'})).status,409);
  assert.equal((await makeHarness().call('host_revoke_confirm',{configId:'cfg',confirmRevocation:true,reason:'Committee decision confirmed'})).status,403);
 });
+test('Ready transition rejects an overlapping scheduled activity at the same venue',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ Object.assign(h.db.ClubActivity[0],{status:'draft',starts_at:'2026-11-04T19:00:00Z',ends_at:'2026-11-04T20:30:00Z'});
+ h.db.ClubActivity.push({...h.db.ClubActivity[0],id:'conflict',status:'scheduled',revision:1,starts_at:'2026-11-04T20:00:00Z',ends_at:'2026-11-04T21:00:00Z'});
+ const result=await h.call('transition',{id:'a1',to:'ready',expectedRevision:1});
+ assert.equal(result.status,409);assert.match(result.data.error,/overlapping active activity/);
+ assert.equal(h.db.ClubActivity[0].status,'draft');
+});
+test('Ready transition allows an adjacent session and ignores cancelled activity',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ Object.assign(h.db.ClubActivity[0],{status:'draft',starts_at:'2026-11-04T19:00:00Z',ends_at:'2026-11-04T20:30:00Z'});
+ h.db.ClubActivity.push({...h.db.ClubActivity[0],id:'adjacent',status:'scheduled',starts_at:'2026-11-04T20:30:00Z',ends_at:'2026-11-04T21:00:00Z'});
+ h.db.ClubActivity.push({...h.db.ClubActivity[0],id:'cancelled',status:'cancelled'});
+ const result=await h.call('transition',{id:'a1',to:'ready',expectedRevision:1});
+ assert.equal(result.status,200);assert.equal(h.db.ClubActivity[0].status,'ready');
+});
