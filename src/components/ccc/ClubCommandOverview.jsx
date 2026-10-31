@@ -20,7 +20,7 @@ export default function ClubCommandOverview({membershipApprovals=0,membershipPay
  ];
  return <section aria-label="Club Command Centre action summary" className="rounded-2xl border bg-card p-4 sm:p-5">
   <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-   <div><h2 className="text-lg font-bold">Club Command Centre</h2><p className="text-sm text-muted-foreground">Overview · People · Activities · Operations · Management</p></div>
+   <div><h2 className="text-lg font-bold">Club Command Centre</h2><p className="text-sm text-muted-foreground">Overview · People · Activities · Operations · Management</p><Link to="/app/club-command-centre" className="mt-1 inline-block text-sm font-semibold text-primary hover:underline">Open full Command Centre</Link></div>
    <span className="rounded-full border px-3 py-1 text-sm font-semibold" aria-label={`${total} items need attention`}>{total} actions</span>
   </div>
   <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
