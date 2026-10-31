@@ -21,6 +21,7 @@ import {readCccAccess,cccAccessDecision} from './accessGate.mjs';
 import {guestVenueReview} from './guestPolicy.mjs';
 import {membershipReadiness} from './membershipReadiness.mjs';
 import {reviewWeeklyRecurrence} from './recurrenceReview.mjs';
+import {reviewLegacySessionOverlaps} from './legacySessionReview.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -222,8 +223,11 @@ Deno.serve(async req=>{
    const venue=(await sdk.asServiceRole.entities.Venue.filter({id:candidate.venue_id,tenant_id,club_id,status:'active'},'-created_date',1))?.[0];
    if(!venue)return fail('Active venue required',409);
    if(candidate.court_id){const courts=await sdk.asServiceRole.entities.Court.filter({id:candidate.court_id,tenant_id,club_id,venue_id:candidate.venue_id},'-created_date',1);if(!courts?.length||courts[0].status==='Maintenance')return fail('Court not available in selected venue',409)}
-   const schedule=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});
-   return Response.json({success:true,...reviewWeeklyRecurrence(candidate,schedule.activities,{weeks:body.weeks,complete:schedule.complete})});
+   const [schedule,legacy]=await Promise.all([readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id}),readScopedInventory(sdk.asServiceRole.entities.GuestSessionLink,{tenant_id,club_id},{pageSize:200,maxPages:20})]);
+   const ccc=reviewWeeklyRecurrence(candidate,schedule.activities,{weeks:body.weeks,complete:schedule.complete});
+   const legacyReview=reviewLegacySessionOverlaps(ccc.occurrences,legacy.rows,{tenantId:tenant_id,clubId:club_id,venueName:venue.name,complete:legacy.complete});
+   const occurrences=ccc.occurrences.map((o:any,i:number)=>({...o,legacyOverlaps:legacyReview.occurrences[i]?.legacyOverlaps||[],legacyUnmapped:legacyReview.occurrences[i]?.legacyUnmapped||[]}));
+   return Response.json({success:true,...ccc,occurrences,ready:ccc.ready&&legacyReview.ready,legacySessionInventoryComplete:legacy.complete,legacyConflictedWeeks:legacyReview.conflictedWeeks,legacyUnmappedWeeks:legacyReview.unmappedWeeks,legacySessionCheckAdvisory:true});
   }
   if(body.action==='schedule_review'){
    const draft=body.draft||{};
