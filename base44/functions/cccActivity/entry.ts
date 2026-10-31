@@ -28,6 +28,7 @@ import {buildRecurrenceManifest} from './recurrenceManifest.mjs';
 import {recurrenceDraftPayloads} from './recurrenceDrafts.mjs';
 import {createRecurrenceDraftBatch} from './recurrenceBatch.mjs';
 import {createScopedRecurrenceDrafts} from './recurrenceService.mjs';
+import {inspectRecurrenceBatch} from './recurrenceRecovery.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -235,6 +236,11 @@ Deno.serve(async req=>{
    const local=reviewDublinOccurrences(ccc.occurrences);
    const occurrences=local.occurrences.map((o:any,i:number)=>({...o,legacyOverlaps:legacyReview.occurrences[i]?.legacyOverlaps||[],legacyUnmapped:legacyReview.occurrences[i]?.legacyUnmapped||[]}));
    return Response.json({success:true,...ccc,occurrences,ready:ccc.ready&&legacyReview.ready&&local.ready,localTimeIssues:local.issues,timezone:local.timezone,daylightSavingChecked:true,legacySessionInventoryComplete:legacy.complete,legacyConflictedWeeks:legacyReview.conflictedWeeks,legacyUnmappedWeeks:legacyReview.unmappedWeeks,legacySessionCheckAdvisory:true});
+  }
+  if(body.action==='recurrence_recovery_review'){
+   const id=s(body.id),source=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!source)return fail('Activity not found',404);
+   return Response.json({success:true,...await inspectRecurrenceBatch(entity,source,{tenantId:tenant_id,clubId:club_id})});
   }
   if(body.action==='recurrence_create_drafts'){
    const id=s(body.id),revision=Number(body.expectedRevision),batchKey=s(body.batchKey,120);
