@@ -1,0 +1,11 @@
+import {strict as assert} from 'node:assert';
+import {assessTournivalHostStateHealth as health} from './stateHealth.ts';
+import {planTournivalHostReconciliation as plan} from './reconciliation.ts';
+import {mirrorCommittedTournivalHostState as mirror} from './mirrorWrite.ts';
+const session=(revision:number,score:number)=>({id:'session',tenant_id:'tenant',tournament_id:'event',state_revision:revision,state_json:JSON.stringify({revision,status:'In Progress',matches:[{id:'m',status:'completed',result:{scoreA:score,scoreB:2,winner:'A'}}],results:{m:score}})});
+const tournament=(revision:number,score:number)=>({id:'event',tenant_id:'tenant',status:'In Progress',tournival_state:JSON.stringify({revision,status:'In Progress',matches:[{id:'m',status:'completed',result:{scoreA:score,scoreB:2,winner:'A'}}],results:{m:score}})});
+Deno.test('normal save updates mirror and health stays clear',async()=>{const s=session(3,11),t=tournament(2,9);const next=JSON.parse(s.state_json);let updated=t;const r=await mirror(async(_id,patch)=>{updated={...t,...patch}},t,next);assert.equal(r.mirrorSynced,true);assert.equal(health(s,updated).healthy,true);});
+Deno.test('mirror outage leaves committed score authoritative and signals manual review',async()=>{const s=session(3,11),t=tournament(2,9);const r=await mirror(async()=>{throw Error('offline')},t,JSON.parse(s.state_json));assert.equal(r.committed,true);assert.equal(r.requiresReconciliation,true);assert.equal(health(s,t).healthy,false);assert.equal(plan(s,t).readyForOrganiserReview,true);});
+Deno.test('same revision with divergent scores cannot be automatically reconciled',()=>{const s=session(3,11),t=tournament(3,9);assert.equal(health(s,t).issues.includes('tournament_mirror_content_mismatch'),true);assert.equal(plan(s,t).readyForOrganiserReview,false);});
+Deno.test('mirror ahead of authoritative session cannot be promoted or overwritten',()=>{const s=session(3,11),t=tournament(4,12);assert.equal(plan(s,t).readyForOrganiserReview,false);});
+Deno.test('cross-tenant mirror is never recovery candidate',()=>{const s=session(3,11),t={...tournament(2,9),tenant_id:'other'};assert.equal(plan(s,t).readyForOrganiserReview,false);});
