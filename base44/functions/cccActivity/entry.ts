@@ -47,13 +47,13 @@ Deno.serve(async req=>{
   if(!access.admin&&!hostAction)return fail('Active tenant or club administrator grant required',403);
   if(hostAction&&!access.member)return fail('Active club access required',403);
   if(body.action==='host_activities'){
-   if(!access.admin&&user.approval_status!=='approved')return fail('Host access denied',403);
+   if(!access.admin&&user.approval_status&&user.approval_status!=='approved')return fail('Host access denied',403);
    const activityRead=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});const activities=activityRead.activities;
    const active=(activities||[]).filter((a:any)=>a.linked_event_id&&['scheduled','registration_open','registration_closed','in_progress'].includes(a.status));
    let allowed=active;
    if(!access.admin){
     const [users,venues,configs]=await Promise.all([
-     sdk.asServiceRole.entities.User.filter({id:user.id,active_tenant_id:tenant_id,active_club_id:club_id,approval_status:'approved'},'-created_date',1),
+     sdk.asServiceRole.entities.User.filter({id:user.id,active_tenant_id:tenant_id,active_club_id:club_id},'-created_date',1),
      sdk.asServiceRole.entities.Venue.filter({tenant_id,club_id,status:'active'},'-created_date',200),
      sdk.asServiceRole.entities.MembershipVenueHostConfig.filter({tenant_id,club_id,active:true},'-updated_date',100)
     ]);
@@ -65,7 +65,7 @@ Deno.serve(async req=>{
   if(hostAction){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!record||!record.linked_event_id)return fail('Linked activity not found',404);
-   if(!access.admin&&(user.approval_status!=='approved'||!await isClubHost(sdk,tenant_id,club_id,record.venue_id,user.id)))return fail('Host access denied',403);
+   if(!access.admin&&((user.approval_status&&user.approval_status!=='approved')||!await isClubHost(sdk,tenant_id,club_id,record.venue_id,user.id)))return fail('Host access denied',403);
    const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
    if(!event)return fail('Linked event unavailable',404);
    if(body.action==='host_roster'||body.action==='host_roster_page'){
