@@ -18,8 +18,15 @@ Deno.serve(async req=>{
   const tenant_id=s(user.active_tenant_id),club_id=s(user.active_club_id);
   if(!tenant_id||!club_id)return fail('Select a club',409);
   const body=await req.json().catch(()=>({})),entity=sdk.asServiceRole.entities.ClubActivity;
-  const hostAction=['host_roster','host_checkin'].includes(body.action);
+  const hostAction=['host_activities','host_roster','host_checkin'].includes(body.action);
   if(user.role!=='admin'&&!hostAction)return fail('Admin access required',403);
+  if(body.action==='host_activities'){
+   if(user.role!=='admin'&&user.approval_status!=='approved')return fail('Host access denied',403);
+   const activities=await entity.filter({tenant_id,club_id},'-starts_at',100);
+   const active=(activities||[]).filter((a:any)=>a.linked_event_id&&['scheduled','registration_open','registration_closed','in_progress'].includes(a.status));
+   const allowed=[];for(const a of active){if(user.role==='admin'||await isClubHost(sdk,tenant_id,club_id,a.venue_id,user.id))allowed.push({id:a.id,title:a.title,startsAt:a.starts_at,status:a.status,venueId:a.venue_id});}
+   return Response.json({success:true,activities:allowed,resultsMayBeTruncated:(activities||[]).length===100});
+  }
   if(hostAction){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!record||!record.linked_event_id)return fail('Linked activity not found',404);
