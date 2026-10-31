@@ -1,8 +1,8 @@
+import {readScopedMembershipLedger} from './scopedLedgerReader.mjs';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { createCheckout, retrievePayment, providerConfigured, type ProviderAccount } from './payments.ts';
 import {assessMemberAccountLink} from './accountLinkGuard.ts';
 import {assessMembershipIdentityHealth} from './identityHealth.ts';
-import {assessMembershipLedgerCompleteness} from './ledgerCompleteness.ts';
 
 const clean=(v:any,max=500)=>String(v??'').trim().slice(0,max);
 const lower=(v:any)=>clean(v,240).toLowerCase();
@@ -738,13 +738,19 @@ Deno.serve(async(req)=>{
     if(action==='admin_dashboard_counts'){
       // ClubMembership is the only authoritative membership ledger. Neither the
       // legacy Player roster nor ClubRelationship may determine member totals.
-      const [memberships,people,accesses,membershipConfigs]=await Promise.all([
-        base44.asServiceRole.entities.ClubMembership.filter({tenant_id:tenantId,club_id:clubId},'-created_date',500),
-        base44.asServiceRole.entities.Person.filter({tenant_id:tenantId},'-created_date',500),
-        base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:tenantId,club_id:clubId},'-approved_at',500),
-        base44.asServiceRole.entities.MembershipApplicationConfig.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',50)
-      ]);
-      const ledgerCompleteness=assessMembershipLedgerCompleteness({memberships,people,accesses});
+      let membershipRead,peopleRead,accessRead;
+      try{
+        [membershipRead,peopleRead,accessRead]=await Promise.all([
+          readScopedMembershipLedger(base44.asServiceRole.entities.ClubMembership,{tenant_id:tenantId,club_id:clubId}),
+          readScopedMembershipLedger(base44.asServiceRole.entities.Person,{tenant_id:tenantId}),
+          readScopedMembershipLedger(base44.asServiceRole.entities.ClubUserAccess,{tenant_id:tenantId,club_id:clubId})
+        ]);
+      }catch(error){
+        return Response.json({error:'Complete membership totals could not be verified; please retry.',code:'MEMBERSHIP_LEDGER_INCOMPLETE',details:String(error instanceof Error?error.message:'pagination failed')},{status:503});
+      }
+      const memberships=membershipRead.rows,people=peopleRead.rows,accesses=accessRead.rows;
+      const membershipConfigs=await base44.asServiceRole.entities.MembershipApplicationConfig.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',50);
+      const ledgerCompleteness={complete:true,issues:[],source:'ClubMembership',requiresPagination:false,pages:{memberships:membershipRead.pages,people:peopleRead.pages,accesses:accessRead.pages}};
       const membershipConfig=(membershipConfigs||[]).find((c:any)=>c.status==='active')||(membershipConfigs||[])[0]||null;
       const currentSeason=membershipConfig?.season_label||null;
       const qaPeople=new Set((people||[]).filter((p:any)=>String(p.source_system||'').includes('membership_qa')||(p.data_quality_flags||[]).includes('qa_test_record')).map((p:any)=>String(p.id)));
