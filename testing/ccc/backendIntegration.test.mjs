@@ -556,6 +556,24 @@ test('recurrence recovery review is scoped and never changes records',async()=>{
  assert.equal(r.status,200);assert.equal(r.data.childCount,1);assert.equal(r.data.requiresManualReview,true);
  assert.equal(JSON.stringify(h.db),before);
 });
+test('recovery completion requires exact batch, revision and all expected drafts',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ Object.assign(h.db.ClubActivity[0],{status:'draft',linked_event_id:'',recurrence_batch_key:'ccc-batch-12345678',recurrence_batch_state:'needs_recovery',recurrence_expected_count:2,revision:2});
+ h.db.ClubActivity.push(...[1,2].map(week=>({id:'child'+week,tenant_id:'t1',club_id:'c1',venue_id:'v1',status:'draft',idempotency_key:'ccc-rec-a1-1-'+week,configuration:{recurrence_source_activity_id:'a1',recurrence_week:week}})));
+ const input={id:'a1',expectedRevision:2,batchKey:'ccc-batch-12345678',confirm:true};
+ assert.equal((await h.call('recurrence_recovery_complete',{...input,confirm:false})).status,400);
+ assert.equal((await h.call('recurrence_recovery_complete',{...input,expectedRevision:1})).status,409);
+ const completed=await h.call('recurrence_recovery_complete',input);
+ assert.equal(completed.status,200,JSON.stringify(completed.data));assert.equal(completed.data.childCount,2);
+ assert.equal(h.db.ClubActivity[0].recurrence_batch_state,'complete');
+ assert.equal((await h.call('recurrence_recovery_complete',input)).status,409);
+});
+test('recovery completion blocks incomplete child batch without mutations',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ Object.assign(h.db.ClubActivity[0],{recurrence_batch_key:'ccc-batch-12345678',recurrence_batch_state:'needs_recovery',recurrence_expected_count:2});
+ const r=await h.call('recurrence_recovery_complete',{id:'a1',expectedRevision:1,batchKey:'ccc-batch-12345678',confirm:true});
+ assert.equal(r.status,409);assert.equal(h.db.ClubActivity[0].recurrence_batch_state,'needs_recovery');
+});
 test('Dublin daylight-saving gaps and repeated times block schedule readiness',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  const base={venue_id:'v1',court_id:'court1'};
