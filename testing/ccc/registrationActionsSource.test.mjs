@@ -7,7 +7,7 @@ const activity=read('../../base44/functions/cccActivity/entry.ts');
 const ui=read('../../src/components/ccc/ClubEventRegistrationOverview.jsx');
 const schema=read('../../base44/entities/EventRegistration.jsonc');
 test('existing event admin actions fail closed outside active tenant and club',()=>{
- assert.match(event,/if\(isAdminAction\).*user\.role!=='admin'/);
+ assert.match(event,/if\(isAdminAction\).*requireEventAdminGrant\(base44,user,t\)/);
  assert.match(event,/user\.active_tenant_id/);
  assert.match(event,/user\.active_club_id/);
  assert.match(event,/Event outside selected tenant or club/);
