@@ -1,0 +1,13 @@
+import {strict as assert} from 'node:assert';
+import {assessMembershipIdentityHealth as check} from './identityHealth.ts';
+const fixture=()=>({tenantId:'t',clubId:'c',person:{id:'p',tenant_id:'t'},membership:{id:'m',tenant_id:'t',club_id:'c',person_id:'p'},player:{id:'r',tenant_id:'t',club_id:'c',person_id:'p'},accessRows:[]});
+Deno.test('unlinked consistent membership is healthy',()=>assert.equal(check(fixture()).healthy,true));
+Deno.test('fully linked person player and access are healthy',()=>{const f=fixture();f.person.linked_user_id='u';f.player.user_id='u';f.accessRows=[{tenant_id:'t',club_id:'c',user_id:'u',person_id:'p',player_id:'r',status:'active'}];assert.equal(check(f).healthy,true);});
+Deno.test('person updated but player missing link signals partial write',()=>{const f=fixture();f.person.linked_user_id='u';assert.ok(check(f).issues.includes('partial_account_link'));});
+Deno.test('player updated but person missing link signals partial write',()=>{const f=fixture();f.player.user_id='u';assert.ok(check(f).issues.includes('partial_account_link'));});
+Deno.test('conflicting account links are flagged',()=>{const f=fixture();f.person.linked_user_id='u';f.player.user_id='other';assert.ok(check(f).issues.includes('conflicting_account_links'));});
+Deno.test('linked account without access flagged',()=>{const f=fixture();f.person.linked_user_id='u';f.player.user_id='u';assert.ok(check(f).issues.includes('linked_account_missing_active_access'));});
+Deno.test('access active before account link flagged',()=>{const f=fixture();f.accessRows=[{tenant_id:'t',club_id:'c',user_id:'u',person_id:'p',status:'active'}];assert.ok(check(f).issues.includes('access_without_account_link'));});
+Deno.test('cross-club access flagged',()=>{const f=fixture();f.accessRows=[{tenant_id:'t',club_id:'other',user_id:'u',person_id:'p',status:'active'}];assert.ok(check(f).issues.includes('access_scope_mismatch'));});
+Deno.test('duplicate access records flagged',()=>{const f=fixture();f.accessRows=[{tenant_id:'t',club_id:'c',person_id:'p'},{tenant_id:'t',club_id:'c',person_id:'p'}];assert.ok(check(f).issues.includes('multiple_access_records'));});
+Deno.test('missing player is not silently treated as healthy',()=>assert.ok(check({...fixture(),player:null}).issues.includes('player_record_missing')));
