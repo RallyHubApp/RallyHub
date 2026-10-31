@@ -7,6 +7,7 @@ import {summariseEventFinance} from '../../base44/functions/cccActivity/reconcil
 import {isConfiguredHost} from '../../base44/functions/cccActivity/hostPolicy.mjs';
 import {readEventPayments} from '../../base44/functions/cccActivity/eventPaymentReader.mjs';
 import {readEventRegistrations} from '../../base44/functions/cccActivity/registrationReader.mjs';
+import {readScopedActivities} from '../../base44/functions/cccActivity/activityReader.mjs';
 const source=readFileSync(new URL('../../base44/functions/cccActivity/entry.ts',import.meta.url),'utf8').replace(/^import .*;\s*$/gm,'');
 const js=transformSync(source,{loader:'ts',format:'cjs'}).code;
 const records={
@@ -28,7 +29,7 @@ function makeHarness(user=records.User[0]){
  }]));
  let handler;
  const sdk={auth:{me:async()=>user},asServiceRole:{entities}};
- vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,readEventRegistrations,Response,Date,console});
+ vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,readEventRegistrations,readScopedActivities,Response,Date,console});
  const call=async(action,fields={})=>{const response=await handler({method:'POST',json:async()=>({action,...fields})});return {status:response.status,data:await response.json()}};
  return {call,db,reads};
 }
@@ -45,6 +46,14 @@ test('host activity discovery uses batched lookups, not one query per activity',
  const result=await h.call('host_activities');
  assert.equal(result.data.activities.length,31);
  assert.equal(h.reads.User,1);assert.equal(h.reads.Venue,1);assert.equal(h.reads.MembershipVenueHostConfig,1);
+});
+test('host discovery reads more than 100 activities with cursor paging',async()=>{
+ const h=makeHarness();
+ for(let i=2;i<303;i++)h.db.ClubActivity.push({...h.db.ClubActivity[0],id:'a'+i});
+ const result=await h.call('host_activities');
+ assert.equal(result.status,200);assert.equal(result.data.activities.length,302);
+ assert.equal(result.data.resultsMayBeTruncated,false);
+ assert.equal(h.reads.ClubActivity,2);
 });
 test('delegated host is denied admin options and cross-club activity access',async()=>{
  const h=makeHarness();
