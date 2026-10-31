@@ -11,6 +11,7 @@ import PageHeader from '@/components/shared/PageHeader';
 import { addDays, format } from 'date-fns';
 import MemberPortalDashboard from '@/components/member/MemberPortalDashboard';
 import ClubCommandOverview from '@/components/ccc/ClubCommandOverview';
+import ClubOperationsBoard from '@/components/ccc/ClubOperationsBoard';
 import ClubSchedulePanel from '@/components/ccc/ClubSchedulePanel';
 import ClubActivityPlanner from '@/components/ccc/ClubActivityPlanner';
 import ClubHostWorkspace from '@/components/ccc/ClubHostWorkspace';
@@ -211,6 +212,8 @@ export default function Dashboard() {
 
       {currentUser?.active_tenant_id && currentUser?.active_club_id && <ClubHostWorkspace key={'host:'+currentUser.active_tenant_id+':'+currentUser.active_club_id} tenantId={currentUser.active_tenant_id} clubId={currentUser.active_club_id} />}
       {currentUser?.role === 'admin' && <ClubActivityPlanner key={`${currentUser?.active_tenant_id||''}:${currentUser?.active_club_id||''}`} tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} />}
+
+      {currentUser?.role === 'admin' && <ClubOperationsBoard tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} />}
 
       {currentUser?.role === 'admin' && <ClubSchedulePanel tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} sessions={clubSessions} fromDate={scheduleFrom} toDate={scheduleTo} loading={sessionsLoading} error={sessionsError} />}
 
