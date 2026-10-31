@@ -1,3 +1,4 @@
+import { invokeReadWithDeadline, shouldRetryRead, readRetryDelay, READ_STALE_MS, READ_GC_MS } from '@/lib/ccc/readResilience';
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -155,7 +156,7 @@ export default function MembershipConsole() {
   const [training, setTraining] = useState({ trainingName: '', sportId: '', status: 'completed', completionDate: '', provider: '', levelCategory: '', notes: '' });
   const [qualification, setQualification] = useState({ title: '', sportId: '', verificationStatus: 'unverified', level: '', governingBody: '', awardDate: '', expiryDate: '', notes: '' });
 
-  const membershipRead = (name, payload) => Promise.race([base44.functions.invoke(name, payload), new Promise((_, reject) => setTimeout(() => reject(new Error(`${name} did not respond within 15 seconds`)), 15000))]);
+  const membershipRead = (name, payload) => invokeReadWithDeadline((service,args)=>base44.functions.invoke(service,args),name,payload);
 
   const {data:venueHostConfig={venues:[]}}=useQuery({
     queryKey:['membership-venue-hosts',user?.active_tenant_id,user?.active_club_id],
@@ -178,7 +179,11 @@ export default function MembershipConsole() {
 
   const { data: meta = {}, isLoading: metaLoading, isError: metaError, refetch: retryMeta } = useQuery({
     queryKey: ['membership-console-meta', user?.active_tenant_id, user?.active_club_id],
-    retry: false,
+    retry: shouldRetryRead,
+    retryDelay: readRetryDelay,
+    staleTime: READ_STALE_MS,
+    gcTime: READ_GC_MS,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const response = await membershipRead('membershipRecord', { action: 'admin_meta' });
       if (response.data?.error) throw new Error(response.data.error);
@@ -213,7 +218,11 @@ export default function MembershipConsole() {
 
   const { data: listData = { rows: [], counts: {} }, isLoading: listLoading, isError: listError, refetch: refetchList } = useQuery({
     queryKey: ['membership-console-list', user?.active_tenant_id, user?.active_club_id],
-    retry: false,
+    retry: shouldRetryRead,
+    retryDelay: readRetryDelay,
+    staleTime: READ_STALE_MS,
+    gcTime: READ_GC_MS,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const response = await membershipRead('membershipRecord', { action: 'admin_list' });
       if (response.data?.error) throw new Error(response.data.error);
@@ -230,21 +239,25 @@ export default function MembershipConsole() {
       return response.data || { counts: {} };
     },
     enabled: canManage,
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true
+    staleTime: READ_STALE_MS,
+    refetchOnWindowFocus: false
   });
 
   const { data: applicationData = { applications: [], counts: {} }, isLoading: applicationsLoading, isError: applicationsError, refetch: refetchApplications } = useQuery({
     queryKey: ['membership-applications', user?.active_tenant_id, user?.active_club_id],
-    retry: false,
+    retry: shouldRetryRead,
+    retryDelay: readRetryDelay,
+    staleTime: READ_STALE_MS,
+    gcTime: READ_GC_MS,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const response = await membershipRead('membershipApplication', { action: 'admin_list' });
       if (response.data?.error) throw new Error(response.data.error);
       return response.data || { applications: [], counts: {} };
     },
     enabled: canManage,
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true
+    staleTime: READ_STALE_MS,
+    refetchOnWindowFocus: false
   });
 
   const { data: waitingListData = { counts: {} } } = useQuery({
@@ -255,8 +268,8 @@ export default function MembershipConsole() {
       return response.data || { counts: {} };
     },
     enabled: canManage,
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true
+    staleTime: READ_STALE_MS,
+    refetchOnWindowFocus: false
   });
 
   const { data: detail = null, isLoading: detailLoading, error: detailError, refetch: refetchDetail } = useQuery({
