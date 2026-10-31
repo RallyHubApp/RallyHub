@@ -6,6 +6,7 @@ import {eventNoticeRecipients,eventNoticeBody,EVENT_NOTICE_TYPES} from './notifi
 import {renderBasicBrandedEmail} from './communicationsBasicRenderer.ts';
 import {deliverEventNotice} from './delivery.ts';
 import {readBookingRegistrations} from './scopedRegistrationReader.mjs';
+import {readAdminEventPayments} from './scopedPaymentReader.mjs';
 const clean=(v:any,n=200)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,n);
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
 Deno.serve(async(req)=>{
@@ -50,7 +51,7 @@ Deno.serve(async(req)=>{
    return Response.json({success:true,noticeType,subject:`${t.name} · ${noticeType.replaceAll('_',' ')}`,body,html,recipients,delivery:'preview_only'});
   }
   if(action==='admin_list'){
-   const payments=await base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,purpose_type:'event'},'-created_date',500);
+   const payments=await readAdminEventPayments(base44.asServiceRole.entities.PaymentRecord,{tenantId:t.tenant_id,clubId:t.host_club_id,registrationIds:rows.map((r:any)=>r.id)});
    return Response.json({success:true,event:publicEvent,registrations:rows.map((r:any)=>{const p=payments.find((x:any)=>x.purpose_id===r.id);return {id:r.id,name:r.full_name,email:r.email,mobile:r.mobile,emergencyContactName:r.emergency_contact_name,emergencyContactMobile:r.emergency_contact_mobile,status:r.registration_status,paymentStatus:r.payment_status,createdAt:r.created_at,paymentRecordId:p?.id||null,paymentRecordStatus:p?.payment_status||null,amount:Number(p?.amount||0),refundedAmount:Number(p?.amount_refunded||0),transactionReference:p?.provider_payment_reference||'',refundableAmount:p&&['paid','partially_refunded','refund_failed'].includes(p.payment_status)?Math.max(0,Number(p.amount||0)-Number(p.amount_refunded||0)):0};})});
   }
   if(action==='admin_approve'||action==='admin_verify'||action==='admin_refund_payment'){
@@ -134,5 +135,5 @@ Deno.serve(async(req)=>{
   }
   try{await deliverEventNotice(base44,t,{full_name:name,email},accepted?'application_received':'waitlist_joined');}catch(noticeError){console.error('Event application saved but notification delivery failed',noticeError);}
   return Response.json({success:true,received:true,status,message:accepted?'Application received. Await organiser approval.':'Event full. You have joined the waiting list.'});
- }catch(e){const message=String(e?.message||e||'Unknown error');console.error('event registration error',stage,message,e?.stack);if(message.startsWith('Event registration verification')||message.startsWith('Event registration pagination')||message.startsWith('Event registration missing ID'))return fail('Booking records could not be fully verified. No new booking has been accepted; please try again later or contact the organiser.',503);if(message.startsWith('Required consent missing:'))return fail('Please accept the required document: '+message.split(':')[1].trim().replaceAll('_',' '),400);return fail(`Registration could not be saved (stage: ${stage}). Your details remain in the form. Please contact the organiser.`,503)}
+ }catch(e){const message=String(e?.message||e||'Unknown error');console.error('event registration error',stage,message,e?.stack);if(message.startsWith('Event payment verification')||message.startsWith('Event payment pagination')||message.startsWith('Event payment record missing ID'))return fail('Event payment records could not be fully verified. No financial action was taken; please try again later.',503);if(message.startsWith('Event registration verification')||message.startsWith('Event registration pagination')||message.startsWith('Event registration missing ID'))return fail('Booking records could not be fully verified. No new booking has been accepted; please try again later or contact the organiser.',503);if(message.startsWith('Required consent missing:'))return fail('Please accept the required document: '+message.split(':')[1].trim().replaceAll('_',' '),400);return fail(`Registration could not be saved (stage: ${stage}). Your details remain in the form. Please contact the organiser.`,503)}
 });
