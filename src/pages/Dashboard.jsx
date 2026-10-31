@@ -12,6 +12,7 @@ import { addDays, format } from 'date-fns';
 import MemberPortalDashboard from '@/components/member/MemberPortalDashboard';
 import ClubCommandOverview from '@/components/ccc/ClubCommandOverview';
 import ClubSchedulePanel from '@/components/ccc/ClubSchedulePanel';
+import ClubActivityPlanner from '@/components/ccc/ClubActivityPlanner';
 import ClubPaymentPanel from '@/components/ccc/ClubPaymentPanel';
 import ClubPostEventPanel from '@/components/ccc/ClubPostEventPanel';
 import { READ_STALE_MS, READ_GC_MS, shouldRetryRead, readRetryDelay } from '@/lib/ccc/readResilience';
@@ -206,6 +207,8 @@ export default function Dashboard() {
       </PageHeader>
 
       <ClubCommandOverview membershipApprovals={pendingMembershipDecisionCount} membershipPayments={pendingMembershipApplicationCount} guestApprovals={pendingSessionBookingCount} directoryApprovals={pendingDirectoryApprovalCount} isPlatformAdmin={currentUser?.role === 'admin'} />
+
+      {currentUser?.role === 'admin' && <ClubActivityPlanner key={`${currentUser?.active_tenant_id||''}:${currentUser?.active_club_id||''}`} tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} />}
 
       {currentUser?.role === 'admin' && <ClubSchedulePanel tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} sessions={clubSessions} fromDate={scheduleFrom} toDate={scheduleTo} loading={sessionsLoading} error={sessionsError} />}
 
