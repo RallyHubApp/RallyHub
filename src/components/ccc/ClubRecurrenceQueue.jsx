@@ -13,8 +13,10 @@ export default function ClubRecurrenceQueue({tenantId,clubId}){
   {isLoading&&<p className="mt-2 text-sm">Loading batches…</p>}
   {isError&&<p role="alert" className="mt-2 text-sm text-destructive">Batch queue unavailable.</p>}
   {data&&<><p className="mt-2 text-sm">{data.counts?.needs_recovery||0} need recovery · {data.counts?.creating||0} creating · {data.counts?.complete||0} complete</p>
+  {data.draftCollisions?.collisionCount>0&&<p role="alert" className="mt-2 text-sm text-amber-700">{data.draftCollisions.collisionCount} cross-batch draft scheduling overlap(s) require review before scheduling. Drafts do not reserve courts.</p>}
+  {data.draftCollisions?.invalidDraftIds?.length>0&&<p role="alert" className="mt-2 text-sm text-amber-700">{data.draftCollisions.invalidDraftIds.length} recurring draft(s) have invalid schedule details.</p>}
   {!data.complete&&<p role="alert" className="text-sm text-amber-700">Partial activity inventory; some batches may be missing.</p>}
-  <div className="mt-2 max-h-72 space-y-2 overflow-y-auto">{data.batches?.slice(0,30).map(b=><div key={b.id} className="rounded-lg border p-2 text-sm"><div className="font-medium">{b.title}</div><div className="text-xs text-muted-foreground">State: {b.state.replaceAll('_',' ')} · Expected drafts: {b.expectedCount??'unknown'} · Activity ID: {b.id}</div>{b.state==='needs_recovery'&&<p className="text-xs text-amber-700">Open this source activity in the planner to inspect and reconcile. No automatic retry.</p>}</div>)}</div>
+  <div className="mt-2 max-h-72 space-y-2 overflow-y-auto">{data.batches?.slice(0,30).map(b=><div key={b.id} className="rounded-lg border p-2 text-sm"><div className="font-medium">{b.title}</div><div className="text-xs text-muted-foreground">State: {b.state.replaceAll('_',' ')} · Expected drafts: {b.expectedCount??'unknown'} · Activity ID: {b.id}</div>{b.integrity?.issues?.length>0&&<p role="alert" className="text-xs text-amber-700">Integrity review: {b.integrity.issues.join(', ')}</p>}{b.state==='needs_recovery'&&<p className="text-xs text-amber-700">Open this source activity in the planner to inspect and reconcile. No automatic retry.</p>}</div>)}</div>
   {data.total>30&&<p className="text-xs text-muted-foreground">Showing first 30 of {data.total} batches.</p>}</>}
  </section>;
 }
