@@ -20,13 +20,13 @@ Each of the 17 workstreams below receives equal weight (1/17). Each score is an 
 | Hosts and delegated access | 95 | Host selection and actions use authoritative grants and venue assignment; real Base44 runtime, mobile UAT and cross-module revocation remain |
 | Communications and branding | 73 | Post-event candidate triage and linked-person evidence review integrated; endpoint-hash suppression, approved preview, delivery and provider verification remain |
 | Financial reconciliation | 82 | Refund recovery and paginated linked payment rollups; SumUp settlement remains unverified |
-| Audit and operational health | 65 | Host revocation audit, refund reconciliation alerts, identity-integrity flags and fail-closed event close-out readiness checklist; durable audit and monitoring remain |
+| Audit and operational health | 72 | Prioritised read-only operations action queue, recurrence/recovery alerts, event close-out readiness and identity flags; durable audit and monitoring remain |
 | Analytics and reporting | 82 | Event and guest attendance/registration CSV exports with personal-data confirmation, formula protection and partial-read warnings; canonical settlement reporting and cross-module exports remain |
 | Sporting formats | 45 | Protected module integration and regression |
-| Base44 performance and resilience | 75 | Bounded recurrence preview, paginated finance and stale response guard; live concurrency/load remain |
+| Base44 performance and resilience | 77 | Bounded recurrence preview, paginated finance, guest attendance concurrent-save guard and stale session response protection; live concurrency/load remain |
 | A01–A20 acceptance and release gates | 35 | Added recurrence boundary and paginated finance tests; formal A01–A20 traceability and live acceptance remain unpassed |
 
-**Arithmetic:** 1235/17 = **72.6% (rounded to 73%) provisional implementation estimate**. This is an engineering estimate of source coverage, not verified acceptance.
+**Arithmetic:** 1244/17 = **73.2% (rounded to 73%) provisional implementation estimate**. This is an engineering estimate of source coverage, not verified acceptance.
 
 **Critical distinction:** This is an estimate of implementation coverage, not verified feature completion. **A01–A20 full acceptance has not passed.** The current changes are development code only; there has been no authorised production deploy or live SumUp verification.
 
