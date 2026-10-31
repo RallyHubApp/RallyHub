@@ -110,7 +110,7 @@ test('financial overview fetches all 500 registrations via cursor pages',async()
 });
 test('registration continuation loads beyond 10,000 without losing tenant scope',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
- for(let i=1;i<10005;i++)h.db.EventRegistration.push({...h.db.EventRegistration[0],id:'r'+i});
+ for(let i=2;i<10006;i++)h.db.EventRegistration.push({...h.db.EventRegistration[0],id:'r'+i});
  const first=await h.call('registration_overview',{id:'a1'});
  assert.equal(first.status,200);assert.equal(first.data.registrations.length,10000);
  assert.equal(first.data.resultsMayBeTruncated,true);
