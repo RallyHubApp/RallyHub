@@ -1,3 +1,4 @@
+import {readActiveSportCatalogue} from './sportCatalogueReader.mjs';
 import {readScopedMembershipLedger} from './scopedLedgerReader.mjs';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { createCheckout, retrievePayment, providerConfigured, type ProviderAccount } from './payments.ts';
@@ -799,9 +800,9 @@ Deno.serve(async(req)=>{
         ]);
         clubSports=clubSportRead.rows;membershipConfigs=configRead.rows;
       }catch{return Response.json({error:'Membership configuration inventory is incomplete.',code:'MEMBERSHIP_CONFIG_INCOMPLETE'},{status:503});}
-      const allSports=await base44.asServiceRole.entities.Sport.filter({status:'active'},'name',100);
-      if(!Array.isArray(allSports)||allSports.length>=100)
-        return Response.json({error:'Global sports inventory is incomplete.',code:'GLOBAL_SPORT_INVENTORY_INCOMPLETE'},{status:503});
+      let allSports;
+      try{allSports=await readActiveSportCatalogue(base44.asServiceRole.entities.Sport);}
+      catch{return Response.json({error:'Global sports inventory is incomplete.',code:'GLOBAL_SPORT_INVENTORY_INCOMPLETE'},{status:503});}
       const qaPersonIds=new Set((people||[]).filter((p:any)=>String(p.source_system||'').includes('membership_qa')||(p.data_quality_flags||[]).includes('qa_test_record')).map((p:any)=>String(p.id)));
       const members=(membersRaw||[]).filter((m:any)=>!qaPersonIds.has(String(m.person_id))&&!String(m.source_system||'').includes('membership_qa')&&!(m.data_quality_flags||[]).includes('qa_test_record'));
       const relationships=(relationshipsRaw||[]).filter((r:any)=>!qaPersonIds.has(String(r.person_id))&&!String(r.source_system||'').includes('membership_qa'));
