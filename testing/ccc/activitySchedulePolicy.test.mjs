@@ -16,6 +16,12 @@ test('invalid schedule fails closed',()=>{
  assert.equal(activityScheduleConflicts(row('x','bad')).valid,false);
  assert.equal(activityScheduleConflicts(row('x','2026-11-04T20:00:00Z','2026-11-04T19:00:00Z')).valid,false);
 });
+test('malformed active bookings on same resource fail closed rather than being ignored',()=>{
+ const candidate=row('c',undefined,undefined,{court_id:'court1'});
+ const result=activityScheduleConflicts(candidate,[row('broken','invalid','invalid',{court_id:'court1'})]);
+ assert.equal(result.valid,false);assert.deepEqual(result.unverifiable,[{activityId:'broken',status:'scheduled'}]);
+ assert.equal(activityScheduleConflicts(candidate,[row('other','invalid','invalid',{court_id:'court2'})]).valid,true);
+});
 test('separate explicitly allocated courts may overlap, whole-venue booking blocks both',()=>{
  const candidate=row('c',undefined,undefined,{court_id:'court1'});
  const other=row('other',undefined,undefined,{court_id:'court2'});
