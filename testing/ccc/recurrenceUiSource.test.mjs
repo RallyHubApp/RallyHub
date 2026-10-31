@@ -7,8 +7,12 @@ test('recurrence preview ignores stale responses when activity or date changes',
  assert.match(source,/if\(requestKey\.current!==requested\)return/);
  assert.match(source,/setBusy\(false\)/);
 });
-test('recurrence preview is advisory, not a publishing or batch-create action',()=>{
+test('recurrence draft creation requires an explicit confirmation and never publishes',()=>{
  assert.match(source,/action:'recurrence_review'/);
+ assert.match(source,/action:'recurrence_create_drafts'/);
+ assert.match(source,/confirmDraftCreation/);
+ assert.match(source,/expectedRevision:activityRevision/);
+ assert.match(source,/Drafts do not reserve courts/);
  assert.doesNotMatch(source,/action:'(?:publish|create_recurrence|save_draft)'/);
  assert.match(source,/localTimeIssues/);
 });
