@@ -447,3 +447,12 @@ test('admin context without actual grant is rejected and revoked club grant over
  h.db.ClubUserAccess.push({id:'blocked',tenant_id:'t1',club_id:'c1',user_id:'host',permission_bundle:'member',status:'revoked'});
  assert.equal((await h.call('people_summary')).status,403);
 });
+test('membership readiness inspects scoped config without payment or email actions',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.MembershipApplicationConfig.push({id:'cfg',tenant_id:'t1',club_id:'c1',status:'active',season_label:'2026',membership_fee:25,payment_required:true});
+ const before=JSON.stringify(h.db);
+ const r=await h.call('membership_readiness');
+ assert.equal(r.status,200);assert.equal(r.data.activeConfigCount,1);
+ assert.equal(r.data.authorisedToCharge,false);assert.equal(JSON.stringify(h.db),before);
+ assert.equal((await makeHarness().call('membership_readiness')).status,403);
+});
