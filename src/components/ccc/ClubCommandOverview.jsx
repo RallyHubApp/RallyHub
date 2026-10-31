@@ -13,10 +13,10 @@ export default function ClubCommandOverview({membershipApprovals=0,membershipPay
  ];
  const total=items.reduce((sum,item)=>sum+Math.max(0,Number(item.count)||0),0);
  const sections=[
-  {name:'People',description:'Membership, guests and approvals',links:[['Membership','/app/membership'],['Guest bookings','/app/guest-bookings']]},
-  {name:'Activities',description:'Events and club sessions',links:[['Events','/app/events'],['Guest sessions','/app/guest-bookings']]},
-  {name:'Operations',description:'Attendance, venues and finance',links:[['Bookings and attendance','/app/guest-bookings'],['Finance','/app/finance']]},
-  {name:'Management',description:'Communications and administration',links:[['Communications Centre','/app/communications'],['Administration','/app/admin']]}
+  {name:'People',description:'Membership, guests and approvals',links:[['Open People workspace','/app/club-command-centre?section=people'],['Membership','/app/membership'],['Guest bookings','/app/guest-bookings']]},
+  {name:'Activities',description:'Events and club sessions',links:[['Open Activities workspace','/app/club-command-centre?section=activities'],['Events','/app/events'],['Guest sessions','/app/guest-bookings']]},
+  {name:'Operations',description:'Attendance, venues and finance',links:[['Open Operations workspace','/app/club-command-centre?section=operations'],['Bookings and attendance','/app/guest-bookings'],['Finance','/app/finance']]},
+  {name:'Management',description:'Communications and administration',links:[['Open Management workspace','/app/club-command-centre?section=management'],['Communications Centre','/app/communications'],['Administration','/app/admin']]}
  ];
  return <section aria-label="Club Command Centre action summary" className="rounded-2xl border bg-card p-4 sm:p-5">
   <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
