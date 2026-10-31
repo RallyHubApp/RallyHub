@@ -1,0 +1,12 @@
+import {strict as assert} from 'node:assert';
+import {buildTournivalRecoveryPreview as preview} from './recoveryPreview.ts';
+const state={revision:4,matches:[{id:'m'}],results:[],status:'In Progress'};
+const event=(rev=3)=>({id:'e',tenant_id:'t',host_club_id:'c',tournival_state:JSON.stringify({...state,revision:rev})});
+const session=(x:any={})=>({id:'s',tenant_id:'t',club_id:'c',tournament_id:'e',state_revision:4,state_json:JSON.stringify(state),...x});
+Deno.test('stale mirror produces non-mutating recovery preview',()=>{const p=preview(event(),[session()]);assert.equal(p.available,true);assert.equal(p.writePerformed,false);assert.equal(p.fromRevision,3);assert.equal(p.toRevision,4);});
+Deno.test('healthy mirror has no recovery preview',()=>assert.equal(preview(event(4),[session()]).available,false));
+Deno.test('mirror ahead cannot be proposed for overwrite',()=>assert.equal(preview(event(5),[session()]).available,false));
+Deno.test('duplicate sessions block preview',()=>assert.equal(preview(event(),[session(),session()]).available,false));
+Deno.test('cross-club session blocks preview',()=>assert.equal(preview(event(),[session({club_id:'other'})]).available,false));
+Deno.test('invalid JSON blocks preview',()=>assert.equal(preview(event(),[session({state_json:'bad'})]).available,false));
+Deno.test('rehearsal cannot be promoted',()=>assert.equal(preview(event(),[session({rehearsal:true})]).available,false));
