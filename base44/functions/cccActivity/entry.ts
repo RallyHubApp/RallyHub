@@ -5,6 +5,7 @@ import {readEventPayments} from './eventPaymentReader.mjs';
 import {readEventRegistrations} from './registrationReader.mjs';
 import {readScopedActivities} from './activityReader.mjs';
 import {buildFollowupReview} from './followupReview.mjs';
+import {validateEventLink} from './eventLinkPolicy.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -95,11 +96,14 @@ Deno.serve(async req=>{
    if(!['draft','ready','scheduled'].includes(record.status))return fail('Cannot link activity in current state',409);
    const event=(await sdk.asServiceRole.entities.Tournament.filter({id:event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
    if(!event)return fail('Event not found in selected club',404);
-   if(event.event_registration_mode!=='rallyhub')return fail('Event does not use RallyHub registration',409);
-   if(Number(event.event_capacity)!==Number(record.capacity))return fail('Event capacity differs from activity',409);
-   if(event.venue_id&&event.venue_id!==record.venue_id)return fail('Event venue differs from activity',409);
-   if(event.start_date&&String(event.start_date).slice(0,10)!==String(record.starts_at).slice(0,10))return fail('Event date differs from activity',409);
-   if(Number(event.event_fee_amount||0)>0&&record.payment_method!=='online')return fail('Paid event requires online payment policy',409);
+   const [venueRows,templateRows,hostVerified]=await Promise.all([
+    sdk.asServiceRole.entities.Venue.filter({id:record.venue_id,tenant_id,club_id,status:'active'},'-created_date',1),
+    record.communication_template_id?sdk.asServiceRole.entities.CommunicationTemplate.filter({id:record.communication_template_id,tenant_id,owner_scope:'tenant',status:'approved'},'-created_date',1):Promise.resolve([]),
+    record.host_user_id?isClubHost(sdk,tenant_id,club_id,record.venue_id,record.host_user_id):Promise.resolve(false)
+   ]);
+   const template=templateRows?.[0],templateVerified=!!template&&(!template.club_id||template.club_id===club_id);
+   const issues=validateEventLink(record,event,{venue:venueRows?.[0],hostVerified,templateVerified});
+   if(issues.length)return fail('Event link requires review: '+issues.join(', '),409);
    const update=await entity.updateMany({id,tenant_id,club_id,revision},{$set:{linked_event_id:event_id,bridge_status:'linked_unverified',revision:revision+1,updated_by_user_id:user.id}});
    if(update.updated!==1)return fail('Activity changed; reload',409);
    await audit(sdk,tenant_id,club_id,user.id,'ccc.activity.link_event','ClubActivity',id,{linked_event_id:record.linked_event_id||'',revision},{linked_event_id:event_id,revision:revision+1});
