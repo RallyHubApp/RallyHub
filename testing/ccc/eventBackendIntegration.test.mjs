@@ -19,13 +19,13 @@ const initial={
  PaymentRefund:[],PaymentGatewayAccount:[{id:'gateway',tenant_id:'t1',club_id:'c1',provider:'sumup',status:'connected',is_default:true}],ClubLegalDocument:[],CommunicationBrandKit:[],Club:[]
 };
 const matches=(row,query)=>Object.entries(query||{}).every(([key,value])=>value&&typeof value==='object'&&'$in'in value?value.$in.includes(row[key]):value&&typeof value==='object'&&'$lt'in value?row[key]<value.$lt:value&&typeof value==='object'&&'$gt'in value?row[key]>value.$gt:value===null?row[key]==null:row[key]===value);
-function harness({user={id:'admin',role:'admin',active_tenant_id:'t1',active_club_id:'c1'},refundResult={refundId:'provider-refund',providerStatus:'REFUNDED'},lockAllowed=true}={}){
+function harness({user={id:'admin',role:'admin',active_tenant_id:'t1',active_club_id:'c1'},refundResult={refundId:'provider-refund',providerStatus:'REFUNDED'},lockAllowed=true,failPaymentUpdate=false}={}){
  const db=structuredClone(initial),calls={refund:0,notice:0,locks:0,reads:{}};
  const entities=Object.fromEntries(Object.entries(db).map(([name,records])=>[name,{
   count:async(query={})=>{calls.reads[name]=(calls.reads[name]||0)+1;return records.filter(r=>matches(r,query)).length},
   filter:async(query={},sort,limit)=>{calls.reads[name]=(calls.reads[name]||0)+1;const rows=records.filter(r=>matches(r,query));if(sort&&typeof sort==='object'){const start=Number(sort.cursor||0),end=start+(sort.limit||200);return {items:rows.slice(start,end),has_more:end<rows.length,next_cursor:end<rows.length?String(end):null}}return rows.slice(0,limit||1000)},
   updateMany:async(query,patch)=>{calls.locks++;if(!lockAllowed)return {updated:0};let updated=0;for(const row of records)if(matches(row,query)){Object.assign(row,patch.$set||{});for(const [k,v] of Object.entries(patch.$inc||{}))row[k]=Number(row[k]||0)+v;updated++}return {updated}},
-  update:async(id,patch)=>{const row=records.find(r=>r.id===id);if(!row)throw Error('Record missing');Object.assign(row,patch);return row},
+  update:async(id,patch)=>{if(name==='PaymentRecord'&&failPaymentUpdate)throw Error('PaymentRecord persistence unavailable');const row=records.find(r=>r.id===id);if(!row)throw Error('Record missing');Object.assign(row,patch);return row},
   create:async(record)=>{const saved={...record,id:'new'+(records.length+1)};records.push(saved);return saved},
   get:async(id)=>records.find(r=>r.id===id)
  }]));
@@ -112,6 +112,15 @@ test('refund contention fails without calling provider',async()=>{
  const h=harness({lockAllowed:false});
  const response=await h.call('admin_refund_payment',{registrationId:'r1',confirmRefund:true,reason:'Cancelled'});
  assert.equal(response.status,409);assert.equal(h.calls.refund,0);assert.equal(h.db.PaymentRefund.length,0);
+});
+test('provider success with database failure preserves provider reference for manual recovery',async()=>{
+ const h=harness({failPaymentUpdate:true});
+ const response=await h.call('admin_refund_payment',{registrationId:'r1',confirmRefund:true,reason:'Cancelled'});
+ assert.equal(response.status,503);assert.equal(h.calls.refund,1);
+ assert.equal(h.db.PaymentRecord[0].payment_status,'refund_pending');
+ assert.equal(h.db.PaymentRefund[0].status,'needs_reconciliation');
+ assert.equal(h.db.PaymentRefund[0].provider_status,'REFUNDED');
+ assert.equal(h.db.PaymentRefund[0].provider_refund_id,'provider-refund');
 });
 test('provider refund failure retains lock and records reconciliation requirement',async()=>{
  const h=harness({refundResult:new Error('Provider timeout')});
