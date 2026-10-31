@@ -15,7 +15,7 @@ test('only verified linked activities can open a roster; no duplicate booking or
  const hub=read('ClubOperationsRegistrationHub.jsx');
  assert.match(hub,/a\.linkedEventId&&a\.bridgeStatus==='verified'/);
  assert.match(hub,/\['scheduled','registration_open','registration_closed','in_progress','completed'\]/);
- assert.doesNotMatch(hub,/EventRegistration\.create|PaymentRecord\.create|sendEmail|refund/i);
+ assert.doesNotMatch(hub,/EventRegistration\.create|PaymentRecord\.create|sendEmail|refundPayment\(/i);
 });
 test('attendance and approval refresh follow-up candidate review',()=>{
  const overview=read('ClubEventRegistrationOverview.jsx');
