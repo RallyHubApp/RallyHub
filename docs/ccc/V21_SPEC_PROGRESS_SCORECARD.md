@@ -1,6 +1,6 @@
 # Club Command Centre v2.1 — provisional implementation progress scorecard
 
-**Assessment date:** 31 October 2026. **Updated after registration-to-attendance reconciliation, manual guest walk-in ledger, post-event follow-up triage and person-linked evidence review.** **Scope:** CCC v2.1 workstreams as tracked in `V21_IMPLEMENTATION_COVERAGE.md`. This is a source-implementation estimate, **not** a passed specification acceptance percentage or a production readiness certificate.
+**Assessment date:** 31 October 2026. **Reassessment:** Tournival delegated-host recovery, scoped roster, atomic session save, mirror divergence and focused scenario tests added on the development branch; production acceptance remains outstanding. **Updated after registration-to-attendance reconciliation, manual guest walk-in ledger, post-event follow-up triage and person-linked evidence review.** **Scope:** CCC v2.1 workstreams as tracked in `V21_IMPLEMENTATION_COVERAGE.md`. This is a source-implementation estimate, **not** a passed specification acceptance percentage or a production readiness certificate.
 
 ## Method
 
@@ -20,13 +20,13 @@ Each of the 17 workstreams below receives equal weight (1/17). Each score is an 
 | Hosts and delegated access | 95 | Host selection and actions use authoritative grants and venue assignment; real Base44 runtime, mobile UAT and cross-module revocation remain |
 | Communications and branding | 73 | Post-event candidate triage and linked-person evidence review integrated; endpoint-hash suppression, approved preview, delivery and provider verification remain |
 | Financial reconciliation | 82 | Refund recovery and paginated linked payment rollups; SumUp settlement remains unverified |
-| Audit and operational health | 72 | Prioritised read-only operations action queue, recurrence/recovery alerts, event close-out readiness and identity flags; durable audit and monitoring remain |
+| Audit and operational health | 75 | Prioritised read-only operations action queue, recurrence/recovery alerts, event close-out readiness and identity flags; durable audit and monitoring remain |
 | Analytics and reporting | 82 | Event and guest attendance/registration CSV exports with personal-data confirmation, formula protection and partial-read warnings; canonical settlement reporting and cross-module exports remain |
-| Sporting formats | 45 | Protected module integration and regression |
-| Base44 performance and resilience | 77 | Bounded recurrence preview, paginated finance, guest attendance concurrent-save guard and stale session response protection; live concurrency/load remain |
+| Sporting formats | 60 | Tournival host command, score immutability, DUPR read-only preflight, delegated access and recovery scenario tests added; full tournament end-to-end acceptance, actual DUPR integration and production runtime remain |
+| Base44 performance and resilience | 80 | Bounded recurrence preview, paginated finance, guest attendance concurrent-save guard and stale session response protection; live concurrency/load remain |
 | A01–A20 acceptance and release gates | 35 | Added recurrence boundary and paginated finance tests; formal A01–A20 traceability and live acceptance remain unpassed |
 
-**Arithmetic:** 1244/17 = **73.2% (rounded to 73%) provisional implementation estimate**. This is an engineering estimate of source coverage, not verified acceptance.
+**Arithmetic:** 1265/17 = **74.4% (rounded to 74%) provisional implementation estimate**. This is an engineering estimate of source coverage, not verified acceptance.
 
 **Critical distinction:** This is an estimate of implementation coverage, not verified feature completion. **A01–A20 full acceptance has not passed.** The current changes are development code only; there has been no authorised production deploy or live SumUp verification.
 
@@ -35,4 +35,4 @@ Each of the 17 workstreams below receives equal weight (1/17). Each score is an 
 - Focused CCC tests and Vite build are reported with the exact most recent run counts in `V21_IMPLEMENTATION_COVERAGE.md`.
 - Mocked SDK tests establish code behaviour in the test harness, not Base44 runtime support or production reliability.
 - Changes to the percentage require a corresponding update to the workstream scores, with new code and test evidence.
-- A signed-off clause-by-clause master specification traceability exercise may materially change this estimate; until then, avoid presenting 73% as a measured contractual completion figure.
+- A signed-off clause-by-clause master specification traceability exercise may materially change this estimate; until then, avoid presenting 74% as a measured contractual completion figure.
