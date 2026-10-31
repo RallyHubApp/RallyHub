@@ -51,6 +51,18 @@
     "updated_by_user_id": {
       "type": "string"
     },
+    "recurrence_batch_key": {
+      "type": "string",
+      "description": "Source draft batch operation key; prevents overlapping creation attempts"
+    },
+    "recurrence_batch_state": {
+      "type": "string",
+      "enum": [
+        "creating",
+        "complete",
+        "needs_recovery"
+      ]
+    },
     "idempotency_key": {
       "type": "string"
     },
