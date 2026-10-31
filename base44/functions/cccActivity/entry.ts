@@ -14,10 +14,35 @@ Deno.serve(async req=>{
  if(req.method!=='POST')return fail('POST required',405);
  try{
   const sdk=createClientFromRequest(req),user=await sdk.auth.me().catch(()=>null);
-  if(!user||user.role!=='admin')return fail('Admin access required',403);
+  if(!user)return fail('Authentication required',403);
   const tenant_id=s(user.active_tenant_id),club_id=s(user.active_club_id);
   if(!tenant_id||!club_id)return fail('Select a club',409);
   const body=await req.json().catch(()=>({})),entity=sdk.asServiceRole.entities.ClubActivity;
+  const hostAction=['host_roster','host_checkin'].includes(body.action);
+  if(user.role!=='admin'&&!hostAction)return fail('Admin access required',403);
+  if(hostAction){
+   const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!record||!record.linked_event_id)return fail('Linked activity not found',404);
+   if(user.role!=='admin'&&(user.approval_status!=='approved'||!await isClubHost(sdk,tenant_id,club_id,record.venue_id,user.id)))return fail('Host access denied',403);
+   const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
+   if(!event)return fail('Linked event unavailable',404);
+   if(body.action==='host_roster'){
+    const registrations=await sdk.asServiceRole.entities.EventRegistration.filter({event_id:event.id,tenant_id,club_id},'-created_date',500);
+    return Response.json({success:true,activityId:id,eventName:event.name||record.title,participants:(registrations||[]).map((r:any)=>({id:r.id,name:r.full_name||'',bookingStatus:r.registration_status||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)})),resultsMayBeTruncated:(registrations||[]).length===500});
+   }
+   if(!['scheduled','registration_open','registration_closed','in_progress','completed'].includes(record.status))return fail('Check-in unavailable for this activity',409);
+   const registrationId=s(body.registrationId),attendance=s(body.attendance),revision=Number(body.expectedRevision);
+   if(!['attended','no_show','excused','not_marked'].includes(attendance)||!Number.isSafeInteger(revision)||revision<0)return fail('Invalid check-in request');
+   const r=(await sdk.asServiceRole.entities.EventRegistration.filter({id:registrationId,event_id:event.id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!r)return fail('Registration not found',404);
+   if(!['confirmed','cash_confirmed'].includes(r.registration_status))return fail('Only confirmed participants can be checked in',409);
+   if(Number(r.attendance_revision||0)!==revision)return fail('Attendance changed; reload',409);
+   const prior=r.attendance_revision===undefined?{$exists:false}:r.attendance_revision;
+   const updated=await sdk.asServiceRole.entities.EventRegistration.updateMany({id:registrationId,event_id:event.id,tenant_id,club_id,attendance_revision:prior},{$set:{attendance_status:attendance,attendance_revision:revision+1,attendance_marked_at:new Date().toISOString(),attendance_marked_by_user_id:user.id}});
+   if(updated.updated!==1)return fail('Attendance changed; reload',409);
+   await audit(sdk,tenant_id,club_id,user.id,'ccc.host.checkin','EventRegistration',registrationId,{attendance:r.attendance_status||'not_marked',revision},{attendance,revision:revision+1});
+   return Response.json({success:true,registrationId,attendance,revision:revision+1});
+  }
   if(body.action==='options'){
    const venueId=s(body.venueId);const venue=venueId?(await sdk.asServiceRole.entities.Venue.filter({id:venueId,tenant_id,club_id,status:'active'},'-created_date',1))?.[0]:null;
    if(venueId&&!venue)return fail('Venue outside active club',403);
