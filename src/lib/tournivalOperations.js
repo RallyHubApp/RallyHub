@@ -106,6 +106,16 @@ export function applyTournivalMatchChange(event,{matches,actor='host',action='co
  if(!Array.isArray(matches)||matches.length!==event.matches.length)throw Error('Match count changed unexpectedly');
  const byId=new Map(event.matches.map(m=>[m.id,m]));
  if(matches.some(m=>!byId.has(m.id)))throw Error('Unknown match');
+ // Court updates must not rewrite a fixture's identity or silently reopen a completed match.
+ for(const next of matches){
+   const prior=byId.get(next.id);
+   if(JSON.stringify(next.teamA)!==JSON.stringify(prior.teamA)||JSON.stringify(next.teamB)!==JSON.stringify(prior.teamB))
+     throw Error('Fixture teams cannot change during court updates');
+   if(prior.status==='completed' && next.status!=='completed')
+     throw Error('Completed match cannot be reopened through court updates');
+   if(prior.status==='completed' && next.court!==prior.court)
+     throw Error('Completed match court cannot be changed');
+ }
  const preflight=inspectSportingFixtures(matches,{courts,requireCheckIn:false});
  if(!preflight.valid)throw Error('Fixture preflight failed: '+preflight.issues.map(issue=>issue.code).join(', '));
  if(event.matches.some(m=>m.status==='completed' && JSON.stringify(matches.find(n=>n.id===m.id)?.result)!==JSON.stringify(m.result)))
