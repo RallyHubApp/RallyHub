@@ -19,7 +19,10 @@ export async function createRecurrenceDraftBatch(entity,{source,manifest,batchKe
   }
   const done=await entity.updateMany({id,tenant_id,club_id,recurrence_batch_key:batchKey,recurrence_batch_state:'creating',revision:revision+1},{$set:{recurrence_batch_state:'complete',revision:revision+2}});
   if(done.updated!==1)throw Error('Completion CAS failed');
-  try{await audit?.(createdIds)}catch(_){return {success:false,reason:'audit_reconciliation_required',createdIds,batchKey}}
+  try{await audit?.(createdIds)}catch(_){
+   try{await entity.updateMany({id,tenant_id,club_id,recurrence_batch_key:batchKey,recurrence_batch_state:'complete',revision:revision+2},{$set:{recurrence_batch_state:'needs_recovery'}})}catch(_){}
+   return {success:false,reason:'audit_reconciliation_required',createdIds,batchKey};
+  }
   return {success:true,createdIds,batchKey,sourceRevision:revision+2,published:false,bookingsOpened:false};
  }catch(_){
   try{await entity.updateMany({id,tenant_id,club_id,recurrence_batch_key:batchKey,recurrence_batch_state:'creating'},{$set:{recurrence_batch_state:'needs_recovery'}})}catch(_){}
