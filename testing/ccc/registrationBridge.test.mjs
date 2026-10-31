@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {registrationBridgePreflight,registrationBridgeStatus} from '../../src/lib/ccc/registrationBridge.js';
+const activity={id:'a',tenant_id:'t',club_id:'c',status:'scheduled',capacity:16};
+const event={id:'e',tenant_id:'t',host_club_id:'c',event_registration_mode:'rallyhub',event_publish_status:'published',event_public_visible:true,event_booking_enabled:true,event_capacity:16,event_fee_amount:5};
+const ready={activity,event,tenantId:'t',clubId:'c',providerReady:true,communicationsReady:true};
+test('verified bridge requires all operational gates',()=>{assert.equal(registrationBridgePreflight(ready).ready,true);assert.equal(registrationBridgeStatus(ready),'verified')});
+test('unlinked bridge is not assumed active',()=>{assert.equal(registrationBridgeStatus({...ready,event:null}),'unlinked');assert.ok(registrationBridgePreflight({...ready,event:null}).issues.includes('event_link_missing'))});
+test('cross tenant or club events cannot be linked',()=>{for(const changed of [{tenant_id:'other'},{host_club_id:'other'}]){const r=registrationBridgePreflight({...ready,event:{...event,...changed}});assert.equal(r.ready,false);assert.ok(r.issues.includes('event_scope_denied'))}});
+test('capacity and published visibility must match',()=>{const r=registrationBridgePreflight({...ready,event:{...event,event_capacity:20,event_public_visible:false}});assert.ok(r.issues.includes('capacity_mismatch'));assert.ok(r.issues.includes('event_not_bookable'))});
+test('paid events need provider, all events need communications',()=>{const r=registrationBridgePreflight({...ready,providerReady:false,communicationsReady:false});assert.ok(r.issues.includes('payment_provider_unavailable'));assert.ok(r.issues.includes('communications_unverified'))});
+test('cannot link unscheduled activity',()=>assert.ok(registrationBridgePreflight({...ready,activity:{...activity,status:'draft'}}).issues.includes('activity_not_scheduled')));
