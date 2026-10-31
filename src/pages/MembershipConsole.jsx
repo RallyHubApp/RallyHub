@@ -234,7 +234,7 @@ export default function MembershipConsole() {
     enabled: canManage
   });
 
-  const { data: dashboardData = { counts: {} }, refetch: refetchDashboard } = useQuery({
+  const { data: dashboardData = { counts: {} }, isError: dashboardError, refetch: refetchDashboard } = useQuery({
     queryKey: ['membership-dashboard-counts', user?.active_tenant_id, user?.active_club_id],
     queryFn: async () => {
       const response = await membershipRead('membershipRecord', { action: 'admin_dashboard_counts' });
@@ -1333,6 +1333,7 @@ export default function MembershipConsole() {
               </div> : null}
             </div>
 
+            {dashboardError && <div role="alert" className="rounded-lg border border-destructive/40 p-3 text-sm"><strong>Verified membership totals unavailable.</strong> The complete ledger could not be read. Do not use the displayed figures for reporting. <Button size="sm" variant="outline" onClick={() => refetchDashboard()}>Retry totals</Button></div>}
             {dashboardData.ledgerCompleteness?.complete === false && <div role="alert" className="rounded-lg border border-amber-500/40 p-3 text-sm">
               <strong>Membership totals may be incomplete.</strong> The backend returned a full or invalid data page; figures below are based only on loaded records. Pagination or a verified server-side count is required before using these totals for reporting.
             </div>}
