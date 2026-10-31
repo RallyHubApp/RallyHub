@@ -10,6 +10,13 @@ Deno.serve(async req=>{
   const tenant_id=s(user.active_tenant_id),club_id=s(user.active_club_id);
   if(!tenant_id||!club_id)return fail('Select a club',409);
   const body=await req.json().catch(()=>({})),entity=sdk.asServiceRole.entities.ClubActivity;
+  if(body.action==='options'){
+   const [users,templates]=await Promise.all([
+    sdk.asServiceRole.entities.User.filter({active_tenant_id:tenant_id,active_club_id:club_id,approval_status:'approved'},'full_name',200),
+    sdk.asServiceRole.entities.CommunicationTemplate.filter({tenant_id,status:'approved',owner_scope:'tenant'},'-updated_date',200)
+   ]);
+   return Response.json({success:true,hosts:(users||[]).filter((u:any)=>u.role==='admin'||u.active_club_role==='club_admin').map((u:any)=>({id:u.id,name:u.full_name||u.name||u.email||u.id})),templates:(templates||[]).filter((t:any)=>!t.club_id||t.club_id===club_id).map((t:any)=>({id:t.id,name:t.name,purpose:t.purpose,version:t.version}))});
+  }
   if(body.action==='list')return Response.json({success:true,activities:await entity.filter({tenant_id,club_id},'-created_date',100)});
   if(body.action==='link_event'){
    const id=s(body.id),event_id=s(body.eventId),revision=Number(body.expectedRevision);
@@ -74,7 +81,16 @@ Deno.serve(async req=>{
   if(!venues?.length)return fail('Venue not in active club',403);
   const registration_mode=s(f.registration_mode||'approval'),payment_method=s(f.payment_method||'none');
   if(!['approval','automatic','closed'].includes(registration_mode)||!['none','cash','online'].includes(payment_method))return fail('Invalid policy');
-  const payload={tenant_id,club_id,sport,type,title,venue_id,starts_at,ends_at,capacity,registration_mode,payment_method,host_user_id:s(f.host_user_id),communication_template_id:s(f.communication_template_id),updated_by_user_id:user.id};
+  const host_user_id=s(f.host_user_id),communication_template_id=s(f.communication_template_id);
+  if(host_user_id){
+   const hosts=await sdk.asServiceRole.entities.User.filter({id:host_user_id,active_tenant_id:tenant_id,active_club_id:club_id,approval_status:'approved'},'-created_date',1);
+   if(!hosts?.length||!(hosts[0].role==='admin'||hosts[0].active_club_role==='club_admin'))return fail('Select an authorised club host',403);
+  }
+  if(communication_template_id){
+   const templates=await sdk.asServiceRole.entities.CommunicationTemplate.filter({id:communication_template_id,tenant_id,owner_scope:'tenant',status:'approved'},'-created_date',1);
+   if(!templates?.length||(templates[0].club_id&&templates[0].club_id!==club_id))return fail('Select an approved club template',403);
+  }
+  const payload={tenant_id,club_id,sport,type,title,venue_id,starts_at,ends_at,capacity,registration_mode,payment_method,host_user_id,communication_template_id,updated_by_user_id:user.id};
   const id=s(body.id),revision=Number(body.expectedRevision);
   if(id){
    const existing=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
