@@ -83,8 +83,13 @@ Deno.serve(async req=>{
    const issue=validatePersonAccessLink(access,person,{tenantId:tenant_id,clubId:club_id,expectedPersonId:personId});
    if(issue)return fail(issue,409);
    if(person.linked_user_id&&person.linked_user_id!==access.user_id)return fail('Person is linked to a different user',409);
-   const conflicting=await sdk.asServiceRole.entities.ClubUserAccess.filter({tenant_id,club_id,user_id:access.user_id,status:'active'},'-created_date',100);
+   const [conflicting,reverseLinks]=await Promise.all([
+    sdk.asServiceRole.entities.ClubUserAccess.filter({tenant_id,club_id,user_id:access.user_id,status:'active'},'-created_date',100),
+    sdk.asServiceRole.entities.ClubUserAccess.filter({tenant_id,club_id,person_id:personId,status:'active'},'-created_date',100)
+   ]);
+   if(conflicting.length>=100||reverseLinks.length>=100)return fail('Identity link review exceeds safe limit',503);
    if(conflicting.some((a:any)=>a.id!==access.id&&a.person_id&&a.person_id!==personId))return fail('User has conflicting active Person links',409);
+   if(reverseLinks.some((a:any)=>a.id!==access.id&&a.user_id!==access.user_id))return fail('Person is already linked to a different user in this club',409);
    if(body.action==='person_link_review')return Response.json({success:true,access:{id:access.id,userId:access.user_id,status:access.status,personId:access.person_id||null},person:{id:person.id,name:person.full_name||'',linkedUserId:person.linked_user_id||null},requiresIndependentIdentityVerification:true,mutationPerformed:false});
    if(body.confirmIdentityVerified!==true||reason.length<12)return fail('Confirm independent identity verification and provide a reason (at least 12 characters)');
    if(access.person_id===personId)return Response.json({success:true,alreadyLinked:true,mutationPerformed:false});
