@@ -1,6 +1,7 @@
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
 import {summariseEventFinance} from './reconciliation.mjs';
 import {isConfiguredHost} from './hostPolicy.mjs';
+import {readEventPayments} from './eventPaymentReader.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -112,12 +113,12 @@ Deno.serve(async req=>{
    if(!event)return fail('Linked event unavailable for this club',404);
    const registrations=await sdk.asServiceRole.entities.EventRegistration.filter({event_id:event.id,tenant_id,club_id},'-created_date',500);
    const registrationIds=(registrations||[]).map((r:any)=>r.id).filter(Boolean);
-   const payments=registrationIds.length?await sdk.asServiceRole.entities.PaymentRecord.filter({tenant_id,club_id,purpose_type:'event',purpose_id:{$in:registrationIds}},'-created_date',500):[];
+   const paymentRead=await readEventPayments(sdk.asServiceRole.entities.PaymentRecord,{tenantId:tenant_id,clubId:club_id,registrationIds});const payments=paymentRead.payments;
    const financeResult=summariseEventFinance(registrations||[],payments||[]);const byRegistration=financeResult.byRegistration;const {byRegistration:_,...finance}=financeResult;
    const rows=(registrations||[]).map((r:any)=>{const p:any=byRegistration.get(r.id);return {id:r.id,name:r.full_name||'',email:r.email||'',mobile:r.mobile||'',status:r.registration_status||'',paymentStatus:p?.payment_status||r.payment_status||'unknown',amount:Number(p?.amount||0),refundedAmount:Number(p?.amount_refunded||0),createdAt:r.created_at||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)}});
    const count=(status:string)=>rows.filter((r:any)=>r.status===status).length;
 
-   return Response.json({success:true,activityId:id,event:{id:event.id,name:event.name||record.title,capacity:Number(event.event_capacity||0),fee:Number(event.event_fee_amount||0),bookingEnabled:!!event.event_booking_enabled},summary:{total:rows.length,pending:count('pending_approval'),confirmed:count('confirmed')+count('cash_confirmed'),waitlisted:count('waitlisted'),cancelled:count('cancelled'),paymentHolds:count('approved_payment_hold'),attended:rows.filter((r:any)=>r.attendance==='attended').length,noShows:rows.filter((r:any)=>r.attendance==='no_show').length,unmarked:rows.filter((r:any)=>['confirmed','cash_confirmed'].includes(r.status)&&r.attendance==='not_marked').length,netCollected:finance.net},finance,registrations:rows,overviewReadOnly:true,resultsMayBeTruncated:(registrations||[]).length===500||(payments||[]).length===500});
+   return Response.json({success:true,activityId:id,event:{id:event.id,name:event.name||record.title,capacity:Number(event.event_capacity||0),fee:Number(event.event_fee_amount||0),bookingEnabled:!!event.event_booking_enabled},summary:{total:rows.length,pending:count('pending_approval'),confirmed:count('confirmed')+count('cash_confirmed'),waitlisted:count('waitlisted'),cancelled:count('cancelled'),paymentHolds:count('approved_payment_hold'),attended:rows.filter((r:any)=>r.attendance==='attended').length,noShows:rows.filter((r:any)=>r.attendance==='no_show').length,unmarked:rows.filter((r:any)=>['confirmed','cash_confirmed'].includes(r.status)&&r.attendance==='not_marked').length,netCollected:finance.net},finance,registrations:rows,overviewReadOnly:true,resultsMayBeTruncated:(registrations||[]).length===500||paymentRead.possiblyTruncated});
   }
   if(body.action==='followup_candidates'){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
