@@ -326,3 +326,23 @@ test('communications readiness is admin-only, tenant and club scoped, and cannot
  assert.equal(JSON.stringify(response.data).includes('PRIVATE OTHER CLUB'),false);
  assert.equal((await makeHarness().call('communications_readiness')).status,403);
 });
+test('delegated host revocation requires review and explicit confirmation, then denies host access',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ const review=await h.call('host_revoke_review',{configId:'cfg'});
+ assert.equal(review.status,200);assert.equal(review.data.affectedHostCount,1);
+ assert.equal(h.db.MembershipVenueHostConfig[0].active,true);
+ assert.equal((await h.call('host_revoke_confirm',{configId:'cfg',reason:'Verified committee decision'})).status,400);
+ const saved=await h.call('host_revoke_confirm',{configId:'cfg',confirmRevocation:true,reason:'Verified committee decision'});
+ assert.equal(saved.status,200);assert.equal(saved.data.mutationPerformed,true);
+ assert.equal(h.db.MembershipVenueHostConfig[0].active,false);
+ assert.equal((await h.call('host_revoke_review',{configId:'cfg'})).status,409);
+ assert.equal(h.db.AuditLog[0].action,'ccc.host.revoke');
+ const host=makeHarness();host.db.MembershipVenueHostConfig[0].active=false;
+ assert.equal((await host.call('host_roster',{id:'a1'})).status,403);
+});
+test('revocation is scoped and non-admins cannot disable host configurations',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.MembershipVenueHostConfig.push({id:'other',tenant_id:'t1',club_id:'c2',active:true,host_emails:['x@y.ie']});
+ assert.equal((await h.call('host_revoke_review',{configId:'other'})).status,409);
+ assert.equal((await makeHarness().call('host_revoke_confirm',{configId:'cfg',confirmRevocation:true,reason:'Committee decision confirmed'})).status,403);
+});
