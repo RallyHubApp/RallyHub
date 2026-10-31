@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readActiveSportCatalogue as read} from '../../base44/functions/membershipRecord/sportCatalogueReader.mjs';
+const rows=Array.from({length:245},(_,i)=>({id:'s'+i,status:'active',name:'Sport '+i}));
+const entity=(data)=>({filter:async(_query,opts)=>{const start=Number(opts.cursor||0);return {items:data.slice(start,start+opts.limit),has_more:start+opts.limit<data.length,next_cursor:String(start+opts.limit)}}});
+test('reads 245 active sports without truncation',async()=>assert.equal((await read(entity(rows))).length,245));
+test('rejects inactive results',async()=>assert.rejects(()=>read(entity([{id:'s',status:'inactive'}])),/scope violation/));
+test('rejects non-cursor responses',async()=>assert.rejects(()=>read({filter:async()=>rows}),/pagination unavailable/));
+test('rejects duplicate conflict',async()=>assert.rejects(()=>read(entity([{id:'s',status:'active',name:'A'},{id:'s',status:'active',name:'B'}]),{pageSize:1}),/Conflicting/));
+test('rejects incomplete inventory at safety cap',async()=>assert.rejects(()=>read(entity(rows),{pageSize:10,maxPages:2}),/verification limit/));
+test('rejects repeated cursor',async()=>assert.rejects(()=>read({filter:async()=>({items:[],has_more:true,next_cursor:'repeat'})}),/cursor stalled/));
