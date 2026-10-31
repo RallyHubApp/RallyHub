@@ -25,3 +25,16 @@ export function assessMembershipPaymentVerification({membership,payment,result}:
  if(status==='paid'&&result?.provider&&result.provider!==payment?.provider)issues.push('provider_mismatch');
  return {allowed:issues.length===0,issues,normalizedStatus:status==='expired'?'failed':status,markMemberPaid:status==='paid'&&issues.length===0};
 }
+/** Prevent verifying an arbitrary checkout when a member has several provider sessions. */
+export function selectMembershipCheckoutForVerification({membership,payments}:any){
+ const issues:string[]=[];
+ if(!membership?.id||!Array.isArray(payments))return {payment:null,issues:['payment_inventory_unavailable']};
+ const scoped=payments.filter((p:any)=>p?.club_membership_id===membership.id&&p.purpose_type==='membership');
+ const paid=scoped.filter((p:any)=>p.payment_status==='paid');
+ if(paid.length>1)issues.push('multiple_settled_payments');
+ if(paid.length===1&&membership.payment_status!=='paid')issues.push('paid_record_membership_out_of_sync');
+ const candidates=scoped.filter((p:any)=>p.provider_checkout_id&&p.provider&&p.payment_status!=='paid'&& !['refunded','refund_pending','chargeback','disputed'].includes(p.payment_status));
+ if(candidates.length>1)issues.push('multiple_checkouts_require_selection');
+ if(candidates.length===0)issues.push('no_verifiable_checkout');
+ return {payment:issues.length===0?candidates[0]:null,issues};
+}
