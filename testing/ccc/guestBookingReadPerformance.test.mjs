@@ -18,3 +18,13 @@ test('booking payment lookups use one club-scoped page with fallback on full pag
  assert.match(src,/paymentPageComplete\|\|indexed\.length/);
  assert.match(src,/PaymentRecord\.filter\(\{tenant_id:tenantId,club_id:clubId,purpose_type:'booking',purpose_id:b\.id\}/);
 });
+
+test('admin list starts independent session, payment and offer reads concurrently',()=>{
+ const start=src.indexOf("if(action==='admin_list')");
+ const end=src.indexOf("if(action==='admin_archive_session'",start);
+ const section=src.slice(start,end);
+ assert.match(section,/const \[sessions,paymentPage,offers\]=await Promise\.all\(\[/);
+ assert.match(section,/GuestSessionLink\.filter\(\{tenant_id:tenantId,club_id:clubId\}/);
+ assert.match(section,/GuestBookingChangeOffer\.filter\(\{tenant_id:tenantId,club_id:clubId\}/);
+ assert.equal((section.match(/GuestBookingChangeOffer\.filter/g)||[]).length,1);
+});
