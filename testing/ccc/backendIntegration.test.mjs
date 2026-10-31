@@ -560,7 +560,7 @@ test('recurrence recovery review is scoped and never changes records',async()=>{
 test('recovery completion requires exact batch, revision and all expected drafts',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  Object.assign(h.db.ClubActivity[0],{status:'draft',linked_event_id:'',recurrence_batch_key:'ccc-batch-12345678',recurrence_batch_state:'needs_recovery',recurrence_expected_count:2,revision:2});
- h.db.ClubActivity.push(...[1,2].map(week=>({id:'child'+week,tenant_id:'t1',club_id:'c1',venue_id:'v1',status:'draft',idempotency_key:'ccc-rec-a1-1-'+week,configuration:{recurrence_source_activity_id:'a1',recurrence_week:week}})));
+ h.db.ClubActivity.push(...[1,2].map(week=>({id:'child'+week,tenant_id:'t1',club_id:'c1',venue_id:'v1',status:'draft',idempotency_key:'ccc-rec-a1-1-'+week,configuration:{recurrence_source_activity_id:'a1',recurrence_source_revision:1,recurrence_week:week}})));
  const input={id:'a1',expectedRevision:2,batchKey:'ccc-batch-12345678',confirm:true};
  assert.equal((await h.call('recurrence_recovery_complete',{...input,confirm:false})).status,400);
  assert.equal((await h.call('recurrence_recovery_complete',{...input,expectedRevision:1})).status,409);
