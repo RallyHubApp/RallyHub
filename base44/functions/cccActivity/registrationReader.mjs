@@ -1,6 +1,6 @@
 /** Base44 v2 cursor pagination: no offset drift or fixed 500-row cut-off. */
-export async function readEventRegistrations(entity,{tenantId,clubId,eventId,pageSize=250,maxPages=40}){
- const query={event_id:eventId,tenant_id:tenantId,club_id:clubId};
+export async function readEventRegistrations(entity,{tenantId,clubId,eventId,extraFilters={},pageSize=250,maxPages=40}){
+ const query={...extraFilters,event_id:eventId,tenant_id:tenantId,club_id:clubId};
  const rows=[];let cursor,hasMore=false,pages=0;
  const seen=new Set();
  do{
