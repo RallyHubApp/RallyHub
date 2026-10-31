@@ -52,3 +52,9 @@ test('missing fixtures fail closed', () => {
   assert.equal(review.valid,false);
   assert.ok(codes(review).includes('fixtures_missing'));
 });
+
+test('malformed team data fails closed instead of crashing the preflight', () => {
+  const review=inspectSportingFixtures([{id:'broken',teamA:'not-an-array',teamB:null,status:'waiting'}],{requireCheckIn:false});
+  assert.equal(review.valid,false);
+  assert.ok(codes(review).includes('invalid_team_structure'));
+});
