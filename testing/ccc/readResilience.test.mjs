@@ -27,3 +27,17 @@ test('membership applications query has a single enabled and stale-time policy',
  assert.equal((section.match(/staleTime: READ_STALE_MS/g)||[]).length,1);
  assert.equal((section.match(/enabled: canManage/g)||[]).length,1);
 });
+
+test('guest admin cache is tenant-and-club scoped and retains prefix invalidation',()=>{
+ const src=readFileSync(new URL('../../src/pages/GuestBookings.jsx',import.meta.url),'utf8');
+ for(const key of ['guest-session-templates','guest-session-admin-list','guest-access-requests']){
+  assert.ok(src.includes("queryKey:['"+key+"',user?.active_tenant_id,user?.active_club_id]"));
+  assert.ok(src.includes("invalidateQueries({queryKey:['"+key+"']"));
+ }
+});
+test('membership host changes and email notifications bypass read timeout wrapper',()=>{
+ const src=readFileSync(new URL('../../src/pages/MembershipConsole.jsx',import.meta.url),'utf8');
+ assert.match(src,/base44\.functions\.invoke\('membershipApplication',\{action:'admin_venue_hosts_set'/);
+ assert.match(src,/base44\.functions\.invoke\('membershipApplication',\{action:'admin_retry_host_notification'/);
+ assert.doesNotMatch(src,/membershipRead\('membershipApplication',\{action:'admin_retry_host_notification'/);
+});
