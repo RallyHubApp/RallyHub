@@ -5,7 +5,7 @@ export default function ClubRecurrencePreview({tenantId,clubId,draft,activityId}
  const [weeks,setWeeks]=useState(4),[result,setResult]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
  const key=[tenantId,clubId,activityId,draft?.venue_id,draft?.court_id,draft?.starts_at,draft?.ends_at].join('|');
  const requestKey=useRef('');requestKey.current=key+'|'+weeks;
- useEffect(()=>{setResult(null);setError('')},[key,weeks]);
+ useEffect(()=>{setResult(null);setError('');setBusy(false)},[key,weeks]);
  const run=async()=>{const requested=requestKey.current;setBusy(true);setError('');setResult(null);try{
   const res=await base44.functions.invoke('cccActivity',{action:'recurrence_review',id:activityId||'',draft:{venue_id:draft?.venue_id,court_id:draft?.court_id,starts_at:draft?.starts_at,ends_at:draft?.ends_at},weeks});
   if(requestKey.current!==requested)return;if(!res.data?.success)throw Error(res.data?.error||'Recurrence review unavailable');setResult(res.data);
