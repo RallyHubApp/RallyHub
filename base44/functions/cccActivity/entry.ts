@@ -121,9 +121,9 @@ Deno.serve(async req=>{
    return Response.json({success:true,...summarisePeopleInventory(access,applications)});
   }
   if(body.action==='management_summary'){
-   const [templateRead,hosts]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.CommunicationTemplate,{tenant_id,owner_scope:'tenant'}),readScopedInventory(sdk.asServiceRole.entities.MembershipVenueHostConfig,{tenant_id,club_id})]);
+   const [templateRead,hosts,venues]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.CommunicationTemplate,{tenant_id,owner_scope:'tenant'}),readScopedInventory(sdk.asServiceRole.entities.MembershipVenueHostConfig,{tenant_id,club_id}),readScopedInventory(sdk.asServiceRole.entities.Venue,{tenant_id,club_id,status:'active'})]);
    const templates={...templateRead,rows:templateRead.rows.filter((t:any)=>!t.club_id||t.club_id===club_id)};
-   return Response.json({success:true,...summariseManagementInventory(templates,hosts)});
+   return Response.json({success:true,...summariseManagementInventory(templates,hosts,venues)});
   }
   if(body.action==='options'){
    const venueId=s(body.venueId);const venue=venueId?(await sdk.asServiceRole.entities.Venue.filter({id:venueId,tenant_id,club_id,status:'active'},'-created_date',1))?.[0]:null;
