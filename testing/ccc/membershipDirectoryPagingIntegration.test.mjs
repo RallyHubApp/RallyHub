@@ -7,4 +7,4 @@ test('member directory cursor-pages all five scoped ledgers',()=>{for(const enti
 test('member directory refuses partial or failed pagination',()=>{assert.match(block,/MEMBERSHIP_DIRECTORY_INCOMPLETE/);assert.match(block,/status:503/);});
 test('configuration capped pages fail closed',()=>{assert.match(block,/readScopedMembershipLedger\(base44\.asServiceRole\.entities\.ClubSport/);assert.match(block,/readScopedMembershipLedger\(base44\.asServiceRole\.entities\.MembershipApplicationConfig/);assert.match(block,/MEMBERSHIP_CONFIG_INCOMPLETE/);});
 
-test('global sports catalogue fails closed at cap rather than hiding sports',()=>{assert.match(block,/allSports.length>=100/);assert.match(block,/GLOBAL_SPORT_INVENTORY_INCOMPLETE/);});
+test('global sports catalogue fails closed at cap rather than hiding sports',()=>{assert.match(block,/readActiveSportCatalogue\(base44\.asServiceRole\.entities\.Sport\)/);assert.match(block,/GLOBAL_SPORT_INVENTORY_INCOMPLETE/);});
