@@ -174,15 +174,16 @@ Deno.serve(async req=>{
   if(body.action==='options'){
    const venueId=s(body.venueId);const venue=venueId?(await sdk.asServiceRole.entities.Venue.filter({id:venueId,tenant_id,club_id,status:'active'},'-created_date',1))?.[0]:null;
    if(venueId&&!venue)return fail('Venue outside active club',403);
-   const [users,templates,events,hostConfigs]=await Promise.all([
+   const [users,templates,events,hostConfigs,courts]=await Promise.all([
     sdk.asServiceRole.entities.User.filter({active_tenant_id:tenant_id,active_club_id:club_id,approval_status:'approved'},'full_name',200),
     sdk.asServiceRole.entities.CommunicationTemplate.filter({tenant_id,status:'approved',owner_scope:'tenant'},'-updated_date',200),
     sdk.asServiceRole.entities.Tournament.filter({tenant_id,host_club_id:club_id,event_registration_mode:'rallyhub'},'-created_date',100),
-    sdk.asServiceRole.entities.MembershipVenueHostConfig.filter({tenant_id,club_id,active:true},'-updated_date',100)
+    sdk.asServiceRole.entities.MembershipVenueHostConfig.filter({tenant_id,club_id,active:true},'-updated_date',100),
+    venueId?sdk.asServiceRole.entities.Court.filter({tenant_id,club_id,venue_id:venueId},'name',200):Promise.resolve([])
    ]);
    const delegated=(u:any)=>!!venue&&isConfiguredHost(hostConfigs,venue,u.email);
    const hosts=(users||[]).filter((u:any)=>u.role==='admin'||u.active_club_role==='club_admin'||delegated(u)).map((u:any)=>({id:u.id,name:u.full_name||u.name||u.email||u.id,delegated:delegated(u)}));
-   return Response.json({success:true,hosts,templates:(templates||[]).filter((t:any)=>!t.club_id||t.club_id===club_id).map((t:any)=>({id:t.id,name:t.name,purpose:t.purpose,version:t.version})),events:(events||[]).map((e:any)=>({id:e.id,name:e.name||e.title||e.id,start_date:e.start_date,capacity:e.event_capacity}))});
+   return Response.json({success:true,hosts,courts:(courts||[]).filter((c:any)=>c.status!=='Maintenance').map((c:any)=>({id:c.id,name:c.name})),templates:(templates||[]).filter((t:any)=>!t.club_id||t.club_id===club_id).map((t:any)=>({id:t.id,name:t.name,purpose:t.purpose,version:t.version})),events:(events||[]).map((e:any)=>({id:e.id,name:e.name||e.title||e.id,start_date:e.start_date,capacity:e.event_capacity}))});
   }
   if(body.action==='schedule_review'){
    const draft=body.draft||{};
