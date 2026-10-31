@@ -552,6 +552,7 @@ test('recurrence source template cannot transition or cancel after claiming a ba
  const h=makeHarness({...records.User[0],role:'admin'});
  Object.assign(h.db.ClubActivity[0],{status:'draft',linked_event_id:'',recurrence_batch_key:'ccc-batch-abcdefgh',recurrence_batch_state:'complete'});
  for(const to of ['ready','cancelled'])assert.equal((await h.call('transition',{id:'a1',to,expectedRevision:1})).status,409);
+ assert.equal((await h.call('link_event',{id:'a1',eventId:'e1',expectedRevision:1})).status,409);
  assert.equal(h.db.ClubActivity[0].status,'draft');
 });
 test('recurring child cannot become ready until its source batch is complete',async()=>{
