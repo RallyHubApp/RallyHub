@@ -22,12 +22,12 @@
 | Base44 performance / resilience | `readResilience.js`; guest/membership backend query batching and indexing | Source-level improvements; load/429/timeout tests and actual latency benchmarks outstanding |
 | Release gates A01–A20 | Focused `testing/ccc` tests and existing regression scripts | **Not passed**; requires full mapping to master spec, browser/mobile/role and failure-injection evidence |
 
-**Provisional implementation coverage:** **65%**, from 17 equally weighted workstream estimates in `V21_SPEC_PROGRESS_SCORECARD.md`. This is **not** formal A01–A20 acceptance or production readiness.
+**Provisional implementation coverage:** **67%**, from 17 equally weighted workstream estimates in `V21_SPEC_PROGRESS_SCORECARD.md`. This is **not** formal A01–A20 acceptance or production readiness.
 
 ## Current evidence and next implementation order
 
 - **Implemented in source:** `ClubActivity` schema; `cccActivity` save/list/transition/preflight/link operations; activity planner controls; `registrationBridge.js` policy; existing `eventRegistration` booking, SumUp and notification workflows.
-- **Verified in sandbox:** 312 focused CCC tests passing and frontend build successful in the latest sandbox run; includes mocked backend handler tests for delegated access, cross-club isolation, attendance revision/audit, scoped finance and batch-query behaviour. These tests do not establish backend deployment or integration acceptance.
+- **Verified in sandbox:** 319 focused CCC tests passing and frontend build successful in the latest sandbox run; includes mocked backend handler tests for delegated access, cross-club isolation, attendance revision/audit, scoped finance and batch-query behaviour. These tests do not establish backend deployment or integration acceptance.
 - **Priority 1:** Verify Base44 SDK/entity semantics in an isolated tenant. Mocked backend handler tests now cover tenant/club authority, host revocation, attendance CAS, event-scoped finance and request validation; live SDK query operators, concurrency and audit durability remain unverified.
 - **Priority 2:** Existing event linking now checks exact venue ID, approved club template, authorised host, date, capacity and payment policy. Verify legacy venue-ID mappings and real records before any activation; keep public registration closed until fully verified.
 - **Priority 3:** Validate `cccActivity.registration_overview` and `mark_attendance` against an isolated test tenant, including first-write attendance CAS and concurrent updates; validate delegated approval/verification actions, tenant scope, SumUp payment holds, webhooks, email delivery, waitlists and refunds without live transactions. Verify new Base44 v2 cursor pagination and batched payment reads in an isolated runtime, and performance-test the new continuation interface for datasets exceeding the initial 1,000-row request bound; host discovery now cursor-pages beyond its previous 100-activity limit.
