@@ -463,3 +463,16 @@ test('host picker excludes ungranted users even when their profile claims club_a
  const r=await h.call('options',{venueId:'v1'});
  assert.equal(r.status,200);assert.equal(r.data.hosts.some(u=>u.id==='ungranted'),false);
 });
+test('weekly recurrence preview requires admin grant and does not write activities',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ const before=JSON.stringify(h.db);
+ const r=await h.call('recurrence_review',{weeks:4,draft:{venue_id:'v1',court_id:'court1',starts_at:'2026-11-02T19:00',ends_at:'2026-11-02T20:30'}});
+ assert.equal(r.status,200);assert.equal(r.data.occurrences.length,4);
+ assert.equal(r.data.mutationPerformed,false);assert.equal(JSON.stringify(h.db),before);
+ assert.equal((await makeHarness().call('recurrence_review',{weeks:4})).status,403);
+});
+test('weekly recurrence preview rejects court outside the selected venue',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ const r=await h.call('recurrence_review',{weeks:4,draft:{venue_id:'v1',court_id:'foreign',starts_at:'2026-11-02T19:00',ends_at:'2026-11-02T20:30'}});
+ assert.equal(r.status,409);
+});
