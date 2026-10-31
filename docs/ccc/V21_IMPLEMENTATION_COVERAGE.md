@@ -1,6 +1,6 @@
 # Club Command Centre v2.1 — implementation and release coverage
 
-**Status:** Development inventory, not an acceptance certificate. Source: CCC v2.1 master specification discussed with the owner, alongside the repository Software Control Master and Master Testing Blueprint. The protected modules remain authoritative. **No production deployment authorised by this file.**
+**Status:** Development inventory and verification tracker, not an acceptance certificate. Source: CCC v2.1 master specification discussed with the owner, alongside the repository Software Control Master and Master Testing Blueprint. The protected modules remain authoritative. **No production deployment authorised by this file.**
 
 | Specification workstream | Current implementation evidence | Status / next acceptance requirement |
 |---|---|---|
