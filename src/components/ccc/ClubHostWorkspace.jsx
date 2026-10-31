@@ -15,6 +15,8 @@ export default function ClubHostWorkspace({tenantId,clubId}){
  const enabled=!!tenantId&&!!clubId;
  const activities=useQuery({queryKey:['ccc-host-activities',tenantId,clubId],queryFn:async()=>{const r=await base44.functions.invoke('cccActivity',{action:'host_activities'});if(!r.data?.success)throw Error(r.data?.error||'Host activities unavailable');return r.data},enabled,retry:false,staleTime:30000});
  const selected=activityId&&activities.data?.activities?.some(a=>a.id===activityId)?activityId:'';
+ const scopeKey=[tenantId,clubId,selected].join('|');
+ const scopeRef=useRef('');scopeRef.current=scopeKey;
  useEffect(()=>{setExtraRows([]);setCursor(undefined);setSearch('');},[selected,tenantId,clubId]);
  const roster=useQuery({queryKey:['ccc-host-roster',tenantId,clubId,selected],queryFn:async()=>{const r=await base44.functions.invoke('cccActivity',{action:'host_roster',id:selected});if(!r.data?.success)throw Error(r.data?.error||'Host roster unavailable');return r.data},enabled:!!selected&&enabled,retry:false,staleTime:10000});
  const nextCursor=cursor===undefined?roster.data?.nextCursor:cursor;
