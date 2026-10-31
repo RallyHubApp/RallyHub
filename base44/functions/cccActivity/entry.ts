@@ -123,7 +123,7 @@ Deno.serve(async req=>{
    const registrations=await sdk.asServiceRole.entities.EventRegistration.filter({event_id:event.id,tenant_id,club_id},'-created_date',500);
    const registrationIds=(registrations||[]).map((r:any)=>r.id).filter(Boolean);
    const paymentRead=await readEventPayments(sdk.asServiceRole.entities.PaymentRecord,{tenantId:tenant_id,clubId:club_id,registrationIds});const payments=paymentRead.payments;
-   const financeResult=summariseEventFinance(registrations||[],payments||[]);const byRegistration=financeResult.byRegistration;const {byRegistration:_,...finance}=financeResult;
+   const financeResult=summariseEventFinance(registrations||[],payments||[]);const byRegistration=financeResult.byRegistration;const {byRegistration:_,...finance}=financeResult;finance.complete=(registrations||[]).length<500&&!paymentRead.possiblyTruncated;finance.requiresReview=!finance.complete||finance.anomalies.length>0;
    const rows=(registrations||[]).map((r:any)=>{const p:any=byRegistration.get(r.id);return {id:r.id,name:r.full_name||'',email:r.email||'',mobile:r.mobile||'',status:r.registration_status||'',paymentStatus:p?.payment_status||r.payment_status||'unknown',amount:Number(p?.amount||0),refundedAmount:Number(p?.amount_refunded||0),createdAt:r.created_at||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)}});
    const count=(status:string)=>rows.filter((r:any)=>r.status===status).length;
 
