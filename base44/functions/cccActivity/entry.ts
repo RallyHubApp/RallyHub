@@ -266,7 +266,7 @@ Deno.serve(async req=>{
    if(!id||!Number.isSafeInteger(revision)||!/^ccc-batch-[a-zA-Z0-9_-]{8,80}$/.test(batchKey))return fail('Invalid batch request');
    const source=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!source||source.revision!==revision)return fail('Source draft changed',409);
-   const result=await createScopedRecurrenceDrafts(sdk,{source,tenantId:tenant_id,clubId:club_id,weeks:body.weeks,batchKey,userId:user.id,audit:async ids=>audit(sdk,tenant_id,club_id,user.id,'ccc.recurrence.drafts_created','ClubActivity',id,{revision},{batchKey,count:ids.length})});
+   const result=await createScopedRecurrenceDrafts(sdk,{source,tenantId:tenant_id,clubId:club_id,weeks:body.weeks,batchKey,userId:user.id,audit:async ids=>sdk.asServiceRole.entities.AuditLog.create({tenant_id,club_id,user_id:user.id,action:'ccc.recurrence.drafts_created',entity_type:'ClubActivity',entity_id:id,scope_type:'club',scope_id:club_id,before_state:JSON.stringify({revision}),after_state:JSON.stringify({batchKey,count:ids.length})})});
    return Response.json(result,{status:result.success?200:409});
   }
   if(body.action==='recurrence_manifest'){
