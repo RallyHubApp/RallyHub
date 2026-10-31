@@ -90,7 +90,7 @@ Deno.serve(async req=>{
    if(access.person_id===personId)return Response.json({success:true,alreadyLinked:true,mutationPerformed:false});
    const result=await sdk.asServiceRole.entities.ClubUserAccess.updateMany({id:accessId,tenant_id,club_id,status:'active',person_id:{$exists:false}},{$set:{person_id:personId}});
    if(result.updated!==1)return fail('Access link changed; reload review',409);
-   await audit(sdk,tenant_id,club_id,user.id,'ccc.person.link','ClubUserAccess',accessId,{person_id:null},{person_id:personId,verification_reason:reason});
+   await audit(sdk,tenant_id,club_id,user.id,'ccc.person.link','ClubUserAccess',accessId,{person_id:null},{person_id:personId,verification_confirmed:true});
    return Response.json({success:true,accessId,personId,mutationPerformed:true});
   }
   if(body.action==='host_venue_review'||body.action==='host_venue_confirm'){
@@ -108,7 +108,7 @@ Deno.serve(async req=>{
    if(config.venue_id===venueId)return Response.json({success:true,alreadyMapped:true,mutationPerformed:false});
    const result=await sdk.asServiceRole.entities.MembershipVenueHostConfig.updateMany({id:configId,tenant_id,club_id,active:true,venue_id:{$exists:false}},{$set:{venue_id:venueId,updated_by_user_id:user.id,updated_at:new Date().toISOString()}});
    if(result.updated!==1)return fail('Venue mapping changed; reload review',409);
-   await audit(sdk,tenant_id,club_id,user.id,'ccc.host.venue_map','MembershipVenueHostConfig',configId,{venue_id:null,venue_key:config.venue_key},{venue_id:venueId,verification_reason:reason});
+   await audit(sdk,tenant_id,club_id,user.id,'ccc.host.venue_map','MembershipVenueHostConfig',configId,{venue_id:null,venue_key:config.venue_key},{venue_id:venueId,verification_confirmed:true});
    return Response.json({success:true,configId,venueId,mutationPerformed:true});
   }
   if(body.action==='people_summary'){
