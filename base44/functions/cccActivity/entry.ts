@@ -146,8 +146,10 @@ Deno.serve(async req=>{
    const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
    if(!event)return fail('Linked event unavailable',404);
    const read=await readEventRegistrations(sdk.asServiceRole.entities.EventRegistration,{tenantId:tenant_id,clubId:club_id,eventId:event.id,startCursor:cursor,pageSize:250,maxPages:1});
-   const rows=read.registrations.map((r:any)=>({id:r.id,name:r.full_name||'',email:r.email||'',mobile:r.mobile||'',status:r.registration_status||'',paymentStatus:'not_loaded',amount:0,refundedAmount:0,createdAt:r.created_at||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)}));
-   return Response.json({success:true,activityId:id,registrations:rows,nextCursor:read.nextCursor,hasMore:read.hasMore,financeNotIncluded:true});
+   const paymentRead=await readEventPayments(sdk.asServiceRole.entities.PaymentRecord,{tenantId:tenant_id,clubId:club_id,registrationIds:read.registrations.map((r:any)=>r.id)});
+   const financeResult=summariseEventFinance(read.registrations,paymentRead.payments);const byRegistration=financeResult.byRegistration;
+   const rows=read.registrations.map((r:any)=>{const p:any=byRegistration.get(r.id);return {id:r.id,name:r.full_name||'',email:r.email||'',mobile:r.mobile||'',status:r.registration_status||'',paymentStatus:p?.payment_status||r.payment_status||'unknown',amount:Number(p?.amount||0),refundedAmount:Number(p?.amount_refunded||0),createdAt:r.created_at||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)}});
+   return Response.json({success:true,activityId:id,registrations:rows,nextCursor:read.nextCursor,hasMore:read.hasMore,financeNotIncluded:paymentRead.possiblyTruncated,paymentReviewRequired:paymentRead.possiblyTruncated||financeResult.anomalies.length>0});
   }
   if(body.action==='followup_candidates'){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
