@@ -3,6 +3,7 @@ import {summariseEventFinance} from './reconciliation.mjs';
 import {isConfiguredHost} from './hostPolicy.mjs';
 import {readEventPayments} from './eventPaymentReader.mjs';
 import {readEventRegistrations} from './registrationReader.mjs';
+import {readScopedActivities} from './activityReader.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -26,7 +27,7 @@ Deno.serve(async req=>{
   if(user.role!=='admin'&&!hostAction)return fail('Admin access required',403);
   if(body.action==='host_activities'){
    if(user.role!=='admin'&&user.approval_status!=='approved')return fail('Host access denied',403);
-   const activities=await entity.filter({tenant_id,club_id},'-starts_at',100);
+   const activityRead=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});const activities=activityRead.activities;
    const active=(activities||[]).filter((a:any)=>a.linked_event_id&&['scheduled','registration_open','registration_closed','in_progress'].includes(a.status));
    let allowed=active;
    if(user.role!=='admin'){
@@ -38,7 +39,7 @@ Deno.serve(async req=>{
     const host=users?.[0],byVenue=new Map((venues||[]).map((v:any)=>[v.id,v]));
     allowed=host?active.filter((a:any)=>{const venue=byVenue.get(a.venue_id);return venue&&(host.active_club_role==='club_admin'||isConfiguredHost(configs,venue,host.email));}):[];
    }
-   return Response.json({success:true,activities:allowed.map((a:any)=>({id:a.id,title:a.title,startsAt:a.starts_at,status:a.status,venueId:a.venue_id})),resultsMayBeTruncated:(activities||[]).length===100});
+   return Response.json({success:true,activities:allowed.map((a:any)=>({id:a.id,title:a.title,startsAt:a.starts_at,status:a.status,venueId:a.venue_id})),resultsMayBeTruncated:!activityRead.complete});
   }
   if(hostAction){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
