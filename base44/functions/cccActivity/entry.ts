@@ -12,6 +12,7 @@ import {readScopedInventory,summarisePeopleInventory,summariseManagementInventor
 import {validateHostVenueMapping,validatePersonAccessLink} from './managementActions.mjs';
 import {communicationReadiness} from './communicationReadiness.mjs';
 import {reviewHostRevocation} from './hostRevocation.mjs';
+import {activityScheduleConflicts} from './activitySchedulePolicy.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -298,6 +299,13 @@ Deno.serve(async req=>{
    if(!Number.isSafeInteger(revision)||record.revision!==revision)return fail('Activity changed; reload',409);
    const allowed:any={draft:['ready','cancelled'],ready:['draft','scheduled','cancelled'],scheduled:['registration_open','registration_closed','in_progress','cancelled'],registration_open:['registration_closed','in_progress','cancelled'],registration_closed:['registration_open','in_progress','cancelled'],in_progress:['completed','cancelled'],completed:['archived'],cancelled:['archived']};
    if(!allowed[record.status]?.includes(to))return fail('Transition unavailable until downstream workflows are connected',409);
+   if(['ready','scheduled'].includes(to)){
+    const schedule=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});
+    if(!schedule.complete)return fail('Schedule review incomplete; cannot advance activity',503);
+    const checked=activityScheduleConflicts(record,schedule.activities);
+    if(!checked.valid)return fail('Invalid schedule',409);
+    if(checked.conflicts.length)return fail('Venue has an overlapping active activity',409);
+   }
    if(['ready','scheduled','registration_open','in_progress'].includes(to)){
     const venue=(await sdk.asServiceRole.entities.Venue.filter({id:record.venue_id,tenant_id,club_id,status:'active'},'-created_date',1))?.[0];
     if(!venue)return fail('Club venue is no longer active',409);
