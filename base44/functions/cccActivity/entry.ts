@@ -159,6 +159,13 @@ Deno.serve(async req=>{
    const hosts=(users||[]).filter((u:any)=>u.role==='admin'||u.active_club_role==='club_admin'||delegated(u)).map((u:any)=>({id:u.id,name:u.full_name||u.name||u.email||u.id,delegated:delegated(u)}));
    return Response.json({success:true,hosts,templates:(templates||[]).filter((t:any)=>!t.club_id||t.club_id===club_id).map((t:any)=>({id:t.id,name:t.name,purpose:t.purpose,version:t.version})),events:(events||[]).map((e:any)=>({id:e.id,name:e.name||e.title||e.id,start_date:e.start_date,capacity:e.event_capacity}))});
   }
+  if(body.action==='schedule_review'){
+   const draft=body.draft||{};
+   const candidate={id:s(body.id),tenant_id,club_id,venue_id:s(draft.venue_id),starts_at:s(draft.starts_at),ends_at:s(draft.ends_at)};
+   const schedule=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});
+   const checked=activityScheduleConflicts(candidate,schedule.activities);
+   return Response.json({success:true,valid:checked.valid,conflicts:checked.conflicts,complete:schedule.complete,ready:checked.valid&&schedule.complete&&checked.conflicts.length===0,mutationPerformed:false});
+  }
   if(body.action==='operations_summary'){
    const result=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});
    return Response.json({success:true,...summariseClubOperations(result.activities,{complete:result.complete})});
