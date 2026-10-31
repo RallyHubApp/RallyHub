@@ -17,6 +17,12 @@ test('invalid schedule and past open activities are flagged',()=>{
  assert.ok(result.alerts.some(x=>x.code==='invalid_schedule'));
  assert.ok(result.alerts.some(x=>x.code==='past_activity_not_closed'));
 });
+test('unfinished recurrence batches surface on the operations board',()=>{
+ const result=summariseClubOperations([row('a','draft',{recurrence_batch_key:'batch',recurrence_batch_state:'needs_recovery',recurrence_expected_count:2}),row('b','draft',{recurrence_batch_key:'batch2',recurrence_batch_state:'creating',recurrence_expected_count:0})]);
+ assert.ok(result.alerts.some(a=>a.code==='recurrence_batch_needs_recovery'));
+ assert.ok(result.alerts.some(a=>a.code==='recurrence_batch_creation_unverified'));
+ assert.ok(result.alerts.some(a=>a.code==='recurrence_expected_count_invalid'));
+});
 test('partial activity reads are prominently marked',()=>{
  const result=summariseClubOperations([row('a')],{complete:false});
  assert.equal(result.complete,false);assert.equal(result.resultsMayBeTruncated,true);
