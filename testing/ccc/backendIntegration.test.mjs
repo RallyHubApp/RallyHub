@@ -42,7 +42,7 @@ const records={
  MembershipVenueHostConfig:[{id:'cfg',tenant_id:'t1',club_id:'c1',venue_key:'ennistymon',active:true,host_emails:['host@example.ie']}],
  Person:[{id:'p1',tenant_id:'t1',full_name:'Player One'}],
  TenantUserAccess:[],
- ClubActivity:[{id:'a1',tenant_id:'t1',club_id:'c1',venue_id:'v1',title:'Wednesday play',starts_at:'2026-11-04T19:00:00',status:'scheduled',linked_event_id:'e1',revision:1}],
+ ClubActivity:[{id:'a1',tenant_id:'t1',club_id:'c1',venue_id:'v1',title:'Wednesday play',starts_at:'2026-11-04T19:00:00',ends_at:'2026-11-04T20:30:00',status:'scheduled',linked_event_id:'e1',revision:1}],
  Tournament:[{id:'e1',tenant_id:'t1',host_club_id:'c1',name:'Wednesday play',event_capacity:16,event_registration_mode:'rallyhub'}],
  EventRegistration:[{id:'r1',event_id:'e1',tenant_id:'t1',club_id:'c1',full_name:'Player One',email:'private@example.ie',medical_note:'private',registration_status:'confirmed',attendance_status:'not_marked'}],
  GuestSessionLink:[],MembershipApplicationConfig:[],ClubPolicy:[],ClubLegalDocument:[],PaymentGatewayAccount:[],
