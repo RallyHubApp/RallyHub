@@ -1,6 +1,6 @@
 # Club Command Centre v2.1 — provisional implementation progress scorecard
 
-**Assessment date:** 31 October 2026. **Scope:** CCC v2.1 workstreams as tracked in `V21_IMPLEMENTATION_COVERAGE.md`. This is a source-implementation estimate, **not** a passed specification acceptance percentage or a production readiness certificate.
+**Assessment date:** 31 October 2026. **Updated after operations board and delegated host roster continuation implementation.** **Scope:** CCC v2.1 workstreams as tracked in `V21_IMPLEMENTATION_COVERAGE.md`. This is a source-implementation estimate, **not** a passed specification acceptance percentage or a production readiness certificate.
 
 ## Method
 
@@ -10,23 +10,23 @@ Each of the 17 workstreams below receives equal weight (1/17). Each score is an 
 |---|---:|---|
 | Multi-tenant / club / sport boundary | 45 | Actual role/RLS runtime isolation |
 | Canonical Person / membership identity | 20 | Explicit canonical linking and consent |
-| Command Centre overview/navigation | 40 | Integrated native CCC workflows |
+| Command Centre overview/navigation | 55 | Full dedicated People/Activities/Operations/Management routing and mobile UAT |
 | Activity types and lifecycle | 60 | End-to-end activation, recurrence, live persistence |
 | Sessions / calendar | 35 | Scheduling and capacity controls |
 | Registration / booking | 65 | Live provider/runtime and edge-case acceptance |
 | Guest eligibility | 45 | End-to-end venue/experience policy |
 | Membership and payment journeys | 50 | Journey parity and provider verification |
 | Attendance and post-session | 55 | Mobile UAT and consent-cleared follow-up |
-| Hosts and delegated access | 60 | Actual venue mapping, host UAT and revocation |
+| Hosts and delegated access | 70 | Actual venue mapping, host UAT and revocation |
 | Communications and branding | 30 | All outbound routes and consent/suppression |
 | Financial reconciliation | 55 | SumUp settlement and failure recovery |
 | Audit and operational health | 40 | Durable audit, alerting, monitoring |
-| Analytics and reporting | 35 | Canonical metrics and reconciled totals |
+| Analytics and reporting | 45 | Full canonical metrics and reconciled financial totals |
 | Sporting formats | 45 | Protected module integration and regression |
-| Base44 performance and resilience | 45 | Real concurrency, load, timeouts, SDK behaviour |
+| Base44 performance and resilience | 50 | Real concurrency, load, timeouts, SDK behaviour |
 | A01–A20 acceptance and release gates | 15 | Formal traceability and full live acceptance |
 
-**Arithmetic:** 740/17 = **43.5%, rounded to 44% implementation estimate**.
+**Arithmetic:** 780/17 = **45.9%, rounded to 46% implementation estimate**.
 
 **Critical distinction:** This is an estimate of implementation coverage, not verified feature completion. **A01–A20 full acceptance has not passed.** The current changes are development code only; there has been no authorised production deploy or live SumUp verification.
 
