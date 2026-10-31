@@ -17,12 +17,12 @@ const initial={
  PaymentRecord:[{id:'p1',tenant_id:'t1',club_id:'c1',purpose_type:'event',purpose_id:'r1',payment_status:'paid',amount:10,amount_refunded:0,provider:'sumup',provider_transaction_id:'tx1',provider_checkout_id:'checkout1'}],
  PaymentRefund:[],PaymentGatewayAccount:[{id:'gateway',tenant_id:'t1',club_id:'c1',provider:'sumup',status:'connected',is_default:true}],ClubLegalDocument:[],CommunicationBrandKit:[],Club:[]
 };
-const matches=(row,query)=>Object.entries(query||{}).every(([key,value])=>value&&typeof value==='object'&&'$in'in value?value.$in.includes(row[key]):row[key]===value);
+const matches=(row,query)=>Object.entries(query||{}).every(([key,value])=>value&&typeof value==='object'&&'$in'in value?value.$in.includes(row[key]):value&&typeof value==='object'&&'$lt'in value?Number(row[key])<value.$lt:value&&typeof value==='object'&&'$gt'in value?Number(row[key])>value.$gt:value===null?row[key]==null:row[key]===value);
 function harness({user={id:'admin',role:'admin',active_tenant_id:'t1',active_club_id:'c1'},refundResult={refundId:'provider-refund',providerStatus:'REFUNDED'},lockAllowed=true}={}){
  const db=structuredClone(initial),calls={refund:0,notice:0,locks:0,reads:{}};
  const entities=Object.fromEntries(Object.entries(db).map(([name,records])=>[name,{
   filter:async(query={},sort,limit)=>{calls.reads[name]=(calls.reads[name]||0)+1;const rows=records.filter(r=>matches(r,query));if(sort&&typeof sort==='object'){const start=Number(sort.cursor||0),end=start+(sort.limit||200);return {items:rows.slice(start,end),has_more:end<rows.length,next_cursor:end<rows.length?String(end):null}}return rows.slice(0,limit||1000)},
-  updateMany:async(query,patch)=>{calls.locks++;if(!lockAllowed)return {updated:0};let updated=0;for(const row of records)if(matches(row,query)){Object.assign(row,patch.$set||{});updated++}return {updated}},
+  updateMany:async(query,patch)=>{calls.locks++;if(!lockAllowed)return {updated:0};let updated=0;for(const row of records)if(matches(row,query)){Object.assign(row,patch.$set||{});for(const [k,v] of Object.entries(patch.$inc||{}))row[k]=Number(row[k]||0)+v;updated++}return {updated}},
   update:async(id,patch)=>{const row=records.find(r=>r.id===id);if(!row)throw Error('Record missing');Object.assign(row,patch);return row},
   create:async(record)=>{const saved={...record,id:'new'+(records.length+1)};records.push(saved);return saved},
   get:async(id)=>records.find(r=>r.id===id)
