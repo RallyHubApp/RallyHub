@@ -236,6 +236,14 @@ Deno.serve(async req=>{
    const occurrences=local.occurrences.map((o:any,i:number)=>({...o,legacyOverlaps:legacyReview.occurrences[i]?.legacyOverlaps||[],legacyUnmapped:legacyReview.occurrences[i]?.legacyUnmapped||[]}));
    return Response.json({success:true,...ccc,occurrences,ready:ccc.ready&&legacyReview.ready&&local.ready,localTimeIssues:local.issues,timezone:local.timezone,daylightSavingChecked:true,legacySessionInventoryComplete:legacy.complete,legacyConflictedWeeks:legacyReview.conflictedWeeks,legacyUnmappedWeeks:legacyReview.unmappedWeeks,legacySessionCheckAdvisory:true});
   }
+  if(body.action==='recurrence_create_drafts'){
+   const id=s(body.id),revision=Number(body.expectedRevision),batchKey=s(body.batchKey,120);
+   if(!id||!Number.isSafeInteger(revision)||!/^ccc-batch-[a-zA-Z0-9_-]{8,80}$/.test(batchKey))return fail('Invalid batch request');
+   const source=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!source||source.revision!==revision)return fail('Source draft changed',409);
+   const result=await createScopedRecurrenceDrafts(sdk,{source,tenantId:tenant_id,clubId:club_id,weeks:body.weeks,batchKey,userId:user.id,audit:async ids=>audit(sdk,tenant_id,club_id,user.id,'ccc.recurrence.drafts_created','ClubActivity',id,{revision},{batchKey,count:ids.length})});
+   return Response.json(result,{status:result.success?200:409});
+  }
   if(body.action==='recurrence_manifest'){
    const id=s(body.id),revision=Number(body.expectedRevision);
    const source=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
