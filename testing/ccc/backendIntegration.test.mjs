@@ -19,9 +19,9 @@ const records={
 };
 const matches=(item,query)=>Object.entries(query).every(([k,v])=>v&&typeof v==='object'&&'$in'in v?v.$in.includes(item[k]):v&&typeof v==='object'&&'$exists'in v?(v.$exists?item[k]!==undefined:item[k]===undefined):item[k]===v);
 function makeHarness(user=records.User[0]){
- const db=structuredClone(records);
+ const db=structuredClone(records);const reads={};
  const entities=Object.fromEntries(Object.keys(db).map(name=>[name,{
-  filter:async(query={},sort,limit)=>db[name].filter(row=>matches(row,query)).slice(0,limit||1000),
+  filter:async(query={},sort,limit)=>{reads[name]=(reads[name]||0)+1;return db[name].filter(row=>matches(row,query)).slice(0,limit||1000)},
   updateMany:async(query,patch)=>{let updated=0;for(const row of db[name])if(matches(row,query)){Object.assign(row,patch.$set||{});updated++}return {updated}},
   create:async(record)=>{db[name].push(record);return record}
  }]));
@@ -29,7 +29,7 @@ function makeHarness(user=records.User[0]){
  const sdk={auth:{me:async()=>user},asServiceRole:{entities}};
  vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,Response,Date,console});
  const call=async(action,fields={})=>{const response=await handler({method:'POST',json:async()=>({action,...fields})});return {status:response.status,data:await response.json()}};
- return {call,db};
+ return {call,db,reads};
 }
 test('delegated host lists assigned activities and sees only confirmed names',async()=>{
  const h=makeHarness();
@@ -37,6 +37,13 @@ test('delegated host lists assigned activities and sees only confirmed names',as
  const roster=await h.call('host_roster',{id:'a1'});assert.equal(roster.status,200);assert.equal(roster.data.participants[0].name,'Player One');
  assert.equal(JSON.stringify(roster.data).includes('private@example.ie'),false);
  assert.equal(JSON.stringify(roster.data).includes('medical_note'),false);
+});
+test('host activity discovery uses batched lookups, not one query per activity',async()=>{
+ const h=makeHarness();
+ for(let i=0;i<30;i++)h.db.ClubActivity.push({...h.db.ClubActivity[0],id:'a'+(i+2)});
+ const result=await h.call('host_activities');
+ assert.equal(result.data.activities.length,31);
+ assert.equal(h.reads.User,1);assert.equal(h.reads.Venue,1);assert.equal(h.reads.MembershipVenueHostConfig,1);
 });
 test('delegated host is denied admin options and cross-club activity access',async()=>{
  const h=makeHarness();
