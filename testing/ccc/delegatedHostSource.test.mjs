@@ -10,7 +10,7 @@ test('delegated host must be approved and venue-scoped',()=>{
  assert.match(backend,/const isClubHost=async/);
  assert.match(backend,/MembershipVenueHostConfig\.filter\(\{tenant_id,club_id,active:true\}/);
  assert.match(backend,/active_tenant_id:tenant_id,active_club_id:club_id,approval_status:'approved'/);
- assert.match(backend,/norm\(c\.venue_key\)===norm\(venue\.name\)/);
+ assert.match(backend,/isConfiguredHost\(configs,venue,host\.email\)/);
  assert.match(backend,/user\.approval_status!=='approved'/);
 });
 test('non-admins can only use explicitly authorised host actions',()=>{
