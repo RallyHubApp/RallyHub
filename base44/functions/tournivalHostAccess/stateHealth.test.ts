@@ -10,3 +10,5 @@ Deno.test('malformed JSON reported safely',()=>assert.equal(check({...session(),
 Deno.test('cross-tenant session mirror mismatch detected',()=>assert.equal(check(session(),{...tournament(),tenant_id:'other'}).healthy,false));
 Deno.test('duplicate match identities detected',()=>{const s=session();s.state_json=JSON.stringify({...state,matches:[{id:'m1'},{id:'m1'}]});assert.equal(check(s,tournament()).issues.includes('session_match_ids_invalid'),true);});
 Deno.test('missing tournament mirror is review only',()=>{const x=check(session(),{...tournament(),tournival_state:null});assert.equal(x.automaticRepair,false);assert.equal(x.requiresReconciliation,true);});
+
+Deno.test('equal revision but different scores is not healthy',()=>{const t=tournament();t.tournival_state=JSON.stringify({...state,results:{1:{1:{scoreA:9,scoreB:4,winner:'A'}}}});assert.equal(check(session(),t).issues.includes('tournament_mirror_content_mismatch'),true);});
