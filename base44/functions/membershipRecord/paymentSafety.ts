@@ -38,3 +38,18 @@ export function selectMembershipCheckoutForVerification({membership,payments}:an
  if(candidates.length===0)issues.push('no_verifiable_checkout');
  return {payment:issues.length===0?candidates[0]:null,issues};
 }
+/** Read-only financial integrity summary for administrator review. */
+export function assessMembershipPaymentHealth({membership,payments}:any){
+ const issues:string[]=[];
+ if(!membership?.id||!Array.isArray(payments))return {healthy:false,issues:['payment_inventory_unavailable'],automaticRepair:false};
+ const scoped=payments.filter((p:any)=>p.club_membership_id===membership.id&&p.purpose_type==='membership');
+ const settled=scoped.filter((p:any)=>p.payment_status==='paid');
+ const pending=scoped.filter((p:any)=>p.payment_status==='pending');
+ if(settled.length>1)issues.push('multiple_settled_payments');
+ if(settled.length&&membership.payment_status!=='paid')issues.push('settled_payment_membership_not_paid');
+ if(!settled.length&&membership.payment_status==='paid')issues.push('paid_membership_without_settled_payment_record');
+ if(pending.length>1)issues.push('multiple_pending_checkouts');
+ if(pending.some((p:any)=>!p.provider_checkout_url))issues.push('pending_checkout_missing_url');
+ if(scoped.some((p:any)=>['refunded','refund_pending','partially_refunded','chargeback','disputed'].includes(p.payment_status)))issues.push('refund_or_dispute_requires_review');
+ return {healthy:issues.length===0,issues,settledCount:settled.length,pendingCount:pending.length,automaticRepair:false};
+}
