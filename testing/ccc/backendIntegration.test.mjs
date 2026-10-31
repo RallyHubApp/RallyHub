@@ -201,6 +201,15 @@ test('activity list reads more than 100 drafts without silently truncating',asyn
  const result=await h.call('list');assert.equal(result.status,200);
  assert.equal(result.data.activities.length,305);assert.equal(result.data.resultsMayBeTruncated,false);
 });
+test('operations summary is club-scoped, admin-only and read-only',async()=>{
+ const admin=makeHarness({...records.User[0],role:'admin'});
+ admin.db.ClubActivity.push({...admin.db.ClubActivity[0],id:'outside',club_id:'c2',email:'hidden@example.ie'});
+ const result=await admin.call('operations_summary');
+ assert.equal(result.status,200);assert.equal(result.data.total,1);
+ assert.equal(JSON.stringify(result.data).includes('hidden@example.ie'),false);
+ assert.equal(result.data.financialTotalsIncluded,false);
+ assert.equal((await makeHarness().call('operations_summary')).status,403);
+});
 test('event cannot be linked to a second activity within the same club',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  Object.assign(h.db.ClubActivity[0],{status:'draft',capacity:16,registration_mode:'approval',payment_method:'none',host_user_id:'host',communication_template_id:'template1'});
