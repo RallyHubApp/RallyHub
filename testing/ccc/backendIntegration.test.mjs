@@ -315,3 +315,13 @@ test('Person link cannot claim an identity already linked to another club user',
  assert.equal((await h.call('person_link_review',{accessId:'a',personId:'p1'})).status,409);
  assert.equal(h.db.ClubUserAccess[0].person_id,undefined);
 });
+test('communications readiness is admin-only, tenant and club scoped, and cannot send',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.CommunicationTemplate.push({id:'otherclub',tenant_id:'t1',club_id:'c2',owner_scope:'tenant',purpose:'payment_link',status:'approved',html_template:'PRIVATE OTHER CLUB'});
+ h.db.CommunicationTemplate.push({id:'othertenant',tenant_id:'t2',club_id:'c1',owner_scope:'tenant',purpose:'payment_failed',status:'approved'});
+ const response=await h.call('communications_readiness');
+ assert.equal(response.status,200);assert.equal(response.data.readyPurposeCount,0);
+ assert.equal(response.data.authorisedToSend,false);assert.equal(response.data.deliveryEnabled,false);
+ assert.equal(JSON.stringify(response.data).includes('PRIVATE OTHER CLUB'),false);
+ assert.equal((await makeHarness().call('communications_readiness')).status,403);
+});
