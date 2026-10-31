@@ -485,6 +485,18 @@ test('schedule and weekly preview include scoped legacy guest sessions without w
  assert.equal(weekly.status,200);assert.equal(weekly.data.legacyConflictedWeeks,1);assert.equal(weekly.data.ready,false);
  assert.equal(JSON.stringify(h.db),before);
 });
+test('Dublin daylight-saving gaps and repeated times block schedule readiness',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ const base={venue_id:'v1',court_id:'court1'};
+ for(const starts_at of ['2027-03-28T01:30','2026-10-25T01:30']){
+  const result=await h.call('schedule_review',{draft:{...base,starts_at,ends_at:starts_at.slice(0,11)+'02:30'}});
+  assert.equal(result.status,200);assert.equal(result.data.ready,false);assert.equal(result.data.daylightSavingChecked,true);
+  assert.equal(result.data.localTimeIssues.length,1);
+ }
+ const weekly=await h.call('recurrence_review',{weeks:2,draft:{...base,starts_at:'2027-03-21T01:30',ends_at:'2027-03-21T02:30'}});
+ assert.equal(weekly.status,200);assert.equal(weekly.data.ready,false);
+ assert.equal(weekly.data.localTimeIssues[0].week,2);
+});
 test('weekly recurrence preview rejects court outside the selected venue',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  const r=await h.call('recurrence_review',{weeks:4,draft:{venue_id:'v1',court_id:'foreign',starts_at:'2026-11-02T19:00',ends_at:'2026-11-02T20:30'}});
