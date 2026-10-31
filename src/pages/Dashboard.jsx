@@ -13,6 +13,7 @@ import MemberPortalDashboard from '@/components/member/MemberPortalDashboard';
 import ClubCommandOverview from '@/components/ccc/ClubCommandOverview';
 import ClubSchedulePanel from '@/components/ccc/ClubSchedulePanel';
 import ClubPaymentPanel from '@/components/ccc/ClubPaymentPanel';
+import ClubPostEventPanel from '@/components/ccc/ClubPostEventPanel';
 
 export default function Dashboard() {
   const { data: currentUser = null } = useQuery({
@@ -143,6 +144,25 @@ export default function Dashboard() {
     refetchOnWindowFocus: true
   });
 
+  const { data: guestBookings = [], isLoading: bookingsLoading, isError: bookingsError } = useQuery({
+    queryKey: ['ccc-guest-bookings', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    queryFn: () => base44.entities.GuestSessionBooking.filter({tenant_id:currentUser.active_tenant_id,club_id:currentUser.active_club_id}, '-created_date', 500),
+    enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && !isMemberView,
+    refetchInterval: 60_000
+  });
+  const { data: guestAttendance = [], isLoading: attendanceLoading, isError: attendanceError } = useQuery({
+    queryKey: ['ccc-guest-attendance', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    queryFn: () => base44.entities.GuestSessionAttendance.filter({tenant_id:currentUser.active_tenant_id,club_id:currentUser.active_club_id}, '-created_date', 500),
+    enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && !isMemberView,
+    refetchInterval: 60_000
+  });
+  const { data: followupAttempts = [], isLoading: followupLoading, isError: followupError } = useQuery({
+    queryKey: ['ccc-followup-attempts', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    queryFn: () => base44.entities.CommunicationDeliveryAttempt.filter({tenant_id:currentUser.active_tenant_id}, '-created_date', 500),
+    enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && !isMemberView,
+    refetchInterval: 60_000
+  });
+
   const scheduleFrom = format(new Date(), 'yyyy-MM-dd');
   const scheduleTo = format(addDays(new Date(), 14), 'yyyy-MM-dd');
 
@@ -171,6 +191,8 @@ export default function Dashboard() {
       <ClubSchedulePanel tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} sessions={clubSessions} fromDate={scheduleFrom} toDate={scheduleTo} loading={sessionsLoading} error={sessionsError} />
 
       <ClubPaymentPanel tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} payments={clubPayments} loading={paymentsLoading} error={paymentsError} />
+
+      <ClubPostEventPanel tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} sessions={clubSessions} bookings={guestBookings} attendance={guestAttendance} attempts={followupAttempts} fromDate={format(addDays(new Date(), -14), 'yyyy-MM-dd')} toDate={scheduleFrom} loading={sessionsLoading||bookingsLoading||attendanceLoading||followupLoading} error={sessionsError||bookingsError||attendanceError||followupError} />
 
       {((currentUser?.role === 'admin' && (pendingMembershipApprovalCount > 0 || pendingDirectoryApprovalCount > 0)) || pendingMembershipApplicationCount > 0 || pendingMembershipDecisionCount > 0 || pendingSessionBookingCount > 0) && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
