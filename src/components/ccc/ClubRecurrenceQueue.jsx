@@ -13,6 +13,7 @@ export default function ClubRecurrenceQueue({tenantId,clubId}){
   {isLoading&&<p className="mt-2 text-sm">Loading batches…</p>}
   {isError&&<p role="alert" className="mt-2 text-sm text-destructive">Batch queue unavailable.</p>}
   {data&&<><p className="mt-2 text-sm">{data.counts?.needs_recovery||0} need recovery · {data.counts?.creating||0} creating · {data.counts?.complete||0} complete</p>
+  {data.draftCollisions?.activeConflictCount>0&&<p role="alert" className="mt-2 text-sm text-amber-700">{data.draftCollisions.activeConflictCount} recurring draft(s) overlap already-active CCC activities. Review before advancing any draft.</p>}
   {data.draftCollisions?.collisionCount>0&&<p role="alert" className="mt-2 text-sm text-amber-700">{data.draftCollisions.collisionCount} cross-batch draft scheduling overlap(s) require review before scheduling. Drafts do not reserve courts.</p>}
   {data.draftCollisions?.collisions?.length>0&&<div className="mt-2 max-h-36 overflow-y-auto rounded-lg border p-2 text-xs"><p className="font-medium">Drafts needing separate scheduling decisions</p>{data.draftCollisions.collisions.slice(0,12).map((pair,i)=><p key={pair.firstActivityId+'-'+pair.secondActivityId+'-'+i}>Activities {pair.firstActivityId} and {pair.secondActivityId} · Venue {pair.venueId}</p>)}</div>}
   {data.draftCollisions?.invalidDraftIds?.length>0&&<p role="alert" className="mt-2 text-sm text-amber-700">{data.draftCollisions.invalidDraftIds.length} recurring draft(s) have invalid schedule details.</p>}
