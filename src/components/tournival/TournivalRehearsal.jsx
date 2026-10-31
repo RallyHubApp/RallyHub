@@ -5,6 +5,8 @@ import {generateGroupFixtures,createKnockoutPairs,createKnockoutBracket,computeL
 import {indexTournivalMatches,scheduleTournivalCourts,recordTournivalResult} from '@/lib/tournivalScheduler';
 import {createTournivalEvent,registerTournivalPlayer,checkInTournivalPlayer,startTournival,applyTournivalMatchChange,tournivalPublicSnapshot,assertRehearsalIsolation} from '@/lib/tournivalOperations';
 import {createQuickScenario,finishQuickQualification,finishQuickKnockout,runQuickAcceptance,quickTestReport} from '@/lib/tournivalQuickTest';
+import {reviewTournivalRecovery} from '@/lib/ccc/tournivalRecoveryReview.mjs';
+import {reviewTournivalDuprReadiness} from '@/lib/ccc/tournivalDuprReadiness.mjs';
 
 const syntheticIds=n=>Array.from({length:n},(_,i)=>`rehearsal-player-${i+1}`);
 const play=(match,scoreA,scoreB)=>recordTournivalResult([match],{
@@ -120,6 +122,11 @@ export default function TournivalRehearsal() {
  const previewKnockout=quick?.knockout.filter(m=>[...(m.teamA||[]),...(m.teamB||[])].includes(previewPlayer))||[];
  const active=phase==='qualification'?event?.matches||[]:knockout;
  const snapshot=event?tournivalPublicSnapshot(event):null;
+ const recovery=event&&phase==='qualification'?reviewTournivalRecovery(event,{courts,expectedRevision:event.revision}):null;
+ const knockoutRecovery=phase==='knockout'&&event?reviewTournivalRecovery({...event,phase:'knockout',matches:knockout},{courts}):null;
+ const recoveryReview=knockoutRecovery||recovery;
+ const duprReview=event?reviewTournivalDuprReadiness({...event,matches:phase==='knockout'?knockout:event.matches}):null;
+
  return <section className="glass p-4 rounded-xl space-y-3">
   <div><h3 className="font-semibold">Isolated Tournival Rehearsal</h3>
    <p className="text-xs text-muted-foreground">All participants and results are synthetic. No live records, payments, communications, DUPR submissions or statistics.</p></div>
@@ -171,6 +178,19 @@ export default function TournivalRehearsal() {
     </section>
    </div>}
   </div>
+  {recoveryReview&&<section className="rounded-lg border p-3 space-y-2" data-testid="tournival-recovery-review" aria-label="Tournament recovery review">
+   <h4 className="font-semibold text-sm">Interrupted-match recovery review</h4>
+   <p className="text-xs">{recoveryReview.issues.length?`${recoveryReview.issues.length} issue(s) require attention`:
+    recoveryReview.safeToResume?'No integrity conflicts detected; host confirmation still required':'Active courts require host score verification before resuming'}</p>
+   {recoveryReview.issues.slice(0,8).map((issue,i)=><p className="text-xs text-destructive" key={i}>{issue.code} · {issue.matchId||'event'}</p>)}
+   {recoveryReview.actions.slice(0,8).map((item,i)=><p className="text-xs" key={i}>{item.matchId}: {item.action.replaceAll('_',' ')}</p>)}
+   <p className="text-xs text-muted-foreground">Advisory only. This panel does not restart matches, overwrite scores or send external data.</p>
+  </section>}
+  {duprReview&&<section className="rounded-lg border p-3 space-y-1" data-testid="tournival-dupr-readiness">
+   <h4 className="font-semibold text-sm">DUPR submission preflight · read-only</h4>
+   <p className="text-xs">{duprReview.eligible?'Eligible for separate authorised provider submission':'Submission blocked until provider rules, identities, consent and results are verified'}</p>
+   <p className="text-xs text-muted-foreground">{duprReview.issues.length} outstanding checks. No DUPR submission or external call is performed.</p>
+  </section>}
   <Button onClick={initialise} variant="outline">Start / Reset Rehearsal</Button>
   {event&&<div className="space-y-2">
     <p className="text-xs">Phase: <strong>{phase}</strong> · Revision {event.revision} · {snapshot?.registered} checked-in synthetic participants</p>
