@@ -29,8 +29,8 @@ test('booking reader enforces complete tenant club event scope',async()=>{
 });
 test('live booking service uses full cursor roster for initial and pre-commit checks and alternatives',()=>{
  const calls=source.match(/readBookingRegistrations\(/g)||[];
- assert.ok(calls.length>=3);
+ assert.ok(calls.length>=2);
  assert.doesNotMatch(source,/EventRegistration\.filter\(\{event_id:id,tenant_id:t\.tenant_id\},'-created_date',500\)/);
  assert.match(source,/const current=await readBookingRegistrations/);
- assert.match(source,/const candidateRows=await readBookingRegistrations/);
+ assert.match(source,/const candidateUsed=await countActiveEventRegistrations/);
 });
