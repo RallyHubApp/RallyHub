@@ -456,3 +456,9 @@ test('membership readiness inspects scoped config without payment or email actio
  assert.equal(r.data.authorisedToCharge,false);assert.equal(JSON.stringify(h.db),before);
  assert.equal((await makeHarness().call('membership_readiness')).status,403);
 });
+test('host picker excludes ungranted users even when their profile claims club_admin',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.User.push({id:'ungranted',email:'stranger@example.ie',full_name:'Stranger',active_tenant_id:'t1',active_club_id:'c1',active_club_role:'club_admin',role:'admin'});
+ const r=await h.call('options',{venueId:'v1'});
+ assert.equal(r.status,200);assert.equal(r.data.hosts.some(u=>u.id==='ungranted'),false);
+});
