@@ -1,3 +1,4 @@
+import { invokeReadWithDeadline, shouldRetryRead, readRetryDelay, READ_STALE_MS, READ_GC_MS } from '@/lib/ccc/readResilience';
 import EnnisDiamondSpondPilot from '@/components/spond/EnnisDiamondSpondPilot';
 import GuestAttendanceFollowup from '@/components/communications/GuestAttendanceFollowup';
 import React, { useMemo, useState } from 'react';
@@ -57,11 +58,15 @@ export default function GuestBookings(){
   const [changeBooking,setChangeBooking]=useState(null);
   const [changeSlot,setChangeSlot]=useState('');
   const [changeDate,setChangeDate]=useState('');
-  const invokeWithTimeout=(name,payload)=>Promise.race([base44.functions.invoke(name,payload),new Promise((_,reject)=>setTimeout(()=>reject(new Error(`${name} did not respond within 15 seconds. Retry this section.`)),15000))]);
+  const invokeWithTimeout=(name,payload)=>invokeReadWithDeadline((service,args)=>base44.functions.invoke(service,args),name,payload);
 
   const {data:templateData={templates:[],sumupConfigured:false},isLoading:templatesLoading,isError:templatesError,refetch:retryTemplates}=useQuery({
     queryKey:['guest-session-templates'],
-    retry:false,
+    retry:shouldRetryRead,
+    retryDelay:readRetryDelay,
+    staleTime:READ_STALE_MS,
+    gcTime:READ_GC_MS,
+    refetchOnWindowFocus:false,
     queryFn:async()=>{
       const res=await invokeWithTimeout('guestSessionBooking',{action:'admin_templates'});
       if(res.data?.error)throw new Error(res.data.error);
@@ -72,7 +77,11 @@ export default function GuestBookings(){
 
   const {data:listData={sessions:[],sumupConfigured:false},isLoading:listLoading,isError:listError,refetch:retryList}=useQuery({
     queryKey:['guest-session-admin-list'],
-    retry:false,
+    retry:shouldRetryRead,
+    retryDelay:readRetryDelay,
+    staleTime:READ_STALE_MS,
+    gcTime:READ_GC_MS,
+    refetchOnWindowFocus:false,
     queryFn:async()=>{
       const res=await invokeWithTimeout('guestSessionBooking',{action:'admin_list'});
       if(res.data?.error)throw new Error(res.data.error);
@@ -83,7 +92,11 @@ export default function GuestBookings(){
 
   const {data:requestData={requests:[]},isLoading:requestsLoading,isError:requestsError,refetch:retryRequests}=useQuery({
     queryKey:['guest-access-requests'],
-    retry:false,
+    retry:shouldRetryRead,
+    retryDelay:readRetryDelay,
+    staleTime:READ_STALE_MS,
+    gcTime:READ_GC_MS,
+    refetchOnWindowFocus:false,
     queryFn:async()=>{
       const res=await invokeWithTimeout('guestAccessJourney',{action:'admin_list'});
       if(res.data?.error)throw new Error(res.data.error);
