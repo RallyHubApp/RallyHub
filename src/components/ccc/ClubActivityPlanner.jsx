@@ -17,6 +17,7 @@ export default function ClubActivityPlanner({tenantId,clubId}){
  const [hostId,setHostId]=useState('');
  const [templateId,setTemplateId]=useState('');
  const [copied,setCopied]=useState(false);
+ const [draftSearch,setDraftSearch]=useState('');
  const [saved,setSaved]=useState(null);
  const [savedStatus,setSavedStatus]=useState('draft');
  const [serverPreflight,setServerPreflight]=useState(null);
@@ -61,7 +62,7 @@ export default function ClubActivityPlanner({tenantId,clubId}){
  };
  return <section className="rounded-2xl border bg-card p-4 sm:p-5" aria-label="Activity planner">
   <div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-lg font-bold">Activity planner</h2><p className="text-sm text-muted-foreground">Plan a session, clinic, event or tournament before publishing.</p></div><span className="rounded-full border px-3 py-1 text-xs font-semibold">Internal lifecycle · No event publication or bulk messages</span></div>
-  {savedDrafts.length>0&&<div className="mt-3 flex flex-wrap gap-2" aria-label="Saved activity drafts">{savedDrafts.filter(d=>['draft','ready','scheduled','registration_open','registration_closed','in_progress','completed','cancelled'].includes(d.status)).slice(0,10).map(d=><button type="button" key={d.id} onClick={()=>loadDraft(d)} className="rounded-lg border px-3 py-1 text-sm">{d.title} · {d.status}</button>)}</div>}
+  {savedDrafts.length>0&&<div className="mt-3" aria-label="Saved activity drafts"><label className="block text-xs font-medium">Find a saved activity or recurring draft<input type="search" value={draftSearch} onChange={e=>setDraftSearch(e.target.value)} placeholder="Search title or activity ID" className="mt-1 w-full max-w-md rounded-lg border bg-background p-2 text-sm"/></label><div className="mt-2 flex max-h-48 flex-wrap gap-2 overflow-y-auto">{savedDrafts.filter(d=>['draft','ready','scheduled','registration_open','registration_closed','in_progress','completed','cancelled'].includes(d.status)&&(!draftSearch||String(d.title||'').toLowerCase().includes(draftSearch.toLowerCase())||String(d.id||'').toLowerCase().includes(draftSearch.toLowerCase()))).slice(0,40).map(d=><button type="button" key={d.id} onClick={()=>loadDraft(d)} className="rounded-lg border px-3 py-1 text-sm">{d.title} · {d.status}</button>)}</div><p className="mt-1 text-xs text-muted-foreground">Showing up to 40 matching activities. Search by exact ID for a specific recurring draft.</p></div>}
   <button type="button" onClick={resetDraft} className="mt-3 rounded-lg border px-3 py-2 text-sm font-semibold">New activity</button>
   <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Planner steps">{ACTIVITY_STEPS.map((name,i)=><button key={name} type="button" onClick={()=>setStep(i)} aria-current={step===i?'step':undefined} className={'rounded-lg border px-3 py-1.5 text-sm capitalize '+(step===i?'bg-primary text-primary-foreground':'hover:bg-muted')}>{i+1}. {name}</button>)}</div>
   {!tenantId||!clubId?<p className="mt-4 text-sm text-destructive">Select an active club before planning an activity.</p>:<div className="mt-4 space-y-4">
