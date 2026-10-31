@@ -49,12 +49,6 @@ Deno.serve(async(req)=>{
    const docs=await base44.asServiceRole.entities.ClubLegalDocument.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,active:true},'-effective_from',100);
    return Response.json({success:true,event:{...publicEvent,alternative:alternative?{name:alternative.name,date:alternative.start_date,slug:alternative.event_slug}:null},consents:docs.filter((d:any)=>['liability_waiver','code_of_conduct','health_declaration','privacy_data','photo_video'].includes(d.document_type)).map((d:any)=>({type:d.document_type,version:d.version,label:d.consent_label||d.document_type,content:d.body_text||'',optional:d.document_type==='photo_video'}))});
   }
-  if(action==='check'){
-   const operationId=clean(b.operationId,100);
-   if(!operationId)return fail('Application reference required');
-   const saved=rows.some((r:any)=>r.operation_id===operationId);
-   return Response.json({success:true,saved});
-  }
   if(action==='admin_notice_preview'){
    const noticeType=clean(b.noticeType||'booking_confirmed',50);
    if(!EVENT_NOTICE_TYPES.includes(noticeType))return fail('Unknown notice type');
