@@ -15,6 +15,7 @@ import {reviewHostRevocation} from './hostRevocation.mjs';
 import {activityScheduleConflicts} from './activitySchedulePolicy.mjs';
 import {reviewPersonCommunications} from './consentReview.mjs';
 import {readPersonInventory} from './personInventory.mjs';
+import {refundRecoveryQueue} from './refundRecovery.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -157,6 +158,13 @@ Deno.serve(async req=>{
    const templates=await readScopedInventory(sdk.asServiceRole.entities.CommunicationTemplate,{tenant_id,owner_scope:'tenant'});
    const scoped=templates.rows.filter((t:any)=>!t.club_id||t.club_id===club_id);
    return Response.json({success:true,...communicationReadiness(scoped,{complete:templates.complete})});
+  }
+  if(body.action==='refund_recovery_queue'){
+   const [payments,refunds]=await Promise.all([
+    readScopedInventory(sdk.asServiceRole.entities.PaymentRecord,{tenant_id,club_id},{pageSize:200,maxPages:30}),
+    readScopedInventory(sdk.asServiceRole.entities.PaymentRefund,{tenant_id,club_id},{pageSize:200,maxPages:30})
+   ]);
+   return Response.json({success:true,...refundRecoveryQueue(payments.rows,refunds.rows,{tenantId:tenant_id,clubId:club_id,complete:payments.complete&&refunds.complete})});
   }
   if(body.action==='management_summary'){
    const [templateRead,hosts,venues]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.CommunicationTemplate,{tenant_id,owner_scope:'tenant'}),readScopedInventory(sdk.asServiceRole.entities.MembershipVenueHostConfig,{tenant_id,club_id}),readScopedInventory(sdk.asServiceRole.entities.Venue,{tenant_id,club_id,status:'active'})]);
