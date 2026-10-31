@@ -34,7 +34,7 @@ test('planner UI is admin gated, scoped by club key, and saves drafts only throu
  const ui=readFileSync(new URL('../../src/components/ccc/ClubActivityPlanner.jsx',import.meta.url),'utf8');
  assert.match(dashboard,/currentUser\?\.role === 'admin' && <ClubActivityPlanner/);
  assert.match(dashboard,/key=\{\x60\$\{currentUser\?\.active_tenant_id/);
- assert.match(ui,/Draft only · No publication or messages/);
+ assert.match(ui,/Internal lifecycle · No event publication or bulk messages/);
  assert.match(ui,/base44\.functions\.invoke\('cccActivity'/);
  assert.match(ui,/action:'save_draft'/);
  assert.doesNotMatch(ui,/action:'activate'|action:'publish'/);
