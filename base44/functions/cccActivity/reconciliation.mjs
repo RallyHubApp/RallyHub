@@ -25,7 +25,7 @@ export function summariseEventFinance(registrations=[],payments=[]){
   const transactionIds=new Set();
   for(const p of list){
    const amount=asCents(p.amount),refund=asCents(p.amount_refunded??0);
-   if(amount===null||refund===null){anomalies.push({registrationId:r.id,code:'invalid_payment_amount'});excludedPaymentRecords++;continue;}
+   if(amount===null||refund===null){anomalies.push({registrationId:r.id,code:'invalid_payment_amount'});if(Number(p.amount_refunded)>Number(p.amount))anomalies.push({registrationId:r.id,code:'refund_exceeds_payment'});excludedPaymentRecords++;continue;}
    if(refund>amount){anomalies.push({registrationId:r.id,code:'refund_exceeds_payment'});excludedPaymentRecords++;continue;}
    const currency=String(p.currency||'EUR').trim().toUpperCase();
    if(currency!=='EUR'){anomalies.push({registrationId:r.id,code:'currency_mismatch'});excludedPaymentRecords++;continue;}
