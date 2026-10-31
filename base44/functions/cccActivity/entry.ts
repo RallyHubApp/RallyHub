@@ -25,7 +25,7 @@ const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
 const isClubHost=async(sdk:any,tenant_id:string,club_id:string,venue_id:string,host_user_id:string)=>{
- const [users,venues]=await Promise.all([sdk.asServiceRole.entities.User.filter({id:host_user_id,active_tenant_id:tenant_id,active_club_id:club_id},'-created_date',1),sdk.asServiceRole.entities.Venue.filter({id:venue_id,tenant_id,club_id,status:'active'},'-created_date',1)]);
+ const [users,venues]=await Promise.all([sdk.asServiceRole.entities.User.filter({id:host_user_id,active_tenant_id:tenant_id,active_club_id:club_id,approval_status:'approved'},'-created_date',1),sdk.asServiceRole.entities.Venue.filter({id:venue_id,tenant_id,club_id,status:'active'},'-created_date',1)]);
  const host=users?.[0],venue=venues?.[0];if(!host||!venue)return false;
  const grant=await readCccAccess(sdk,host,tenant_id,club_id);
  if(grant.admin)return true;
@@ -53,7 +53,7 @@ Deno.serve(async req=>{
    let allowed=active;
    if(!access.admin){
     const [users,venues,configs]=await Promise.all([
-     sdk.asServiceRole.entities.User.filter({id:user.id,active_tenant_id:tenant_id,active_club_id:club_id},'-created_date',1),
+     sdk.asServiceRole.entities.User.filter({id:user.id,active_tenant_id:tenant_id,active_club_id:club_id,approval_status:'approved'},'-created_date',1),
      sdk.asServiceRole.entities.Venue.filter({tenant_id,club_id,status:'active'},'-created_date',200),
      sdk.asServiceRole.entities.MembershipVenueHostConfig.filter({tenant_id,club_id,active:true},'-updated_date',100)
     ]);
