@@ -252,7 +252,10 @@ Deno.serve(async req=>{
    if(!decision.allowed)return Response.json({success:false,error:'Batch cannot be completed safely',issues:decision.issues},{status:409});
    const changed=await entity.updateMany({id,tenant_id,club_id,revision,recurrence_batch_key:batchKey,recurrence_batch_state:'needs_recovery'},{$set:{recurrence_batch_state:'complete',revision:revision+1,updated_by_user_id:user.id}});
    if(changed.updated!==1)return fail('Concurrent batch update; reload',409);
-   try{await audit(sdk,tenant_id,club_id,user.id,'ccc.recurrence.recovery_completed','ClubActivity',id,{revision},{batchKey,childCount:review.childCount})}catch(_){return Response.json({success:false,error:'Batch marked complete but audit requires manual reconciliation',batchKey},{status:409})}
+   try{await sdk.asServiceRole.entities.AuditLog.create({tenant_id,club_id,user_id:user.id,action:'ccc.recurrence.recovery_completed',entity_type:'ClubActivity',entity_id:id,scope_type:'club',scope_id:club_id,before_state:JSON.stringify({revision}),after_state:JSON.stringify({batchKey,childCount:review.childCount})})}catch(_){
+    await entity.updateMany({id,tenant_id,club_id,revision:revision+1,recurrence_batch_key:batchKey,recurrence_batch_state:'complete'},{$set:{recurrence_batch_state:'needs_recovery'}}).catch(()=>null);
+    return Response.json({success:false,error:'Audit unavailable; recurrence requires reconciliation',batchKey},{status:409});
+   }
    return Response.json({success:true,batchKey,childCount:review.childCount,sourceRevision:revision+1,published:false,bookingsOpened:false});
   }
   if(body.action==='recurrence_recovery_review'){
