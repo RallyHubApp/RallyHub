@@ -5,6 +5,7 @@ import {readFileSync} from 'node:fs';
 import {transformSync} from 'esbuild';
 import {summariseEventFinance} from '../../base44/functions/cccActivity/reconciliation.mjs';
 import {isConfiguredHost} from '../../base44/functions/cccActivity/hostPolicy.mjs';
+import {readEventPayments} from '../../base44/functions/cccActivity/eventPaymentReader.mjs';
 const source=readFileSync(new URL('../../base44/functions/cccActivity/entry.ts',import.meta.url),'utf8').replace(/^import .*;\s*$/gm,'');
 const js=transformSync(source,{loader:'ts',format:'cjs'}).code;
 const records={
@@ -26,7 +27,7 @@ function makeHarness(user=records.User[0]){
  }]));
  let handler;
  const sdk={auth:{me:async()=>user},asServiceRole:{entities}};
- vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,Response,Date,console});
+ vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,Response,Date,console});
  const call=async(action,fields={})=>{const response=await handler({method:'POST',json:async()=>({action,...fields})});return {status:response.status,data:await response.json()}};
  return {call,db};
 }
