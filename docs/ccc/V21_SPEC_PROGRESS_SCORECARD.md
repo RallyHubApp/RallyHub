@@ -16,17 +16,17 @@ Each of the 17 workstreams below receives equal weight (1/17). Each score is an 
 | Registration / booking | 75 | Event admin listing, approval, verification and refunds now require authoritative active grants, with mocked denial tests; live provider/runtime and concurrency acceptance remain |
 | Guest eligibility | 65 | Clare venue policy preflight and review UI added, cross-checked against existing guestAccessJourney rules; authoritative booking/host acceptance still requires live UAT |
 | Membership and payment journeys | 70 | Read-only membership config, legal document, adult policy and scoped SumUp account checks; real checkout, callback and member lifecycle UAT remain |
-| Attendance and post-session | 75 | Event and guest reconciliation, walk-in ledger and loaded-roster attendance CSV added; mobile UAT, runtime validation and consent-cleared follow-up remain |
+| Attendance and post-session | 78 | Event and guest reconciliation, walk-in ledger, attendance CSV and advisory event close-out checklist added; mobile UAT, runtime validation and consent-cleared follow-up remain |
 | Hosts and delegated access | 95 | Host selection and actions use authoritative grants and venue assignment; real Base44 runtime, mobile UAT and cross-module revocation remain |
 | Communications and branding | 73 | Post-event candidate triage and linked-person evidence review integrated; endpoint-hash suppression, approved preview, delivery and provider verification remain |
 | Financial reconciliation | 82 | Refund recovery and paginated linked payment rollups; SumUp settlement remains unverified |
-| Audit and operational health | 60 | Host revocation audit, refund reconciliation alerts and identity-integrity flags; durable audit and monitoring remain |
+| Audit and operational health | 65 | Host revocation audit, refund reconciliation alerts, identity-integrity flags and fail-closed event close-out readiness checklist; durable audit and monitoring remain |
 | Analytics and reporting | 78 | Loaded registration and attendance CSV exports with personal-data confirmation, injection protection and partial-page warnings added; canonical settlement reporting and wider exports remain |
 | Sporting formats | 45 | Protected module integration and regression |
 | Base44 performance and resilience | 75 | Bounded recurrence preview, paginated finance and stale response guard; live concurrency/load remain |
 | A01–A20 acceptance and release gates | 35 | Added recurrence boundary and paginated finance tests; formal A01–A20 traceability and live acceptance remain unpassed |
 
-**Arithmetic:** 1218/17 = **71.6% (rounded to 72%) provisional implementation estimate**. This is an engineering estimate of source coverage, not verified acceptance.
+**Arithmetic:** 1226/17 = **72.1% (rounded to 72%) provisional implementation estimate**. This is an engineering estimate of source coverage, not verified acceptance.
 
 **Critical distinction:** This is an estimate of implementation coverage, not verified feature completion. **A01–A20 full acceptance has not passed.** The current changes are development code only; there has been no authorised production deploy or live SumUp verification.
 
