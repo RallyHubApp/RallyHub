@@ -1,5 +1,6 @@
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.29';
 import {reviewTournivalOrganiserHealth} from './healthReview.ts';
+import {canReviewTournivalHealth} from './accessPolicy.ts';
 const clean=(v:any)=>String(v??'').trim().slice(0,160);
 Deno.serve(async(req)=>{
  if(req.method!=='POST')return Response.json({error:'POST required'},{status:405});
@@ -11,9 +12,7 @@ Deno.serve(async(req)=>{
   const tenantId=clean(body.tenantId),clubId=clean(body.clubId),tournamentId=clean(body.tournamentId);
   if(!tenantId||!clubId||!tournamentId)return Response.json({error:'Tenant, club and tournament required'},{status:400});
   const grants=await base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:tenantId,club_id:clubId,user_id:user.id,status:'active',permission_bundle:'club_admin'},'-updated_date',20);
-  const allowed=(user.role==='admin'&&user.active_tenant_id===tenantId&&user.active_club_id===clubId)||(Array.isArray(grants)&&grants.some((grant:any)=>{
-   const now=Date.now();return (!grant.starts_at||Date.parse(grant.starts_at)<=now)&&(!grant.ends_at||Date.parse(grant.ends_at)>=now);
-  }));
+  const allowed=canReviewTournivalHealth(user,grants,tenantId,clubId);
   if(!allowed)return Response.json({error:'Club administrator required'},{status:403});
   const tournaments=await base44.asServiceRole.entities.Tournament.filter({id:tournamentId,tenant_id:tenantId,host_club_id:clubId},'-created_date',2);
   if(!Array.isArray(tournaments)||tournaments.length!==1||String(tournaments[0].format).toLowerCase()!=='tournival')
