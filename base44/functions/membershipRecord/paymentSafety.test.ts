@@ -22,3 +22,8 @@ Deno.test('provider mismatch rejected',()=>assert.equal(verify({membership:membe
 Deno.test('pending checkout missing URL blocks new checkout',()=>assert.equal(link({...args(),payments:[payment({provider_checkout_url:''})]}).allowed,false));
 Deno.test('unknown provider state requires review',()=>assert.equal(verify({membership:member(),payment:payment(),result:{normalizedStatus:'unknown'}}).allowed,false));
 Deno.test('refunded provider state requires review',()=>assert.equal(verify({membership:member(),payment:payment(),result:{normalizedStatus:'refunded'}}).allowed,false));
+import {selectMembershipCheckoutForVerification as selectCheckout} from './paymentSafety.ts';
+Deno.test('one pending checkout selected',()=>assert.equal(selectCheckout({membership:member(),payments:[{...payment(),purpose_type:'membership'}]}).payment?.id,'p'));
+Deno.test('multiple pending checkouts require explicit review',()=>assert.equal(selectCheckout({membership:member(),payments:[{...payment(),purpose_type:'membership'},{...payment({id:'p2'}),purpose_type:'membership'}]}).payment,null));
+Deno.test('already paid payment with stale membership requires reconciliation',()=>assert.ok(selectCheckout({membership:member(),payments:[{...payment({payment_status:'paid'}),purpose_type:'membership'}]}).issues.includes('paid_record_membership_out_of_sync')));
+Deno.test('different purpose payment ignored',()=>assert.equal(selectCheckout({membership:member(),payments:[{...payment(),purpose_type:'event'}]}).payment,null));
