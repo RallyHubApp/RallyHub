@@ -767,16 +767,26 @@ Deno.serve(async(req)=>{
     }
 
     if(action==='admin_list'){
-      const [membersRaw,people,players,sportProfiles,clubSports,allSports,relationshipsRaw,membershipConfigs]=await Promise.all([
-        base44.asServiceRole.entities.ClubMembership.filter({tenant_id:tenantId,club_id:clubId},'member_id',500),
-        base44.asServiceRole.entities.Person.filter({tenant_id:tenantId},'full_name',500),
-        base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId},'full_name',500),
-        base44.asServiceRole.entities.SportProfile.filter({tenant_id:tenantId},'person_id',500),
+      let memberReads;
+      try{
+        memberReads=await Promise.all([
+          readScopedMembershipLedger(base44.asServiceRole.entities.ClubMembership,{tenant_id:tenantId,club_id:clubId},{sort:'member_id'}),
+          readScopedMembershipLedger(base44.asServiceRole.entities.Person,{tenant_id:tenantId},{sort:'full_name'}),
+          readScopedMembershipLedger(base44.asServiceRole.entities.Player,{tenant_id:tenantId,club_id:clubId},{sort:'full_name'}),
+          readScopedMembershipLedger(base44.asServiceRole.entities.SportProfile,{tenant_id:tenantId},{sort:'person_id'}),
+          readScopedMembershipLedger(base44.asServiceRole.entities.ClubRelationship,{tenant_id:tenantId,club_id:clubId},{sort:'person_id'})
+        ]);
+      }catch(error){
+        return Response.json({error:'Complete membership directory could not be verified; please retry.',code:'MEMBERSHIP_DIRECTORY_INCOMPLETE',details:String(error instanceof Error?error.message:'pagination failed')},{status:503});
+      }
+      const [membersRaw,people,players,sportProfiles,relationshipsRaw]=memberReads.map((result:any)=>result.rows);
+      const [clubSports,allSports,membershipConfigs]=await Promise.all([
         base44.asServiceRole.entities.ClubSport.filter({tenant_id:tenantId,club_id:clubId,status:'active'},'-is_primary',100),
         base44.asServiceRole.entities.Sport.filter({status:'active'},'name',100),
-        base44.asServiceRole.entities.ClubRelationship.filter({tenant_id:tenantId,club_id:clubId},'person_id',500),
         base44.asServiceRole.entities.MembershipApplicationConfig.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',50)
       ]);
+      if(!Array.isArray(clubSports)||!Array.isArray(allSports)||!Array.isArray(membershipConfigs)||clubSports.length>=100||allSports.length>=100||membershipConfigs.length>=50)
+        return Response.json({error:'Membership configuration inventory is incomplete.',code:'MEMBERSHIP_CONFIG_INCOMPLETE'},{status:503});
       const qaPersonIds=new Set((people||[]).filter((p:any)=>String(p.source_system||'').includes('membership_qa')||(p.data_quality_flags||[]).includes('qa_test_record')).map((p:any)=>String(p.id)));
       const members=(membersRaw||[]).filter((m:any)=>!qaPersonIds.has(String(m.person_id))&&!String(m.source_system||'').includes('membership_qa')&&!(m.data_quality_flags||[]).includes('qa_test_record'));
       const relationships=(relationshipsRaw||[]).filter((r:any)=>!qaPersonIds.has(String(r.person_id))&&!String(r.source_system||'').includes('membership_qa'));
