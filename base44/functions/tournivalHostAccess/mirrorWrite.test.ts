@@ -1,0 +1,5 @@
+import {strict as assert} from 'node:assert';
+import {mirrorCommittedTournivalHostState as mirror} from './mirrorWrite.ts';
+Deno.test('mirror write mirrors committed revision and status',async()=>{let patch:any;const result=await mirror(async(_id,p)=>{patch=p}, {id:'e',status:'Open'}, {revision:4,status:'Group Complete'});assert.equal(result.mirrorSynced,true);assert.equal(JSON.parse(patch.tournival_state).revision,4);assert.equal(patch.status,'In Progress');});
+Deno.test('failed mirror never misreports committed session as rolled back',async()=>{const result=await mirror(async()=>{throw Error('temporary outage')},{id:'e',status:'Open'},{revision:4});assert.equal(result.committed,true);assert.equal(result.mirrorSynced,false);assert.equal(result.requiresReconciliation,true);});
+Deno.test('mirror update leaves tournament status unchanged for normal scoring',async()=>{let patch:any;await mirror(async(_id,p)=>{patch=p},{id:'e',status:'Scheduled'},{revision:4,status:'In Progress'});assert.equal(patch.status,'Scheduled');});
