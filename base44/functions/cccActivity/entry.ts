@@ -17,6 +17,7 @@ import {reviewPersonCommunications} from './consentReview.mjs';
 import {readPersonInventory} from './personInventory.mjs';
 import {refundRecoveryQueue} from './refundRecovery.mjs';
 import {identityIntegrity} from './identityIntegrity.mjs';
+import {readCccAccess} from './accessGate.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -37,7 +38,9 @@ Deno.serve(async req=>{
   if(!tenant_id||!club_id)return fail('Select a club',409);
   const body=await req.json().catch(()=>({})),entity=sdk.asServiceRole.entities.ClubActivity;
   const hostAction=['host_activities','host_roster','host_roster_page','host_checkin'].includes(body.action);
-  if(user.role!=='admin'&&!hostAction)return fail('Admin access required',403);
+  const access=await readCccAccess(sdk,user,tenant_id,club_id);
+  if(!access.admin&&!hostAction)return fail('Active tenant or club administrator grant required',403);
+  if(hostAction&&!access.member)return fail('Active club access required',403);
   if(body.action==='host_activities'){
    if(user.role!=='admin'&&user.approval_status!=='approved')return fail('Host access denied',403);
    const activityRead=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});const activities=activityRead.activities;
