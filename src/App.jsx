@@ -19,6 +19,7 @@ import SiteAnalytics from '@/components/public/SiteAnalytics';
 
 const AppLayout = lazy(() => import('@/components/layout/AppLayout'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const ClubCommandCentre = lazy(() => import('@/pages/ClubCommandCentre'));
 const Players = lazy(() => import('@/pages/Players'));
 const PlayerProfile = lazy(() => import('@/pages/PlayerProfile'));
 const Tournaments = lazy(() => import('@/pages/Tournaments'));
@@ -206,6 +207,7 @@ const AuthenticatedRoutes = () => (
   <Routes>
     <Route element={<AppLayout />}>
       <Route index element={<Dashboard />} />
+      <Route path="club-command-centre" element={<ClubCommandCentre />} />
       <Route path="players" element={<Players />} />
       <Route path="players/:id" element={<PlayerProfile />} />
       <Route path="events" element={<TenantEvents />} />
