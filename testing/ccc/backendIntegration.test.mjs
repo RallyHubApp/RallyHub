@@ -37,6 +37,24 @@ function makeHarness(user=records.User[0]){
  const call=async(action,fields={})=>{const response=await handler({method:'POST',json:async()=>({action,...fields})});return {status:response.status,data:await response.json()}};
  return {call,db,reads};
 }
+test('host roster continues beyond 250 participants with scoped cursor and no private fields',async()=>{
+ const h=makeHarness();
+ for(let i=2;i<=560;i++)h.db.EventRegistration.push({...h.db.EventRegistration[0],id:'r'+i,full_name:'Player '+i,email:'private'+i+'@example.ie'});
+ const first=await h.call('host_roster',{id:'a1'});
+ assert.equal(first.status,200);assert.equal(first.data.participants.length,250);
+ assert.ok(first.data.nextCursor);
+ const second=await h.call('host_roster_page',{id:'a1',cursor:first.data.nextCursor});
+ assert.equal(second.status,200);assert.equal(second.data.participants.length,250);
+ const third=await h.call('host_roster_page',{id:'a1',cursor:second.data.nextCursor});
+ assert.equal(third.status,200);assert.equal(third.data.participants.length,60);
+ assert.equal(third.data.nextCursor,null);
+ assert.equal(JSON.stringify(second.data).includes('private@example.ie'),false);
+ assert.equal(JSON.stringify(second.data).includes('medical_note'),false);
+});
+test('revoked host cannot continue a previously loaded roster',async()=>{
+ const h=makeHarness();h.db.MembershipVenueHostConfig[0].active=false;
+ assert.equal((await h.call('host_roster_page',{id:'a1',cursor:'250'})).status,403);
+});
 test('delegated host lists assigned activities and sees only confirmed names',async()=>{
  const h=makeHarness();
  const list=await h.call('host_activities');assert.equal(list.status,200);assert.deepEqual(list.data.activities.map(x=>x.id),['a1']);
