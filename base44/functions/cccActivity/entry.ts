@@ -1,5 +1,6 @@
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
 import {summariseEventFinance} from './reconciliation.mjs';
+import {isConfiguredHost} from './hostPolicy.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -7,8 +8,8 @@ const isClubHost=async(sdk:any,tenant_id:string,club_id:string,venue_id:string,h
  const [users,venues]=await Promise.all([sdk.asServiceRole.entities.User.filter({id:host_user_id,active_tenant_id:tenant_id,active_club_id:club_id,approval_status:'approved'},'-created_date',1),sdk.asServiceRole.entities.Venue.filter({id:venue_id,tenant_id,club_id,status:'active'},'-created_date',1)]);
  const host=users?.[0],venue=venues?.[0];if(!host||!venue)return false;
  if(host.role==='admin'||host.active_club_role==='club_admin')return true;
- const norm=(v:any)=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');const configs=await sdk.asServiceRole.entities.MembershipVenueHostConfig.filter({tenant_id,club_id,active:true},'-updated_date',100);
- return (configs||[]).some((c:any)=>norm(c.venue_key)===norm(venue.name)&&(c.host_emails||[]).some((email:any)=>String(email||'').trim().toLowerCase()===String(host.email||'').trim().toLowerCase()));
+ const configs=await sdk.asServiceRole.entities.MembershipVenueHostConfig.filter({tenant_id,club_id,active:true},'-updated_date',100);
+ return isConfiguredHost(configs,venue,host.email);
 };
 const audit=async(sdk:any,tenant_id:string,club_id:string,user_id:string,action:string,entity_type:string,entity_id:string,before:any,after:any)=>{try{await sdk.asServiceRole.entities.AuditLog.create({tenant_id,club_id,user_id,action,entity_type,entity_id,scope_type:'club',scope_id:club_id,before_state:JSON.stringify(before),after_state:JSON.stringify(after)})}catch(_){/* A successful CAS must not be reported as failed after an audit transport error. */}};
 Deno.serve(async req=>{
@@ -60,8 +61,8 @@ Deno.serve(async req=>{
     sdk.asServiceRole.entities.Tournament.filter({tenant_id,host_club_id:club_id,event_registration_mode:'rallyhub'},'-created_date',100),
     sdk.asServiceRole.entities.MembershipVenueHostConfig.filter({tenant_id,club_id,active:true},'-updated_date',100)
    ]);
-   const norm=(v:any)=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');const delegated=new Set((hostConfigs||[]).filter((c:any)=>venue&&norm(c.venue_key)===norm(venue.name)).flatMap((c:any)=>c.host_emails||[]).map((email:any)=>String(email).trim().toLowerCase()));
-   const hosts=(users||[]).filter((u:any)=>u.role==='admin'||u.active_club_role==='club_admin'||(venue&&delegated.has(String(u.email||'').trim().toLowerCase()))).map((u:any)=>({id:u.id,name:u.full_name||u.name||u.email||u.id,delegated:!!venue&&delegated.has(String(u.email||'').trim().toLowerCase())}));
+   const delegated=(u:any)=>!!venue&&isConfiguredHost(hostConfigs,venue,u.email);
+   const hosts=(users||[]).filter((u:any)=>u.role==='admin'||u.active_club_role==='club_admin'||delegated(u)).map((u:any)=>({id:u.id,name:u.full_name||u.name||u.email||u.id,delegated:delegated(u)}));
    return Response.json({success:true,hosts,templates:(templates||[]).filter((t:any)=>!t.club_id||t.club_id===club_id).map((t:any)=>({id:t.id,name:t.name,purpose:t.purpose,version:t.version})),events:(events||[]).map((e:any)=>({id:e.id,name:e.name||e.title||e.id,start_date:e.start_date,capacity:e.event_capacity}))});
   }
   if(body.action==='list')return Response.json({success:true,activities:await entity.filter({tenant_id,club_id},'-created_date',100)});
