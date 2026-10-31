@@ -11,6 +11,30 @@ Deno.serve(async req=>{
   if(!tenant_id||!club_id)return fail('Select a club',409);
   const body=await req.json().catch(()=>({})),entity=sdk.asServiceRole.entities.ClubActivity;
   if(body.action==='list')return Response.json({success:true,activities:await entity.filter({tenant_id,club_id},'-created_date',100)});
+  if(body.action==='registration_preflight'){
+   const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!record)return fail('Activity not found',404);
+   const issues:string[]=[];
+   if(record.status!=='scheduled'&&record.status!=='registration_closed')issues.push('activity_not_scheduled');
+   if(!Number.isSafeInteger(record.capacity)||record.capacity<1)issues.push('invalid_capacity');
+   if(!Number.isFinite(Date.parse(record.starts_at))||Date.parse(record.starts_at)<=Date.now())issues.push('activity_start_not_future');
+   const venue=(await sdk.asServiceRole.entities.Venue.filter({id:record.venue_id,tenant_id,club_id,status:'active'},'-created_date',1))?.[0];
+   if(!venue)issues.push('venue_not_active');
+   if(!record.host_user_id)issues.push('host_required');
+   else {
+    const hosts=await sdk.asServiceRole.entities.User.filter({id:record.host_user_id},'-created_date',1);
+    if(!hosts?.length||hosts[0].active_tenant_id!==tenant_id||hosts[0].active_club_id!==club_id)issues.push('host_not_verified_for_club');
+   }
+   if(!['approval','automatic','closed'].includes(record.registration_mode)||record.registration_mode==='closed')issues.push('registration_policy_closed');
+   if(!['none','cash','online'].includes(record.payment_method))issues.push('payment_policy_invalid');
+   if(!record.communication_template_id)issues.push('approved_template_required');
+   else {
+    const templates=await sdk.asServiceRole.entities.CommunicationTemplate.filter({id:record.communication_template_id,tenant_id,club_id,status:'approved'},'-created_date',1);
+    if(!templates?.length)issues.push('approved_template_not_found');
+   }
+   issues.push('booking_capacity_payment_and_notification_integration_pending');
+   return Response.json({success:true,ready:false,issues,activityId:id,revision:record.revision});
+  }
   if(body.action==='transition'){
    const id=s(body.id),to=s(body.to),revision=Number(body.expectedRevision);
    const record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
