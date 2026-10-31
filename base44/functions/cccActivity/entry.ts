@@ -320,7 +320,7 @@ Deno.serve(async req=>{
    const financeResult=summariseEventFinance(read.registrations,paymentRead.payments);const byRegistration=financeResult.byRegistration;
    const rows=read.registrations.map((r:any)=>{const p:any=byRegistration.get(r.id);return {id:r.id,name:r.full_name||'',email:r.email||'',mobile:r.mobile||'',status:r.registration_status||'',paymentStatus:p?.payment_status||r.payment_status||'unknown',amount:Number(p?.amount||0),refundedAmount:Number(p?.amount_refunded||0),createdAt:r.created_at||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)}});
    const {byRegistration:_,...pageFinance}=financeResult;pageFinance.complete=!paymentRead.possiblyTruncated;pageFinance.requiresReview=!pageFinance.complete||pageFinance.anomalies.length>0;
-   return Response.json({success:true,activityId:id,registrations:rows,nextCursor:read.nextCursor,hasMore:read.hasMore,finance:pageFinance,paymentReviewRequired:pageFinance.requiresReview});
+   return Response.json({success:true,activityId:id,registrations:rows,nextCursor:read.nextCursor,hasMore:read.hasMore,finance:pageFinance,financeNotIncluded:paymentRead.possiblyTruncated,paymentReviewRequired:pageFinance.requiresReview});
   }
   if(body.action==='followup_candidates'){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
