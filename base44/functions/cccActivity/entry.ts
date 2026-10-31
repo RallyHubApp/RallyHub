@@ -4,6 +4,7 @@ import {isConfiguredHost} from './hostPolicy.mjs';
 import {readEventPayments} from './eventPaymentReader.mjs';
 import {readEventRegistrations} from './registrationReader.mjs';
 import {readScopedActivities} from './activityReader.mjs';
+import {buildFollowupReview} from './followupReview.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -158,8 +159,8 @@ Deno.serve(async req=>{
    const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
    if(!event)return fail('Linked event unavailable',404);
    const registrationRead=await readEventRegistrations(sdk.asServiceRole.entities.EventRegistration,{tenantId:tenant_id,clubId:club_id,eventId:event.id,extraFilters:{attendance_status:'attended'}});const registrations=registrationRead.registrations;
-   const candidates=(registrations||[]).filter((r:any)=>['confirmed','cash_confirmed'].includes(r.registration_status)).map((r:any)=>({registrationId:r.id,name:r.full_name||'',email:r.email||'',hasEmail:!!r.email,attendance:r.attendance_status}));
-   return Response.json({success:true,activityId:id,candidates,reviewRequired:true,deliveryEnabled:false,consentAndSuppressionNotChecked:true,resultsMayBeTruncated:!registrationRead.complete});
+   const review=buildFollowupReview(registrations);
+   return Response.json({success:true,activityId:id,...review,resultsMayBeTruncated:!registrationRead.complete});
   }
   if(body.action==='registration_preflight'){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
