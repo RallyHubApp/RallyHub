@@ -16,9 +16,12 @@ test('overview exposes only selected participant fields and no medical notes',()
  assert.match(action,/readOnly:true/);
  assert.match(action,/resultsMayBeTruncated/);
 });
-test('frontend only reads overview and does not invoke booking, approval, refund or send',()=>{
+test('frontend delegates approval and verification to existing service with confirmation, never direct refunds',()=>{
  assert.match(frontend,/action:'registration_overview'/);
- assert.doesNotMatch(frontend,/action:'admin_approve'|action:'admin_refund_payment'|action:'send'/);
+ assert.match(frontend,/action:'admin_approve'/);
+ assert.match(frontend,/action:'admin_verify'/);
+ assert.match(frontend,/Confirm action/);
+ assert.doesNotMatch(frontend,/action:'admin_refund_payment'|action:'send'/);
  assert.match(frontend,/not an authoritative SumUp reconciliation/);
 });
 test('planner supports new activity and linked registration overview',()=>{
