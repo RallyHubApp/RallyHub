@@ -2,6 +2,7 @@ import {createClientFromRequest} from 'npm:@base44/sdk@0.8.29';
 import {reviewTournivalOrganiserHealth} from './healthReview.ts';
 import {canReviewTournivalHealth} from './accessPolicy.ts';
 import {readScopedTournivalRecords} from './scopedRead.mjs';
+import {buildTournivalRecoveryPreview} from './recoveryPreview.ts';
 const clean=(v:any)=>String(v??'').trim().slice(0,160);
 Deno.serve(async(req)=>{
  if(req.method!=='POST')return Response.json({error:'POST required'},{status:405});
@@ -9,7 +10,7 @@ Deno.serve(async(req)=>{
   const base44=createClientFromRequest(req),user=await base44.auth.me();
   if(!user)return Response.json({error:'Authentication required'},{status:401});
   const body=await req.json().catch(()=>({}));
-  if(body.action!=='review')return Response.json({error:'Read-only review only'},{status:403});
+  if(!['review','preview_recovery'].includes(body.action))return Response.json({error:'Read-only review only'},{status:403});
   const tenantId=clean(body.tenantId),clubId=clean(body.clubId),tournamentId=clean(body.tournamentId);
   if(!tenantId||!clubId||!tournamentId)return Response.json({error:'Tenant, club and tournament required'},{status:400});
   let grants;
@@ -27,6 +28,7 @@ Deno.serve(async(req)=>{
   }catch{return Response.json({error:'Complete tournament inventory unavailable',code:'TOURNIVAL_INVENTORY_INCOMPLETE'},{status:503});}
   if(tournaments.length!==1||String(tournaments[0].format).toLowerCase()!=='tournival')
    return Response.json({error:'Tournival not found in authorised club'},{status:404});
+  if(body.action==='preview_recovery')return Response.json({success:true,preview:buildTournivalRecoveryPreview(tournaments[0],sessions)});
   return Response.json({success:true,review:reviewTournivalOrganiserHealth(tournaments[0],sessions)});
  }catch(error){console.error('Tournival organiser health read failed',error instanceof Error?error.message:'unknown');return Response.json({error:'Unable to verify organiser health safely'},{status:500});}
 });
