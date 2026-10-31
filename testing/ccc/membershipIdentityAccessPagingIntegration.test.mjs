@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const backend=readFileSync(new URL('../../base44/functions/membershipRecord/entry.ts',import.meta.url),'utf8');
+const health=backend.slice(backend.indexOf("if(action==='admin_identity_health')"),backend.indexOf("if(action==='admin_connect_account')"));
+const link=backend.slice(backend.indexOf("if(action==='admin_connect_account')"),backend.indexOf("if(action==='admin_dashboard_counts')"));
+test('identity review cursor-pages both person and account access',()=>{assert.match(health,/readScopedMembershipLedger\(base44\.asServiceRole\.entities\.ClubUserAccess,\{tenant_id:tenantId,club_id:clubId,person_id:personId\}/);assert.match(health,/readScopedMembershipLedger\(base44\.asServiceRole\.entities\.ClubUserAccess,\{tenant_id:tenantId,club_id:clubId,user_id:linkedUserId\}/);});
+test('identity review fails closed if access read is incomplete',()=>{assert.match(health,/IDENTITY_ACCESS_INCOMPLETE/);assert.match(health,/status:503/);});
+test('linking reads all access grants before first identity mutation',()=>{const read=link.indexOf('readScopedMembershipLedger('),guard=link.indexOf('assessMemberAccountLink('),write=link.indexOf('Person.update(person.id');assert.ok(read>0&&guard>read&&write>guard);});
+test('linking refuses incomplete access ledger',()=>{assert.match(link,/ACCOUNT_ACCESS_INCOMPLETE/);assert.match(link,/status:503/);});
