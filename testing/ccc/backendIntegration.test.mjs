@@ -266,3 +266,44 @@ test('Management inventory filters templates to tenant and club, hides host emai
  assert.equal(response.data.sendingEnabled,false);
  assert.equal((await makeHarness().call('management_summary')).status,403);
 });
+test('explicit Person link requires review, verified identity and a reason before CAS update',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.ClubUserAccess.push({id:'access1',tenant_id:'t1',club_id:'c1',user_id:'host',status:'active'});
+ const review=await h.call('person_link_review',{accessId:'access1',personId:'p1'});
+ assert.equal(review.status,200);assert.equal(review.data.mutationPerformed,false);assert.equal(h.db.ClubUserAccess[0].person_id,undefined);
+ assert.equal((await h.call('person_link_confirm',{accessId:'access1',personId:'p1',confirmIdentityVerified:true,reason:'short'})).status,400);
+ assert.equal((await h.call('person_link_confirm',{accessId:'access1',personId:'p1',reason:'Independently verified'})).status,400);
+ const saved=await h.call('person_link_confirm',{accessId:'access1',personId:'p1',confirmIdentityVerified:true,reason:'Membership card checked'});
+ assert.equal(saved.status,200);assert.equal(saved.data.mutationPerformed,true);
+ assert.equal(h.db.ClubUserAccess[0].person_id,'p1');assert.equal(h.db.AuditLog.length,1);
+ const repeat=await h.call('person_link_confirm',{accessId:'access1',personId:'p1',confirmIdentityVerified:true,reason:'Membership card checked'});
+ assert.equal(repeat.data.alreadyLinked,true);assert.equal(h.db.AuditLog.length,1);
+});
+test('Person link rejects cross-tenant Person and conflicting user identity',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.ClubUserAccess.push({id:'access1',tenant_id:'t1',club_id:'c1',user_id:'host',status:'active'});
+ h.db.Person.push({id:'p2',tenant_id:'t2',full_name:'Other'});
+ assert.equal((await h.call('person_link_review',{accessId:'access1',personId:'p2'})).status,409);
+ h.db.Person[0].linked_user_id='another';
+ assert.equal((await h.call('person_link_review',{accessId:'access1',personId:'p1'})).status,409);
+ assert.equal((await makeHarness().call('person_link_review',{accessId:'access1',personId:'p1'})).status,403);
+});
+test('host venue mapping requires explicit review and preserves existing host emails',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ const review=await h.call('host_venue_review',{configId:'cfg',venueId:'v1'});
+ assert.equal(review.status,200);assert.equal(review.data.configuredHostCount,1);
+ assert.equal(review.data.mutationPerformed,false);
+ assert.equal((await h.call('host_venue_confirm',{configId:'cfg',venueId:'v1',reason:'Verified venue assignment'})).status,400);
+ const saved=await h.call('host_venue_confirm',{configId:'cfg',venueId:'v1',confirmVenueVerified:true,reason:'Verified venue assignment'});
+ assert.equal(saved.status,200);assert.equal(h.db.MembershipVenueHostConfig[0].venue_id,'v1');
+ assert.deepEqual(h.db.MembershipVenueHostConfig[0].host_emails,['host@example.ie']);
+ assert.equal(h.db.AuditLog.length,1);
+});
+test('host venue mapping fails closed for cross-club or inactive venues and revoked admins',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.Venue.push({id:'v2',tenant_id:'t1',club_id:'c2',status:'active'});
+ assert.equal((await h.call('host_venue_review',{configId:'cfg',venueId:'v2'})).status,409);
+ h.db.Venue[0].status='inactive';
+ assert.equal((await h.call('host_venue_review',{configId:'cfg',venueId:'v1'})).status,409);
+ assert.equal((await makeHarness().call('host_venue_review',{configId:'cfg',venueId:'v1'})).status,403);
+});
