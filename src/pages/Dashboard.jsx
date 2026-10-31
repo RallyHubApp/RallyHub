@@ -12,6 +12,7 @@ import { addDays, format } from 'date-fns';
 import MemberPortalDashboard from '@/components/member/MemberPortalDashboard';
 import ClubCommandOverview from '@/components/ccc/ClubCommandOverview';
 import ClubSchedulePanel from '@/components/ccc/ClubSchedulePanel';
+import ClubPaymentPanel from '@/components/ccc/ClubPaymentPanel';
 
 export default function Dashboard() {
   const { data: currentUser = null } = useQuery({
@@ -131,6 +132,17 @@ export default function Dashboard() {
     refetchOnWindowFocus: true
   });
 
+  const { data: clubPayments = [], isLoading: paymentsLoading, isError: paymentsError } = useQuery({
+    queryKey: ['ccc-club-payment-records', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    queryFn: () => base44.entities.PaymentRecord.filter({
+      tenant_id: currentUser.active_tenant_id,
+      club_id: currentUser.active_club_id
+    }, '-created_date', 250),
+    enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && !isMemberView,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true
+  });
+
   const scheduleFrom = format(new Date(), 'yyyy-MM-dd');
   const scheduleTo = format(addDays(new Date(), 14), 'yyyy-MM-dd');
 
@@ -157,6 +169,8 @@ export default function Dashboard() {
       <ClubCommandOverview membershipApprovals={pendingMembershipDecisionCount} membershipPayments={pendingMembershipApplicationCount} guestApprovals={pendingSessionBookingCount} directoryApprovals={pendingDirectoryApprovalCount} isPlatformAdmin={currentUser?.role === 'admin'} />
 
       <ClubSchedulePanel tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} sessions={clubSessions} fromDate={scheduleFrom} toDate={scheduleTo} loading={sessionsLoading} error={sessionsError} />
+
+      <ClubPaymentPanel tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} payments={clubPayments} loading={paymentsLoading} error={paymentsError} />
 
       {((currentUser?.role === 'admin' && (pendingMembershipApprovalCount > 0 || pendingDirectoryApprovalCount > 0)) || pendingMembershipApplicationCount > 0 || pendingMembershipDecisionCount > 0 || pendingSessionBookingCount > 0) && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
