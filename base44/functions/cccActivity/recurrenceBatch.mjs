@@ -6,7 +6,7 @@ export async function createRecurrenceDraftBatch(entity,{source,manifest,batchKe
  const {id,tenant_id,club_id,revision}=source;
  if(!/^ccc-batch-[a-zA-Z0-9_-]{8,80}$/.test(batchKey)||!manifest.valid||!drafts.length||drafts.length!==manifest.rows.length)throw Error('Invalid batch');
  if(source.status!=='draft'||source.linked_event_id||source.recurrence_batch_key)throw Error('Source is not available for recurrence');
- const claim=await entity.updateMany({id,tenant_id,club_id,status:'draft',revision,recurrence_batch_key:{$exists:false}},{$set:{recurrence_batch_key:batchKey,recurrence_batch_state:'creating',revision:revision+1,updated_by_user_id:userId}});
+ const claim=await entity.updateMany({id,tenant_id,club_id,status:'draft',revision,recurrence_batch_key:{$exists:false}},{$set:{recurrence_batch_key:batchKey,recurrence_batch_state:'creating',recurrence_expected_count:drafts.length,revision:revision+1,updated_by_user_id:userId}});
  if(claim.updated!==1)return {success:false,reason:'concurrent_claim',createdIds:[]};
  const createdIds=[];
  try{
