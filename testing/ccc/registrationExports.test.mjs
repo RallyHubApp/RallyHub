@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {registrationRosterCsv,attendanceAuditCsv,exportReadiness,safeExportFilename} from '../../src/lib/ccc/registrationExports.mjs';
+const row=(id,status='confirmed',attendance='attended')=>({id,name:'Jane "Sample"',email:'j@example.com',mobile:'0871234567',status,paymentStatus:'paid',amount:5.5,refundedAmount:0,attendance,attendanceRevision:2,createdAt:'2026-10-31'});
+test('roster CSV includes personal contact, payment and attendance fields',()=>{const csv=registrationRosterCsv([row('one')]);assert.match(csv,/Registration ID/);assert.match(csv,/Attendance revision/);assert.match(csv,/Jane ""Sample""/);assert.match(csv,/0871234567/)});
+test('spreadsheet formula injection and line breaks are neutralised',()=>{const csv=registrationRosterCsv([{...row('one'),name:' =HYPERLINK("https://evil")',email:'\t+cmd',mobile:'-42',paymentStatus:'@SUM(1,2)'}]);assert.match(csv,/"' =HYPERLINK/);assert.match(csv,/"'\t\+cmd"/);assert.match(csv,/"'-42"/);assert.match(csv,/"'@SUM/)});
+test('attendance audit excludes unconfirmed bookings and preserves unmarked status',()=>{const csv=attendanceAuditCsv([row('a'),row('b','pending_approval'),row('c','cash_confirmed','not_marked')]);assert.match(csv,/"a"/);assert.match(csv,/"c"/);assert.doesNotMatch(csv,/"b"/);assert.match(csv,/"yes"/)});
+test('partial and duplicate rosters cannot claim completeness',()=>{assert.equal(exportReadiness([row('a')],{hasMore:true}).complete,false);const d=exportReadiness([row('a'),row('a')],{});assert.equal(d.complete,false);assert.deepEqual(d.duplicateIds,['a']);assert.equal(d.settlementVerified,false)});
+test('export filenames do not contain path traversal',()=>{assert.equal(safeExportFilename('../x','attendance'),'rallyhub-___x-attendance.csv')});
+test('exports are integrated into scoped admin roster with confirmation',()=>{const parent=readFileSync(new URL('../../src/components/ccc/ClubEventRegistrationOverview.jsx',import.meta.url),'utf8');const ui=readFileSync(new URL('../../src/components/ccc/ClubRegistrationExports.jsx',import.meta.url),'utf8');assert.match(parent,/ClubRegistrationExports/);assert.match(parent,/rows=\{loaded\}/);assert.match(ui,/Confirm personal data export/);assert.doesNotMatch(ui,/base44\.functions|sendEmail|\.create\(/)});
