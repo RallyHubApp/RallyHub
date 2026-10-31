@@ -1,0 +1,16 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {reviewTournivalDuprReadiness} from '../../src/lib/ccc/tournivalDuprReadiness.mjs';
+const ids=Object.fromEntries(['a','b','c','d'].map(id=>[id,{duprId:'dupr-'+id,consent:true}]));
+const match={id:'m',teamA:['a','b'],teamB:['c','d'],status:'completed',matchFormat:'first_11_by1',result:{scoreA:11,scoreB:7}};
+const event={id:'e',tenantId:'t',clubId:'c',duprEnabled:true,rehearsal:false,matches:[match]};
+const opts={providerRulesVerified:true,ssoVerified:true};
+const codes=r=>r.issues.map(i=>i.code);
+test('verified complete match is eligible for separate controlled submission',()=>{const r=reviewTournivalDuprReadiness(event,ids,opts);assert.equal(r.eligible,true);assert.equal(r.submissionAttempted,false);});
+test('rehearsal always blocked',()=>assert.ok(codes(reviewTournivalDuprReadiness({...event,rehearsal:true},ids,opts)).includes('rehearsal_isolated')));
+test('provider and SSO verification required',()=>{const c=codes(reviewTournivalDuprReadiness(event,ids));assert.ok(c.includes('provider_rules_unverified'));assert.ok(c.includes('sso_unverified'));});
+test('timed match format blocked pending provider verification',()=>assert.ok(codes(reviewTournivalDuprReadiness({...event,matches:[{...match,matchFormat:'timed_10'}]},ids,opts)).includes('timed_format_unverified')));
+test('missing DUPR identity and consent blocked',()=>{const c=codes(reviewTournivalDuprReadiness(event,{a:{duprId:'a',consent:false}},opts));assert.ok(c.includes('dupr_identity_missing'));assert.ok(c.includes('dupr_consent_missing'));});
+test('unfinished matches blocked',()=>assert.ok(codes(reviewTournivalDuprReadiness({...event,matches:[{...match,status:'playing'}]},ids,opts)).includes('match_not_completed')));
+test('duplicate match IDs blocked',()=>assert.ok(codes(reviewTournivalDuprReadiness({...event,matches:[match,match]},ids,opts)).includes('invalid_match_identity')));
+test('invalid score blocked',()=>assert.ok(codes(reviewTournivalDuprReadiness({...event,matches:[{...match,result:{scoreA:11,scoreB:11}}]},ids,opts)).includes('invalid_score')));
