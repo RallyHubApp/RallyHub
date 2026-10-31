@@ -414,3 +414,12 @@ test('court selection requires exact tenant, club and venue; separate courts avo
  const check=await h.call('schedule_review',{draft});assert.equal(check.status,200);assert.equal(check.data.ready,true);
  const whole=await h.call('schedule_review',{draft:{...draft,court_id:''}});assert.equal(whole.data.ready,false);
 });
+test('people summary flags conflicting identity links without merging records',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.ClubUserAccess.push({id:'x1',tenant_id:'t1',club_id:'c1',status:'active',person_id:'p1',user_id:'u1'});
+ h.db.ClubUserAccess.push({id:'x2',tenant_id:'t1',club_id:'c1',status:'active',person_id:'p1',user_id:'u2'});
+ const before=JSON.stringify(h.db.ClubUserAccess);
+ const result=await h.call('people_summary');
+ assert.equal(result.status,200);assert.equal(result.data.integrity.duplicatePersonLinkCount,1);
+ assert.equal(result.data.integrity.autoMergeEnabled,false);assert.equal(JSON.stringify(h.db.ClubUserAccess),before);
+});
