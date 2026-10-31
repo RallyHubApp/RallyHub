@@ -200,3 +200,12 @@ test('activity list reads more than 100 drafts without silently truncating',asyn
  const result=await h.call('list');assert.equal(result.status,200);
  assert.equal(result.data.activities.length,305);assert.equal(result.data.resultsMayBeTruncated,false);
 });
+test('event cannot be linked to a second activity within the same club',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ Object.assign(h.db.ClubActivity[0],{status:'draft',capacity:16,registration_mode:'approval',payment_method:'none',host_user_id:'host',communication_template_id:'template1'});
+ Object.assign(h.db.Tournament[0],{event_capacity:16,event_fee_amount:0,venue_id:'v1',start_date:'2026-11-04'});
+ h.db.ClubActivity.push({...h.db.ClubActivity[0],id:'a2',linked_event_id:'e1'});
+ const result=await h.call('link_event',{id:'a1',eventId:'e1',expectedRevision:1});
+ assert.equal(result.status,409);assert.match(result.data.error,/already linked/);
+ assert.equal(h.db.ClubActivity[0].revision,1);
+});
