@@ -11,6 +11,8 @@ export function assessTournivalHostStateHealth(session:any,tournament:any){
  const mirror=(()=>{try{return JSON.parse(tournament?.tournival_state||'{}')}catch{return null}})();
  if(!mirror||typeof mirror!=='object'||!Number.isInteger(mirror.revision))issues.push('tournament_mirror_unavailable');
  else if(state&&mirror.revision!==state.revision)issues.push('tournament_mirror_revision_mismatch');
+ else if(state&&['matches','results','status'].some(key=>JSON.stringify(state[key]??null)!==JSON.stringify(mirror[key]??null)))
+  issues.push('tournament_mirror_content_mismatch');
  if(state&&!Array.isArray(state.matches))issues.push('session_matches_missing');
  if(state&&Array.isArray(state.matches)){
   const ids=state.matches.map((m:any)=>m?.id);
