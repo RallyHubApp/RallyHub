@@ -39,9 +39,10 @@ export default function PublicTournivalHost(){
    const current=snapshotRef.current?.state;
    if(!current)throw Error('Tournament state not loaded');
    const operationId=crypto.randomUUID();
-   await invoke({action:'save',expectedRevision:current.revision||0,operationId,
+   const result=await invoke({action:'save',expectedRevision:current.revision||0,operationId,
     stateJson:JSON.stringify(next),correctionReason});
    await refresh(); // reconcile true committed state after save
+   if(result.requiresReconciliation)setError('Session save confirmed; tournament synchronisation needs organiser review. Do not submit again.');
   }catch(e){
    await refresh().catch(()=>{});
    setError(e.message||'Host save not confirmed; check latest state before retrying.');
