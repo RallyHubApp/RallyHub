@@ -1,0 +1,11 @@
+import {strict as assert} from 'node:assert';
+import {assessGuestApprovalPolicy as check} from './guestApprovalPolicy.ts';
+const fixture=()=>({experienceLevel:'beginner',session:{id:'wed',venueId:'corofin',guestEligible:true,beginnerGuestEligible:true},venue:{id:'corofin',name:'Corofin GAA Hall'}});
+Deno.test('beginner can be approved for enabled Corofin session',()=>assert.equal(check(fixture()).allowed,true));
+Deno.test('beginner cannot be approved for Doora',()=>assert.equal(check({...fixture(),session:{...fixture().session,venueId:'doora-barefield'},venue:{id:'doora-barefield',name:'Doora Barefield'}}).allowed,false));
+Deno.test('experienced guest can request Doora subject to approval',()=>assert.equal(check({...fixture(),experienceLevel:'experienced',session:{id:'db-mon-1900',venueId:'doora-barefield'},venue:{id:'doora-barefield',name:'Doora Barefield'}}).allowed,true));
+Deno.test('disabled guest session is rejected for experienced players',()=>assert.equal(check({...fixture(),experienceLevel:'experienced',session:{...fixture().session,guestEligible:false}}).allowed,false));
+Deno.test('directory venue mismatch fails closed',()=>assert.equal(check({...fixture(),venue:{id:'other',name:'Other'}}).allowed,false));
+Deno.test('configured beginner session list takes precedence over stale session flag',()=>assert.equal(check({...fixture(),beginnerSessionKeys:['another']}).allowed,false));
+Deno.test('configured beginner list allows explicitly selected session',()=>assert.equal(check({...fixture(),session:{...fixture().session,beginnerGuestEligible:false},beginnerSessionKeys:['wed']}).allowed,true));
+Deno.test('missing experience fails closed',()=>assert.equal(check({...fixture(),experienceLevel:''}).allowed,false));
