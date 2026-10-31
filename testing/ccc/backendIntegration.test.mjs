@@ -428,3 +428,20 @@ test('people summary flags conflicting identity links without merging records',a
  assert.equal(result.status,200);assert.equal(result.data.integrity.duplicatePersonLinkCount,1);
  assert.equal(result.data.integrity.autoMergeEnabled,false);assert.equal(JSON.stringify(h.db.ClubUserAccess),before);
 });
+test('guest policy endpoint is scoped, admin-only and does not book or pay',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ const before=JSON.stringify(h.db);
+ const result=await h.call('guest_eligibility_review',{venueId:'v1',experience:'beginner'});
+ assert.equal(result.status,200);assert.equal(result.data.eligible,true);
+ assert.equal(result.data.bookingCreated,false);assert.equal(JSON.stringify(h.db),before);
+ assert.equal((await h.call('guest_eligibility_review',{venueId:'other',experience:'experienced'})).data.eligible,false);
+ assert.equal((await makeHarness().call('guest_eligibility_review',{venueId:'v1',experience:'experienced'})).status,403);
+});
+test('admin context without actual grant is rejected and revoked club grant overrides tenant access',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.TenantUserAccess.length=0;
+ assert.equal((await h.call('people_summary')).status,403);
+ h.db.TenantUserAccess.push({id:'g1',tenant_id:'t1',user_id:'host',role:'admin',status:'active'});
+ h.db.ClubUserAccess.push({id:'blocked',tenant_id:'t1',club_id:'c1',user_id:'host',permission_bundle:'member',status:'revoked'});
+ assert.equal((await h.call('people_summary')).status,403);
+});
