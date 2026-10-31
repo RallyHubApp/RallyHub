@@ -1,11 +1,12 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {base44} from '@/api/base44Client';
 /** No implicit identity or venue assignment: review and confirmation are separate actions. */
-export default function ClubExplicitLinkReview({mode,tenantId,clubId,onComplete}){
+export default function ClubExplicitLinkReview({mode,tenantId,clubId,onComplete,initialFirst='',initialSecond=''}){
  const person=mode==='person';
- const [first,setFirst]=useState(''),[second,setSecond]=useState(''),[reason,setReason]=useState(''),[verified,setVerified]=useState(false);
+ const [first,setFirst]=useState(initialFirst),[second,setSecond]=useState(initialSecond),[reason,setReason]=useState(''),[verified,setVerified]=useState(false);
  const [review,setReview]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
  useEffect(()=>{setReview(null);setVerified(false);setReason('');setError('');setMessage('')},[mode,tenantId,clubId,first,second]);
+ useEffect(()=>{setFirst(initialFirst);setSecond(initialSecond)},[initialFirst,initialSecond,mode,tenantId,clubId]);
  const requestVersion=useRef(0);
  const invalidate=()=>{requestVersion.current+=1;setReview(null);setVerified(false);setReason('');};
  const params=person?{accessId:first.trim(),personId:second.trim()}:{configId:first.trim(),venueId:second.trim()};
