@@ -106,6 +106,7 @@ export function applyTournivalMatchChange(event,{matches,actor='host',action='co
  if(!Array.isArray(matches)||matches.length!==event.matches.length)throw Error('Match count changed unexpectedly');
  const byId=new Map(event.matches.map(m=>[m.id,m]));
  if(matches.some(m=>!byId.has(m.id)))throw Error('Unknown match');
+ if(new Set(matches.map(m=>m.id)).size!==matches.length)throw Error('Duplicate match in update');
  // Court updates must not rewrite a fixture's identity or silently reopen a completed match.
  for(const next of matches){
    const prior=byId.get(next.id);
@@ -115,6 +116,14 @@ export function applyTournivalMatchChange(event,{matches,actor='host',action='co
      throw Error('Completed match cannot be reopened through court updates');
    if(prior.status==='completed' && next.court!==prior.court)
      throw Error('Completed match court cannot be changed');
+   if(prior.status==='completed' && next.revision!==prior.revision)
+     throw Error('Completed match revision cannot be changed');
+   if(next.revision<prior.revision)throw Error('Invalid match revision transition');
+   if(prior.status==='waiting' && !['waiting','playing','completed','cancelled'].includes(next.status))throw Error('Invalid waiting match transition');
+   if(prior.status==='playing' && !['playing','completed','waiting'].includes(next.status))throw Error('Invalid playing match transition');
+   if(prior.status==='cancelled' && next.status!=='cancelled')throw Error('Cancelled match cannot be reopened');
+   if(prior.status==='playing' && next.status==='completed' && !next.result)throw Error('Completed match requires result');
+   if(prior.status==='playing' && next.status==='waiting' && next.result)throw Error('Reset to waiting cannot retain result');
  }
  const preflight=inspectSportingFixtures(matches,{courts,requireCheckIn:false});
  if(!preflight.valid)throw Error('Fixture preflight failed: '+preflight.issues.map(issue=>issue.code).join(', '));
