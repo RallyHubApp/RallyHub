@@ -227,7 +227,8 @@ Deno.serve(async req=>{
    const [schedule,legacy]=await Promise.all([readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id}),readScopedInventory(sdk.asServiceRole.entities.GuestSessionLink,{tenant_id,club_id},{pageSize:200,maxPages:20})]);
    const ccc=reviewWeeklyRecurrence(candidate,schedule.activities,{weeks:body.weeks,complete:schedule.complete});
    const legacyReview=reviewLegacySessionOverlaps(ccc.occurrences,legacy.rows,{tenantId:tenant_id,clubId:club_id,venueName:venue.name,complete:legacy.complete});
-   const occurrences=ccc.occurrences.map((o:any,i:number)=>({...o,legacyOverlaps:legacyReview.occurrences[i]?.legacyOverlaps||[],legacyUnmapped:legacyReview.occurrences[i]?.legacyUnmapped||[]}));
+   const local=reviewDublinOccurrences(ccc.occurrences);
+   const occurrences=local.occurrences.map((o:any,i:number)=>({...o,legacyOverlaps:legacyReview.occurrences[i]?.legacyOverlaps||[],legacyUnmapped:legacyReview.occurrences[i]?.legacyUnmapped||[]}));
    return Response.json({success:true,...ccc,occurrences,ready:ccc.ready&&legacyReview.ready,legacySessionInventoryComplete:legacy.complete,legacyConflictedWeeks:legacyReview.conflictedWeeks,legacyUnmappedWeeks:legacyReview.unmappedWeeks,legacySessionCheckAdvisory:true});
   }
   if(body.action==='schedule_review'){
