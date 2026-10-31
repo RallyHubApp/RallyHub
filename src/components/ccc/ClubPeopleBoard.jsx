@@ -3,6 +3,7 @@ import {useQuery} from '@tanstack/react-query';
 import {base44} from '@/api/base44Client';
 import {Link} from 'react-router-dom';
 import ClubExplicitLinkReview from './ClubExplicitLinkReview';
+import ClubPersonConsentReview from './ClubPersonConsentReview';
 export default function ClubPeopleBoard({tenantId,clubId}){
  const {data,isLoading,isError,refetch,isFetching}=useQuery({queryKey:['ccc-people',tenantId,clubId],enabled:!!tenantId&&!!clubId,queryFn:async()=>{const response=await base44.functions.invoke('cccActivity',{action:'people_summary'});if(!response.data?.success)throw Error(response.data?.error||'People summary unavailable');return response.data},retry:false,staleTime:30000});
  return <section className="rounded-xl border bg-card p-4" aria-label="People overview"><div className="flex items-center justify-between gap-2"><h3 className="font-semibold">People and membership overview</h3><button className="rounded-lg border px-3 py-1 text-sm" disabled={isFetching} onClick={()=>refetch()}>Refresh</button></div>
