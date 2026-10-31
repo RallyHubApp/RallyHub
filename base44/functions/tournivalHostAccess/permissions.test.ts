@@ -27,3 +27,25 @@ Deno.test('host cannot fake score, double allocate or finish incomplete session'
  const after={...prior,matches:[{...match,status:'playing',court:1},{...duplicate,status:'playing',court:2}]};
  assert.equal(check(prior,after).valid,false);
 });
+
+Deno.test('host cannot submit duplicate match IDs, stale revisions or invalid states',()=>{
+ const duplicate={...match,id:'q:1:2'};
+ const before={...base,matches:[match,duplicate]};
+ assert.equal(check(before,{...before,matches:[match,match]}).valid,false);
+ assert.equal(check(base,{...base,matches:[{...match,revision:-1}]}).valid,false);
+ assert.equal(check(base,{...base,matches:[{...match,status:'cancelled'}]}).valid,false);
+});
+Deno.test('completed results and revisions are immutable for delegated host',()=>{
+ const result={scoreA:8,scoreB:4,winner:'A'};
+ const completed={...match,status:'completed',revision:2,result};
+ const before={...base,matches:[completed],results:{1:{1:result}}};
+ assert.equal(check(before,{...before,matches:[{...completed,result:{scoreA:9,scoreB:4,winner:'A'}}]}).valid,false);
+ assert.equal(check(before,{...before,matches:[{...completed,revision:3}]}).valid,false);
+ assert.equal(check(before,{...before,matches:[{...completed,status:'waiting'}]}).valid,false);
+});
+Deno.test('host cannot fake invalid winner or score',()=>{
+ const playing={...base,matches:[{...match,status:'playing',court:1,revision:1}]};
+ const invalid={scoreA:8,scoreB:4,winner:'B'};
+ const next={...playing,matches:[{...match,status:'completed',revision:2,result:invalid}],results:{1:{1:invalid}}};
+ assert.equal(check(playing,next).valid,false);
+});
