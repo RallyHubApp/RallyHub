@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {proposeTournivalHostRecovery,acknowledgeTournivalHostRecovery} from '../../src/lib/ccc/tournivalHostRecovery.mjs';
+const fixture=(id,players,status='playing',court=1)=>({id,teamA:players.slice(0,2),teamB:players.slice(2),status,court,revision:2,result:null});
+const event=()=>({id:'e',tenantId:'t',clubId:'c',phase:'qualification',revision:5,audit:[],matches:[fixture('m1',['a','b','c','d'])]});
+const proposal=e=>proposeTournivalHostRecovery(e,{expectedRevision:5,hostId:'host1',confirmedMatchIds:['m1']});
+test('explicit host confirmation produces a pure recovery proposal',()=>{const e=event(),p=proposal(e);assert.equal(p.ready,true);assert.equal(p.writesPerformed,false);assert.equal(e.revision,5);});
+test('missing active confirmation blocks proposal',()=>assert.equal(proposeTournivalHostRecovery(event(),{expectedRevision:5,hostId:'host1'}).ready,false));
+test('unknown confirmation blocks proposal',()=>assert.equal(proposeTournivalHostRecovery(event(),{expectedRevision:5,hostId:'host1',confirmedMatchIds:['m1','fake']}).ready,false));
+test('missing host blocks proposal',()=>assert.equal(proposeTournivalHostRecovery(event(),{expectedRevision:5,confirmedMatchIds:['m1']}).ready,false));
+test('stale revision blocks proposal',()=>assert.equal(proposeTournivalHostRecovery(event(),{expectedRevision:4,hostId:'host1',confirmedMatchIds:['m1']}).ready,false));
+test('host acknowledgement writes audit without changing scores or fixtures',()=>{const e=event(),p=proposal(e),next=acknowledgeTournivalHostRecovery(e,p,{expectedRevision:5,hostId:'host1'});assert.equal(next.revision,6);assert.deepEqual(next.matches,e.matches);assert.equal(next.audit.at(-1).type,'host_recovery_acknowledged');assert.equal(e.audit.length,0);});
+test('stale acknowledgement blocked',()=>assert.throws(()=>acknowledgeTournivalHostRecovery({...event(),revision:6},proposal(event()),{expectedRevision:5,hostId:'host1'}),/Stale recovery revision/));
+test('host mismatch blocked',()=>assert.throws(()=>acknowledgeTournivalHostRecovery(event(),proposal(event()),{expectedRevision:5,hostId:'host2'}),/host mismatch/));
+test('invalid court collision blocks recovery',()=>{const e=event();e.matches.push(fixture('m2',['e','f','g','h'],'playing',1));assert.equal(proposeTournivalHostRecovery(e,{expectedRevision:5,hostId:'host1',confirmedMatchIds:['m1','m2']}).ready,false);});
