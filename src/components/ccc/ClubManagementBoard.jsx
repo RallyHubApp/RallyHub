@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import ClubExplicitLinkReview from './ClubExplicitLinkReview';
 import ClubCommunicationsReadiness from './ClubCommunicationsReadiness';
 import ClubHostRevocation from './ClubHostRevocation';
+import ClubMembershipReadiness from './ClubMembershipReadiness';
 export default function ClubManagementBoard({tenantId,clubId}){
  const {data,isLoading,isError,refetch,isFetching}=useQuery({queryKey:['ccc-management',tenantId,clubId],enabled:!!tenantId&&!!clubId,queryFn:async()=>{const response=await base44.functions.invoke('cccActivity',{action:'management_summary'});if(!response.data?.success)throw Error(response.data?.error||'Management summary unavailable');return response.data},retry:false,staleTime:30000});
  return <section className="rounded-xl border bg-card p-4" aria-label="Management controls overview"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">Communication and host configuration</h3><button className="rounded-lg border px-3 py-1 text-sm" disabled={isFetching} onClick={()=>refetch()}>Refresh</button></div>
@@ -16,6 +17,7 @@ export default function ClubManagementBoard({tenantId,clubId}){
  {data.venues?.length>0&&<div className="mt-3 rounded-lg border p-3"><h4 className="text-sm font-semibold">Active venues available for explicit mapping</h4><ul className="mt-2 space-y-1 text-xs">{data.venues.map(v=><li key={v.id} className="break-all">{v.name} · Venue ID: {v.id}</li>)}</ul></div>}
  <p className="mt-3 text-xs text-muted-foreground">Configuration inventory is read-only. The separate confirmed venue-mapping action below changes host access to the selected venue; it does not edit host email lists, send messages or approve templates.</p><Link to="/app/communications" className="mt-2 inline-block text-sm text-primary underline">Open Communications Centre</Link></>}
  <div className="mt-4"><ClubCommunicationsReadiness tenantId={tenantId} clubId={clubId}/></div>
+ <ClubMembershipReadiness tenantId={tenantId} clubId={clubId}/>
  <div className="mt-4"><ClubExplicitLinkReview mode="venue" tenantId={tenantId} clubId={clubId} onComplete={()=>refetch()}/></div>
  <div className="mt-4"><ClubHostRevocation tenantId={tenantId} clubId={clubId} configs={data?.hosts||[]} onComplete={()=>refetch()}/></div>
  </section>;
