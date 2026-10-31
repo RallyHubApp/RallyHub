@@ -40,7 +40,8 @@ const records={
 const matches=(item,query)=>Object.entries(query).every(([k,v])=>v&&typeof v==='object'&&'$in'in v?v.$in.includes(item[k]):v&&typeof v==='object'&&'$exists'in v?(v.$exists?item[k]!==undefined:item[k]===undefined):item[k]===v);
 function makeHarness(user=records.User[0]){
  const db=structuredClone(records);const reads={};
- db.ClubUserAccess.push({id:'access-seed',tenant_id:'t1',club_id:'c1',user_id:user.id,status:'active',permission_bundle:user.role==='admin'?'club_admin':'member'});
+ if(user.role==='admin')db.TenantUserAccess.push({id:'tenant-admin',tenant_id:'t1',user_id:user.id,role:'admin',status:'active'});
+ else db.ClubUserAccess.push({id:'access-seed',tenant_id:'t1',club_id:'c1',user_id:user.id,status:'active',permission_bundle:'member'});
  const entities=Object.fromEntries(Object.keys(db).map(name=>[name,{
   filter:async(query={},sort,limit)=>{reads[name]=(reads[name]||0)+1;const rows=db[name].filter(row=>matches(row,query));if(sort&&typeof sort==='object'){const start=Number(sort.cursor||0),size=sort.limit||250;return {items:rows.slice(start,start+size),has_more:start+size<rows.length,next_cursor:start+size<rows.length?String(start+size):null}}return rows.slice(0,limit||1000)},
   updateMany:async(query,patch)=>{let updated=0;for(const row of db[name])if(matches(row,query)){Object.assign(row,patch.$set||{});updated++}return {updated}},
