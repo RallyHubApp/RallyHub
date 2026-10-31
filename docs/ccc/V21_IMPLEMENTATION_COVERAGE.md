@@ -7,7 +7,7 @@
 | Multi-tenant / club / sport boundary | Existing Base44 hierarchy, `src/lib/ccc/activityContracts.js`, scoped dashboard queries | Partial; prove cross-club, cross-tenant and club-admin access end-to-end |
 | Canonical Person / membership identity | `memberIdentity.js`; optional explicit `EventRegistration.person_id` | Partial; admin-confirmed linking not wired into all workflows |
 | Command Centre overview/navigation | `ClubCommandOverview.jsx` in Dashboard; overview counts use existing backend | Partial; full People / Activities / Operations / Management navigation not delivered |
-| Activity types and lifecycle | `activityContracts.js`, `activityReadiness.js` | Pure contracts only; creation wizard, persistence, role checks and lifecycle transitions not connected |
+| Activity types and lifecycle | `activityContracts.js`, `activityReadiness.js`, `activityWorkflow.js`, `activityWizard.js`, `ClubActivityPlanner.jsx` | Four-step admin planning preview now connected to Dashboard; draft and transition preflight tested. **No persistence, verified IDs, backend permissions or published activity yet** |
 | Sessions / calendar | `sessionCalendar.js`, `ClubSchedulePanel.jsx` | Read-only; verify date coverage, recurrence, capacity and real host assignments |
 | Registration / booking | Existing guest/membership functions; `bookingPolicy.js`, `registrationEligibility.js` | Existing workflows retained; pure policies not authoritative backend enforcement |
 | Guest / beginner / experienced access | Existing guest-access backend and `registrationEligibility.js` | Test actual venue restrictions, approvals and rescheduling on mobile |
@@ -24,7 +24,7 @@
 
 ## Release blockers
 1. Locate and check the exact signed-off v2.1 specification against this inventory; do not infer missing requirements from existing helpers.
-2. Implement the remaining integrated workflows, not just standalone policy modules.
+2. Implement server-authorised activity persistence and lifecycle transitions, connect real venue/host/template selectors and bookings; the current dashboard wizard is a no-write planning preview, not a completed creation flow.
 3. Validate actual Base44 schema, record limits and query completeness; avoid treating truncated snapshots as full totals.
 4. Test initial loading, repeat navigation, stale cache, 429, slow response, lost response and simultaneous actions for membership and booking.
 5. Verify permissions for super-admin, club admin, host, member, guest and cross-tenant access without weakening backend RLS.
