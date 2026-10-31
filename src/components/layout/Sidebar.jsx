@@ -46,6 +46,7 @@ export default function Sidebar({ isOpen, onToggle }) {
   ]; 
   const superAdminNavItems = [
     { path: '/app', label: 'Dashboard', icon: LayoutDashboard, section: 'SUPER ADMIN' },
+    { path: '/app/club-command-centre', label: 'Club Command Centre', icon: ClipboardList, section: 'CLUB OPERATIONS' },
     { path: '/app/admin', label: 'Admin Panel', icon: Shield, admin: true, section: 'SUPER ADMIN' },
     { path: '/app/admin?tab=control-library', label: 'Control Library', icon: BookOpen, controlLibrary: true, section: 'SUPER ADMIN' },
     { path: '/app/admin?tab=directory-command', label: 'Directory Command Centre', icon: Shield, directoryAdmin: true, section: 'SUPER ADMIN' },
@@ -79,6 +80,7 @@ export default function Sidebar({ isOpen, onToggle }) {
     navItems[0],
     ...(canAccessAdmin ? [{ path: '/app/messages', label: 'Member Messages', icon: MessageCircle, messages: true }] : []),
     ...(canManageMembership ? [
+      { path: '/app/club-command-centre', label: 'Club Command Centre', icon: ClipboardList },
       { path: '/app/membership', label: 'Membership', icon: ContactRound },
       { path: '/app/finance', label: 'Finance Summary', icon: WalletCards },
       { path: '/app/waiting-list', label: 'Waiting List', icon: ClipboardList },
