@@ -319,6 +319,7 @@ Deno.serve(async req=>{
    const record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!record)return fail('Activity not found',404);
    if(record.revision!==revision||!Number.isSafeInteger(revision))return fail('Activity changed; reload',409);
+   if(record.recurrence_batch_key)return fail('Recurring source template cannot be linked to an event',409);
    if(!['draft','ready','scheduled'].includes(record.status))return fail('Cannot link activity in current state',409);
    const event=(await sdk.asServiceRole.entities.Tournament.filter({id:event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
    if(!event)return fail('Event not found in selected club',404);
