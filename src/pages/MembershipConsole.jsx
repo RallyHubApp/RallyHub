@@ -119,7 +119,9 @@ export default function MembershipConsole() {
   const [saving, setSaving] = useState(false);
   const [identityReview, setIdentityReview] = useState(null);
   const [identityReviewBusy, setIdentityReviewBusy] = useState(false);
-  useEffect(() => { setIdentityReview(null); }, [personId]);
+  const [paymentHealth, setPaymentHealth] = useState(null);
+  const [paymentHealthBusy, setPaymentHealthBusy] = useState(false);
+  useEffect(() => { setIdentityReview(null); setPaymentHealth(null); }, [personId]);
   const [applicationBusyId, setApplicationBusyId] = useState('');
   const [editApplicant,setEditApplicant]=useState(null);
   const [editApplicantForm,setEditApplicantForm]=useState({fullName:'',email:'',mobile:''});
@@ -818,6 +820,18 @@ export default function MembershipConsole() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const checkPaymentHealth = async () => {
+    if (!personId || paymentHealthBusy) return;
+    setPaymentHealthBusy(true);
+    setPaymentHealth(null);
+    try {
+      const response = await membershipRead('membershipRecord', { action: 'admin_payment_health', personId });
+      if (response.data?.error) throw new Error(response.data.error);
+      setPaymentHealth(response.data?.health || null);
+    } catch (error) { toast.error(error?.response?.data?.error || error?.message || 'Payment integrity review unavailable'); }
+    finally { setPaymentHealthBusy(false); }
   };
 
   const verifyMembershipPayment = async () => {
@@ -1583,9 +1597,14 @@ export default function MembershipConsole() {
 
                 <TabsContent value="payments" className="pt-4 space-y-3">
                   <div className="flex flex-wrap justify-end gap-2">
+                    <Button size="sm" variant="outline" disabled={paymentHealthBusy} onClick={checkPaymentHealth}><ShieldCheck className="w-3.5 h-3.5 mr-1.5" />{paymentHealthBusy ? 'Checking…' : 'Review payment integrity'}</Button>
                     {detail.membership?.payment_status !== 'paid' && gateway?.supports_payments !== false ? <Button size="sm" onClick={createMembershipPayment} disabled={saving}><WalletCards className="w-3.5 h-3.5 mr-1.5" />Create / copy payment link</Button> : null}
                     {(detail.payments || []).some(payment => payment.purpose_type === 'membership' && payment.provider_checkout_id && payment.payment_status !== 'paid') ? <Button size="sm" variant="outline" onClick={verifyMembershipPayment} disabled={saving}><ShieldCheck className="w-3.5 h-3.5 mr-1.5" />Verify payment</Button> : null}
                   </div>
+                  {paymentHealth && <div role="status" className={`rounded-lg border p-3 text-sm ${paymentHealth.healthy ? 'border-green-500/30' : 'border-amber-500/40'}`}>
+                    <strong>{paymentHealth.healthy ? 'Payment records consistent' : 'Finance review required'}</strong>
+                    <p className="mt-1">{paymentHealth.healthy ? 'No conflicts detected in the complete membership payment ledger.' : `Issues: ${(paymentHealth.issues || []).map(label).join(', ')}. No records have been changed.`}</p>
+                  </div>}
                   {!(detail.payments || []).length ? <p className="text-sm text-muted-foreground">No payment records.</p> :
                     detail.payments.map(payment => <div key={payment.id} className="rounded-lg border p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                       <div>
