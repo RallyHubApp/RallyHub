@@ -5,9 +5,11 @@ const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const page=read('../../src/pages/ClubCommandCentre.jsx');
 const people=read('../../src/components/ccc/ClubPeopleBoard.jsx');
 const management=read('../../src/components/ccc/ClubManagementBoard.jsx');
-test('People and Management panels are embedded only for administrators',()=>{
- assert.match(page,/active==='people'&&admin&&<ClubPeopleBoard/);
- assert.match(page,/active==='management'&&admin&&<ClubManagementBoard/);
+test('People and Management panels require permitted club administration access',()=>{
+ assert.match(page,/const permitted=admin\|\|clubAdmin/);
+ assert.match(page,/active==='people'&&permitted&&<ClubPeopleBoard/);
+ assert.match(page,/active==='management'&&permitted&&<ClubManagementBoard/);
+ assert.match(page,/every CCC backend action checks live tenant\/club grants/);
 });
 test('People overview uses scoped server inventory without direct PII queries',()=>{
  assert.match(people,/action:'people_summary'/);
