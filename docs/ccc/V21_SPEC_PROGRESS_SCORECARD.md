@@ -35,4 +35,4 @@ Each of the 17 workstreams below receives equal weight (1/17). Each score is an 
 - Focused CCC tests and Vite build are reported with the exact most recent run counts in `V21_IMPLEMENTATION_COVERAGE.md`.
 - Mocked SDK tests establish code behaviour in the test harness, not Base44 runtime support or production reliability.
 - Changes to the percentage require a corresponding update to the workstream scores, with new code and test evidence.
-- A signed-off clause-by-clause master specification traceability exercise may materially change this estimate; until then, avoid presenting 67% as a measured contractual completion figure.
+- A signed-off clause-by-clause master specification traceability exercise may materially change this estimate; until then, avoid presenting 70% as a measured contractual completion figure.
