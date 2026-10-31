@@ -416,6 +416,7 @@ Deno.serve(async req=>{
    const record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!record)return fail('Activity not found',404);
    if(!Number.isSafeInteger(revision)||record.revision!==revision)return fail('Activity changed; reload',409);
+   if(record.recurrence_batch_state==='creating'||record.recurrence_batch_state==='needs_recovery')return fail('Recurrence batch requires reconciliation',409);
    const allowed:any={draft:['ready','cancelled'],ready:['draft','scheduled','cancelled'],scheduled:['registration_open','registration_closed','in_progress','cancelled'],registration_open:['registration_closed','in_progress','cancelled'],registration_closed:['registration_open','in_progress','cancelled'],in_progress:['completed','cancelled'],completed:['archived'],cancelled:['archived']};
    if(!allowed[record.status]?.includes(to))return fail('Transition unavailable until downstream workflows are connected',409);
    if(to==='cancelled' && !reviewActivityCancellation(record).allowed) return fail('Cancel the linked event first',409);
@@ -476,6 +477,7 @@ Deno.serve(async req=>{
    const existing=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!existing)return fail('Draft not found',404);
    if(existing.status!=='draft'||!Number.isSafeInteger(revision)||revision!==existing.revision)return fail('Draft changed; reload',409);
+   if(existing.recurrence_batch_key)return fail('Recurrence batch already claimed; source is locked',409);
    const result=await entity.updateMany({id,tenant_id,club_id,status:'draft',revision},{$set:{...payload,revision:revision+1}});
    if(result.updated!==1)return fail('Draft changed; reload',409);
    return Response.json({success:true,id,revision:revision+1,status:'draft'});
