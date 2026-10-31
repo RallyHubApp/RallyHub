@@ -536,6 +536,15 @@ test('recurrence manifest rejects a linked source and existing venue clashes',as
  const review=await h.call('recurrence_manifest',{id:'a1',expectedRevision:1,weeks:2});
  assert.equal(review.data.valid,false);assert.equal(review.data.rows.length,0);
 });
+test('recurrence creation is draft-only and blocks a repeated batch',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ Object.assign(h.db.ClubActivity[0],{status:'draft',linked_event_id:'',starts_at:'2026-11-04T19:00',ends_at:'2026-11-04T20:30'});
+ const payload={id:'a1',expectedRevision:1,weeks:2,batchKey:'ccc-batch-integration01'};
+ const result=await h.call('recurrence_create_drafts',payload);
+ assert.equal(result.status,200);assert.equal(result.data.createdIds.length,2);
+ assert.equal(h.db.ClubActivity[0].recurrence_batch_state,'complete');
+ assert.equal((await h.call('recurrence_create_drafts',payload)).status,409);
+});
 test('Dublin daylight-saving gaps and repeated times block schedule readiness',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  const base={venue_id:'v1',court_id:'court1'};
