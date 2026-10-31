@@ -19,9 +19,9 @@ const initial={
 };
 const matches=(row,query)=>Object.entries(query||{}).every(([key,value])=>value&&typeof value==='object'&&'$in'in value?value.$in.includes(row[key]):row[key]===value);
 function harness({user={id:'admin',role:'admin',active_tenant_id:'t1',active_club_id:'c1'},refundResult={refundId:'provider-refund',providerStatus:'REFUNDED'},lockAllowed=true}={}){
- const db=structuredClone(initial),calls={refund:0,notice:0,locks:0};
+ const db=structuredClone(initial),calls={refund:0,notice:0,locks:0,reads:{}};
  const entities=Object.fromEntries(Object.entries(db).map(([name,records])=>[name,{
-  filter:async(query={},sort,limit)=>{const rows=records.filter(r=>matches(r,query));if(sort&&typeof sort==='object'){const start=Number(sort.cursor||0),end=start+(sort.limit||200);return {items:rows.slice(start,end),has_more:end<rows.length,next_cursor:end<rows.length?String(end):null}}return rows.slice(0,limit||1000)},
+  filter:async(query={},sort,limit)=>{calls.reads[name]=(calls.reads[name]||0)+1;const rows=records.filter(r=>matches(r,query));if(sort&&typeof sort==='object'){const start=Number(sort.cursor||0),end=start+(sort.limit||200);return {items:rows.slice(start,end),has_more:end<rows.length,next_cursor:end<rows.length?String(end):null}}return rows.slice(0,limit||1000)},
   updateMany:async(query,patch)=>{calls.locks++;if(!lockAllowed)return {updated:0};let updated=0;for(const row of records)if(matches(row,query)){Object.assign(row,patch.$set||{});updated++}return {updated}},
   update:async(id,patch)=>{const row=records.find(r=>r.id===id);if(!row)throw Error('Record missing');Object.assign(row,patch);return row},
   create:async(record)=>{const saved={...record,id:'new'+(records.length+1)};records.push(saved);return saved},
@@ -46,6 +46,20 @@ test('admin page denies cross-club users before reading private data',async()=>{
  const h=harness({user:{id:'admin',role:'admin',active_tenant_id:'t1',active_club_id:'other'}});
  assert.equal((await h.call('admin_list')).status,403);
  assert.equal((await h.call('admin_page',{cursor:'200'})).status,403);
+});
+test('booking verification uses operation ID lookup without reading full roster',async()=>{
+ const h=harness();
+ h.db.EventRegistration[0].operation_id='operation1';
+ const response=await h.call('check',{operationId:'operation1'});
+ assert.equal(response.status,200);assert.equal(response.data.saved,true);
+ assert.equal(h.calls.reads.EventRegistration,1);
+});
+test('admin notice preview does not scan registration roster or send email',async()=>{
+ const h=harness();
+ const response=await h.call('admin_notice_preview',{noticeType:'invalid'});
+ assert.equal(response.status,400);
+ assert.equal(h.calls.reads.EventRegistration||0,0);
+ assert.equal(h.calls.notice,0);
 });
 test('refund locks payment before provider call and updates ledger after success',async()=>{
  const h=harness();
