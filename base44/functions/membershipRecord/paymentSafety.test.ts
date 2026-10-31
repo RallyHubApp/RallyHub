@@ -18,3 +18,7 @@ Deno.test('settled member cannot downgrade',()=>assert.equal(verify({membership:
 Deno.test('wrong membership payment rejected',()=>assert.equal(verify({membership:member(),payment:payment({club_membership_id:'other'}),result:{normalizedStatus:'paid'}}).allowed,false));
 Deno.test('refunded payment requires review',()=>assert.equal(verify({membership:member(),payment:payment({payment_status:'refunded'}),result:{normalizedStatus:'paid'}}).allowed,false));
 Deno.test('provider mismatch rejected',()=>assert.equal(verify({membership:member(),payment:payment(),result:{normalizedStatus:'paid',provider:'stripe'}}).allowed,false));
+
+Deno.test('pending checkout missing URL blocks new checkout',()=>assert.equal(link({...args(),payments:[payment({provider_checkout_url:''})]}).allowed,false));
+Deno.test('unknown provider state requires review',()=>assert.equal(verify({membership:member(),payment:payment(),result:{normalizedStatus:'unknown'}}).allowed,false));
+Deno.test('refunded provider state requires review',()=>assert.equal(verify({membership:member(),payment:payment(),result:{normalizedStatus:'refunded'}}).allowed,false));
