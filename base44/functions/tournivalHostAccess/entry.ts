@@ -3,6 +3,7 @@ import {validateTournivalStateTransition} from './tournivalStateValidation.ts';
 import {validateDelegatedTournivalHostEdit} from './permissions.ts';
 import {assessTournivalHostStateHealth} from './stateHealth.ts';
 import {loadTournivalHostPlayerMap} from './playerRead.ts';
+import {planTournivalHostReconciliation} from './reconciliation.ts';
 const clean=(v:any,max=160)=>String(v??'').trim().slice(0,max);
 const SPORT_FIELDS=['rounds','seedOrder','playerIds','numCourts','numRounds','matchFormat',
   'knockoutPairs','knockoutState','duprEnabled','venueMinutes','matchMinutes','changeoverMinutes'];
@@ -46,7 +47,7 @@ Deno.serve(async(req)=>{
    const {playerMap,missingPlayerIds}=roster;
    return Response.json({success:true,event:{id:tournament.id,name:tournament.name,
     location:tournament.location,start_date:tournament.start_date,status:tournament.status},
-    state,playerMap,missingPlayerIds,health,role:'delegated_host',permissions:{
+    state,playerMap,missingPlayerIds,health,reconciliation:planTournivalHostReconciliation(session,tournament),role:'delegated_host',permissions:{
      score:true,courts:true,announcements:true,timing:true,finance:false,configuration:false,dupr:false
     }});
   }
