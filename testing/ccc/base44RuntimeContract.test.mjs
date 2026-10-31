@@ -13,7 +13,7 @@ test('refund_pending exists in PaymentRecord schema and refunds have supported s
  const payment=JSON.parse(file('../../base44/entities/PaymentRecord.jsonc'));
  const refund=JSON.parse(file('../../base44/entities/PaymentRefund.jsonc'));
  assert.ok(payment.properties.payment_status.enum.includes('refund_pending'));
- for(const status of ['requested','processing','succeeded','failed'])assert.ok(refund.properties.status.enum.includes(status));
+ for(const status of ['requested','processing','succeeded','failed','needs_reconciliation'])assert.ok(refund.properties.status.enum.includes(status));
 });
 test('identity and host mapping fields exist in the authoritative entity schemas',()=>{
  const access=JSON.parse(file('../../base44/entities/ClubUserAccess.jsonc'));
