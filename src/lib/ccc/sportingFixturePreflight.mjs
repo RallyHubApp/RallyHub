@@ -3,7 +3,7 @@
  * Advisory only: never starts fixtures, allocates courts or sends DUPR results.
  */
 const validId = id => typeof id === 'string' && id.trim().length > 0;
-const allPlayers = match => [...(match.teamA || []), ...(match.teamB || [])];
+const allPlayers = match => [...(Array.isArray(match.teamA) ? match.teamA : []), ...(Array.isArray(match.teamB) ? match.teamB : [])];
 
 export function inspectSportingFixtures(matches, {
   courts = 4,
@@ -30,8 +30,9 @@ export function inspectSportingFixtures(matches, {
     else if (matchIds.has(id)) add('duplicate_match_id', id);
     matchIds.add(id);
     const players = allPlayers(match || {});
-    if (!allowIncomplete && (match?.teamA?.length !== 2 || match?.teamB?.length !== 2))
+    if (!allowIncomplete && (!Array.isArray(match?.teamA) || !Array.isArray(match?.teamB) || match.teamA.length !== 2 || match.teamB.length !== 2))
       add('invalid_doubles_teams', id);
+    if (!Array.isArray(match?.teamA) || !Array.isArray(match?.teamB)) add('invalid_team_structure', id);
     if (players.some(p => !validId(p))) add('invalid_player_id', id);
     if (new Set(players).size !== players.length) add('duplicate_player_in_match', id);
     for (const player of players) if (validId(player)) participants.add(player);
