@@ -1,3 +1,4 @@
+import {assessMembershipPaymentLink,assessMembershipPaymentVerification} from './paymentSafety.ts';
 import {readActiveSportCatalogue} from './sportCatalogueReader.mjs';
 import {readScopedMembershipLedger} from './scopedLedgerReader.mjs';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
@@ -589,17 +590,21 @@ Deno.serve(async(req)=>{
       if(!gateway||!providerConfigured(gateway.row.provider,gateway.account)) return Response.json({error:'No connected online payment gateway is available for this club.'},{status:409});
       const provider=String(gateway.row.provider||'').toLowerCase();
 
-      const existing=await base44.asServiceRole.entities.PaymentRecord.filter({
+      let existing;
+      try{existing=(await readScopedMembershipLedger(base44.asServiceRole.entities.PaymentRecord,{
         tenant_id:tenantId,club_id:clubId,person_id:personId,club_membership_id:membership.id,purpose_type:'membership'
-      },'-created_date',20);
-      const reusable=(existing||[]).find((p:any)=>p.payment_status==='pending'&&p.provider===provider&&p.provider_checkout_url);
+      })).rows;}
+      catch{return Response.json({error:'Cannot verify complete payment history',code:'MEMBERSHIP_PAYMENT_HISTORY_INCOMPLETE'},{status:503});}
+      const currency=clean(gateway.row.currency,8)||'EUR';
+      const linkReview=assessMembershipPaymentLink({membership,payments:existing,provider,amount,currency});
+      if(!linkReview.allowed)return Response.json({error:'Existing membership payment needs review before another checkout',code:'MEMBERSHIP_PAYMENT_REVIEW_REQUIRED',issues:linkReview.issues},{status:409});
+      const reusable=linkReview.reusable;
       if(reusable) return Response.json({success:true,reused:true,payment:{
         id:reusable.id,provider:reusable.provider,amount:reusable.amount,currency:reusable.currency||gateway.row.currency||'EUR',
         checkout_url:reusable.provider_checkout_url,status:reusable.payment_status
       }});
 
       const club=await first(base44,'Club',{id:clubId,tenant_id:tenantId});
-      const currency=clean(gateway.row.currency,8)||'EUR';
       const ref=`membership-${String(membership.id).slice(-20)}-${Date.now().toString(36)}`.slice(0,64);
       const checkout=await createCheckout({
         provider,account:gateway.account,amount,currency,reference:ref,
@@ -632,23 +637,27 @@ Deno.serve(async(req)=>{
       const personId=clean(body.personId,180);
       const membership=await first(base44,'ClubMembership',{tenant_id:tenantId,club_id:clubId,person_id:personId});
       if(!membership) return Response.json({error:'Member not found in the active club.'},{status:404});
-      const payments=await base44.asServiceRole.entities.PaymentRecord.filter({
+      let payments;
+      try{payments=(await readScopedMembershipLedger(base44.asServiceRole.entities.PaymentRecord,{
         tenant_id:tenantId,club_id:clubId,person_id:personId,club_membership_id:membership.id,purpose_type:'membership'
-      },'-created_date',20);
+      })).rows;}
+      catch{return Response.json({error:'Cannot verify complete membership payment history',code:'MEMBERSHIP_PAYMENT_HISTORY_INCOMPLETE'},{status:503});}
       const payment=(payments||[]).find((p:any)=>p.provider_checkout_id&&p.provider)||null;
       if(!payment) return Response.json({error:'No online membership payment checkout is attached to this membership.'},{status:409});
       const gateway=await resolvePaymentGateway(base44,tenantId,clubId,payment.provider);
       if(!gateway) return Response.json({error:'The payment gateway for this membership is not configured.'},{status:409});
       const result=await retrievePayment(payment.provider,payment.provider_checkout_id,gateway.account);
+      const verification=assessMembershipPaymentVerification({membership,payment,result});
+      if(!verification.allowed)return Response.json({error:'Payment status needs finance review before changing records',code:'MEMBERSHIP_PAYMENT_REVIEW_REQUIRED',issues:verification.issues},{status:409});
       const now=new Date().toISOString();
       await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{
-        payment_status:result.normalizedStatus==='expired'?'failed':result.normalizedStatus,
+        payment_status:verification.normalizedStatus,
         payment_date:result.normalizedStatus==='paid'?now.slice(0,10):payment.payment_date||undefined,
         provider_status:result.providerStatus,provider_transaction_id:result.transactionId||payment.provider_transaction_id||'',
         provider_payment_reference:result.transactionCode||payment.provider_payment_reference||'',
         external_payment_reference:result.transactionCode||payment.external_payment_reference||''
       });
-      if(result.normalizedStatus==='paid'){
+      if(verification.markMemberPaid){
         await base44.asServiceRole.entities.ClubMembership.update(membership.id,{payment_status:'paid',membership_status:'paid_active',payment_date:now.slice(0,10)});
         const relationship=await first(base44,'ClubRelationship',{tenant_id:tenantId,club_id:clubId,person_id:personId});
         if(relationship) await base44.asServiceRole.entities.ClubRelationship.update(relationship.id,{status:'active',payment_status:'paid',payment_date:now.slice(0,10)});
