@@ -12,12 +12,17 @@ Deno.serve(async req=>{
   if(!tenant_id||!club_id)return fail('Select a club',409);
   const body=await req.json().catch(()=>({})),entity=sdk.asServiceRole.entities.ClubActivity;
   if(body.action==='options'){
-   const [users,templates,events]=await Promise.all([
+   const venueId=s(body.venueId);const venue=venueId?(await sdk.asServiceRole.entities.Venue.filter({id:venueId,tenant_id,club_id,status:'active'},'-created_date',1))?.[0]:null;
+   if(venueId&&!venue)return fail('Venue outside active club',403);
+   const [users,templates,events,hostConfigs]=await Promise.all([
     sdk.asServiceRole.entities.User.filter({active_tenant_id:tenant_id,active_club_id:club_id,approval_status:'approved'},'full_name',200),
     sdk.asServiceRole.entities.CommunicationTemplate.filter({tenant_id,status:'approved',owner_scope:'tenant'},'-updated_date',200),
-    sdk.asServiceRole.entities.Tournament.filter({tenant_id,host_club_id:club_id,event_registration_mode:'rallyhub'},'-created_date',100)
+    sdk.asServiceRole.entities.Tournament.filter({tenant_id,host_club_id:club_id,event_registration_mode:'rallyhub'},'-created_date',100),
+    sdk.asServiceRole.entities.MembershipVenueHostConfig.filter({tenant_id,club_id,active:true},'-updated_date',100)
    ]);
-   return Response.json({success:true,hosts:(users||[]).filter((u:any)=>u.role==='admin'||u.active_club_role==='club_admin').map((u:any)=>({id:u.id,name:u.full_name||u.name||u.email||u.id})),templates:(templates||[]).filter((t:any)=>!t.club_id||t.club_id===club_id).map((t:any)=>({id:t.id,name:t.name,purpose:t.purpose,version:t.version})),events:(events||[]).map((e:any)=>({id:e.id,name:e.name||e.title||e.id,start_date:e.start_date,capacity:e.event_capacity}))});
+   const norm=(v:any)=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');const delegated=new Set((hostConfigs||[]).filter((c:any)=>venue&&norm(c.venue_key)===norm(venue.name)).flatMap((c:any)=>c.host_emails||[]).map((email:any)=>String(email).trim().toLowerCase()));
+   const hosts=(users||[]).filter((u:any)=>u.role==='admin'||u.active_club_role==='club_admin'||(venue&&delegated.has(String(u.email||'').trim().toLowerCase()))).map((u:any)=>({id:u.id,name:u.full_name||u.name||u.email||u.id,delegated:!!venue&&delegated.has(String(u.email||'').trim().toLowerCase())}));
+   return Response.json({success:true,hosts,templates:(templates||[]).filter((t:any)=>!t.club_id||t.club_id===club_id).map((t:any)=>({id:t.id,name:t.name,purpose:t.purpose,version:t.version})),events:(events||[]).map((e:any)=>({id:e.id,name:e.name||e.title||e.id,start_date:e.start_date,capacity:e.event_capacity}))});
   }
   if(body.action==='list')return Response.json({success:true,activities:await entity.filter({tenant_id,club_id},'-created_date',100)});
   if(body.action==='link_event'){
