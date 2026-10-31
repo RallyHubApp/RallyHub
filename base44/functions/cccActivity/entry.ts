@@ -71,6 +71,15 @@ Deno.serve(async req=>{
    const paid=rows.reduce((sum:number,r:any)=>sum+(r.paymentStatus==='paid'||r.paymentStatus==='partially_refunded'||r.paymentStatus==='refunded'?Math.max(0,r.amount-r.refundedAmount):0),0);
    return Response.json({success:true,activityId:id,event:{id:event.id,name:event.name||record.title,capacity:Number(event.event_capacity||0),fee:Number(event.event_fee_amount||0),bookingEnabled:!!event.event_booking_enabled},summary:{total:rows.length,pending:count('pending_approval'),confirmed:count('confirmed')+count('cash_confirmed'),waitlisted:count('waitlisted'),cancelled:count('cancelled'),paymentHolds:count('approved_payment_hold'),attended:rows.filter((r:any)=>r.attendance==='attended').length,noShows:rows.filter((r:any)=>r.attendance==='no_show').length,unmarked:rows.filter((r:any)=>['confirmed','cash_confirmed'].includes(r.status)&&r.attendance==='not_marked').length,netCollected:Math.round(paid*100)/100},registrations:rows,overviewReadOnly:true,resultsMayBeTruncated:(registrations||[]).length===500||(payments||[]).length===500});
   }
+  if(body.action==='followup_candidates'){
+   const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!record||!record.linked_event_id)return fail('Linked activity not found',404);
+   const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
+   if(!event)return fail('Linked event unavailable',404);
+   const registrations=await sdk.asServiceRole.entities.EventRegistration.filter({event_id:event.id,tenant_id,club_id,attendance_status:'attended'},'-created_date',500);
+   const candidates=(registrations||[]).filter((r:any)=>['confirmed','cash_confirmed'].includes(r.registration_status)).map((r:any)=>({registrationId:r.id,name:r.full_name||'',email:r.email||'',hasEmail:!!r.email,attendance:r.attendance_status}));
+   return Response.json({success:true,activityId:id,candidates,reviewRequired:true,deliveryEnabled:false,consentAndSuppressionNotChecked:true,resultsMayBeTruncated:(registrations||[]).length===500});
+  }
   if(body.action==='registration_preflight'){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!record)return fail('Activity not found',404);
