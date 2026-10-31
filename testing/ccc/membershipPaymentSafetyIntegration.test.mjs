@@ -9,3 +9,5 @@ test('checkout returns conflict for existing payment requiring review',()=>{asse
 test('payment verification reads complete scoped history',()=>assert.match(verify,/readScopedMembershipLedger\(base44\.asServiceRole\.entities\.PaymentRecord/));
 test('payment verification validates transition before writing payment or membership',()=>{const review=verify.indexOf('assessMembershipPaymentVerification('),write=verify.indexOf('PaymentRecord.update(');assert.ok(review>0&&write>review);assert.match(verify,/verification\.markMemberPaid/);});
 test('incomplete payment inventory fails closed',()=>{assert.match(checkout,/MEMBERSHIP_PAYMENT_HISTORY_INCOMPLETE/);assert.match(verify,/MEMBERSHIP_PAYMENT_HISTORY_INCOMPLETE/);});
+
+test('payment verification refuses ambiguous multiple checkouts',()=>{assert.match(verify,/selectMembershipCheckoutForVerification/);assert.match(verify,/MEMBERSHIP_PAYMENT_SELECTION_REVIEW/);});
