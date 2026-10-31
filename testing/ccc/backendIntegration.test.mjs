@@ -377,3 +377,16 @@ test('schedule review returns scoped conflict details without mutating any activ
  assert.equal(review.data.mutationPerformed,false);assert.equal(JSON.stringify(h.db.ClubActivity),before);
  assert.equal((await makeHarness().call('schedule_review',{draft:{venue_id:'v1',starts_at:'2026-11-04T19:30:00Z',ends_at:'2026-11-04T20:30:00Z'}})).status,403);
 });
+test('person communication review requires active linked club identity, stays read-only and never authorises send',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.ClubUserAccess.push({id:'access1',tenant_id:'t1',club_id:'c1',person_id:'p1',status:'active',user_id:'host'});
+ h.db.ConsentRecord.push({id:'consent1',tenant_id:'t1',club_id:'c1',person_id:'p1',consent_type:'marketing',status:'accepted',channels:['email'],recorded_at:'2026-10-01',consent_version:'1'});
+ h.db.CommunicationSuppression.push({id:'s1',person_id:'p1',owner_scope:'platform',channel:'email',active:true});
+ const before=JSON.stringify(h.db);
+ const result=await h.call('person_communication_review',{personId:'p1',channel:'email',purpose:'marketing'});
+ assert.equal(result.status,200);assert.equal(result.data.sendEligible,false);assert.equal(result.data.personSuppressionCount,1);
+ assert.ok(result.data.issues.includes('active_suppression'));
+ assert.equal(JSON.stringify(h.db),before);
+ assert.equal((await h.call('person_communication_review',{personId:'unknown',channel:'email',purpose:'marketing'})).status,409);
+ assert.equal((await makeHarness().call('person_communication_review',{personId:'p1',channel:'email',purpose:'marketing'})).status,403);
+});
