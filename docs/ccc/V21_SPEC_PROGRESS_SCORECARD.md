@@ -16,17 +16,17 @@ Each of the 17 workstreams below receives equal weight (1/17). Each score is an 
 | Registration / booking | 75 | Event admin listing, approval, verification and refunds now require authoritative active grants, with mocked denial tests; live provider/runtime and concurrency acceptance remain |
 | Guest eligibility | 65 | Clare venue policy preflight and review UI added, cross-checked against existing guestAccessJourney rules; authoritative booking/host acceptance still requires live UAT |
 | Membership and payment journeys | 70 | Read-only membership config, legal document, adult policy and scoped SumUp account checks; real checkout, callback and member lifecycle UAT remain |
-| Attendance and post-session | 78 | Event and guest reconciliation, walk-in ledger, attendance CSV and advisory event close-out checklist added; mobile UAT, runtime validation and consent-cleared follow-up remain |
+| Attendance and post-session | 83 | Guest and event attendance reconciliation, separate walk-in ledger, both CSV exports and advisory close-out checklist; server-side booking eligibility and stale UI save protections added; live UAT and complete-roster verification remain |
 | Hosts and delegated access | 95 | Host selection and actions use authoritative grants and venue assignment; real Base44 runtime, mobile UAT and cross-module revocation remain |
 | Communications and branding | 73 | Post-event candidate triage and linked-person evidence review integrated; endpoint-hash suppression, approved preview, delivery and provider verification remain |
 | Financial reconciliation | 82 | Refund recovery and paginated linked payment rollups; SumUp settlement remains unverified |
 | Audit and operational health | 65 | Host revocation audit, refund reconciliation alerts, identity-integrity flags and fail-closed event close-out readiness checklist; durable audit and monitoring remain |
-| Analytics and reporting | 78 | Loaded registration and attendance CSV exports with personal-data confirmation, injection protection and partial-page warnings added; canonical settlement reporting and wider exports remain |
+| Analytics and reporting | 82 | Event and guest attendance/registration CSV exports with personal-data confirmation, formula protection and partial-read warnings; canonical settlement reporting and cross-module exports remain |
 | Sporting formats | 45 | Protected module integration and regression |
 | Base44 performance and resilience | 75 | Bounded recurrence preview, paginated finance and stale response guard; live concurrency/load remain |
 | A01–A20 acceptance and release gates | 35 | Added recurrence boundary and paginated finance tests; formal A01–A20 traceability and live acceptance remain unpassed |
 
-**Arithmetic:** 1226/17 = **72.1% (rounded to 72%) provisional implementation estimate**. This is an engineering estimate of source coverage, not verified acceptance.
+**Arithmetic:** 1235/17 = **72.6% (rounded to 73%) provisional implementation estimate**. This is an engineering estimate of source coverage, not verified acceptance.
 
 **Critical distinction:** This is an estimate of implementation coverage, not verified feature completion. **A01–A20 full acceptance has not passed.** The current changes are development code only; there has been no authorised production deploy or live SumUp verification.
 
@@ -35,4 +35,4 @@ Each of the 17 workstreams below receives equal weight (1/17). Each score is an 
 - Focused CCC tests and Vite build are reported with the exact most recent run counts in `V21_IMPLEMENTATION_COVERAGE.md`.
 - Mocked SDK tests establish code behaviour in the test harness, not Base44 runtime support or production reliability.
 - Changes to the percentage require a corresponding update to the workstream scores, with new code and test evidence.
-- A signed-off clause-by-clause master specification traceability exercise may materially change this estimate; until then, avoid presenting 72% as a measured contractual completion figure.
+- A signed-off clause-by-clause master specification traceability exercise may materially change this estimate; until then, avoid presenting 73% as a measured contractual completion figure.
