@@ -6,6 +6,7 @@ import {transformSync} from 'esbuild';
 import {summariseEventFinance} from '../../base44/functions/cccActivity/reconciliation.mjs';
 import {isConfiguredHost} from '../../base44/functions/cccActivity/hostPolicy.mjs';
 import {readEventPayments} from '../../base44/functions/cccActivity/eventPaymentReader.mjs';
+import {readEventRegistrations} from '../../base44/functions/cccActivity/registrationReader.mjs';
 const source=readFileSync(new URL('../../base44/functions/cccActivity/entry.ts',import.meta.url),'utf8').replace(/^import .*;\s*$/gm,'');
 const js=transformSync(source,{loader:'ts',format:'cjs'}).code;
 const records={
@@ -21,13 +22,13 @@ const matches=(item,query)=>Object.entries(query).every(([k,v])=>v&&typeof v==='
 function makeHarness(user=records.User[0]){
  const db=structuredClone(records);const reads={};
  const entities=Object.fromEntries(Object.keys(db).map(name=>[name,{
-  filter:async(query={},sort,limit)=>{reads[name]=(reads[name]||0)+1;return db[name].filter(row=>matches(row,query)).slice(0,limit||1000)},
+  filter:async(query={},sort,limit)=>{reads[name]=(reads[name]||0)+1;const rows=db[name].filter(row=>matches(row,query));if(sort&&typeof sort==='object'){const start=Number(sort.cursor||0),size=sort.limit||250;return {items:rows.slice(start,start+size),has_more:start+size<rows.length,next_cursor:start+size<rows.length?String(start+size):null}}return rows.slice(0,limit||1000)},
   updateMany:async(query,patch)=>{let updated=0;for(const row of db[name])if(matches(row,query)){Object.assign(row,patch.$set||{});updated++}return {updated}},
   create:async(record)=>{db[name].push(record);return record}
  }]));
  let handler;
  const sdk={auth:{me:async()=>user},asServiceRole:{entities}};
- vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,Response,Date,console});
+ vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,readEventRegistrations,Response,Date,console});
  const call=async(action,fields={})=>{const response=await handler({method:'POST',json:async()=>({action,...fields})});return {status:response.status,data:await response.json()}};
  return {call,db,reads};
 }
@@ -98,14 +99,14 @@ test('event overview only counts payments linked to selected registrations',asyn
  assert.equal(result.data.registrations[0].name,'Player One');
  assert.equal(JSON.stringify(result.data).includes('medical_note'),false);
 });
-test('financial review flags incomplete registration snapshots',async()=>{
+test('financial overview fetches all 500 registrations via cursor pages',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  for(let i=0;i<499;i++)h.db.EventRegistration.push({...h.db.EventRegistration[0],id:'extra-'+i});
  const result=await h.call('registration_overview',{id:'a1'});
  assert.equal(result.status,200);assert.equal(result.data.registrations.length,500);
- assert.equal(result.data.finance.complete,false);
- assert.equal(result.data.finance.requiresReview,true);
- assert.equal(result.data.resultsMayBeTruncated,true);
+ assert.equal(result.data.finance.complete,true);
+ assert.equal(result.data.resultsMayBeTruncated,false);
+ assert.equal(h.reads.EventRegistration,2);
 });
 test('event overview and roster enforce linked event tenant and club',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
