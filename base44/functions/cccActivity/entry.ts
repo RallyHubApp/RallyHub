@@ -238,7 +238,8 @@ Deno.serve(async req=>{
    const [schedule,legacy,venueRows]=await Promise.all([readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id}),readScopedInventory(sdk.asServiceRole.entities.GuestSessionLink,{tenant_id,club_id},{pageSize:200,maxPages:20}),sdk.asServiceRole.entities.Venue.filter({id:candidate.venue_id,tenant_id,club_id,status:'active'},'-created_date',1)]);
    const checked=activityScheduleConflicts(candidate,schedule.activities);
    const valid=checked.valid&&!!venueRows?.[0];
-   const legacyReview=reviewLegacySessionOverlaps([{week:1,startsAt:candidate.starts_at,endsAt:candidate.ends_at}],legacy.rows,{tenantId:tenant_id,clubId:club_id,venueName:venueRows?.[0]?.name,complete:legacy.complete});
+   const local=reviewDublinOccurrences([{week:1,startsAt:candidate.starts_at,endsAt:candidate.ends_at}]);
+   const legacyReview=reviewLegacySessionOverlaps(local.occurrences,legacy.rows,{tenantId:tenant_id,clubId:club_id,venueName:venueRows?.[0]?.name,complete:legacy.complete});
    return Response.json({success:true,valid,conflicts:checked.conflicts,legacyOverlaps:legacyReview.occurrences[0]?.legacyOverlaps||[],legacyUnmapped:legacyReview.occurrences[0]?.legacyUnmapped||[],complete:schedule.complete&&legacy.complete,ready:valid&&schedule.complete&&checked.conflicts.length===0&&legacyReview.ready,mutationPerformed:false,legacySessionCheckAdvisory:true});
   }
   if(body.action==='operations_summary'){
