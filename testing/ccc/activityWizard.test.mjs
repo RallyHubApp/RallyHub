@@ -39,3 +39,7 @@ test('planner UI is admin gated, scoped by club key, and saves drafts only throu
  assert.match(ui,/action:'save_draft'/);
  assert.doesNotMatch(ui,/action:'activate'|action:'publish'/);
 });
+test('court allocation survives activity wizard normalisation',()=>{
+ const activity=normaliseActivityForm({sport:'pickleball',type:'session',title:'Court',venue_id:'v1',court_id:'court1',starts_at:'2026-11-04T19:00',ends_at:'2026-11-04T20:30',capacity:4},{tenant_id:'t1',club_id:'c1'});
+ assert.equal(activity.court_id,'court1');
+});
