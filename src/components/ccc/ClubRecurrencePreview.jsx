@@ -6,6 +6,7 @@ export default function ClubRecurrencePreview({tenantId,clubId,draft,activityId,
  const key=[tenantId,clubId,activityId,activityRevision,activityStatus,draft?.venue_id,draft?.court_id,draft?.starts_at,draft?.ends_at].join('|');
  const requestKey=useRef('');requestKey.current=key+'|'+weeks;
  useEffect(()=>{setResult(null);setManifest(null);setError('');setBusy(false)},[key,weeks]);
+ const plan=async()=>{const requested=requestKey.current;setBusy(true);setError('');setManifest(null);try{const res=await base44.functions.invoke('cccActivity',{action:'recurrence_manifest',id:activityId,expectedRevision:activityRevision,weeks});if(requestKey.current!==requested)return;if(!res.data?.success)throw Error(res.data?.error||'Manifest unavailable');setManifest(res.data)}catch(e){if(requestKey.current===requested)setError(e?.response?.data?.error||e?.message||'Manifest unavailable')}finally{if(requestKey.current===requested)setBusy(false)}};
  const run=async()=>{const requested=requestKey.current;setBusy(true);setError('');setResult(null);try{
   const res=await base44.functions.invoke('cccActivity',{action:'recurrence_review',id:activityId||'',draft:{venue_id:draft?.venue_id,court_id:draft?.court_id,starts_at:draft?.starts_at,ends_at:draft?.ends_at},weeks});
   if(requestKey.current!==requested)return;if(!res.data?.success)throw Error(res.data?.error||'Recurrence review unavailable');setResult(res.data);
