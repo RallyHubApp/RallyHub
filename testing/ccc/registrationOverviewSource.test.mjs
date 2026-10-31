@@ -13,7 +13,7 @@ test('overview is explicitly scoped to active tenant and club',()=>{
 test('overview exposes only selected participant fields and no medical notes',()=>{
  const action=backend.slice(backend.indexOf("if(body.action==='registration_overview')"),backend.indexOf("if(body.action==='registration_preflight')"));
  assert.doesNotMatch(action,/medical_note|consent_evidence|payment_checkout_url|provider_transaction_id/);
- assert.match(action,/readOnly:true/);
+ assert.match(action,/overviewReadOnly:true/);
  assert.match(action,/resultsMayBeTruncated/);
 });
 test('frontend delegates approval and verification to existing service with confirmation, never direct refunds',()=>{
