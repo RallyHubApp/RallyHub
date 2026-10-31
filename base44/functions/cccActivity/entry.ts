@@ -29,6 +29,7 @@ import {recurrenceDraftPayloads} from './recurrenceDrafts.mjs';
 import {createRecurrenceDraftBatch} from './recurrenceBatch.mjs';
 import {createScopedRecurrenceDrafts} from './recurrenceService.mjs';
 import {inspectRecurrenceBatch} from './recurrenceRecovery.mjs';
+import {reviewRecurrenceCompletion} from './recurrenceRecoveryDecision.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -236,6 +237,19 @@ Deno.serve(async req=>{
    const local=reviewDublinOccurrences(ccc.occurrences);
    const occurrences=local.occurrences.map((o:any,i:number)=>({...o,legacyOverlaps:legacyReview.occurrences[i]?.legacyOverlaps||[],legacyUnmapped:legacyReview.occurrences[i]?.legacyUnmapped||[]}));
    return Response.json({success:true,...ccc,occurrences,ready:ccc.ready&&legacyReview.ready&&local.ready,localTimeIssues:local.issues,timezone:local.timezone,daylightSavingChecked:true,legacySessionInventoryComplete:legacy.complete,legacyConflictedWeeks:legacyReview.conflictedWeeks,legacyUnmappedWeeks:legacyReview.unmappedWeeks,legacySessionCheckAdvisory:true});
+  }
+  if(body.action==='recurrence_recovery_complete'){
+   const id=s(body.id),revision=Number(body.expectedRevision),batchKey=s(body.batchKey,120);
+   if(!id||!Number.isSafeInteger(revision)||!batchKey||body.confirm!==true)return fail('Explicit batch confirmation required',400);
+   const source=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!source||source.revision!==revision||source.recurrence_batch_key!==batchKey)return fail('Batch changed; reload review',409);
+   const review=await inspectRecurrenceBatch(entity,source,{tenantId:tenant_id,clubId:club_id});
+   const decision=reviewRecurrenceCompletion(source,review);
+   if(!decision.allowed)return Response.json({success:false,error:'Batch cannot be completed safely',issues:decision.issues},{status:409});
+   const changed=await entity.updateMany({id,tenant_id,club_id,revision,recurrence_batch_key:batchKey,recurrence_batch_state:'needs_recovery'},{$set:{recurrence_batch_state:'complete',revision:revision+1,updated_by_user_id:user.id}});
+   if(changed.updated!==1)return fail('Concurrent batch update; reload',409);
+   try{await audit(sdk,tenant_id,club_id,user.id,'ccc.recurrence.recovery_completed','ClubActivity',id,{revision},{batchKey,childCount:review.childCount})}catch(_){return Response.json({success:false,error:'Batch marked complete but audit requires manual reconciliation',batchKey},{status:409})}
+   return Response.json({success:true,batchKey,childCount:review.childCount,sourceRevision:revision+1,published:false,bookingsOpened:false});
   }
   if(body.action==='recurrence_recovery_review'){
    const id=s(body.id),source=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
