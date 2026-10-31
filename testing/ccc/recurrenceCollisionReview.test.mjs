@@ -10,6 +10,12 @@ test('half-open boundaries, different courts and same-source drafts are not conf
  const a=draft('a','s1','2026-11-01T19:00','2026-11-01T20:00','court1');
  for(const b of [draft('b','s2','2026-11-01T20:00','2026-11-01T21:00','court1'),draft('b','s2','2026-11-01T19:00','2026-11-01T20:00','court2'),draft('b','s1','2026-11-01T19:00','2026-11-01T20:00','court1')])assert.equal(reviewDraftResourceCollisions([a,b],{complete:true}).collisionCount,0);
 });
+test('recurring drafts overlapping already scheduled activities are reported separately',()=>{
+ const a=draft('a','s1','2026-11-01T19:00','2026-11-01T20:00');
+ const scheduled={...draft('live','s2','2026-11-01T19:30','2026-11-01T20:30'),status:'scheduled'};
+ const r=reviewDraftResourceCollisions([a,scheduled],{complete:true});
+ assert.equal(r.activeConflictCount,1);assert.equal(r.collisionCount,0);assert.equal(r.venueReservationConfirmed,false);
+});
 test('tenant and club isolation and invalid schedule are enforced',()=>{
  const a=draft('a','s1','2026-11-01T19:00','2026-11-01T20:00');
  const other={...draft('b','s2','2026-11-01T19:00','2026-11-01T20:00'),club_id:'other'};
