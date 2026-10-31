@@ -14,5 +14,6 @@ export default function ClubPeopleBoard({tenantId,clubId}){
  {data.access.unlinkedReview?.length>0&&<div className="mt-3 rounded-lg border p-3"><h4 className="text-sm font-semibold">Active access records needing Person review</h4><p className="mt-1 text-xs text-muted-foreground">Use these exact access IDs in the review form below. Find the verified Person ID in the authoritative membership console.</p><ul className="mt-2 space-y-1 text-xs">{data.access.unlinkedReview.map(r=><li key={r.accessId} className="break-all">Access {r.accessId} · User {r.userId}</li>)}</ul></div>}
  <p className="mt-3 text-xs text-muted-foreground">Access records and applications are different datasets; their totals must not be added together as unique people. Missing Person links require explicit authorised review, not automatic matching.</p><Link className="mt-2 inline-block text-sm text-primary underline" to="/app/membership">Open authoritative membership console</Link></>}
  <div className="mt-4"><ClubExplicitLinkReview mode="person" tenantId={tenantId} clubId={clubId} onComplete={()=>refetch()}/></div>
+ <ClubPersonConsentReview tenantId={tenantId} clubId={clubId}/>
  </section>;
 }
