@@ -11,7 +11,7 @@ export function communicationPreflight({tenantId,clubId,personId,channel,purpose
  if(!['tenant','platform'].includes(brandScope))errors.push('brand_scope_required');
  if(!templateId)errors.push('approved_template_required');
  if(!recipient)errors.push('recipient_required');
- const suppressed=suppressions.some(s=>s?.tenant_id===tenantId&&s?.person_id===personId&&s?.channel===channel&&s?.status!=='inactive');
+ const suppressed=suppressions.some(s=>s?.active!==false&&s?.channel===channel&&s?.person_id===personId&&(s?.owner_scope==='platform'||s?.tenant_id===tenantId));
  if(suppressed)errors.push('recipient_suppressed');
  if(purpose==='marketing'){
   const permitted=consents.some(c=>c?.tenant_id===tenantId&&c?.club_id===clubId&&c?.person_id===personId&&c?.status==='accepted'&&c?.consent_type==='marketing'&&Array.isArray(c.channels)&&c.channels.includes(channel));
