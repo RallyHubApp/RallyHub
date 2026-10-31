@@ -4,11 +4,13 @@ import {useQuery} from '@tanstack/react-query';
 import {base44} from '@/api/base44Client';
 import ClubRefundRecoveryQueue from './ClubRefundRecoveryQueue';
 import ClubRecurrenceQueue from './ClubRecurrenceQueue';
+import ClubEventRegistrationOverview from './ClubEventRegistrationOverview';
 
 /** Read-only operational status; no hidden publishing, booking or payment mutations. */
 export default function ClubOperationsBoard({tenantId,clubId}){
  const [alertFilter,setAlertFilter]=useState('all');
  const [activitySearch,setActivitySearch]=useState('');
+ const [selectedActivity,setSelectedActivity]=useState('');
  const {data,isLoading,isError,refetch,isFetching}=useQuery({
   queryKey:['ccc-operations',tenantId,clubId],
   enabled:!!tenantId&&!!clubId,
