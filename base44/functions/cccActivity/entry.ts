@@ -9,6 +9,7 @@ import {validateEventLink} from './eventLinkPolicy.mjs';
 import {readActivityAudit} from './activityAuditReader.mjs';
 import {summariseClubOperations} from './operationsSummary.mjs';
 import {readScopedInventory,summarisePeopleInventory,summariseManagementInventory} from './managementReaders.mjs';
+import {validateHostVenueMapping,validatePersonAccessLink} from './managementActions.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -70,6 +71,45 @@ Deno.serve(async req=>{
    if(updated.updated!==1)return fail('Attendance changed; reload',409);
    await audit(sdk,tenant_id,club_id,user.id,'ccc.host.checkin','EventRegistration',registrationId,{attendance:r.attendance_status||'not_marked',revision},{attendance,revision:revision+1});
    return Response.json({success:true,registrationId,attendance,revision:revision+1});
+  }
+  if(body.action==='person_link_review'||body.action==='person_link_confirm'){
+   const accessId=s(body.accessId),personId=s(body.personId),reason=s(body.reason,500);
+   if(!accessId||!personId)return fail('Access ID and Person ID required');
+   const [accessRows,personRows]=await Promise.all([
+    sdk.asServiceRole.entities.ClubUserAccess.filter({id:accessId,tenant_id,club_id},'-created_date',1),
+    sdk.asServiceRole.entities.Person.filter({id:personId,tenant_id},'-created_date',1)
+   ]);
+   const access=accessRows?.[0],person=personRows?.[0];
+   const issue=validatePersonAccessLink(access,person,{tenantId:tenant_id,clubId:club_id,expectedPersonId:personId});
+   if(issue)return fail(issue,409);
+   if(person.linked_user_id&&person.linked_user_id!==access.user_id)return fail('Person is linked to a different user',409);
+   const conflicting=await sdk.asServiceRole.entities.ClubUserAccess.filter({tenant_id,club_id,user_id:access.user_id,status:'active'},'-created_date',100);
+   if(conflicting.some((a:any)=>a.id!==access.id&&a.person_id&&a.person_id!==personId))return fail('User has conflicting active Person links',409);
+   if(body.action==='person_link_review')return Response.json({success:true,access:{id:access.id,userId:access.user_id,status:access.status,personId:access.person_id||null},person:{id:person.id,name:person.full_name||'',linkedUserId:person.linked_user_id||null},requiresIndependentIdentityVerification:true,mutationPerformed:false});
+   if(body.confirmIdentityVerified!==true||reason.length<12)return fail('Confirm independent identity verification and provide a reason (at least 12 characters)');
+   if(access.person_id===personId)return Response.json({success:true,alreadyLinked:true,mutationPerformed:false});
+   const result=await sdk.asServiceRole.entities.ClubUserAccess.updateMany({id:accessId,tenant_id,club_id,status:'active',person_id:{$exists:false}},{$set:{person_id:personId}});
+   if(result.updated!==1)return fail('Access link changed; reload review',409);
+   await audit(sdk,tenant_id,club_id,user.id,'ccc.person.link','ClubUserAccess',accessId,{person_id:null},{person_id:personId,verification_reason:reason});
+   return Response.json({success:true,accessId,personId,mutationPerformed:true});
+  }
+  if(body.action==='host_venue_review'||body.action==='host_venue_confirm'){
+   const configId=s(body.configId),venueId=s(body.venueId),reason=s(body.reason,500);
+   if(!configId||!venueId)return fail('Host configuration and venue required');
+   const [configs,venues]=await Promise.all([
+    sdk.asServiceRole.entities.MembershipVenueHostConfig.filter({id:configId,tenant_id,club_id},'-created_date',1),
+    sdk.asServiceRole.entities.Venue.filter({id:venueId,tenant_id,club_id},'-created_date',1)
+   ]);
+   const config=configs?.[0],venue=venues?.[0];
+   const issue=validateHostVenueMapping(config,venue,{tenantId:tenant_id,clubId:club_id,expectedVenueId:venueId});
+   if(issue)return fail(issue,409);
+   if(body.action==='host_venue_review')return Response.json({success:true,configId,venue:{id:venue.id,name:venue.name},configuredHostCount:config.host_emails.length,legacyVenueKey:config.venue_key||'',currentVenueId:config.venue_id||null,mutationPerformed:false});
+   if(body.confirmVenueVerified!==true||reason.length<12)return fail('Confirm venue assignment and provide a reason (at least 12 characters)');
+   if(config.venue_id===venueId)return Response.json({success:true,alreadyMapped:true,mutationPerformed:false});
+   const result=await sdk.asServiceRole.entities.MembershipVenueHostConfig.updateMany({id:configId,tenant_id,club_id,active:true,venue_id:{$exists:false}},{$set:{venue_id:venueId,updated_by_user_id:user.id,updated_at:new Date().toISOString()}});
+   if(result.updated!==1)return fail('Venue mapping changed; reload review',409);
+   await audit(sdk,tenant_id,club_id,user.id,'ccc.host.venue_map','MembershipVenueHostConfig',configId,{venue_id:null,venue_key:config.venue_key},{venue_id:venueId,verification_reason:reason});
+   return Response.json({success:true,configId,venueId,mutationPerformed:true});
   }
   if(body.action==='people_summary'){
    const [access,applications]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.ClubUserAccess,{tenant_id,club_id}),readScopedInventory(sdk.asServiceRole.entities.MembershipApplication,{tenant_id,club_id})]);
