@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {executeTournivalHostCommand as execute} from '../../src/lib/ccc/tournivalHostPersistence.mjs';
+const now='2026-10-31T20:00:00Z';
+const fixture=()=>({id:'e',tenantId:'t',clubId:'c',revision:1,phase:'qualification',audit:[],matches:[{id:'m',teamA:['a','b'],teamB:['c','d'],status:'playing',court:1,revision:1,result:null}]});
+const grant=()=>({tenant_id:'t',club_id:'c',session_id:'e',user_id:'host',expires_at:'2026-11-01T20:00:00Z',allowed_actions:['manage_session','view_roster']});
+const command=()=>({action:'recovery_acknowledge',expectedRevision:1,operationId:'op',now,confirmedMatchIds:['m']});
+const args=()=>({actorId:'host',eventId:'e',tenantId:'t',clubId:'c',command:command(),loadEvent:async()=>fixture(),loadGrant:async()=>grant(),compareAndSwap:async()=>true});
+test('trusted server adapter commits only through atomic CAS',async()=>{let called=0;const a=args();a.compareAndSwap=async({expectedRevision,nextEvent})=>{called++;assert.equal(expectedRevision,1);assert.equal(nextEvent.revision,2);return true;};const r=await execute(a);assert.equal(r.ok,true);assert.equal(called,1);});
+test('CAS conflict fails closed',async()=>{const a=args();a.compareAndSwap=async()=>false;assert.equal((await execute(a)).reason,'concurrent_revision_conflict');});
+test('cross tenant event cannot be accessed',async()=>{const a=args();a.loadEvent=async()=>({...fixture(),tenantId:'other'});await assert.rejects(()=>execute(a),/scope mismatch/);});
+test('missing repository adapter rejected',async()=>{const a=args();delete a.compareAndSwap;await assert.rejects(()=>execute(a),/Atomic repository required/);});
+test('revoked grant blocks CAS',async()=>{const a=args();a.loadGrant=async()=>({...grant(),revoked_at:now});a.compareAndSwap=async()=>{throw Error('CAS should not run');};assert.equal((await execute(a)).ok,false);});
+test('DUPR review does not call CAS',async()=>{const a=args();a.command.action='dupr_review';a.compareAndSwap=async()=>{throw Error('CAS should not run');};const r=await execute(a);assert.equal(r.readOnly,true);assert.equal(r.review.submissionAttempted,false);});
+test('missing trusted scope rejected',async()=>{const a=args();a.actorId='';await assert.rejects(()=>execute(a),/Authenticated scope required/);});
