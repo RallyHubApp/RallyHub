@@ -139,7 +139,7 @@ Deno.serve(async req=>{
    return Response.json({success:true,activityId:id,event:{id:event.id,name:event.name||record.title,capacity:Number(event.event_capacity||0),fee:Number(event.event_fee_amount||0),bookingEnabled:!!event.event_booking_enabled},summary:{total:rows.length,pending:count('pending_approval'),confirmed:count('confirmed')+count('cash_confirmed'),waitlisted:count('waitlisted'),cancelled:count('cancelled'),paymentHolds:count('approved_payment_hold'),attended:rows.filter((r:any)=>r.attendance==='attended').length,noShows:rows.filter((r:any)=>r.attendance==='no_show').length,unmarked:rows.filter((r:any)=>['confirmed','cash_confirmed'].includes(r.status)&&r.attendance==='not_marked').length,netCollected:finance.net},finance,registrations:rows,overviewReadOnly:true,registrationNextCursor:registrationRead.nextCursor,resultsMayBeTruncated:!registrationRead.complete||paymentRead.possiblyTruncated});
   }
   if(body.action==='registration_page'){
-   const id=s(body.id),cursor=s(body.cursor);
+   const id=s(body.id),cursor=s(body.cursor,2048);
    if(!cursor||cursor.length>1024)return fail('Valid continuation cursor required',400);
    const record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!record||!record.linked_event_id)return fail('Linked activity not found',404);
