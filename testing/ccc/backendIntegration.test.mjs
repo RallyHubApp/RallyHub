@@ -121,6 +121,21 @@ test('registration continuation loads beyond the bounded initial page without lo
  assert.equal(second.data.hasMore,true);
  assert.equal(second.data.financeNotIncluded,false);
  assert.equal(second.data.registrations[0].email,'private@example.ie');
+ const third=await h.call('registration_page',{id:'a1',cursor:second.data.nextCursor});
+ assert.equal(third.status,200);assert.equal(third.data.registrations.length,250);
+ const last=await h.call('registration_page',{id:'a1',cursor:third.data.nextCursor});
+ assert.equal(last.status,200);assert.equal(last.data.registrations.length,5);assert.equal(last.data.hasMore,false);
+});
+test('continuation loads matched payments for registrations beyond initial overview',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ for(let i=2;i<1003;i++)h.db.EventRegistration.push({...h.db.EventRegistration[0],id:'r'+i});
+ h.db.PaymentRecord.push({id:'payment-late',tenant_id:'t1',club_id:'c1',purpose_type:'event',purpose_id:'r1002',payment_status:'paid',amount:9.5});
+ const first=await h.call('registration_overview',{id:'a1'});
+ const later=await h.call('registration_page',{id:'a1',cursor:first.data.registrationNextCursor});
+ assert.equal(later.status,200);
+ const row=later.data.registrations.find(r=>r.id==='r1002');
+ assert.equal(row.amount,9.5);assert.equal(row.paymentStatus,'paid');
+ assert.equal(later.data.financeNotIncluded,false);
 });
 test('continuation denies missing cursor and cross-club event',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
