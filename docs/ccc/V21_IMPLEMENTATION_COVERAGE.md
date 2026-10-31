@@ -22,7 +22,7 @@
 | Base44 performance / resilience | `readResilience.js`; guest/membership backend query batching and indexing | Source-level improvements; load/429/timeout tests and actual latency benchmarks outstanding |
 | Release gates A01–A20 | Focused `testing/ccc` tests and existing regression scripts | **Not passed**; requires full mapping to master spec, browser/mobile/role and failure-injection evidence |
 
-**Provisional implementation coverage:** **72%**, from 17 equally weighted workstream estimates in `V21_SPEC_PROGRESS_SCORECARD.md`. This is **not** formal A01–A20 acceptance or production readiness.
+**Provisional implementation coverage:** **73%**, from 17 equally weighted workstream estimates in `V21_SPEC_PROGRESS_SCORECARD.md`. This is **not** formal A01–A20 acceptance or production readiness.
 
 ## Current evidence and next implementation order
 
