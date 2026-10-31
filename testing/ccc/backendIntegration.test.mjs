@@ -19,6 +19,7 @@ import {reviewHostRevocation} from '../../base44/functions/cccActivity/hostRevoc
 import {activityScheduleConflicts} from '../../base44/functions/cccActivity/activitySchedulePolicy.mjs';
 import {reviewPersonCommunications} from '../../base44/functions/cccActivity/consentReview.mjs';
 import {readPersonInventory} from '../../base44/functions/cccActivity/personInventory.mjs';
+import {refundRecoveryQueue} from '../../base44/functions/cccActivity/refundRecovery.mjs';
 const source=readFileSync(new URL('../../base44/functions/cccActivity/entry.ts',import.meta.url),'utf8').replace(/^import .*;\s*$/gm,'');
 const js=transformSync(source,{loader:'ts',format:'cjs'}).code;
 const records={
@@ -30,7 +31,7 @@ const records={
  Tournament:[{id:'e1',tenant_id:'t1',host_club_id:'c1',name:'Wednesday play',event_capacity:16,event_registration_mode:'rallyhub'}],
  EventRegistration:[{id:'r1',event_id:'e1',tenant_id:'t1',club_id:'c1',full_name:'Player One',email:'private@example.ie',medical_note:'private',registration_status:'confirmed',attendance_status:'not_marked'}],
  ConsentRecord:[],CommunicationPreference:[],CommunicationSuppression:[],
- CommunicationTemplate:[{id:'template1',tenant_id:'t1',owner_scope:'tenant',status:'approved',club_id:'c1'}],ClubUserAccess:[],MembershipApplication:[],PaymentRecord:[],AuditLog:[]
+ CommunicationTemplate:[{id:'template1',tenant_id:'t1',owner_scope:'tenant',status:'approved',club_id:'c1'}],ClubUserAccess:[],MembershipApplication:[],PaymentRecord:[],PaymentRefund:[],AuditLog:[]
 };
 const matches=(item,query)=>Object.entries(query).every(([k,v])=>v&&typeof v==='object'&&'$in'in v?v.$in.includes(item[k]):v&&typeof v==='object'&&'$exists'in v?(v.$exists?item[k]!==undefined:item[k]===undefined):item[k]===v);
 function makeHarness(user=records.User[0]){
@@ -42,7 +43,7 @@ function makeHarness(user=records.User[0]){
  }]));
  let handler;
  const sdk={auth:{me:async()=>user},asServiceRole:{entities}};
- vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,readEventRegistrations,readScopedActivities,buildFollowupReview,validateEventLink,readActivityAudit,summariseClubOperations,readScopedInventory,summarisePeopleInventory,summariseManagementInventory,validateHostVenueMapping,validatePersonAccessLink,communicationReadiness,reviewHostRevocation,activityScheduleConflicts,reviewPersonCommunications,readPersonInventory,Response,Date,console});
+ vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,readEventRegistrations,readScopedActivities,buildFollowupReview,validateEventLink,readActivityAudit,summariseClubOperations,readScopedInventory,summarisePeopleInventory,summariseManagementInventory,validateHostVenueMapping,validatePersonAccessLink,communicationReadiness,reviewHostRevocation,activityScheduleConflicts,reviewPersonCommunications,readPersonInventory,refundRecoveryQueue,Response,Date,console});
  const call=async(action,fields={})=>{const response=await handler({method:'POST',json:async()=>({action,...fields})});return {status:response.status,data:await response.json()}};
  return {call,db,reads};
 }
