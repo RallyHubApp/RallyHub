@@ -12,9 +12,9 @@ test('four distinct workspaces preserve authoritative existing journeys',()=>{
  for(const path of ['/app/membership','/app/guest-bookings','/app/events','/app/finance','/app/communications'])assert.ok(page.includes(path));
  assert.match(page,/ClubActivityPlanner/);assert.match(page,/ClubHostWorkspace/);assert.match(page,/ClubOperationsBoard/);
 });
-test('member accounts cannot access CCC and club admins cannot use admin-only planning',()=>{
+test('member accounts cannot access CCC; authorised club admins can plan activities',()=>{
  assert.match(page,/if\(!permitted\)return/);
- assert.match(page,/active==='activities'&&admin&&<ClubActivityPlanner/);
+ assert.match(page,/active==='activities'&&permitted&&<ClubActivityPlanner/);
  assert.match(page,/active==='operations'&&<><ClubHostWorkspace/);
  assert.match(page,/tenantId=user\?\.active_tenant_id,clubId=user\?\.active_club_id/);
 });

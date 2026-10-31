@@ -32,3 +32,12 @@ test('operational overview never returns participant personal information',()=>{
  assert.equal(JSON.stringify(result).includes('secret@example.ie'),false);
  assert.equal(JSON.stringify(result).includes('medical_note'),false);
 });
+
+test('valid activities do not generate spurious unknown-status alerts',()=>{
+ const result=summariseClubOperations([row('valid'),row('draft','draft')],{now:'2026-11-01T00:00:00Z'});
+ assert.equal(result.alerts.some(a=>a.code==='unknown_activity_status'),false);
+});
+test('unknown activity statuses are explicitly flagged',()=>{
+ const result=summariseClubOperations([row('unknown','mystery')]);
+ assert.ok(result.alerts.some(a=>a.code==='unknown_activity_status'));
+});
