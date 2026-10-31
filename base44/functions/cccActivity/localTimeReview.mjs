@@ -2,7 +2,12 @@ const formatter=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Dublin',year:'
 const wall=/^(\d{4})-(\d{2})-(\d{2})T([01]\d|2[0-3]):([0-5]\d)(?::00)?$/;
 /** Reject ambiguous or nonexistent Europe/Dublin local times. */
 export function reviewDublinWallTime(value){
- const match=wall.exec(String(value||''));
+ const raw=String(value||'');
+ if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(raw)){
+  const instant=Date.parse(raw);
+  return Number.isFinite(instant)?{valid:true,issue:null,possibleInstants:[new Date(instant).toISOString()]}:{valid:false,issue:'invalid_absolute_timestamp',possibleInstants:[]};
+ }
+ const match=wall.exec(raw);
  if(!match)return {valid:false,issue:'invalid_wall_clock',possibleInstants:[]};
  const [,year,month,day,hour,minute]=match;
  const naive=Date.UTC(Number(year),Number(month)-1,Number(day),Number(hour),Number(minute));
