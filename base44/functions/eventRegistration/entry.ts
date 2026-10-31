@@ -130,7 +130,10 @@ Deno.serve(async(req)=>{
   const current=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
   if(current.some((r:any)=>r.operation_id===operationId))return Response.json({success:true,received:true,message:'Your application has already been received.'});
   if(duplicate(current,email))return fail('This email may already have an application. Please contact the organiser.',409);
-  await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:null},{$set:{event_reserved_count:occupied(current)}});
+  const observedOccupied=occupied(current);
+  await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:null},{$set:{event_reserved_count:observedOccupied}});
+  // Never trust a stale under-counted counter: raise it atomically to at least the observed active roster.
+  await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$lt:observedOccupied}},{$set:{event_reserved_count:observedOccupied}});
   const claim=await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$lt:capacity}},{$inc:{event_reserved_count:1}});
   const accepted=claim.updated===1;
   const status=accepted?'pending_approval':'waitlisted';
