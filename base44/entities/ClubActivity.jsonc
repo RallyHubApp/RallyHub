@@ -23,6 +23,10 @@
     "venue_id": {
       "type": "string"
     },
+    "court_id": {
+      "type": "string",
+      "description": "Optional exact scoped Court ID; absent means full-venue reservation for conflict review"
+    },
     "starts_at": {
       "type": "string"
     },
