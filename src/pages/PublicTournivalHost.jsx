@@ -35,7 +35,7 @@ export default function PublicTournivalHost(){
   if(busyRef.current)throw Error('A host change is already saving; check confirmed state before retrying.');
   busyRef.current=true;setBusy(true);setError('');
   try{
-   if(snapshotRef.current?.health?.requiresReconciliation)throw Error('Tournament state requires organiser reconciliation before host changes.');
+   if(snapshotRef.current?.health?.requiresReconciliation||snapshotRef.current?.missingPlayerIds?.length)throw Error('Tournament state or player roster requires organiser review before host changes.');
    const current=snapshotRef.current?.state;
    if(!current)throw Error('Tournament state not loaded');
    const operationId=crypto.randomUUID();
@@ -50,7 +50,7 @@ export default function PublicTournivalHost(){
   }finally{busyRef.current=false;setBusy(false);}
  };
  const state=snapshot?.state,playerMap=snapshot?.playerMap||{},event=snapshot?.event||{};
- const hostWriteBlocked=Boolean(snapshot?.health?.requiresReconciliation);
+ const hostWriteBlocked=Boolean(snapshot?.health?.requiresReconciliation||snapshot?.missingPlayerIds?.length);
  const missingPlayers=snapshot?.missingPlayerIds||[];
  const views=[
   ['scores','Courts & Scores'],['timing','Schedule'],['announcements','Announcements'],
