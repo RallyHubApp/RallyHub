@@ -10,6 +10,7 @@ import StatCard from '@/components/shared/StatCard';
 import PageHeader from '@/components/shared/PageHeader';
 import { format } from 'date-fns';
 import MemberPortalDashboard from '@/components/member/MemberPortalDashboard';
+import ClubCommandOverview from '@/components/ccc/ClubCommandOverview';
 
 export default function Dashboard() {
   const { data: currentUser = null } = useQuery({
@@ -125,7 +126,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Dashboard" description="Pickleball tournament command center">
+      <PageHeader title="Dashboard" description="Club operations and sporting activity">
         <Link to="/app/players">
           <Button variant="outline" className="gap-2">
             <Upload className="w-4 h-4" /> Import Players
@@ -137,6 +138,8 @@ export default function Dashboard() {
           </Button>
         </Link>
       </PageHeader>
+
+      <ClubCommandOverview membershipApprovals={pendingMembershipDecisionCount} membershipPayments={pendingMembershipApplicationCount} guestApprovals={pendingSessionBookingCount} directoryApprovals={pendingDirectoryApprovalCount} isPlatformAdmin={currentUser?.role === 'admin'} />
 
       {((currentUser?.role === 'admin' && (pendingMembershipApprovalCount > 0 || pendingDirectoryApprovalCount > 0)) || pendingMembershipApplicationCount > 0 || pendingMembershipDecisionCount > 0 || pendingSessionBookingCount > 0) && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
