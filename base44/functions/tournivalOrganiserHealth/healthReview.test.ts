@@ -1,0 +1,14 @@
+import {strict as assert} from 'node:assert';
+import {reviewTournivalOrganiserHealth as review} from './healthReview.ts';
+const state={revision:3,matches:[{id:'m1'}],results:[],status:'In Progress'};
+const tournament=(rev=3)=>({id:'e',tenant_id:'t',host_club_id:'c',tournival_state:JSON.stringify({...state,revision:rev})});
+const session=()=>({id:'s',tenant_id:'t',tournament_id:'e',state_revision:3,state_json:JSON.stringify(state)});
+Deno.test('healthy state permits delegated host edits',()=>assert.equal(review(tournament(),[session()]).hostWritesAllowed,true));
+Deno.test('stale mirror proposes manual organiser review',()=>{const r=review(tournament(2),[session()]);assert.equal(r.readyForOrganiserReview,true);assert.equal(r.hostWritesAllowed,false);assert.equal(r.automaticRepair,false);});
+Deno.test('mirror ahead cannot be auto reconciled',()=>assert.equal(review(tournament(4),[session()]).readyForOrganiserReview,false));
+Deno.test('cross tenant session cannot pass health',()=>assert.equal(review(tournament(),[{...session(),tenant_id:'other'}]).healthy,false));
+Deno.test('duplicate sessions block health',()=>assert.equal(review(tournament(),[session(),session()]).healthy,false));
+Deno.test('missing sessions block health',()=>assert.equal(review(tournament(),[]).healthy,false));
+Deno.test('rehearsal session cannot be treated as live',()=>assert.equal(review(tournament(),[{...session(),rehearsal:true}]).hostWritesAllowed,false));
+Deno.test('invalid state JSON blocks host writes',()=>assert.equal(review(tournament(),[{...session(),state_json:'{bad'}]).hostWritesAllowed,false));
+Deno.test('missing event club scope blocks health',()=>assert.equal(review({...tournament(),host_club_id:null},[session()]).healthy,false));
