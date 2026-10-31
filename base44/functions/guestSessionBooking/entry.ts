@@ -500,6 +500,19 @@ async function hostContactFromName(base44:any,tenantId:string,hostName:any){
   return {personId:String(person.id||''),name:clean(person.full_name||hostName,120),email:emailKey(person.primary_email||''),mobile:clean(person.mobile||'',80)};
 }
 
+function sessionHostFromSnapshot(session:any,profile:any,people:any[]){
+  try{
+    const data=profile?.public_json?JSON.parse(profile.public_json):{};
+    const configuredSessions=Array.isArray(data?.sessions)?data.sessions:[];
+    const configured=configuredSessions.find((s:any)=>String(s.id||'')===String(session.session_label||''))
+      ||configuredSessions.find((s:any)=>String(s.venueId||'')===String(session.venue_key||'')&&String(s.day||'')===String(session.weekday||'')&&String(s.start||'')===String(session.start_time||''));
+    if(!configured?.host)return null;
+    const wanted=nameKey(configured.host);
+    const person=(people||[]).find((p:any)=>nameKey(p.full_name)===wanted);
+    if(!person)return {personId:'',name:clean(configured.host,120),email:'',mobile:''};
+    return {personId:String(person.id||''),name:clean(person.full_name||configured.host,120),email:emailKey(person.primary_email||''),mobile:clean(person.mobile||'',80)};
+  }catch{return null}
+}
 async function resolveSessionHostContact(base44:any,session:any){
   try{
     const club=(await base44.asServiceRole.entities.Club.filter({id:session.club_id,tenant_id:session.tenant_id},'-updated_date',5))?.[0];
@@ -1206,6 +1219,7 @@ Deno.serve(async(req)=>{
         if(!ids.length||ids.length>50)return Response.json({error:'Select 1–50 guests'},{status:400});
         const selectedBookings=ids.map((bid:string)=>bookings.find((b:any)=>b.id===bid));
         if(selectedBookings.some((b:any)=>!b))return Response.json({error:'One or more selected bookings do not belong to this session'},{status:400});
+        if(selectedBookings.some((b:any)=>!['confirmed','cash_due'].includes(b.booking_status)||records.find((r:any)=>r.booking_id===b.id)?.status!=='attended'))return Response.json({error:'Only confirmed attendees can receive a follow-up'},{status:400});
         const templates=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
         const approved=templates.find((t:any)=>t.status==='approved');
         if(!approved)return Response.json({error:'Approve the guest follow-up template first'},{status:409});
@@ -1281,7 +1295,7 @@ Deno.serve(async(req)=>{
       const sumupGateway=await gatewayAccount(base44,tenantId,clubId,'sumup');
       let sumupConfigured=providerConfigured('sumup',sumupGateway?.account||null);
       let sumupMerchantName='';
-      if(sumupConfigured){
+      if(sumupConfigured&&action==='admin_templates'){
         const verification=await verifyProviderConnection('sumup',sumupGateway?.account||null);
         sumupConfigured=verification.ok===true;
         sumupMerchantName=clean(verification.merchantName,160);
@@ -1305,21 +1319,55 @@ Deno.serve(async(req)=>{
       }
 
       if(action==='admin_list'){
-        const sessions=await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId},'-session_date',200);
+        // Independent club reads run concurrently, not in a serial waterfall.
+        // The response shape and all downstream booking/attendance checks stay unchanged.
+        const [sessions,paymentPage,offers]=await Promise.all([
+          base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId},'-session_date',200),
+          base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:tenantId,club_id:clubId,purpose_type:'booking'},'-created_date',500),
+          base44.asServiceRole.entities.GuestBookingChangeOffer.filter({tenant_id:tenantId,club_id:clubId},'-created_at',500)
+        ]);
         const rows=[];
         // Read-only listing: never archive sessions while someone is loading attendees.
-        // Fetch independent session data concurrently to avoid a long serial waterfall.
+        // Reconcile payment records in one scoped read for the common case.
+        // If the 500-record page is full, retain the original per-booking lookup
+        // to avoid silently missing older transactions.
+        // One host-directory snapshot replaces repeated Club, DirectoryListingProfile
+        // and Person reads for every session in this listing.
+        let hostProfile:any=null,hostPeople:any[]=[];
+        try{
+          const clubRows=await base44.asServiceRole.entities.Club.filter({id:clubId,tenant_id:tenantId},'-updated_date',5);
+          const club=clubRows?.[0];
+          if(club?.slug){
+            const [profiles,people]=await Promise.all([
+              base44.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:club.slug,status:'active'},'-updated_at',5),
+              base44.asServiceRole.entities.Person.filter({tenant_id:tenantId},'full_name',500)
+            ]);
+            hostProfile=profiles?.[0]||null;
+            hostPeople=people||[];
+          }
+        }catch(e){console.error('session host snapshot unavailable',e?.message||e)}
+        const paymentIndex=new Map<string,any[]>();
+        for(const payment of paymentPage||[]){
+          const key=String(payment.purpose_id||'');
+          if(!key)continue;
+          if(!paymentIndex.has(key))paymentIndex.set(key,[]);
+          paymentIndex.get(key)!.push(payment);
+        }
+        const paymentPageComplete=(paymentPage||[]).length<500;
         const sessionDetails=[];
         for(let offset=0;offset<(sessions||[]).length;offset+=8){
           const batch=await Promise.all((sessions||[]).slice(offset,offset+8).map(async s=>{
           const [host,bookings,attendanceRows]=await Promise.all([
-            resolveSessionHostContact(base44,s),
+            Promise.resolve(sessionHostFromSnapshot(s,hostProfile,hostPeople)),
             base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:s.id},'-registered_at',200),
             base44.asServiceRole.entities.GuestSessionAttendance.filter({session_link_id:s.id,tenant_id:tenantId,club_id:clubId},'-marked_at',250)
           ]);
           const paymentsByBooking=[];
           for(let paymentOffset=0;paymentOffset<(bookings||[]).length;paymentOffset+=12){
-            paymentsByBooking.push(...await Promise.all((bookings||[]).slice(paymentOffset,paymentOffset+12).map(b=>base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:b.id},'-created_date',10))));
+            paymentsByBooking.push(...await Promise.all((bookings||[]).slice(paymentOffset,paymentOffset+12).map(b=>{
+              const indexed=paymentIndex.get(String(b.id))||[];
+              return paymentPageComplete||indexed.length?Promise.resolve(indexed.slice(0,10)):base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:tenantId,club_id:clubId,purpose_type:'booking',purpose_id:b.id},'-created_date',10);
+            })));
           }
           return {s,host,bookings,attendanceRows,paymentsByBooking};
           }));
@@ -1344,7 +1392,7 @@ Deno.serve(async(req)=>{
           }
           rows.push({...safeSession(s),notificationEmail:s.notification_email||'',hostName:host?.name||'',hostEmail:host?.email||'',hostMobile:host?.mobile||'',bookings:bookingRows});
         }
-        const offers=await base44.asServiceRole.entities.GuestBookingChangeOffer.filter({tenant_id:tenantId,club_id:clubId},'-created_at',500);
+
         const latestOffers:Record<string,any>={};
         for(const o of offers||[]){if(!latestOffers[o.booking_id])latestOffers[o.booking_id]={status:o.status,targetSessionId:o.target_session_id,targetLabel:o.target_label||'',respondedAt:o.responded_at||'',expiresAt:o.expires_at||''};}
         return Response.json({success:true,sessions:rows,changeOffers:latestOffers,sumupConfigured});

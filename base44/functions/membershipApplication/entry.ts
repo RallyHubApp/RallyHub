@@ -624,11 +624,23 @@ Deno.serve(async(req)=>{
         // Limit concurrent payment lookups instead of serially awaiting every application.
         const paymentUrls=new Map<string,string>();
         const paidLookupApps=liveApps.filter((app:any)=>app.payment_record_id);
-        for(let offset=0;offset<paidLookupApps.length;offset+=12){
-          await Promise.all(paidLookupApps.slice(offset,offset+12).map(async(app:any)=>{
-            const p=await first(base44,'PaymentRecord',{id:app.payment_record_id,tenant_id:tenantId,club_id:clubId});
-            paymentUrls.set(app.id,p?.provider_checkout_url||'');
-          }));
+        // A single scoped read covers normal club volumes; a full page may be
+        // truncated, so resolve unmatched references individually in that case.
+        if(paidLookupApps.length){
+          const paymentPage=await base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:tenantId,club_id:clubId},'-created_date',500);
+          const paymentsById=new Map((paymentPage||[]).map((p:any)=>[String(p.id),p]));
+          const missing:any[]=[];
+          for(const app of paidLookupApps){
+            const p:any=paymentsById.get(String(app.payment_record_id));
+            if(p)paymentUrls.set(app.id,p.provider_checkout_url||'');
+            else if((paymentPage||[]).length===500)missing.push(app);
+          }
+          for(let offset=0;offset<missing.length;offset+=12){
+            await Promise.all(missing.slice(offset,offset+12).map(async(app:any)=>{
+              const p=await first(base44,'PaymentRecord',{id:app.payment_record_id,tenant_id:tenantId,club_id:clubId});
+              paymentUrls.set(app.id,p?.provider_checkout_url||'');
+            }));
+          }
         }
         for(const app of liveApps){
           const paymentUrl=paymentUrls.get(app.id)||'';
@@ -643,7 +655,8 @@ Deno.serve(async(req)=>{
         }
         const accessRequests=await base44.asServiceRole.entities.ClubAccessRequest.filter({tenant_id:tenantId,club_id:clubId,request_type:'membership_application'},'-submitted_at',200);
         const pendingApprovals=(accessRequests||[]).filter((r:any)=>r.status==='pending_approval').map((r:any)=>({id:r.id,fullName:r.full_name,email:r.email,mobile:r.mobile||'',dateOfBirth:r.date_of_birth||'',submittedAt:r.submitted_at||r.created_date,notes:r.notes||'',primaryVenue:(()=>{try{return JSON.parse(r.payload_json||'{}').primaryVenue||''}catch{return ''}})()}));
-        const approvedInvitations=(accessRequests||[]).filter((r:any)=>r.status==='approved'&&!rows.some((a:any)=>emailKey(a.email)===emailKey(r.email))).map((r:any)=>({
+        const applicationEmails=new Set(rows.map((a:any)=>emailKey(a.email)).filter(Boolean));
+        const approvedInvitations=(accessRequests||[]).filter((r:any)=>r.status==='approved'&&!applicationEmails.has(emailKey(r.email))).map((r:any)=>({
           id:r.id,fullName:r.full_name,email:r.email,mobile:r.mobile||'',submittedAt:r.submitted_at||r.created_date,
           approvedAt:r.approved_at||'',primaryVenue:(()=>{try{return JSON.parse(r.payload_json||'{}').primaryVenue||''}catch{return ''}})(),status:'approved',paymentStatus:'not_started'
         }));

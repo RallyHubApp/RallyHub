@@ -8,8 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import StatCard from '@/components/shared/StatCard';
 import PageHeader from '@/components/shared/PageHeader';
-import { format } from 'date-fns';
+import { addDays, format } from 'date-fns';
 import MemberPortalDashboard from '@/components/member/MemberPortalDashboard';
+import ClubCommandOverview from '@/components/ccc/ClubCommandOverview';
+import ClubSchedulePanel from '@/components/ccc/ClubSchedulePanel';
+import ClubActivityPlanner from '@/components/ccc/ClubActivityPlanner';
+import ClubPaymentPanel from '@/components/ccc/ClubPaymentPanel';
+import ClubPostEventPanel from '@/components/ccc/ClubPostEventPanel';
+import { READ_STALE_MS, READ_GC_MS, shouldRetryRead, readRetryDelay } from '@/lib/ccc/readResilience';
 
 export default function Dashboard() {
   const { data: currentUser = null } = useQuery({
@@ -118,6 +124,68 @@ export default function Dashboard() {
     refetchOnWindowFocus: true
   });
 
+  const { data: clubSessions = [], isLoading: sessionsLoading, isError: sessionsError } = useQuery({
+    queryKey: ['ccc-club-session-links', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    retry: shouldRetryRead,
+    retryDelay: readRetryDelay,
+    staleTime: READ_STALE_MS,
+    gcTime: READ_GC_MS,
+    refetchOnWindowFocus: false,
+    queryFn: () => base44.entities.GuestSessionLink.filter({
+      tenant_id: currentUser.active_tenant_id,
+      club_id: currentUser.active_club_id
+    }, '-session_date', 250),
+    enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && currentUser?.role === 'admin'
+  });
+
+  const { data: clubPayments = [], isLoading: paymentsLoading, isError: paymentsError } = useQuery({
+    queryKey: ['ccc-club-payment-records', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    retry: shouldRetryRead,
+    retryDelay: readRetryDelay,
+    staleTime: READ_STALE_MS,
+    gcTime: READ_GC_MS,
+    refetchOnWindowFocus: false,
+    queryFn: () => base44.entities.PaymentRecord.filter({
+      tenant_id: currentUser.active_tenant_id,
+      club_id: currentUser.active_club_id
+    }, '-created_date', 250),
+    enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && currentUser?.role === 'admin'
+  });
+
+  const { data: guestBookings = [], isLoading: bookingsLoading, isError: bookingsError } = useQuery({
+    queryKey: ['ccc-guest-bookings', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    retry: shouldRetryRead,
+    retryDelay: readRetryDelay,
+    staleTime: READ_STALE_MS,
+    gcTime: READ_GC_MS,
+    refetchOnWindowFocus: false,
+    queryFn: () => base44.entities.GuestSessionBooking.filter({tenant_id:currentUser.active_tenant_id,club_id:currentUser.active_club_id}, '-created_date', 500),
+    enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && currentUser?.role === 'admin',
+  });
+  const { data: guestAttendance = [], isLoading: attendanceLoading, isError: attendanceError } = useQuery({
+    queryKey: ['ccc-guest-attendance', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    retry: shouldRetryRead,
+    retryDelay: readRetryDelay,
+    staleTime: READ_STALE_MS,
+    gcTime: READ_GC_MS,
+    refetchOnWindowFocus: false,
+    queryFn: () => base44.entities.GuestSessionAttendance.filter({tenant_id:currentUser.active_tenant_id,club_id:currentUser.active_club_id}, '-created_date', 500),
+    enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && currentUser?.role === 'admin',
+  });
+  const { data: followupAttempts = [], isLoading: followupLoading, isError: followupError } = useQuery({
+    queryKey: ['ccc-followup-attempts', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    retry: shouldRetryRead,
+    retryDelay: readRetryDelay,
+    staleTime: READ_STALE_MS,
+    gcTime: READ_GC_MS,
+    refetchOnWindowFocus: false,
+    queryFn: () => base44.entities.CommunicationDeliveryAttempt.filter({tenant_id:currentUser.active_tenant_id}, '-created_date', 500),
+    enabled: !!currentUser?.active_tenant_id && !!currentUser?.active_club_id && currentUser?.role === 'admin',
+  });
+
+  const scheduleFrom = format(new Date(), 'yyyy-MM-dd');
+  const scheduleTo = format(addDays(new Date(), 14), 'yyyy-MM-dd');
+
   const activeTournaments = tournaments.filter(t => t.status === 'In Progress' || t.status === 'Registration Open');
   const topPlayers = (clubLeaderboard.rows || []).slice(0, 5);
 
@@ -125,7 +193,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Dashboard" description="Pickleball tournament command center">
+      <PageHeader title="Dashboard" description="Club operations and sporting activity">
         <Link to="/app/players">
           <Button variant="outline" className="gap-2">
             <Upload className="w-4 h-4" /> Import Players
@@ -137,6 +205,16 @@ export default function Dashboard() {
           </Button>
         </Link>
       </PageHeader>
+
+      <ClubCommandOverview membershipApprovals={pendingMembershipDecisionCount} membershipPayments={pendingMembershipApplicationCount} guestApprovals={pendingSessionBookingCount} directoryApprovals={pendingDirectoryApprovalCount} isPlatformAdmin={currentUser?.role === 'admin'} />
+
+      {currentUser?.role === 'admin' && <ClubActivityPlanner key={`${currentUser?.active_tenant_id||''}:${currentUser?.active_club_id||''}`} tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} />}
+
+      {currentUser?.role === 'admin' && <ClubSchedulePanel tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} sessions={clubSessions} fromDate={scheduleFrom} toDate={scheduleTo} loading={sessionsLoading} error={sessionsError} />}
+
+      {currentUser?.role === 'admin' && <ClubPaymentPanel tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} payments={clubPayments} loading={paymentsLoading} error={paymentsError} />}
+
+      {currentUser?.role === 'admin' && <ClubPostEventPanel tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} sessions={clubSessions} bookings={guestBookings} attendance={guestAttendance} attempts={followupAttempts} fromDate={format(addDays(new Date(), -14), 'yyyy-MM-dd')} toDate={scheduleFrom} loading={sessionsLoading||bookingsLoading||attendanceLoading||followupLoading} error={sessionsError||bookingsError||attendanceError||followupError} />}
 
       {((currentUser?.role === 'admin' && (pendingMembershipApprovalCount > 0 || pendingDirectoryApprovalCount > 0)) || pendingMembershipApplicationCount > 0 || pendingMembershipDecisionCount > 0 || pendingSessionBookingCount > 0) && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

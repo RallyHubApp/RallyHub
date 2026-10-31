@@ -373,13 +373,28 @@ Deno.serve(async(req)=>{
         base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',300),
       ]);
       const options=publicOptions(directory,await loadConfig(base44,tenantId,clubId));
+      const sessionLinkById=new Map((sessionLinks||[]).map((s:any)=>[String(s.id),s]));
+      const inviteByRequestId=new Map<string,any>();
       const nowMs=Date.now();
+      for(const invite of invites||[]){
+        const key=String(invite.access_request_id||'');
+        if(key&&!inviteByRequestId.has(key)&&invite.status==='active'&&(!invite.expires_at||Date.parse(invite.expires_at)>nowMs))inviteByRequestId.set(key,invite);
+      }
+      const bookingBySessionAndEmail=new Map<string,any>();
+      const bookingBySessionAndMobile=new Map<string,any>();
+      for(const booking of bookings||[]){
+        const sessionKey=String(booking.session_link_id||'');
+        const email=emailKey(booking.email||''),mobile=mobileKey(booking.mobile||'');
+        if(email&&!bookingBySessionAndEmail.has(sessionKey+':'+email))bookingBySessionAndEmail.set(sessionKey+':'+email,booking);
+        if(mobile&&!bookingBySessionAndMobile.has(sessionKey+':'+mobile))bookingBySessionAndMobile.set(sessionKey+':'+mobile,booking);
+      }
       const activeVenueByEmail=new Map((membershipApps||[]).filter((a:any)=>['paid','not_required'].includes(a.payment_status)&&a.primary_venue&&a.email).map((a:any)=>[emailKey(a.email),a.primary_venue]));
       return Response.json({success:true,requests:(requests||[]).map((r:any)=>{
         const s=options.sessions.find((x:any)=>x.id===r.preferred_session_key);
-        const link=(sessionLinks||[]).find((x:any)=>String(x.id)===String(r.approved_session_link_id||''));
-        const booking=(bookings||[]).find((b:any)=>String(b.session_link_id)===String(r.approved_session_link_id||'')&&(emailKey(b.email||'')===emailKey(r.email||'')||mobileKey(b.mobile||'')===mobileKey(r.mobile||'')));
-        const invite=(invites||[]).find((i:any)=>String(i.access_request_id||'')===String(r.id)&&i.status==='active'&&(!i.expires_at||Date.parse(i.expires_at)>nowMs));
+        const sessionKey=String(r.approved_session_link_id||'');
+        const link=sessionLinkById.get(sessionKey);
+        const booking=bookingBySessionAndEmail.get(sessionKey+':'+emailKey(r.email||''))||bookingBySessionAndMobile.get(sessionKey+':'+mobileKey(r.mobile||''));
+        const invite=inviteByRequestId.get(String(r.id));
         return {id:r.id,status:r.status,fullName:r.full_name,email:r.email,mobile:r.mobile,experienceLevel:r.experience_level,previousSports:r.previous_sports||[],sportingBackgroundNote:r.sporting_background_note||'',healthDeclarationApplies:r.health_declaration_applies===true,medicalNote:r.medical_note||'',duprId:r.dupr_id||'',homeClub:r.home_club||'',sessionId:r.preferred_session_key,venueName:link?.venue_name||s?.venueName||r.preferred_venue_key,memberPrimaryVenue:activeVenueByEmail.get(emailKey(r.email||''))||'',day:link?.weekday||s?.day||'',start:link?.start_time||s?.start||'',end:link?.end_time||s?.end||'',nextDate:s?nextDateForDay(s.day,s.start,s.end):'',submittedAt:r.submitted_at,approvedAt:r.approved_at||'',approvedSessionLinkId:r.approved_session_link_id||'',approvedSessionDate:link?.session_date||'',privateInviteUrl:invite&&link?`https://rallyhub.ie/book/${encodeURIComponent(link.token)}?invite=${encodeURIComponent(invite.token)}`:'',inviteExpiresAt:invite?.expires_at||'',bookingId:booking?.id||'',bookingStatus:booking?.booking_status||'',paymentStatus:booking?.payment_status||'',amount:booking?.amount??link?.fee_amount??null,paymentMethod:booking?.payment_method||link?.payment_method||'',sumupCheckoutUrl:booking?.sumup_checkout_url||''};
       })});
     }
