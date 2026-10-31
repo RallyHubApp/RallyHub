@@ -40,7 +40,7 @@ export function createQuickScenario({players=16,courts=4,rounds=4}={}){
   event=checkInTournivalPlayer(event,{playerId:id});
  }
  const qualification=generateGroupFixtures(ids(players),courts,rounds);
- event=startTournival(event,{matches:indexTournivalMatches(qualification)});
+ event=startTournival(event,{matches:indexTournivalMatches(qualification),courts});
  assertRehearsalIsolation(event);
  return {event,qualification,knockout:[],phase:'qualification',ranked:[],players,courts,rounds,checks:['Synthetic registration and check-in passed','Rehearsal isolation verified']};
 }
@@ -48,7 +48,7 @@ export function finishQuickQualification(scenario){
  if(!scenario||scenario.phase!=='qualification')throw Error('Start a qualification rehearsal first');
  const {qualification,courts,players,rounds}=scenario;
  const done=finishMatches(scenario.event.matches,courts);
- const event=applyTournivalMatchChange(scenario.event,{matches:done,action:'quick_test_qualification'});
+ const event=applyTournivalMatchChange(scenario.event,{matches:done,action:'quick_test_qualification',courts});
  assertRehearsalIsolation(event);
  const results={};
  for(const m of done){
