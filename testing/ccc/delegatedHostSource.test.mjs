@@ -14,7 +14,8 @@ test('delegated host must be approved and venue-scoped',()=>{
  assert.match(backend,/user\.approval_status!=='approved'/);
 });
 test('non-admins can only use explicitly authorised host actions',()=>{
- assert.match(backend,/user\.role!=='admin'&&!hostAction/);
+ assert.match(backend,/!access.admin&&!hostAction/);
+ assert.match(backend,/readCccAccess\(sdk,user,tenant_id,club_id\)/);
  assert.match(backend,/host_activities/);
  assert.match(backend,/host_roster/);
  assert.match(backend,/host_checkin/);
