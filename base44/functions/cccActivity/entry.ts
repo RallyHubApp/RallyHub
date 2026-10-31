@@ -13,6 +13,7 @@ import {validateHostVenueMapping,validatePersonAccessLink} from './managementAct
 import {communicationReadiness} from './communicationReadiness.mjs';
 import {reviewHostRevocation} from './hostRevocation.mjs';
 import {activityScheduleConflicts} from './activitySchedulePolicy.mjs';
+import {reviewPersonCommunications} from './consentReview.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -135,6 +136,21 @@ Deno.serve(async req=>{
   if(body.action==='people_summary'){
    const [access,applications]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.ClubUserAccess,{tenant_id,club_id}),readScopedInventory(sdk.asServiceRole.entities.MembershipApplication,{tenant_id,club_id})]);
    return Response.json({success:true,...summarisePeopleInventory(access,applications)});
+  }
+  if(body.action==='person_communication_review'){
+   const personId=s(body.personId),channel=s(body.channel),purpose=s(body.purpose);
+   if(!personId||!['email','sms','whatsapp'].includes(channel)||!['marketing','transactional'].includes(purpose))return fail('Person, channel and purpose required');
+   const [people,access]=await Promise.all([
+    sdk.asServiceRole.entities.Person.filter({id:personId,tenant_id},'-created_date',1),
+    readScopedInventory(sdk.asServiceRole.entities.ClubUserAccess,{tenant_id,club_id,person_id:personId},{pageSize:100,maxPages:5})
+   ]);
+   if(!people?.length||!access.complete||!access.rows.some((a:any)=>a.status==='active'))return fail('Active club Person link not verified',409);
+   const [consents,preferences,suppressions]=await Promise.all([
+    readScopedInventory(sdk.asServiceRole.entities.ConsentRecord,{tenant_id,club_id,person_id:personId},{pageSize:100,maxPages:5}),
+    readScopedInventory(sdk.asServiceRole.entities.CommunicationPreference,{person_id:personId},{pageSize:100,maxPages:5}),
+    readScopedInventory(sdk.asServiceRole.entities.CommunicationSuppression,{person_id:personId,channel},{pageSize:100,maxPages:5})
+   ]);
+   return Response.json({success:true,...reviewPersonCommunications({tenantId:tenant_id,clubId:club_id,personId,channel,purpose,consents:consents.rows,preferences:preferences.rows,suppressions:suppressions.rows,complete:consents.complete&&preferences.complete&&suppressions.complete})});
   }
   if(body.action==='communications_readiness'){
    const templates=await readScopedInventory(sdk.asServiceRole.entities.CommunicationTemplate,{tenant_id,owner_scope:'tenant'});
