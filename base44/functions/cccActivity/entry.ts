@@ -146,7 +146,7 @@ Deno.serve(async req=>{
    const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
    if(!event)return fail('Linked event unavailable',404);
    const read=await readEventRegistrations(sdk.asServiceRole.entities.EventRegistration,{tenantId:tenant_id,clubId:club_id,eventId:event.id,startCursor:cursor,pageSize:250,maxPages:1});
-   const rows=read.registrations.map((r:any)=>({id:r.id,name:r.full_name||'',email:r.email||'',mobile:r.mobile||'',status:r.registration_status||'',paymentStatus:r.payment_status||'unknown',amount:0,refundedAmount:0,createdAt:r.created_at||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)}));
+   const rows=read.registrations.map((r:any)=>({id:r.id,name:r.full_name||'',email:r.email||'',mobile:r.mobile||'',status:r.registration_status||'',paymentStatus:'not_loaded',amount:0,refundedAmount:0,createdAt:r.created_at||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)}));
    return Response.json({success:true,activityId:id,registrations:rows,nextCursor:read.nextCursor,hasMore:read.hasMore,financeNotIncluded:true});
   }
   if(body.action==='followup_candidates'){
