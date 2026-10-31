@@ -136,7 +136,18 @@ Deno.serve(async req=>{
    const rows=(registrations||[]).map((r:any)=>{const p:any=byRegistration.get(r.id);return {id:r.id,name:r.full_name||'',email:r.email||'',mobile:r.mobile||'',status:r.registration_status||'',paymentStatus:p?.payment_status||r.payment_status||'unknown',amount:Number(p?.amount||0),refundedAmount:Number(p?.amount_refunded||0),createdAt:r.created_at||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)}});
    const count=(status:string)=>rows.filter((r:any)=>r.status===status).length;
 
-   return Response.json({success:true,activityId:id,event:{id:event.id,name:event.name||record.title,capacity:Number(event.event_capacity||0),fee:Number(event.event_fee_amount||0),bookingEnabled:!!event.event_booking_enabled},summary:{total:rows.length,pending:count('pending_approval'),confirmed:count('confirmed')+count('cash_confirmed'),waitlisted:count('waitlisted'),cancelled:count('cancelled'),paymentHolds:count('approved_payment_hold'),attended:rows.filter((r:any)=>r.attendance==='attended').length,noShows:rows.filter((r:any)=>r.attendance==='no_show').length,unmarked:rows.filter((r:any)=>['confirmed','cash_confirmed'].includes(r.status)&&r.attendance==='not_marked').length,netCollected:finance.net},finance,registrations:rows,overviewReadOnly:true,resultsMayBeTruncated:!registrationRead.complete||paymentRead.possiblyTruncated});
+   return Response.json({success:true,activityId:id,event:{id:event.id,name:event.name||record.title,capacity:Number(event.event_capacity||0),fee:Number(event.event_fee_amount||0),bookingEnabled:!!event.event_booking_enabled},summary:{total:rows.length,pending:count('pending_approval'),confirmed:count('confirmed')+count('cash_confirmed'),waitlisted:count('waitlisted'),cancelled:count('cancelled'),paymentHolds:count('approved_payment_hold'),attended:rows.filter((r:any)=>r.attendance==='attended').length,noShows:rows.filter((r:any)=>r.attendance==='no_show').length,unmarked:rows.filter((r:any)=>['confirmed','cash_confirmed'].includes(r.status)&&r.attendance==='not_marked').length,netCollected:finance.net},finance,registrations:rows,overviewReadOnly:true,registrationNextCursor:registrationRead.nextCursor,resultsMayBeTruncated:!registrationRead.complete||paymentRead.possiblyTruncated});
+  }
+  if(body.action==='registration_page'){
+   const id=s(body.id),cursor=s(body.cursor);
+   if(!cursor||cursor.length>1024)return fail('Valid continuation cursor required',400);
+   const record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!record||!record.linked_event_id)return fail('Linked activity not found',404);
+   const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
+   if(!event)return fail('Linked event unavailable',404);
+   const read=await readEventRegistrations(sdk.asServiceRole.entities.EventRegistration,{tenantId:tenant_id,clubId:club_id,eventId:event.id,startCursor:cursor,pageSize:250,maxPages:1});
+   const rows=read.registrations.map((r:any)=>({id:r.id,name:r.full_name||'',email:r.email||'',mobile:r.mobile||'',status:r.registration_status||'',paymentStatus:r.payment_status||'unknown',amount:0,refundedAmount:0,createdAt:r.created_at||'',attendance:r.attendance_status||'not_marked',attendanceRevision:Number(r.attendance_revision||0)}));
+   return Response.json({success:true,activityId:id,registrations:rows,nextCursor:read.nextCursor,hasMore:read.hasMore,financeNotIncluded:true});
   }
   if(body.action==='followup_candidates'){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
