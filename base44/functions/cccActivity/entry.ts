@@ -390,6 +390,7 @@ Deno.serve(async req=>{
    if(!Number.isSafeInteger(revision)||record.revision!==revision)return fail('Activity changed; reload',409);
    const allowed:any={draft:['ready','cancelled'],ready:['draft','scheduled','cancelled'],scheduled:['registration_open','registration_closed','in_progress','cancelled'],registration_open:['registration_closed','in_progress','cancelled'],registration_closed:['registration_open','in_progress','cancelled'],in_progress:['completed','cancelled'],completed:['archived'],cancelled:['archived']};
    if(!allowed[record.status]?.includes(to))return fail('Transition unavailable until downstream workflows are connected',409);
+   if(to==='cancelled' && !reviewActivityCancellation(record).allowed) return fail('Cancel the linked event first',409);
    if(['ready','scheduled'].includes(to)){
     if(record.court_id){const courts=await sdk.asServiceRole.entities.Court.filter({id:record.court_id,tenant_id,club_id,venue_id:record.venue_id},'-created_date',1);if(!courts?.length||courts[0].status==='Maintenance')return fail('Court unavailable',409)}
     const schedule=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});
