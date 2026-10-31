@@ -229,7 +229,7 @@ Deno.serve(async req=>{
    const legacyReview=reviewLegacySessionOverlaps(ccc.occurrences,legacy.rows,{tenantId:tenant_id,clubId:club_id,venueName:venue.name,complete:legacy.complete});
    const local=reviewDublinOccurrences(ccc.occurrences);
    const occurrences=local.occurrences.map((o:any,i:number)=>({...o,legacyOverlaps:legacyReview.occurrences[i]?.legacyOverlaps||[],legacyUnmapped:legacyReview.occurrences[i]?.legacyUnmapped||[]}));
-   return Response.json({success:true,...ccc,occurrences,ready:ccc.ready&&legacyReview.ready,legacySessionInventoryComplete:legacy.complete,legacyConflictedWeeks:legacyReview.conflictedWeeks,legacyUnmappedWeeks:legacyReview.unmappedWeeks,legacySessionCheckAdvisory:true});
+   return Response.json({success:true,...ccc,occurrences,ready:ccc.ready&&legacyReview.ready&&local.ready,localTimeIssues:local.issues,timezone:local.timezone,daylightSavingChecked:true,legacySessionInventoryComplete:legacy.complete,legacyConflictedWeeks:legacyReview.conflictedWeeks,legacyUnmappedWeeks:legacyReview.unmappedWeeks,legacySessionCheckAdvisory:true});
   }
   if(body.action==='schedule_review'){
    const draft=body.draft||{};
