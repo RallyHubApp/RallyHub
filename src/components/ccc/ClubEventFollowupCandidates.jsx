@@ -2,6 +2,7 @@ import React,{useState} from 'react';
 import {useQuery} from '@tanstack/react-query';
 import {base44} from '@/api/base44Client';
 import {triageFollowupCandidates} from '@/lib/ccc/followupTriage';
+import ClubFollowupEvidenceReview from './ClubFollowupEvidenceReview';
 const labels={email_missing_or_invalid:'Invalid email',duplicate_email:'Duplicate email',consent_not_verified:'Consent not verified',suppression_not_verified:'Suppression not verified',approved_template_not_verified:'Template not verified'};
 /** Review only. No sending, queuing or permission inference. */
 export default function ClubEventFollowupCandidates({activityId,tenantId,clubId}){
@@ -16,5 +17,6 @@ export default function ClubEventFollowupCandidates({activityId,tenantId,clubId}
  {data.resultsMayBeTruncated&&<p role="alert" className="mt-2 text-sm text-destructive">Candidate read is incomplete. Totals are partial.</p>}
  <div className="mt-3 flex flex-wrap gap-2"><input type="search" aria-label="Search follow-up candidates" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Name or email" className="rounded-lg border bg-background p-2 text-sm"/><select aria-label="Follow-up review issue" value={filter} onChange={e=>setFilter(e.target.value)} className="rounded-lg border bg-background p-2 text-sm"><option value="all">All candidates</option>{Object.entries(labels).map(([code,label])=><option key={code} value={code}>{label}</option>)}</select></div>
  <div className="mt-2 max-h-72 overflow-auto">{visible.map(r=><div key={r.registrationId} className="border-b py-2 text-sm"><div className="font-medium">{r.name||'Unnamed participant'}</div><div className="text-xs text-muted-foreground">{r.email||'No email'} · {r.reviewReasons.map(code=>labels[code]||code).join(' · ')}</div></div>)}{!visible.length&&<p className="text-sm text-muted-foreground">No candidates match this filter.</p>}</div><p className="mt-3 text-xs text-muted-foreground">{visible.length} shown · {triage.counts.total} loaded · zero authorised recipients. Manual walk-ins are excluded until separately verified.</p></>}
+ <ClubFollowupEvidenceReview key={[tenantId,clubId,activityId].join(':')}/>
  </section>;
 }
