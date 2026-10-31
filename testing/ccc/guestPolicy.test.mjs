@@ -18,3 +18,6 @@ test('unknown venues, wrong club and closed sessions fail closed',()=>{
 test('review never creates a booking, payment or approval',()=>{
  const r=check('Shannon','beginner');assert.equal(r.approvalRequired,true);assert.equal(r.bookingCreated,false);assert.equal(r.paymentInitiated,false);
 });
+test('actual Clare venue display name is recognised as restricted Ennis',()=>{
+ assert.ok(check("St. Joseph's Doora Barefield",'beginner').issues.includes('beginner_ennis_restricted'));
+});

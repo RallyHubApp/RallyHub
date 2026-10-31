@@ -24,3 +24,8 @@ test('readCccAccess refuses truncated grants',async()=>{
  const sdk={asServiceRole:{entities:{TenantUserAccess:{filter:async()=>Array.from({length:100},(_,i)=>({...tenant,id:String(i)}))},ClubUserAccess:{filter:async()=>[]}}}};
  await assert.rejects(()=>readCccAccess(sdk,user,'t1','c1'),/incomplete/);
 });
+test('live legacy admin User may omit approval_status but must have an active grant',()=>{
+ const legacy={...user};delete legacy.approval_status;
+ assert.equal(cccAccessDecision({...scope,user:legacy,tenantGrants:[tenant]}).admin,true);
+ assert.equal(cccAccessDecision({...scope,user:legacy}).admin,false);
+});
