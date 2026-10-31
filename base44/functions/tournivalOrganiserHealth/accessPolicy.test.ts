@@ -1,0 +1,13 @@
+import {strict as assert} from 'node:assert';
+import {canReviewTournivalHealth as can} from './accessPolicy.ts';
+const user={id:'u',role:'admin'};
+const grant=(x:any={})=>({tenant_id:'t',club_id:'c',user_id:'u',status:'active',permission_bundle:'club_admin',...x});
+Deno.test('scoped club admin may review',()=>assert.equal(can(user,[grant()],'t','c'),true));
+Deno.test('platform admin without scoped grant cannot review',()=>assert.equal(can(user,[],'t','c'),false));
+Deno.test('cross tenant grant rejected',()=>assert.equal(can(user,[grant({tenant_id:'other'})],'t','c'),false));
+Deno.test('cross club grant rejected',()=>assert.equal(can(user,[grant({club_id:'other'})],'t','c'),false));
+Deno.test('member permission rejected',()=>assert.equal(can(user,[grant({permission_bundle:'member'})],'t','c'),false));
+Deno.test('revoked grant rejected',()=>assert.equal(can(user,[grant({status:'revoked'})],'t','c'),false));
+Deno.test('future grant rejected',()=>assert.equal(can(user,[grant({starts_at:'2099-01-01'})],'t','c'),false));
+Deno.test('expired grant rejected',()=>assert.equal(can(user,[grant({ends_at:'2020-01-01'})],'t','c'),false));
+Deno.test('invalid date fails closed',()=>assert.equal(can(user,[grant({ends_at:'bad'})],'t','c'),false));
