@@ -391,3 +391,14 @@ test('person communication review requires active linked club identity, stays re
  assert.equal((await h.call('person_communication_review',{personId:'unknown',channel:'email',purpose:'marketing'})).status,409);
  assert.equal((await makeHarness().call('person_communication_review',{personId:'p1',channel:'email',purpose:'marketing'})).status,403);
 });
+test('refund recovery queue is scoped, read-only, and flags unresolved refund lock',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ h.db.PaymentRecord.push({id:'p1',tenant_id:'t1',club_id:'c1',payment_status:'refund_pending',amount:20,amount_refunded:0,purpose_type:'event',purpose_id:'r1'});
+ h.db.PaymentRecord.push({id:'p2',tenant_id:'t1',club_id:'c2',payment_status:'refund_pending',amount:20,amount_refunded:0});
+ const before=JSON.stringify(h.db);
+ const result=await h.call('refund_recovery_queue');
+ assert.equal(result.status,200);assert.equal(result.data.caseCount,1);
+ assert.equal(result.data.cases[0].paymentRecordId,'p1');assert.equal(result.data.authorisedToRetry,false);
+ assert.equal(JSON.stringify(h.db),before);
+ assert.equal((await makeHarness().call('refund_recovery_queue')).status,403);
+});
