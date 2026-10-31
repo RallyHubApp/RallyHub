@@ -2,10 +2,11 @@ import React,{useEffect,useRef,useState} from 'react';
 import {base44} from '@/api/base44Client';
 /** Explicitly read-only. Recurrence never creates scheduled activities. */
 export default function ClubRecurrencePreview({tenantId,clubId,draft,activityId,activityRevision,activityStatus}){
- const [weeks,setWeeks]=useState(4),[result,setResult]=useState(null),[manifest,setManifest]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+ const [weeks,setWeeks]=useState(4),[result,setResult]=useState(null),[manifest,setManifest]=useState(null),[recovery,setRecovery]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
  const key=[tenantId,clubId,activityId,activityRevision,activityStatus,draft?.venue_id,draft?.court_id,draft?.starts_at,draft?.ends_at].join('|');
  const requestKey=useRef('');requestKey.current=key+'|'+weeks;
- useEffect(()=>{setResult(null);setManifest(null);setError('');setBusy(false)},[key,weeks]);
+ useEffect(()=>{setResult(null);setManifest(null);setRecovery(null);setError('');setBusy(false)},[key,weeks]);
+ const inspect=async()=>{const requested=requestKey.current;setBusy(true);setError('');setRecovery(null);try{const res=await base44.functions.invoke('cccActivity',{action:'recurrence_recovery_review',id:activityId});if(requestKey.current!==requested)return;if(!res.data?.success)throw Error(res.data?.error||'Recovery review unavailable');setRecovery(res.data)}catch(e){if(requestKey.current===requested)setError(e?.response?.data?.error||e?.message||'Recovery review unavailable')}finally{if(requestKey.current===requested)setBusy(false)}};
  const plan=async()=>{const requested=requestKey.current;setBusy(true);setError('');setManifest(null);try{const res=await base44.functions.invoke('cccActivity',{action:'recurrence_manifest',id:activityId,expectedRevision:activityRevision,weeks});if(requestKey.current!==requested)return;if(!res.data?.success)throw Error(res.data?.error||'Manifest unavailable');setManifest(res.data)}catch(e){if(requestKey.current===requested)setError(e?.response?.data?.error||e?.message||'Manifest unavailable')}finally{if(requestKey.current===requested)setBusy(false)}};
  const run=async()=>{const requested=requestKey.current;setBusy(true);setError('');setResult(null);try{
   const res=await base44.functions.invoke('cccActivity',{action:'recurrence_review',id:activityId||'',draft:{venue_id:draft?.venue_id,court_id:draft?.court_id,starts_at:draft?.starts_at,ends_at:draft?.ends_at},weeks});
