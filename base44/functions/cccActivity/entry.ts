@@ -8,6 +8,7 @@ import {buildFollowupReview} from './followupReview.mjs';
 import {validateEventLink} from './eventLinkPolicy.mjs';
 import {readActivityAudit} from './activityAuditReader.mjs';
 import {summariseClubOperations} from './operationsSummary.mjs';
+import {readScopedInventory,summarisePeopleInventory,summariseManagementInventory} from './managementReaders.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -69,6 +70,15 @@ Deno.serve(async req=>{
    if(updated.updated!==1)return fail('Attendance changed; reload',409);
    await audit(sdk,tenant_id,club_id,user.id,'ccc.host.checkin','EventRegistration',registrationId,{attendance:r.attendance_status||'not_marked',revision},{attendance,revision:revision+1});
    return Response.json({success:true,registrationId,attendance,revision:revision+1});
+  }
+  if(body.action==='people_summary'){
+   const [access,applications]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.ClubUserAccess,{tenant_id,club_id}),readScopedInventory(sdk.asServiceRole.entities.MembershipApplication,{tenant_id,club_id})]);
+   return Response.json({success:true,...summarisePeopleInventory(access,applications)});
+  }
+  if(body.action==='management_summary'){
+   const [templateRead,hosts]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.CommunicationTemplate,{tenant_id,owner_scope:'tenant'}),readScopedInventory(sdk.asServiceRole.entities.MembershipVenueHostConfig,{tenant_id,club_id})]);
+   const templates={...templateRead,rows:templateRead.rows.filter((t:any)=>!t.club_id||t.club_id===club_id)};
+   return Response.json({success:true,...summariseManagementInventory(templates,hosts)});
   }
   if(body.action==='options'){
    const venueId=s(body.venueId);const venue=venueId?(await sdk.asServiceRole.entities.Venue.filter({id:venueId,tenant_id,club_id,status:'active'},'-created_date',1))?.[0]:null;
