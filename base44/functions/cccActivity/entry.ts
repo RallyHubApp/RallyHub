@@ -44,14 +44,14 @@ Deno.serve(async req=>{
    if(!record.host_user_id)issues.push('host_required');
    else {
     const hosts=await sdk.asServiceRole.entities.User.filter({id:record.host_user_id},'-created_date',1);
-    if(!hosts?.length||hosts[0].active_tenant_id!==tenant_id||hosts[0].active_club_id!==club_id)issues.push('host_not_verified_for_club');
+    if(!hosts?.length||hosts[0].approval_status!=='approved'||hosts[0].active_tenant_id!==tenant_id||hosts[0].active_club_id!==club_id||!(hosts[0].role==='admin'||hosts[0].active_club_role==='club_admin'))issues.push('host_not_verified_for_club');
    }
    if(!['approval','automatic','closed'].includes(record.registration_mode)||record.registration_mode==='closed')issues.push('registration_policy_closed');
    if(!['none','cash','online'].includes(record.payment_method))issues.push('payment_policy_invalid');
    if(!record.communication_template_id)issues.push('approved_template_required');
    else {
-    const templates=await sdk.asServiceRole.entities.CommunicationTemplate.filter({id:record.communication_template_id,tenant_id,club_id,status:'approved'},'-created_date',1);
-    if(!templates?.length)issues.push('approved_template_not_found');
+    const templates=await sdk.asServiceRole.entities.CommunicationTemplate.filter({id:record.communication_template_id,tenant_id,owner_scope:'tenant',status:'approved'},'-created_date',1);
+    if(!templates?.length||(templates[0].club_id&&templates[0].club_id!==club_id))issues.push('approved_template_not_found');
    }
    issues.push('booking_capacity_payment_and_notification_integration_pending');
    return Response.json({success:true,ready:false,issues,activityId:id,revision:record.revision});
