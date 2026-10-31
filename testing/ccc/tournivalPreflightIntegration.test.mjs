@@ -57,3 +57,14 @@ test('Tournival court updates preserve completed result protection',()=>{
   const changed=applyTournivalMatchChange(started,{matches:[fixture('m1',['a','b','c','d'],'playing',1)]});
   assert.equal(changed.matches[0].court,1);
 });
+
+test('court updates cannot change teams without an explicit fixture replan',()=>{
+ const started=startTournival(eventWithPlayers(),{matches:[fixture('m1',['a','b','c','d'])]});
+ assert.throws(()=>applyTournivalMatchChange(started,{matches:[fixture('m1',['a','b','c','e'])]}),/Fixture teams cannot change/);
+});
+test('completed matches cannot be silently reopened',()=>{
+ const started=startTournival(eventWithPlayers(),{matches:[fixture('m1',['a','b','c','d'])]});
+ const completed={...fixture('m1',['a','b','c','d'],'completed'),result:{scoreA:11,scoreB:8,winner:'A'}};
+ const done=applyTournivalMatchChange(started,{matches:[completed]});
+ assert.throws(()=>applyTournivalMatchChange(done,{matches:[fixture('m1',['a','b','c','d'],'waiting')]}),/Completed match cannot be reopened/);
+});
