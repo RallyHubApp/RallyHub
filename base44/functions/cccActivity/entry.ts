@@ -24,6 +24,7 @@ import {reviewWeeklyRecurrence} from './recurrenceReview.mjs';
 import {reviewLegacySessionOverlaps} from './legacySessionReview.mjs';
 import {reviewDublinOccurrences} from './localTimeReview.mjs';
 import {reviewActivityCancellation} from './cancellationReview.mjs';
+import {buildRecurrenceManifest} from './recurrenceManifest.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
