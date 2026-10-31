@@ -233,9 +233,11 @@ Deno.serve(async req=>{
    const draft=body.draft||{};
    const candidate={id:s(body.id),tenant_id,club_id,venue_id:s(draft.venue_id),court_id:s(draft.court_id),starts_at:s(draft.starts_at),ends_at:s(draft.ends_at)};
    if(candidate.court_id){const courts=await sdk.asServiceRole.entities.Court.filter({id:candidate.court_id,tenant_id,club_id,venue_id:candidate.venue_id},'-created_date',1);if(!courts?.length||courts[0].status==='Maintenance')return fail('Court not available in selected venue',409)}
-   const schedule=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});
+   const [schedule,legacy,venueRows]=await Promise.all([readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id}),readScopedInventory(sdk.asServiceRole.entities.GuestSessionLink,{tenant_id,club_id},{pageSize:200,maxPages:20}),sdk.asServiceRole.entities.Venue.filter({id:candidate.venue_id,tenant_id,club_id,status:'active'},'-created_date',1)]);
    const checked=activityScheduleConflicts(candidate,schedule.activities);
-   return Response.json({success:true,valid:checked.valid,conflicts:checked.conflicts,complete:schedule.complete,ready:checked.valid&&schedule.complete&&checked.conflicts.length===0,mutationPerformed:false});
+   const valid=checked.valid&&!!venueRows?.[0];
+   const legacyReview=reviewLegacySessionOverlaps([{week:1,startsAt:candidate.starts_at,endsAt:candidate.ends_at}],legacy.rows,{tenantId:tenant_id,clubId:club_id,venueName:venueRows?.[0]?.name,complete:legacy.complete});
+   return Response.json({success:true,valid,conflicts:checked.conflicts,legacyOverlaps:legacyReview.occurrences[0]?.legacyOverlaps||[],legacyUnmapped:legacyReview.occurrences[0]?.legacyUnmapped||[],complete:schedule.complete&&legacy.complete,ready:valid&&schedule.complete&&checked.conflicts.length===0&&legacyReview.ready,mutationPerformed:false,legacySessionCheckAdvisory:true});
   }
   if(body.action==='operations_summary'){
    const result=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});
