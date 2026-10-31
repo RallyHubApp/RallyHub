@@ -16,6 +16,7 @@ import {activityScheduleConflicts} from './activitySchedulePolicy.mjs';
 import {reviewPersonCommunications} from './consentReview.mjs';
 import {readPersonInventory} from './personInventory.mjs';
 import {refundRecoveryQueue} from './refundRecovery.mjs';
+import {identityIntegrity} from './identityIntegrity.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -137,7 +138,7 @@ Deno.serve(async req=>{
   }
   if(body.action==='people_summary'){
    const [access,applications]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.ClubUserAccess,{tenant_id,club_id}),readScopedInventory(sdk.asServiceRole.entities.MembershipApplication,{tenant_id,club_id})]);
-   return Response.json({success:true,...summarisePeopleInventory(access,applications)});
+   return Response.json({success:true,...summarisePeopleInventory(access,applications),integrity:identityIntegrity(access.rows,{tenantId:tenant_id,clubId:club_id,complete:access.complete})});
   }
   if(body.action==='person_communication_review'){
    const personId=s(body.personId),channel=s(body.channel),purpose=s(body.purpose);
