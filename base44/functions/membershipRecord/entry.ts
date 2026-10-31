@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { createCheckout, retrievePayment, providerConfigured, type ProviderAccount } from './payments.ts';
+import {assessMemberAccountLink} from './accountLinkGuard.ts';
 
 const clean=(v:any,max=500)=>String(v??'').trim().slice(0,max);
 const lower=(v:any)=>clean(v,240).toLowerCase();
@@ -696,13 +697,15 @@ Deno.serve(async(req)=>{
       const otherPlayer=await first(base44,'Player',{user_id:userId});
       if(otherPlayer&&String(otherPlayer.id)!==String(player.id)) return Response.json({error:'This user account is already linked to a different player record.'},{status:409});
       if(player.user_id&&String(player.user_id)!==String(userId)) return Response.json({error:'This player record is already linked to another user.'},{status:409});
+      const accessRows=await base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:tenantId,club_id:clubId,user_id:userId},'-updated_date',20);
+      const linkGuard=assessMemberAccountLink({tenantId,clubId,userId,person,membership,player,target,otherPerson,otherPlayer,accessRows});
+      if(!linkGuard.allowed)return Response.json({error:'Member identity or access requires administrator review before linking.',code:'MEMBER_IDENTITY_INTEGRITY',issues:linkGuard.issues},{status:409});
       await base44.asServiceRole.entities.Person.update(person.id,{linked_user_id:userId});
       await base44.asServiceRole.entities.Player.update(player.id,{user_id:userId,linked_user_email:accountEmail});
       if(nameMismatch){
         const aliases=Array.from(new Set([...(membership.alternate_names||[]), clean(target.full_name||target.display_name,180)].filter(Boolean)));
         await base44.asServiceRole.entities.ClubMembership.update(membership.id,{alternate_names:aliases});
       }
-      const accessRows=await base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:tenantId,club_id:clubId,user_id:userId},'-updated_date',20);
       const existingAccess=accessRows?.[0];
       const now=new Date().toISOString();
       const accessData={tenant_id:tenantId,club_id:clubId,user_id:userId,person_id:person.id,player_id:player.id,permission_bundle:'member',relationship_type:'member',status:'active',approved_by_user_id:user.id,approved_at:now};
