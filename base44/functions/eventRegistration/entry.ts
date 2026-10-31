@@ -60,10 +60,6 @@ Deno.serve(async(req)=>{
    const html=renderBasicBrandedEmail('<p style="white-space:pre-line">'+body.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n','<br>')+'</p>',kit,club,club.name||'Clare Pickleball','Event booking update');
    return Response.json({success:true,noticeType,subject:`${t.name} · ${noticeType.replaceAll('_',' ')}`,body,html,recipients,delivery:'preview_only'});
   }
-  if(action==='admin_list'){
-   const payments=await readAdminEventPayments(base44.asServiceRole.entities.PaymentRecord,{tenantId:t.tenant_id,clubId:t.host_club_id,registrationIds:rows.map((r:any)=>r.id)});
-   return Response.json({success:true,event:publicEvent,registrations:rows.map((r:any)=>{const group=payments.filter((x:any)=>x.purpose_id===r.id);const selected=selectRefundableEventPayment(group,r);const p=selected.payment||selectCheckoutPayment(group,r).payment||null;return {id:r.id,name:r.full_name,email:r.email,mobile:r.mobile,emergencyContactName:r.emergency_contact_name,emergencyContactMobile:r.emergency_contact_mobile,status:r.registration_status,paymentStatus:r.payment_status,createdAt:r.created_at,paymentRecordId:p?.id||null,paymentRecordStatus:p?.payment_status||null,amount:Number(p?.amount||0),refundedAmount:Number(p?.amount_refunded||0),transactionReference:p?.provider_payment_reference||'',refundableAmount:selected.payment?Math.max(0,Number(selected.payment.amount||0)-Number(selected.payment.amount_refunded||0)):0,refundReviewRequired:selected.reason==='ambiguous_refundable_payments'||selected.reason==='checkout_mismatch'};})});
-  }
   if(action==='admin_approve'||action==='admin_verify'||action==='admin_refund_payment'){
    const registration=rows.find((r:any)=>r.id===clean(b.registrationId,100));if(!registration)return fail('Registration not found',404);
    const accountRows=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
