@@ -2,6 +2,7 @@ import {createClientFromRequest} from 'npm:@base44/sdk@0.8.29';
 import {validateTournivalStateTransition} from './tournivalStateValidation.ts';
 import {validateDelegatedTournivalHostEdit} from './permissions.ts';
 import {assessTournivalHostStateHealth} from './stateHealth.ts';
+import {loadTournivalHostPlayerMap} from './playerRead.ts';
 const clean=(v:any,max=160)=>String(v??'').trim().slice(0,max);
 const SPORT_FIELDS=['rounds','seedOrder','playerIds','numCourts','numRounds','matchFormat',
   'knockoutPairs','knockoutState','duprEnabled','venueMinutes','matchMinutes','changeoverMinutes'];
@@ -36,18 +37,16 @@ Deno.serve(async(req)=>{
   if(session.rehearsal)return Response.json({error:'Delegated live host access cannot control rehearsal'},{status:409});
   const health=assessTournivalHostStateHealth(session,tournament);
   if(!health.healthy&&action!=='get')return Response.json({error:'Tournival state requires reconciliation before host writes',health},{status:409});
+  if(health.issues.includes('session_state_invalid'))return Response.json({error:'Tournival state unreadable',health},{status:409});
   const state=JSON.parse(session.state_json||'{}');
   if(action==='get'){
    const ids=Array.isArray(state.playerIds)?state.playerIds:[];
-   const players=ids.length?await base44.asServiceRole.entities.Player.filter({
-    tenant_id:tournament.tenant_id
-   },'-created_date',500):[];
-   const playerMap=Object.fromEntries((players||[]).filter((p:any)=>ids.includes(p.id)).map((p:any)=>[
-    p.id,clean(p.full_name,120)
-   ]));
+   const roster=await loadTournivalHostPlayerMap(base44.asServiceRole.entities.Player,tournament.tenant_id,ids);
+   if(roster.error)return Response.json({error:'Tournival roster scope invalid'},{status:409});
+   const {playerMap,missingPlayerIds}=roster;
    return Response.json({success:true,event:{id:tournament.id,name:tournament.name,
     location:tournament.location,start_date:tournament.start_date,status:tournament.status},
-    state,playerMap,health,role:'delegated_host',permissions:{
+    state,playerMap,missingPlayerIds,health,role:'delegated_host',permissions:{
      score:true,courts:true,announcements:true,timing:true,finance:false,configuration:false,dupr:false
     }});
   }
