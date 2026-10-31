@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const backend=readFileSync(new URL('../../base44/functions/membershipRecord/entry.ts',import.meta.url),'utf8');
+const ui=readFileSync(new URL('../../src/pages/MembershipConsole.jsx',import.meta.url),'utf8');
+const guard=readFileSync(new URL('../../base44/functions/membershipRecord/accountLinkGuard.ts',import.meta.url),'utf8');
+test('admin-only identity health endpoint reads scoped member and access records',()=>{const block=backend.slice(backend.indexOf("if(action==='admin_identity_health')"),backend.indexOf("if(action==='admin_connect_account')"));assert.match(block,/ClubMembership/);assert.match(block,/tenant_id:tenantId,club_id:clubId/);assert.match(block,/assessMembershipIdentityHealth/);assert.doesNotMatch(block,/\.update\(|\.create\(/);});
+test('identity health reviews person-linked and account-linked access records',()=>{const block=backend.slice(backend.indexOf("if(action==='admin_identity_health')"),backend.indexOf("if(action==='admin_connect_account')"));assert.match(block,/person_id:personId/);assert.match(block,/user_id:linkedUserId/);});
+test('member interface exposes read-only identity check with conflict details',()=>{assert.match(ui,/action: 'admin_identity_health'/);assert.match(ui,/Check identity/);assert.match(ui,/identityReview\.issues/);});
+test('account linking refuses partial links until reviewed',()=>{assert.match(guard,/partial_account_link_requires_review/);});
