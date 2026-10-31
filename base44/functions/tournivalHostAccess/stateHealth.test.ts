@@ -1,0 +1,12 @@
+import {strict as assert} from 'node:assert';
+import {assessTournivalHostStateHealth as check} from './stateHealth.ts';
+const state={revision:3,matches:[{id:'m1'}]};
+const session=()=>({id:'s',tenant_id:'t',tournament_id:'e',state_revision:3,state_json:JSON.stringify(state)});
+const tournament=()=>({id:'e',tenant_id:'t',tournival_state:JSON.stringify(state)});
+Deno.test('healthy state has no reconciliation warning',()=>assert.equal(check(session(),tournament()).healthy,true));
+Deno.test('outdated tournament mirror detected',()=>{const t=tournament();t.tournival_state=JSON.stringify({...state,revision:2});assert.equal(check(session(),t).issues.includes('tournament_mirror_revision_mismatch'),true);});
+Deno.test('session revision drift detected',()=>assert.equal(check({...session(),state_revision:2},tournament()).issues.includes('session_revision_mismatch'),true));
+Deno.test('malformed JSON reported safely',()=>assert.equal(check({...session(),state_json:'{'},tournament()).issues.includes('session_state_invalid'),true));
+Deno.test('cross-tenant session mirror mismatch detected',()=>assert.equal(check(session(),{...tournament(),tenant_id:'other'}).healthy,false));
+Deno.test('duplicate match identities detected',()=>{const s=session();s.state_json=JSON.stringify({...state,matches:[{id:'m1'},{id:'m1'}]});assert.equal(check(s,tournament()).issues.includes('session_match_ids_invalid'),true);});
+Deno.test('missing tournament mirror is review only',()=>{const x=check(session(),{...tournament(),tournival_state:null});assert.equal(x.automaticRepair,false);assert.equal(x.requiresReconciliation,true);});
