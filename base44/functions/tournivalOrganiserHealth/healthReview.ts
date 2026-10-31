@@ -7,6 +7,7 @@ export function reviewTournivalOrganiserHealth(tournament:any,sessions:any[]){
  if(!Array.isArray(sessions)||sessions.length!==1)issues.push('session_count_invalid');
  const session=Array.isArray(sessions)&&sessions.length===1?sessions[0]:null;
  if(session?.rehearsal)issues.push('rehearsal_session_not_live');
+ if(session&&session.club_id!==tournament?.host_club_id)issues.push('session_club_scope_mismatch');
  const health=session?assessTournivalHostStateHealth(session,tournament):null;
  const plan=session?planTournivalHostReconciliation(session,tournament):null;
  const safe=issues.length===0&&health?.healthy===true;
