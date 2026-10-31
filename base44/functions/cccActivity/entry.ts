@@ -233,6 +233,22 @@ Deno.serve(async req=>{
    const occurrences=local.occurrences.map((o:any,i:number)=>({...o,legacyOverlaps:legacyReview.occurrences[i]?.legacyOverlaps||[],legacyUnmapped:legacyReview.occurrences[i]?.legacyUnmapped||[]}));
    return Response.json({success:true,...ccc,occurrences,ready:ccc.ready&&legacyReview.ready&&local.ready,localTimeIssues:local.issues,timezone:local.timezone,daylightSavingChecked:true,legacySessionInventoryComplete:legacy.complete,legacyConflictedWeeks:legacyReview.conflictedWeeks,legacyUnmappedWeeks:legacyReview.unmappedWeeks,legacySessionCheckAdvisory:true});
   }
+  if(body.action==='recurrence_manifest'){
+   const id=s(body.id),revision=Number(body.expectedRevision);
+   const source=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!source)return fail('Source activity not found',404);
+   if(source.status!=='draft'||!Number.isSafeInteger(revision)||source.revision!==revision)return fail('Source draft changed; reload',409);
+   const venue=(await sdk.asServiceRole.entities.Venue.filter({id:source.venue_id,tenant_id,club_id,status:'active'},'-created_date',1))?.[0];
+   if(!venue)return fail('Active venue required',409);
+   if(source.court_id){const courts=await sdk.asServiceRole.entities.Court.filter({id:source.court_id,tenant_id,club_id,venue_id:source.venue_id},'-created_date',1);if(!courts?.length||courts[0].status==='Maintenance')return fail('Court unavailable',409)}
+   const [schedule,legacy]=await Promise.all([readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id}),readScopedInventory(sdk.asServiceRole.entities.GuestSessionLink,{tenant_id,club_id},{pageSize:200,maxPages:20})]);
+   const ccc=reviewWeeklyRecurrence(source,schedule.activities,{weeks:body.weeks,complete:schedule.complete});
+   const local=reviewDublinOccurrences(ccc.occurrences);
+   const guest=reviewLegacySessionOverlaps(local.occurrences,legacy.rows,{tenantId:tenant_id,clubId:club_id,venueName:venue.name,complete:legacy.complete});
+   const occurrences=local.occurrences.map((o:any,i:number)=>({...o,legacyOverlaps:guest.occurrences[i]?.legacyOverlaps||[],legacyUnmapped:guest.occurrences[i]?.legacyUnmapped||[]}));
+   const manifest=buildRecurrenceManifest(source,occurrences,{tenantId:tenant_id,clubId:club_id,sourceRevision:revision,inventoryComplete:schedule.complete&&legacy.complete,ready:ccc.ready&&local.ready&&guest.ready});
+   return Response.json({success:true,sourceActivityId:id,sourceRevision:revision,timezone:'Europe/Dublin',...manifest});
+  }
   if(body.action==='schedule_review'){
    const draft=body.draft||{};
    const candidate={id:s(body.id),tenant_id,club_id,venue_id:s(draft.venue_id),court_id:s(draft.court_id),starts_at:s(draft.starts_at),ends_at:s(draft.ends_at)};
