@@ -10,6 +10,7 @@ import {readActivityAudit} from './activityAuditReader.mjs';
 import {summariseClubOperations} from './operationsSummary.mjs';
 import {readScopedInventory,summarisePeopleInventory,summariseManagementInventory} from './managementReaders.mjs';
 import {validateHostVenueMapping,validatePersonAccessLink} from './managementActions.mjs';
+import {communicationReadiness} from './communicationReadiness.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -119,6 +120,11 @@ Deno.serve(async req=>{
   if(body.action==='people_summary'){
    const [access,applications]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.ClubUserAccess,{tenant_id,club_id}),readScopedInventory(sdk.asServiceRole.entities.MembershipApplication,{tenant_id,club_id})]);
    return Response.json({success:true,...summarisePeopleInventory(access,applications)});
+  }
+  if(body.action==='communications_readiness'){
+   const templates=await readScopedInventory(sdk.asServiceRole.entities.CommunicationTemplate,{tenant_id,owner_scope:'tenant'});
+   const scoped=templates.rows.filter((t:any)=>!t.club_id||t.club_id===club_id);
+   return Response.json({success:true,...communicationReadiness(scoped,{complete:templates.complete})});
   }
   if(body.action==='management_summary'){
    const [templateRead,hosts,venues]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.CommunicationTemplate,{tenant_id,owner_scope:'tenant'}),readScopedInventory(sdk.asServiceRole.entities.MembershipVenueHostConfig,{tenant_id,club_id}),readScopedInventory(sdk.asServiceRole.entities.Venue,{tenant_id,club_id,status:'active'})]);
