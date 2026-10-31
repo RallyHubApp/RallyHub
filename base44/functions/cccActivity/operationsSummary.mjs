@@ -7,6 +7,9 @@ export function summariseClubOperations(activities=[],{complete=true,now=new Dat
  for(const a of activities){
   if(!a?.id||seen.has(a.id))continue;seen.add(a.id);
   if(validStatuses.has(a.status))counts[a.status]++;
+  if(a.recurrence_batch_state==='needs_recovery')alerts.push({activityId:a.id,code:'recurrence_batch_needs_recovery'});
+  if(a.recurrence_batch_state==='creating')alerts.push({activityId:a.id,code:'recurrence_batch_creation_unverified'});
+  if(a.recurrence_batch_key&&(!Number.isSafeInteger(a.recurrence_expected_count)||a.recurrence_expected_count<1||a.recurrence_expected_count>12))alerts.push({activityId:a.id,code:'recurrence_expected_count_invalid'});
   else alerts.push({activityId:a.id,code:'unknown_activity_status'});
   const start=Date.parse(a.starts_at),end=Date.parse(a.ends_at);
   if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start){alerts.push({activityId:a.id,code:'invalid_schedule'});continue;}
