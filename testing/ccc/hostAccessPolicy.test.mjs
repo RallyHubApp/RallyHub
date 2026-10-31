@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {hostAccessDecision} from '../../src/lib/ccc/hostAccessPolicy.js';
+const valid={tenantId:'t',clubId:'c',sessionId:'s',action:'mark_attendance',now:'2026-11-01T10:00:00Z',hostGrant:{tenant_id:'t',club_id:'c',session_id:'s',allowed_actions:['mark_attendance'],expires_at:'2026-11-01T22:00:00Z'}};
+test('valid host grant authorises only named session and action',()=>{assert.equal(hostAccessDecision(valid).allowed,true);assert.equal(hostAccessDecision({...valid,sessionId:'other'}).allowed,false);assert.equal(hostAccessDecision({...valid,action:'record_score'}).allowed,false);});
+test('expired and revoked host grants fail closed',()=>{assert.equal(hostAccessDecision({...valid,now:'2026-11-01T22:00:00Z'}).reason,'grant_expired');assert.equal(hostAccessDecision({...valid,hostGrant:{...valid.hostGrant,revoked_at:'2026-11-01T09:00:00Z'}}).reason,'grant_revoked');});
+test('unverifiable time and unsupported actions fail closed',()=>{assert.equal(hostAccessDecision({...valid,now:null}).allowed,false);assert.equal(hostAccessDecision({...valid,action:'delete_member'}).allowed,false);});
