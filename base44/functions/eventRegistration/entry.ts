@@ -21,6 +21,7 @@ Deno.serve(async(req)=>{
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)))return fail('Bookings are not open for this event',404);
   if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||user.role!=='admin')return fail('Admin access required',403);if(!t.tenant_id||!t.host_club_id||String(user.active_tenant_id||'')!==String(t.tenant_id)||String(user.active_club_id||'')!==String(t.host_club_id))return fail('Event outside selected tenant or club',403);}
   const capacity=Number(t.event_capacity||0);if(!Number.isSafeInteger(capacity)||capacity<1)return fail('Event capacity is not configured',503);
+  stage='roster_verification';
   const rows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
   const publicEvent={id:t.id,name:t.name,date:t.start_date,venue:t.location,capacity,placesRemaining:Math.max(0,capacity-occupied(rows)),fee:Number(t.event_fee_amount||0),currency:t.event_currency||'EUR'};
   if(action==='get'){
@@ -113,7 +114,7 @@ Deno.serve(async(req)=>{
   const now=new Date().toISOString();const evidence=consentEvidence(b,docs,now);
   // Initialise from existing active applications once, then atomically reserve.
   stage='capacity_check';
-  const current=await base44.asServiceRole.entities.EventRegistration.filter({event_id:id,tenant_id:t.tenant_id},'-created_date',500);
+  const current=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
   if(current.some((r:any)=>r.operation_id===operationId))return Response.json({success:true,received:true,message:'Your application has already been received.'});
   if(duplicate(current,email))return fail('This email may already have an application. Please contact the organiser.',409);
   await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:null},{$set:{event_reserved_count:occupied(current)}});
