@@ -117,6 +117,9 @@ export default function MembershipConsole() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [identityReview, setIdentityReview] = useState(null);
+  const [identityReviewBusy, setIdentityReviewBusy] = useState(false);
+  useEffect(() => { setIdentityReview(null); }, [personId]);
   const [applicationBusyId, setApplicationBusyId] = useState('');
   const [editApplicant,setEditApplicant]=useState(null);
   const [editApplicantForm,setEditApplicantForm]=useState({fullName:'',email:'',mobile:''});
@@ -728,6 +731,19 @@ export default function MembershipConsole() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const checkMemberIdentity = async () => {
+    if (!personId || identityReviewBusy) return;
+    setIdentityReviewBusy(true);
+    setIdentityReview(null);
+    try {
+      const response = await membershipRead('membershipRecord', { action: 'admin_identity_health', personId });
+      if (response.data?.error) throw new Error(response.data.error);
+      setIdentityReview(response.data?.identity || null);
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Unable to review account integrity');
+    } finally { setIdentityReviewBusy(false); }
   };
 
   const connectAccount = async () => {
@@ -1497,10 +1513,16 @@ export default function MembershipConsole() {
                 <Badge variant="outline">{label(detail.membership?.payment_status)}</Badge>
                 {(detail.person?.linked_user_id || detail.player?.user_id) ? <Badge className="bg-primary/15 text-primary"><Link2 className="w-3 h-3 mr-1" />RallyHub linked</Badge> : <Badge variant="outline">Not linked</Badge>}
                 <div className="ml-auto flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" disabled={identityReviewBusy} onClick={checkMemberIdentity}><ShieldCheck className="w-3.5 h-3.5 mr-1.5" />{identityReviewBusy ? 'Checking…' : 'Check identity'}</Button>
                   {!(detail.person?.linked_user_id || detail.player?.user_id) ? <Button size="sm" variant="outline" disabled={saving} onClick={connectAccount}><Link2 className="w-3.5 h-3.5 mr-1.5" />Link RallyHub account</Button> : null}
                   <Button size="sm" onClick={() => setEditOpen(true)}><Pencil className="w-3.5 h-3.5 mr-1.5" />Edit record</Button>
                 </div>
               </div>
+
+              {identityReview && <div role="status" className={`rounded-lg border p-3 text-sm ${identityReview.healthy ? 'border-green-500/30' : 'border-amber-500/40'}`}>
+                <strong>{identityReview.healthy ? 'Identity records consistent' : 'Identity review required'}</strong>
+                <p className="mt-1">{identityReview.healthy ? 'No integrity conflicts detected in the loaded member, player and access records.' : `Issues: ${(identityReview.issues || []).map(label).join(', ')}. No automatic changes have been made.`}</p>
+              </div>}
 
               <Tabs defaultValue="profile">
                 <TabsList className="flex flex-wrap h-auto gap-1 justify-start">
