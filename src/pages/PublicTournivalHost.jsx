@@ -9,7 +9,7 @@ import TournivalHall from '@/components/tournival/TournivalHall';
 import TournivalPrintPack from '@/components/tournival/TournivalPrintPack';
 import RallyHubPublicBrand from '@/components/branding/RallyHubPublicBrand';
 /**
- * Delegated bearer link. Never asks a host to sign in as Super Admin.
+ * Delegated bearer ****** Never asks a host to sign in as Super Admin.
  * Role is restricted by the backend: match scoring, court scheduling, timing
  * and in-app hall announcements, no payments, entity access or configuration.
  */
@@ -35,6 +35,7 @@ export default function PublicTournivalHost(){
   if(busyRef.current)throw Error('A host change is already saving; check confirmed state before retrying.');
   busyRef.current=true;setBusy(true);setError('');
   try{
+   if(snapshotRef.current?.health?.requiresReconciliation)throw Error('Tournament state requires organiser reconciliation before host changes.');
    const current=snapshotRef.current?.state;
    if(!current)throw Error('Tournament state not loaded');
    const operationId=crypto.randomUUID();
@@ -48,6 +49,8 @@ export default function PublicTournivalHost(){
   }finally{busyRef.current=false;setBusy(false);}
  };
  const state=snapshot?.state,playerMap=snapshot?.playerMap||{},event=snapshot?.event||{};
+ const hostWriteBlocked=Boolean(snapshot?.health?.requiresReconciliation);
+ const missingPlayers=snapshot?.missingPlayerIds||[];
  const views=[
   ['scores','Courts & Scores'],['timing','Schedule'],['announcements','Announcements'],
   ['hall','Hall View'],['print','Print Pack']
@@ -63,12 +66,14 @@ export default function PublicTournivalHost(){
     </div>
    </div>
    {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
+   {hostWriteBlocked&&<section role="alert" className="rounded-lg border border-destructive p-3" data-testid="host-health-warning"><h2 className="font-semibold">Host changes paused</h2><p className="text-sm">Tournament state needs organiser reconciliation. Existing results remain visible; do not re-enter scores.</p><p className="text-xs">Checks: {(snapshot.health.issues||[]).join(', ')}</p></section>}
+   {missingPlayers.length>0&&<p role="status" className="text-sm">{missingPlayers.length} player record(s) missing from tournament roster lookup.</p>}
    {!state?<p>Loading secure host control…</p>:<>
     <nav className="flex overflow-x-auto gap-2" aria-label="Host sections">{views.map(([key,label])=>
       <Button key={key} variant={tab===key?'default':'outline'} size="sm" onClick={()=>setTab(key)}>{label}</Button>)}</nav>
-    {tab==='scores'&&<TournivalLiveScoring state={state} playerMap={playerMap} onSaveState={saveState} isAdmin={!busy}/>}
-    {tab==='timing'&&<TournivalTimingMonitor state={state} onSaveState={saveState} isAdmin={!busy}/>}
-    {tab==='announcements'&&<TournivalAnnouncements state={state} playerMap={playerMap} tournament={event} onSaveState={saveState} isAdmin={!busy}/>}
+    {tab==='scores'&&<TournivalLiveScoring state={state} playerMap={playerMap} onSaveState={saveState} isAdmin={!busy&&!hostWriteBlocked}/>}
+    {tab==='timing'&&<TournivalTimingMonitor state={state} onSaveState={saveState} isAdmin={!busy&&!hostWriteBlocked}/>}
+    {tab==='announcements'&&<TournivalAnnouncements state={state} playerMap={playerMap} tournament={event} onSaveState={saveState} isAdmin={!busy&&!hostWriteBlocked}/>}
     {tab==='hall'&&<TournivalHall state={state} tournament={event} playerMap={playerMap}/>}
     {tab==='print'&&<TournivalPrintPack state={state} tournament={event} playerMap={playerMap} currentRevision={state.revision}/>}
    </>}
