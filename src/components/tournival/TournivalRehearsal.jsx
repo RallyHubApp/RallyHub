@@ -43,7 +43,7 @@ export default function TournivalRehearsal() {
    }
    const fixtures=generateGroupFixtures(syntheticIds(players),courts,rounds);
    const matches=indexTournivalMatches(fixtures);
-   next=startTournival(next,{matches});
+   next=startTournival(next,{matches,courts});
    assertRehearsalIsolation(next);
    setEvent(next);setQualification(fixtures);setKnockout([]);setPhase('qualification');
    setHistory([ 'Rehearsal started: synthetic players checked in; all external integrations disabled.' ]);
@@ -53,7 +53,7 @@ export default function TournivalRehearsal() {
    if(phase==='qualification'){
      const scheduled=scheduleTournivalCourts(event.matches,{courts});
      if(scheduled.assignments.length){
-       setEvent(applyTournivalMatchChange(event,{matches:scheduled.matches,action:'court_allocate'}));
+       setEvent(applyTournivalMatchChange(event,{matches:scheduled.matches,action:'court_allocate',courts}));
        setHistory(h=>[`Allocated ${scheduled.assignments.length} courts`,...h].slice(0,20));
        return;
      }
@@ -100,7 +100,7 @@ export default function TournivalRehearsal() {
    if(phase==='qualification'){
      const match=event.matches.find(m=>m.id===id);
      const next=event.matches.map(m=>m.id===id?play(match,scoreA,scoreB):m);
-     setEvent(applyTournivalMatchChange(event,{matches:next,action:'rehearsal_score'}));
+     setEvent(applyTournivalMatchChange(event,{matches:next,action:'rehearsal_score',courts}));
    }else{
      const match=knockout.find(m=>m.id===id);
      setKnockout(old=>old.map(m=>m.id===id?play(match,scoreA,scoreB):m));
