@@ -20,6 +20,7 @@ import {identityIntegrity} from './identityIntegrity.mjs';
 import {readCccAccess,cccAccessDecision} from './accessGate.mjs';
 import {guestVenueReview} from './guestPolicy.mjs';
 import {membershipReadiness} from './membershipReadiness.mjs';
+import {reviewWeeklyRecurrence} from './recurrenceReview.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -214,6 +215,15 @@ Deno.serve(async req=>{
    if(!venueId)return fail('Venue required');
    const venue=(await sdk.asServiceRole.entities.Venue.filter({id:venueId,tenant_id,club_id},'-created_date',1))?.[0];
    return Response.json({success:true,...guestVenueReview({venue,experience,sessionActive:body.sessionActive!==false,tenantId:tenant_id,clubId:club_id})});
+  }
+  if(body.action==='recurrence_review'){
+   const draft=body.draft||{};
+   const candidate={id:s(body.id),tenant_id,club_id,venue_id:s(draft.venue_id),court_id:s(draft.court_id),starts_at:s(draft.starts_at),ends_at:s(draft.ends_at)};
+   const venue=(await sdk.asServiceRole.entities.Venue.filter({id:candidate.venue_id,tenant_id,club_id,status:'active'},'-created_date',1))?.[0];
+   if(!venue)return fail('Active venue required',409);
+   if(candidate.court_id){const courts=await sdk.asServiceRole.entities.Court.filter({id:candidate.court_id,tenant_id,club_id,venue_id:candidate.venue_id},'-created_date',1);if(!courts?.length||courts[0].status==='Maintenance')return fail('Court not available in selected venue',409)}
+   const schedule=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});
+   return Response.json({success:true,...reviewWeeklyRecurrence(candidate,schedule.activities,{weeks:body.weeks,complete:schedule.complete})});
   }
   if(body.action==='schedule_review'){
    const draft=body.draft||{};
