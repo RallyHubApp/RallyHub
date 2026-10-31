@@ -1,6 +1,6 @@
 # Club Command Centre v2.1 — provisional implementation progress scorecard
 
-**Assessment date:** 31 October 2026. **Reassessment:** Added authenticated, tenant/club-scoped read-only Tournival organiser health endpoint. It diagnoses session/mirror drift, invalid sessions and safe manual recovery candidates without automatically changing results. Focused tests pass; live Base44 runtime acceptance remains outstanding. **Updated after registration-to-attendance reconciliation, manual guest walk-in ledger, post-event follow-up triage and person-linked evidence review.** **Scope:** CCC v2.1 workstreams as tracked in `V21_IMPLEMENTATION_COVERAGE.md`. This is a source-implementation estimate, **not** a passed specification acceptance percentage or a production readiness certificate.
+**Assessment date:** 31 October 2026. **Reassessment:** Integrated read-only Tournival organiser integrity review into the tournament console; tightened backend review access to explicit active club grants, with access, UI and state-health tests. No automatic repair or production validation. **Updated after registration-to-attendance reconciliation, manual guest walk-in ledger, post-event follow-up triage and person-linked evidence review.** **Scope:** CCC v2.1 workstreams as tracked in `V21_IMPLEMENTATION_COVERAGE.md`. This is a source-implementation estimate, **not** a passed specification acceptance percentage or a production readiness certificate.
 
 ## Method
 
@@ -20,13 +20,13 @@ Each of the 17 workstreams below receives equal weight (1/17). Each score is an 
 | Hosts and delegated access | 96 | Host selection and actions use authoritative grants and venue assignment; real Base44 runtime, mobile UAT and cross-module revocation remain |
 | Communications and branding | 73 | Post-event candidate triage and linked-person evidence review integrated; endpoint-hash suppression, approved preview, delivery and provider verification remain |
 | Financial reconciliation | 86 | Refund recovery and paginated linked payment rollups; SumUp settlement remains unverified |
-| Audit and operational health | 82 | Prioritised read-only operations action queue, recurrence/recovery alerts, event close-out readiness and identity flags; durable audit and monitoring remain |
+| Audit and operational health | 84 | Prioritised read-only operations action queue, recurrence/recovery alerts, event close-out readiness and identity flags; durable audit and monitoring remain |
 | Analytics and reporting | 87 | Event and guest attendance/registration CSV exports with personal-data confirmation, formula protection and partial-read warnings; canonical settlement reporting and cross-module exports remain |
-| Sporting formats | 65 | Tournival host command, score immutability, DUPR read-only preflight, delegated access and recovery scenario tests added; full tournament end-to-end acceptance, actual DUPR integration and production runtime remain |
+| Sporting formats | 68 | Tournival host command, score immutability, DUPR read-only preflight, delegated access and recovery scenario tests added; full tournament end-to-end acceptance, actual DUPR integration and production runtime remain |
 | Base44 performance and resilience | 95 | Bounded recurrence preview, paginated finance, guest attendance concurrent-save guard and stale session response protection; bounded 8-way Tournival roster reads and fail-closed partial lookup added; membership dashboard and member directory now cursor-page their main scoped ledgers, with verified 1,250-record test and fail-closed incomplete responses; real Base44 SDK/load verification and configuration pagination remain |
-| A01–A20 acceptance and release gates | 44 | Added recurrence boundary and paginated finance tests; formal A01–A20 traceability and live acceptance remain unpassed |
+| A01–A20 acceptance and release gates | 45 | Added recurrence boundary and paginated finance tests; formal A01–A20 traceability and live acceptance remain unpassed |
 
-**Arithmetic:** 1352/17 = **79.5% provisional implementation estimate**. This is an engineering estimate of source coverage, not verified acceptance.
+**Arithmetic:** 1358/17 = **79.9% provisional implementation estimate**. This is an engineering estimate of source coverage, not verified acceptance.
 
 **Critical distinction:** This is an estimate of implementation coverage, not verified feature completion. **A01–A20 full acceptance has not passed.** The current changes are development code only; there has been no authorised production deploy or live SumUp verification.
 
@@ -35,4 +35,4 @@ Each of the 17 workstreams below receives equal weight (1/17). Each score is an 
 - Focused CCC tests and Vite build are reported with the exact most recent run counts in `V21_IMPLEMENTATION_COVERAGE.md`.
 - Mocked SDK tests establish code behaviour in the test harness, not Base44 runtime support or production reliability.
 - Changes to the percentage require a corresponding update to the workstream scores, with new code and test evidence.
-- A signed-off clause-by-clause master specification traceability exercise may materially change this estimate; until then, avoid presenting 79.5% as a measured contractual completion figure.
+- A signed-off clause-by-clause master specification traceability exercise may materially change this estimate; until then, avoid presenting 79.9% as a measured contractual completion figure.
