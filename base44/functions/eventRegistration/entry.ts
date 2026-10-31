@@ -62,8 +62,9 @@ Deno.serve(async(req)=>{
    if(action==='admin_refund_payment'){
     if(b.confirmRefund!==true)return fail('Explicit refund confirmation required');
     const reason=clean(b.reason,500);if(!reason)return fail('Refund reason required');
-    const payments=await base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,purpose_type:'event',purpose_id:registration.id},'-created_date',10);
-    const payment=payments?.[0];if(!payment||!['paid','partially_refunded','refund_failed'].includes(payment.payment_status))return fail('No refundable event payment record',409);
+    const payments=await readAdminEventPayments(base44.asServiceRole.entities.PaymentRecord,{tenantId:t.tenant_id,clubId:t.host_club_id,registrationIds:[registration.id]});
+    const selection=selectRefundableEventPayment(payments,registration);if(!selection.payment)return fail('Refund requires payment reconciliation: '+selection.reason,409);
+    const payment=selection.payment;
     const transactionId=clean(payment.provider_transaction_id||registration.payment_transaction_id,120);
     if(!transactionId)return fail('SumUp transaction reference missing; verify payment first',409);
     const previous=await base44.asServiceRole.entities.PaymentRefund.filter({payment_record_id:payment.id},'-requested_at',100);
@@ -99,8 +100,9 @@ Deno.serve(async(req)=>{
    const result=await retrievePayment('sumup',registration.payment_checkout_id,account);
    if(result.normalizedStatus!=='paid')return Response.json({success:true,status:registration.registration_status,paymentStatus:result.normalizedStatus});
    if(registration.registration_status!=='confirmed'&&!canConfirm(registration,Date.now()))return fail('Paid checkout requires manual reconciliation: hold expired or already processed',409);
-   const existingPayments=await base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,purpose_type:'event',purpose_id:registration.id},'-created_date',10);
-   let payment=existingPayments?.[0];
+   const existingPayments=await readAdminEventPayments(base44.asServiceRole.entities.PaymentRecord,{tenantId:t.tenant_id,clubId:t.host_club_id,registrationIds:[registration.id]});
+   const selectedCheckout=selectCheckoutPayment(existingPayments,registration);if(selectedCheckout.reason)return fail('Payment requires manual reconciliation: '+selectedCheckout.reason,409);
+   let payment=selectedCheckout.payment;
    if(!payment)payment=await base44.asServiceRole.entities.PaymentRecord.create({tenant_id:t.tenant_id,club_id:t.host_club_id,person_id:registration.person_id||'',purpose_type:'event',purpose_id:registration.id,payment_type:'event_registration',amount:Number(t.event_fee_amount||0),currency:t.event_currency||'EUR',payment_method:'sumup',payment_status:'paid',provider:'sumup',provider_account_id:accountRow?.id||'',provider_checkout_id:registration.payment_checkout_id,provider_checkout_url:registration.payment_checkout_url||'',provider_transaction_id:result.transactionId,provider_payment_reference:result.transactionCode||'',provider_status:result.providerStatus||'PAID',source_system:'rallyhub_event'});
    if(payment.payment_status!=='paid')await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{payment_status:'paid',payment_date:new Date().toISOString().slice(0,10),provider_status:result.providerStatus||'PAID',provider_transaction_id:result.transactionId,provider_payment_reference:result.transactionCode||'',external_payment_reference:result.transactionCode||''});
    await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'confirmed',payment_status:'paid',payment_record_id:payment.id,payment_transaction_id:result.transactionId,confirmed_at:registration.confirmed_at||new Date().toISOString()});
