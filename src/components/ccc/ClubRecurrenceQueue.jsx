@@ -1,4 +1,5 @@
 import React from 'react';
+import {Link} from 'react-router-dom';
 import {useQuery} from '@tanstack/react-query';
 import {base44} from '@/api/base44Client';
 /** Read-only queue. Detailed reconciliation happens against the source activity. */
@@ -18,7 +19,7 @@ export default function ClubRecurrenceQueue({tenantId,clubId}){
   {data.draftCollisions?.collisions?.length>0&&<div className="mt-2 max-h-36 overflow-y-auto rounded-lg border p-2 text-xs"><p className="font-medium">Drafts needing separate scheduling decisions</p>{data.draftCollisions.collisions.slice(0,12).map((pair,i)=><p key={pair.firstActivityId+'-'+pair.secondActivityId+'-'+i}>Activities {pair.firstActivityId} and {pair.secondActivityId} · Venue {pair.venueId}</p>)}</div>}
   {data.draftCollisions?.invalidDraftIds?.length>0&&<p role="alert" className="mt-2 text-sm text-amber-700">{data.draftCollisions.invalidDraftIds.length} recurring draft(s) have invalid schedule details.</p>}
   {!data.complete&&<p role="alert" className="text-sm text-amber-700">Partial activity inventory; some batches may be missing.</p>}
-  <div className="mt-2 max-h-72 space-y-2 overflow-y-auto">{data.batches?.slice(0,30).map(b=><div key={b.id} className="rounded-lg border p-2 text-sm"><div className="font-medium">{b.title}</div><div className="text-xs text-muted-foreground">State: {b.state.replaceAll('_',' ')} · Expected drafts: {b.expectedCount??'unknown'} · Activity ID: {b.id}</div>{b.integrity?.issues?.length>0&&<p role="alert" className="text-xs text-amber-700">Integrity review: {b.integrity.issues.join(', ')}</p>}{b.state==='needs_recovery'&&<p className="text-xs text-amber-700">Open this source activity in the planner to inspect and reconcile. No automatic retry.</p>}</div>)}</div>
+  <div className="mt-2 max-h-72 space-y-2 overflow-y-auto">{data.batches?.slice(0,30).map(b=><div key={b.id} className="rounded-lg border p-2 text-sm"><div className="font-medium">{b.title}</div><div className="text-xs text-muted-foreground">State: {b.state.replaceAll('_',' ')} · Expected drafts: {b.expectedCount??'unknown'} · Activity ID: {b.id}</div>{b.integrity?.issues?.length>0&&<p role="alert" className="text-xs text-amber-700">Integrity review: {b.integrity.issues.join(', ')}</p>}<Link className="mt-1 inline-block text-xs text-primary underline" to={'/app/club-command-centre?section=activities&activityId='+encodeURIComponent(b.id)}>Open source in activity planner</Link>{b.state==='needs_recovery'&&<p className="text-xs text-amber-700">Open this source activity in the planner to inspect and reconcile. No automatic retry.</p>}</div>)}</div>
   {data.total>30&&<p className="text-xs text-muted-foreground">Showing first 30 of {data.total} batches.</p>}</>}
  </section>;
 }
