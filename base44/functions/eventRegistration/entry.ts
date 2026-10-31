@@ -10,6 +10,7 @@ import {readAdminEventPayments} from './scopedPaymentReader.mjs';
 import {selectRefundableEventPayment,selectCheckoutPayment} from './paymentSelection.mjs';
 import {readPaymentRefundHistory,refundRemaining} from './scopedRefundReader.mjs';
 import {readEventAdminPage} from './adminPage.mjs';
+import {countActiveEventRegistrations} from './availabilityCount.mjs';
 const clean=(v:any,n=200)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,n);
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
 Deno.serve(async(req)=>{
@@ -53,10 +54,12 @@ Deno.serve(async(req)=>{
   const rows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
   const publicEvent={id:t.id,name:t.name,date:t.start_date,venue:t.location,capacity,placesRemaining:Math.max(0,capacity-occupied(rows)),fee:Number(t.event_fee_amount||0),currency:t.event_currency||'EUR'};
   if(action==='get'){
+   const used=await countActiveEventRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
+   const publicEvent={id:t.id,name:t.name,date:t.start_date,venue:t.location,capacity,placesRemaining:Math.max(0,capacity-used),fee:Number(t.event_fee_amount||0),currency:t.event_currency||'EUR'};
    const otherDates=await base44.asServiceRole.entities.Tournament.filter({tenant_id:t.tenant_id,host_club_id:t.host_club_id,event_registration_mode:'rallyhub',event_booking_enabled:true,event_publish_status:'published',event_public_visible:true},'-start_date',100);
    const alternatives=otherDates.filter((e:any)=>e.id!==id&&e.event_capacity>0&&e.location===t.location&&e.name?.includes('Taster')&&e.start_date>=new Date().toISOString().slice(0,10)).sort((a:any,b:any)=>String(a.start_date).localeCompare(String(b.start_date)));
    let alternative=null;
-   for(const candidate of alternatives){const candidateRows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:candidate.id,tenantId:t.tenant_id,clubId:t.host_club_id});if(occupied(candidateRows)<Number(candidate.event_capacity)){alternative=candidate;break;}}
+   for(const candidate of alternatives){const candidateUsed=await countActiveEventRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:candidate.id,tenantId:t.tenant_id,clubId:t.host_club_id});if(candidateUsed<Number(candidate.event_capacity)){alternative=candidate;break;}}
    const docs=await base44.asServiceRole.entities.ClubLegalDocument.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,active:true},'-effective_from',100);
    return Response.json({success:true,event:{...publicEvent,alternative:alternative?{name:alternative.name,date:alternative.start_date,slug:alternative.event_slug}:null},consents:docs.filter((d:any)=>['liability_waiver','code_of_conduct','health_declaration','privacy_data','photo_video'].includes(d.document_type)).map((d:any)=>({type:d.document_type,version:d.version,label:d.consent_label||d.document_type,content:d.body_text||'',optional:d.document_type==='photo_video'}))});
   }
