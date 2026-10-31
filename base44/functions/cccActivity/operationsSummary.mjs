@@ -4,18 +4,19 @@ const validStatuses=new Set(['draft','ready','scheduled','registration_open','re
 export function summariseClubOperations(activities=[],{complete=true,now=new Date().toISOString()}={}){
  const counts=Object.fromEntries([...validStatuses].map(k=>[k,0]));
  const alerts=[],upcoming=[],recent=[],seen=new Set();
+ const addAlert=(a,code)=>alerts.push({activityId:a.id,activityTitle:String(a.title||'Untitled activity').slice(0,160),code});
  for(const a of activities){
   if(!a?.id||seen.has(a.id))continue;seen.add(a.id);
   if(validStatuses.has(a.status))counts[a.status]++;
-  if(a.recurrence_batch_state==='needs_recovery')alerts.push({activityId:a.id,code:'recurrence_batch_needs_recovery'});
-  if(a.recurrence_batch_state==='creating')alerts.push({activityId:a.id,code:'recurrence_batch_creation_unverified'});
-  if(a.recurrence_batch_key&&(!Number.isSafeInteger(a.recurrence_expected_count)||a.recurrence_expected_count<1||a.recurrence_expected_count>12))alerts.push({activityId:a.id,code:'recurrence_expected_count_invalid'});
-  if(!validStatuses.has(a.status))alerts.push({activityId:a.id,code:'unknown_activity_status'});
+  if(a.recurrence_batch_state==='needs_recovery')addAlert(a,'recurrence_batch_needs_recovery');
+  if(a.recurrence_batch_state==='creating')addAlert(a,'recurrence_batch_creation_unverified');
+  if(a.recurrence_batch_key&&(!Number.isSafeInteger(a.recurrence_expected_count)||a.recurrence_expected_count<1||a.recurrence_expected_count>12))addAlert(a,'recurrence_expected_count_invalid');
+  if(!validStatuses.has(a.status))addAlert(a,'unknown_activity_status');
   const start=Date.parse(a.starts_at),end=Date.parse(a.ends_at);
-  if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start){alerts.push({activityId:a.id,code:'invalid_schedule'});continue;}
-  if(actionable.has(a.status)&&!a.linked_event_id&&['scheduled','registration_open','registration_closed','in_progress'].includes(a.status))alerts.push({activityId:a.id,code:'missing_event_link'});
-  if(a.linked_event_id&&a.bridge_status!=='verified'&&['scheduled','registration_open','registration_closed','in_progress'].includes(a.status))alerts.push({activityId:a.id,code:'event_link_not_verified'});
-  if(['registration_open','scheduled'].includes(a.status)&&end<Date.parse(now))alerts.push({activityId:a.id,code:'past_activity_not_closed'});
+  if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start){addAlert(a,'invalid_schedule');continue;}
+  if(actionable.has(a.status)&&!a.linked_event_id&&['scheduled','registration_open','registration_closed','in_progress'].includes(a.status))addAlert(a,'missing_event_link');
+  if(a.linked_event_id&&a.bridge_status!=='verified'&&['scheduled','registration_open','registration_closed','in_progress'].includes(a.status))addAlert(a,'event_link_not_verified');
+  if(['registration_open','scheduled'].includes(a.status)&&end<Date.parse(now))addAlert(a,'past_activity_not_closed');
   const item={id:a.id,title:String(a.title||'Untitled activity').slice(0,160),status:a.status,startsAt:a.starts_at,endsAt:a.ends_at,venueId:a.venue_id||'',linkedEventId:a.linked_event_id||'',bridgeStatus:a.bridge_status||'unverified'};
   if(end>=Date.parse(now)&&actionable.has(a.status))upcoming.push(item);
   else if(['completed','cancelled'].includes(a.status))recent.push(item);
