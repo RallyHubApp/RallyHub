@@ -2,6 +2,7 @@ import React,{useEffect,useState} from 'react';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {base44} from '@/api/base44Client';
 import ClubEventFollowupCandidates from './ClubEventFollowupCandidates';
+import {summariseLoadedRegistrations} from '@/lib/ccc/pagedEventOverview';
 
 /** Scoped roster with explicit approval, payment verification and attendance controls; no refund control. */
 export default function ClubEventRegistrationOverview({activityId,tenantId,clubId}){
@@ -16,7 +17,8 @@ export default function ClubEventRegistrationOverview({activityId,tenantId,clubI
  const [pageCursor,setPageCursor]=useState(undefined);
  const [paging,setPaging]=useState(false);
  const [extraPaymentReview,setExtraPaymentReview]=useState(false);
- useEffect(()=>{setExtraRows([]);setPageCursor(undefined);setExtraPaymentReview(false);setSelected(null);setActionError('');setActionResult('')},[activityId,tenantId,clubId]);
+ const [extraPages,setExtraPages]=useState([]);
+ useEffect(()=>{setExtraRows([]);setPageCursor(undefined);setExtraPaymentReview(false);setExtraPages([]);setSelected(null);setActionError('');setActionResult('')},[activityId,tenantId,clubId]);
  const queryClient=useQueryClient();
  const {data,isLoading,isError,error,refetch,isFetching}=useQuery({
   queryKey:['ccc-event-registration-overview',tenantId,clubId,activityId],
@@ -27,7 +29,7 @@ export default function ClubEventRegistrationOverview({activityId,tenantId,clubI
  const runAction=async()=>{if(!selected||busy||!data?.event?.id)return;setBusy(true);setActionError('');setActionResult('');try{const res=await base44.functions.invoke('eventRegistration',{action:selected.action,eventId:data.event.id,registrationId:selected.id});if(!res.data?.success)throw Error(res.data?.error||'Action failed');setActionResult(selected.action==='admin_approve'?'Approval processed. Check payment and message delivery records.':'Payment verification checked: '+String(res.data.paymentStatus||res.data.status||'unknown'));setSelected(null);setExtraRows([]);setPageCursor(undefined);setExtraPaymentReview(false);await queryClient.invalidateQueries({queryKey:['ccc-event-registration-overview',tenantId,clubId,activityId]});}catch(e){setActionError(e?.response?.data?.error||e?.message||'Action failed')}finally{setBusy(false)}};
  if(!activityId)return null;
  const nextCursor=pageCursor===undefined?data?.registrationNextCursor:pageCursor;
- const loadMore=async()=>{if(!nextCursor||paging||busy)return;setPaging(true);setActionError('');try{const result=await base44.functions.invoke('cccActivity',{action:'registration_page',id:activityId,cursor:nextCursor});if(!result.data?.success)throw Error(result.data?.error||'Unable to load next page');setExtraRows(current=>{const ids=new Set([...data.registrations,...current].map(r=>r.id));return [...current,...result.data.registrations.filter(r=>!ids.has(r.id))]});setPageCursor(result.data.nextCursor||null);if(result.data.paymentReviewRequired)setExtraPaymentReview(true)}catch(e){setActionError(e?.response?.data?.error||e?.message||'Unable to load next page')}finally{setPaging(false)}};
+ const loadMore=async()=>{if(!nextCursor||paging||busy)return;setPaging(true);setActionError('');try{const result=await base44.functions.invoke('cccActivity',{action:'registration_page',id:activityId,cursor:nextCursor});if(!result.data?.success)throw Error(result.data?.error||'Unable to load next page');setExtraRows(current=>{const ids=new Set([...data.registrations,...current].map(r=>r.id));return [...current,...result.data.registrations.filter(r=>!ids.has(r.id))]});setPageCursor(result.data.nextCursor||null);setExtraPages(current=>[...current,{cursor:nextCursor,finance:result.data.finance||null}]);if(result.data.paymentReviewRequired)setExtraPaymentReview(true)}catch(e){setActionError(e?.response?.data?.error||e?.message||'Unable to load next page')}finally{setPaging(false)}};
  const rows=[...(data?.registrations||[]),...extraRows].filter(r=>(status==='all'||r.status===status)&&(attendanceFilter==='all'||r.attendance===attendanceFilter)&&(!search||[r.name,r.email,r.mobile].some(v=>String(v||'').toLowerCase().includes(search.toLowerCase().trim()))));
  return <section className="mt-4 rounded-xl border p-3" aria-label="Event registrations">
   <div className="flex items-center justify-between gap-2"><h3 className="font-semibold">Linked event registrations</h3><button type="button" onClick={()=>{setExtraRows([]);setPageCursor(undefined);setExtraPaymentReview(false);refetch()}} disabled={isFetching} className="rounded-lg border px-3 py-1 text-sm disabled:opacity-50">Refresh</button></div>
