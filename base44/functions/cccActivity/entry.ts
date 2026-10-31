@@ -27,8 +27,17 @@ Deno.serve(async req=>{
    if(user.role!=='admin'&&user.approval_status!=='approved')return fail('Host access denied',403);
    const activities=await entity.filter({tenant_id,club_id},'-starts_at',100);
    const active=(activities||[]).filter((a:any)=>a.linked_event_id&&['scheduled','registration_open','registration_closed','in_progress'].includes(a.status));
-   const allowed=[];for(const a of active){if(user.role==='admin'||await isClubHost(sdk,tenant_id,club_id,a.venue_id,user.id))allowed.push({id:a.id,title:a.title,startsAt:a.starts_at,status:a.status,venueId:a.venue_id});}
-   return Response.json({success:true,activities:allowed,resultsMayBeTruncated:(activities||[]).length===100});
+   let allowed=active;
+   if(user.role!=='admin'){
+    const [users,venues,configs]=await Promise.all([
+     sdk.asServiceRole.entities.User.filter({id:user.id,active_tenant_id:tenant_id,active_club_id:club_id,approval_status:'approved'},'-created_date',1),
+     sdk.asServiceRole.entities.Venue.filter({tenant_id,club_id,status:'active'},'-created_date',200),
+     sdk.asServiceRole.entities.MembershipVenueHostConfig.filter({tenant_id,club_id,active:true},'-updated_date',100)
+    ]);
+    const host=users?.[0],byVenue=new Map((venues||[]).map((v:any)=>[v.id,v]));
+    allowed=host?active.filter((a:any)=>{const venue=byVenue.get(a.venue_id);return venue&&(host.active_club_role==='club_admin'||isConfiguredHost(configs,venue,host.email));}):[];
+   }
+   return Response.json({success:true,activities:allowed.map((a:any)=>({id:a.id,title:a.title,startsAt:a.starts_at,status:a.status,venueId:a.venue_id})),resultsMayBeTruncated:(activities||[]).length===100});
   }
   if(hostAction){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
