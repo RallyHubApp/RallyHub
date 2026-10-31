@@ -22,7 +22,7 @@ test('attendance checks first write and logs status transitions',()=>{
 test('follow-up candidates are scoped, confirmed attendees only, and never sent',()=>{
  const section=backend.slice(backend.indexOf("if(body.action==='followup_candidates')"),backend.indexOf("if(body.action==='registration_preflight')"));
  assert.match(section,/readEventRegistrations\(sdk\.asServiceRole\.entities\.EventRegistration,\{tenantId:tenant_id,clubId:club_id,eventId:event\.id,extraFilters:\{attendance_status:'attended'\}\}\)/);
- assert.match(section,/\['confirmed','cash_confirmed'\]/);
+ assert.match(section,/buildFollowupReview\(registrations\)/);
  assert.match(section,/deliveryEnabled:false/);
  assert.match(section,/consentAndSuppressionNotChecked:true/);
  assert.match(followup,/No messages can be sent from this panel/);
