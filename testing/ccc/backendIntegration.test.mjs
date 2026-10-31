@@ -546,6 +546,15 @@ test('recurrence creation is draft-only and blocks a repeated batch',async()=>{
  assert.equal(h.db.ClubActivity[0].recurrence_batch_state,'complete');
  assert.equal((await h.call('recurrence_create_drafts',payload)).status,409);
 });
+test('recurrence recovery review is scoped and never changes records',async()=>{
+ const h=makeHarness({...records.User[0],role:'admin'});
+ Object.assign(h.db.ClubActivity[0],{status:'draft',linked_event_id:'',recurrence_batch_key:'ccc-batch-12345678',recurrence_batch_state:'needs_recovery'});
+ h.db.ClubActivity.push({id:'child1',tenant_id:'t1',club_id:'c1',venue_id:'v1',status:'draft',idempotency_key:'ccc-rec-a1-1-1',configuration:{recurrence_source_activity_id:'a1',recurrence_week:1}});
+ const before=JSON.stringify(h.db);
+ const r=await h.call('recurrence_recovery_review',{id:'a1'});
+ assert.equal(r.status,200);assert.equal(r.data.childCount,1);assert.equal(r.data.requiresManualReview,true);
+ assert.equal(JSON.stringify(h.db),before);
+});
 test('Dublin daylight-saving gaps and repeated times block schedule readiness',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  const base={venue_id:'v1',court_id:'court1'};
