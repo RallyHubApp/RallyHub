@@ -1,13 +1,38 @@
 {
   "name": "MembershipVenueHostConfig",
   "type": "object",
-  "rls": {"read": {"user_condition": {"role": "admin"}}, "create": {"user_condition": {"role": "admin"}}, "update": {"user_condition": {"role": "admin"}}, "delete": {"user_condition": {"role": "admin"}}},
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  },
   "properties": {
     "tenant_id": {
       "type": "string"
     },
     "club_id": {
       "type": "string"
+    },
+    "venue_id": {
+      "type": "string",
+      "description": "Optional exact Venue ID for CCC host authorisation; legacy membership venue_key remains supported."
     },
     "venue_key": {
       "type": "string"
