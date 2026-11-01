@@ -5,6 +5,7 @@ import ClubActivityPlanner from '@/components/ccc/ClubActivityPlanner';
 import ClubOperationsBoard from '@/components/ccc/ClubOperationsBoard';
 import ClubHostWorkspace from '@/components/ccc/ClubHostWorkspace';
 import ClubPeopleBoard from '@/components/ccc/ClubPeopleBoard';
+import ClubGuestBookingCRM from '@/components/ccc/ClubGuestBookingCRM';
 import ClubManagementBoard from '@/components/ccc/ClubManagementBoard';
 
 const sections=[
@@ -35,7 +36,7 @@ export default function ClubCommandCentre(){
     {active==='operations'&&<><ClubHostWorkspace tenantId={tenantId} clubId={clubId}/>{permitted&&<ClubOperationsBoard tenantId={tenantId} clubId={clubId}/>}</>}
     {active==='management'&&permitted&&<ClubManagementBoard tenantId={tenantId} clubId={clubId}/>}
     {active==='management'&&!permitted&&<p className="rounded-lg border p-3 text-sm text-muted-foreground">Management configuration inventory requires administrator access. Existing authorised tools remain available above.</p>}
-    {active==='people'&&permitted&&<ClubPeopleBoard tenantId={tenantId} clubId={clubId}/>}
+    {active==='people'&&permitted&&<><ClubGuestBookingCRM tenantId={tenantId} clubId={clubId}/><ClubPeopleBoard tenantId={tenantId} clubId={clubId}/></>}
     {active==='people'&&!permitted&&<p className="rounded-lg border p-3 text-sm text-muted-foreground">Membership and person records remain independent unless explicitly linked. Use the authoritative membership and guest booking workflows above; no automatic contact-based merges are performed.</p>}
    </section>
   </>}
