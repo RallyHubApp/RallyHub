@@ -16,8 +16,12 @@ export function reviewEventOperations({event,rows,payments,now=Date.now()}={}){
    const expiry=Date.parse(r.payment_hold_expires_at||'');
    if(!Number.isFinite(expiry))add(r,'hold_expiry_missing',1,'Review missing hold expiry and payment ledger');
    else if(expiry<=now)add(r,'expired_hold_verify_provider',2,'Verify SumUp checkout before releasing capacity');
+   else if(group.length===1&&group[0].provider_checkout_id===r.payment_checkout_id&&group[0].payment_status==='pending')add(r,'active_hold_verify_payment',2,'Check provider payment status and confirm if settled');
    if(!r.payment_checkout_id||group.length!==1||group.some(p=>p.provider_checkout_id!==r.payment_checkout_id))add(r,'checkout_ledger_mismatch',1,'Reconcile checkout and payment record');
   }
+  if(r.registration_status==='pending_approval'&&group.length>0)add(r,'orphan_checkout_review',1,'Payment exists before approval: inspect checkout and avoid creating a second charge');
+  if(r.registration_status==='confirmed'&&r.payment_status==='paid'&&group.length===0)add(r,'missing_paid_ledger',1,'Confirmed paid booking has no scoped payment record');
+  if(r.registration_status==='cancelled'&&group.some(p=>['paid','partially_refunded','refund_pending'].includes(p.payment_status)))add(r,'cancelled_booking_payment_review',1,'Cancelled booking has payment exposure; reconcile refunds and settlement');
   if(r.registration_status==='confirmed'&&r.payment_status==='refunded')add(r,'refunded_booking_closure',2,'Verify full refund history before closing booking');
   if(r.payment_status==='paid'&&r.registration_status!=='confirmed')add(r,'paid_booking_not_confirmed',1,'Reconcile payment and booking status');
   if(group.some(p=>['refund_pending','needs_reconciliation','unknown','disputed','chargeback'].includes(p.payment_status)))add(r,'payment_reconciliation',1,'Review unresolved payment or refund');
