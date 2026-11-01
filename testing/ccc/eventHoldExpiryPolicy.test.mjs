@@ -1,0 +1,12 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {reviewEventHoldExpiry as review} from '../../base44/functions/eventRegistration/holdExpiryPolicy.mjs';
+const event={id:'e',tenant_id:'t',host_club_id:'c'};
+const registration={id:'r',event_id:'e',tenant_id:'t',club_id:'c',registration_status:'approved_payment_hold',payment_status:'pending',payment_checkout_id:'checkout',payment_hold_expires_at:'2026-01-01T00:00:00Z'};
+const payment={id:'p',tenant_id:'t',club_id:'c',purpose_type:'event',purpose_id:'r',provider_checkout_id:'checkout',payment_status:'pending'};
+const run=(extra={})=>review({registration,event,payments:[payment],providerStatus:'expired',now:Date.parse('2026-02-01'),...extra});
+test('expired checkout and unpaid ledger allow hold release',()=>assert.equal(run().allowed,true));
+test('paid provider outcome blocks expiry',()=>assert.ok(run({providerStatus:'paid'}).issues.includes('provider_not_final')));
+test('unknown provider outcome blocks expiry',()=>assert.ok(run({providerStatus:'unknown'}).issues.includes('provider_not_final')));
+test('paid ledger blocks expiry even when provider says expired',()=>assert.ok(run({payments:[{...payment,payment_status:'paid'}]}).issues.includes('settled_or_disputed_payment')));
+test('other tenant payment is rejected',()=>assert.ok(run({payments:[{...payment,club_id:'other'}]}).issues.includes('ledger_scope')));
+test('hold not expired cannot be released',()=>assert.ok(run({now:Date.parse('2025-12-01')}).issues.includes('hold_not_expired')));
+test('checkout mismatch blocks release',()=>assert.ok(run({payments:[{...payment,provider_checkout_id:'different'}]}).issues.includes('checkout_mismatch')));
