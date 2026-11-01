@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {inspectWaitlistReadiness as inspect} from '../../base44/functions/eventRegistration/waitlistReadiness.mjs';
+const event={id:'e',tenant_id:'t',host_club_id:'c',event_capacity:2,event_waitlist_enabled:true};
+const row=(id,status,date)=>({id,event_id:'e',tenant_id:'t',club_id:'c',registration_status:status,created_at:date});
+const rows=[row('late','waitlisted','2026-10-02'),row('confirmed','confirmed','2026-10-01'),row('early','waitlisted','2026-10-01')];
+test('earliest waiting participant is next',()=>{const result=inspect({rows,event});assert.equal(result.ready,true);assert.equal(result.next,'early');assert.equal(result.available,1)});
+test('full event cannot offer a place',()=>assert.equal(inspect({rows:[...rows,row('full','confirmed','2026-10-01')],event}).ready,false));
+test('foreign registration fails closed',()=>assert.equal(inspect({rows:[{...rows[0],club_id:'other'}],event}).ready,false));
+test('disabled waitlist cannot offer a place',()=>assert.equal(inspect({rows,event:{...event,event_waitlist_enabled:false}}).ready,false));
