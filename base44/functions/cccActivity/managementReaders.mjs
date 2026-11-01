@@ -3,11 +3,19 @@ export async function readScopedInventory(entity,query,{pageSize=200,maxPages=20
  if(!query?.tenant_id)throw Error('Tenant scope required');
  const rows=[],seen=new Set();let cursor,complete=false,pages=0;
  while(pages<maxPages){
-  const opts={sort:'-created_date',limit:pageSize};if(cursor)opts.cursor=cursor;
-  const page=await entity.filter(query,opts);
-  if(!page||!Array.isArray(page.items))throw Error('Inventory pagination unavailable');
-  for(const row of page.items){if(!row?.id)throw Error('Inventory row ID missing');if(!seen.has(row.id)){seen.add(row.id);rows.push(row)}}
+  // Base44's SDK returns an array from filter(query, sort, limit).
+  // Preserve paginated-adapter compatibility, but never treat a full array as complete.
+  const page=await entity.filter(query,'-created_date',pageSize,cursor?{cursor}:undefined);
+  const arrayResult=Array.isArray(page);
+  if(!arrayResult&&(!page||!Array.isArray(page.items)))throw Error('Inventory pagination unavailable');
+  const items=arrayResult?page:page.items;
+  for(const row of items){
+   if(!row?.id)throw Error('Inventory row ID missing');
+   if(Object.entries(query).some(([key,value])=>row[key]!==value))throw Error('Inventory scope violation');
+   if(!seen.has(row.id)){seen.add(row.id);rows.push(row)}
+  }
   pages++;
+  if(arrayResult){complete=items.length<pageSize;break}
   if(page.has_more!==true){complete=true;break}
   if(!page.next_cursor||page.next_cursor===cursor)throw Error('Inventory cursor stalled');
   cursor=page.next_cursor;
