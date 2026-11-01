@@ -29,7 +29,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_promote_waitlist','admin_cancel_unpaid','admin_expire_hold','admin_close_refunded_booking','admin_waitlist_readiness'];
+  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_promote_waitlist','admin_cancel_unpaid','admin_expire_hold','admin_close_refunded_booking','admin_waitlist_readiness','admin_offer_next_waitlisted'];
   const isAdminAction=adminActions.includes(action);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)))return fail('Bookings are not open for this event',404);
   if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||!t.tenant_id||!t.host_club_id||!await requireEventAdminGrant(base44,user,t))return fail('Active tenant or club administrator grant required',403);}
@@ -119,9 +119,12 @@ Deno.serve(async(req)=>{
    try{await deliverEventNotice(base44,t,review.row,'booking_cancelled')}catch(error){noticeNeedsReview=true;console.error('Cancellation saved but notification failed',error)}
    return Response.json({success:true,status:'cancelled',capacityNeedsReview,noticeNeedsReview,releasesCapacity:review.releasesCapacity});
   }
-  if(action==='admin_promote_waitlist'){
+  if(action==='admin_promote_waitlist'||action==='admin_offer_next_waitlisted'){
    stage='waitlist_promotion';
-   const registrationId=clean(b.registrationId,100);
+   if(action==='admin_offer_next_waitlisted'&&b.confirmOffer!==true)return fail('Explicit waiting-list offer confirmation required');
+   const readiness=action==='admin_offer_next_waitlisted'?inspectWaitlistReadiness({rows,event:t}):null;
+   if(readiness&&!readiness.ready)return Response.json({success:false,error:'No safely available waiting-list offer',issues:readiness.issues},{status:409});
+   const registrationId=readiness?readiness.next:clean(b.registrationId,100);
    const review=reviewWaitlistPromotion({rows,event:t,registrationId});
    if(!review.allowed)return Response.json({error:'Waitlist promotion requires review',issues:review.issues,queuePosition:review.queuePosition},{status:409});
    // The observed roster is authoritative. Raise stale counters, then claim the place atomically.
@@ -137,10 +140,10 @@ Deno.serve(async(req)=>{
     console.error('Waitlist promotion outcome uncertain; capacity requires reconciliation',error);
     return Response.json({error:'Waitlist promotion outcome uncertain. Refresh before any retry.',requiresReconciliation:true},{status:503});
    }
-   if(promoted?.updated!==1){await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$gt:0}},{$inc:{event_reserved_count:-1}});return fail('Registration was already changed; refresh the waiting list',409)}
+   if(promoted?.updated!==1){console.error('Waitlist promotion status conflict; capacity requires reconciliation');return Response.json({success:false,error:'Registration changed; capacity reservation needs reconciliation',requiresReconciliation:true},{status:409})}
    let noticeNeedsReview=false;
    try{await deliverEventNotice(base44,t,review.candidate,'place_available')}catch(error){noticeNeedsReview=true;console.error('Waitlist promotion saved but notice failed',error)}
-   return Response.json({success:true,status:'pending_approval',noticeNeedsReview,requiresOrganiserApproval:true});
+   return Response.json({success:true,status:'pending_approval',registrationId,noticeNeedsReview,requiresOrganiserApproval:true});
   }
   if(action==='admin_approve'||action==='admin_verify'||action==='admin_refund_payment'){
    const registration=rows.find((r:any)=>r.id===clean(b.registrationId,100));if(!registration)return fail('Registration not found',404);
