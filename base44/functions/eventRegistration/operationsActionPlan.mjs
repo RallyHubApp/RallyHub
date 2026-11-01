@@ -1,5 +1,6 @@
 /** Organiser remediation plan. Only actions already supported by the event engine are linked. */
 const ACTIONS={
+ active_hold_verify_payment:{action:'admin_verify',label:'Verify SumUp payment',confirmation:'Provider verification is mandatory; no manual paid status override'},
  expired_hold_verify_provider:{action:'admin_expire_hold',label:'Verify expired hold',confirmation:'Provider verification is mandatory before expiry'},
  refunded_booking_closure:{action:'admin_close_refunded_booking',label:'Close refunded booking',confirmation:'Full refund history must reconcile before closure'},
 };
