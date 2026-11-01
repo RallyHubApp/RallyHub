@@ -368,6 +368,26 @@ Deno.serve(async(req)=>{
       return Response.json({success:true,pendingCount:(pending||[]).length});
     }
 
+    if(action==='admin_lifecycle'){
+      // Read-only, club-scoped lifecycle inspection; no identity inference by name alone.
+      const requestId=clean(body.requestId,100);
+      if(!requestId)return Response.json({error:'Guest request ID required'},{status:400});
+      const request=(await base44.asServiceRole.entities.GuestBookingRequest.filter({id:requestId,tenant_id:tenantId,club_id:clubId},'-submitted_at',1))?.[0];
+      if(!request)return Response.json({error:'Guest request not found'},{status:404});
+      const email=emailKey(request.email||''),phone=mobileKey(request.mobile||'');
+      const bookingRows=request.approved_session_link_id?await base44.asServiceRole.entities.GuestSessionBooking.filter({tenant_id:tenantId,club_id:clubId,session_link_id:request.approved_session_link_id},'-registered_at',200):[];
+      const booking=(bookingRows||[]).find((b:any)=>email&&emailKey(b.email||'')===email)||(bookingRows||[]).find((b:any)=>phone&&mobileKey(b.mobile||'')===phone);
+      const personId=String(booking?.person_id||'');
+      const [consents,memberships,attendance,payments,applications]=await Promise.all([
+        personId?base44.asServiceRole.entities.ConsentRecord.filter({tenant_id:tenantId,club_id:clubId,person_id:personId},'-recorded_at',100):Promise.resolve([]),
+        personId?base44.asServiceRole.entities.ClubMembership.filter({tenant_id:tenantId,club_id:clubId,person_id:personId},'-updated_date',30):Promise.resolve([]),
+        booking?base44.asServiceRole.entities.GuestSessionAttendance.filter({tenant_id:tenantId,club_id:clubId,booking_id:booking.id},'-marked_at',20):Promise.resolve([]),
+        booking?base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:tenantId,club_id:clubId,purpose_type:'booking',purpose_id:booking.id},'-created_date',30):Promise.resolve([]),
+        personId?base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId,person_id:personId},'-submitted_at',30):Promise.resolve([])
+      ]);
+      return Response.json({success:true,requestId,booking:booking?{id:booking.id,status:booking.booking_status,paymentStatus:booking.payment_status,amount:booking.amount,paidAt:booking.paid_at||'',registeredAt:booking.registered_at||'',sessionId:booking.session_link_id}:null,consents:(consents||[]).filter((c:any)=>!c.guest_session_booking_id||c.guest_session_booking_id===booking?.id).map((c:any)=>({type:c.consent_type||c.document_type||'',accepted:c.accepted===true||c.consent_given===true||c.granted===true,version:c.document_version||c.consent_version||c.version||'',recordedAt:c.recorded_at||c.created_date||''})),attendance:(attendance||[]).map((a:any)=>({status:a.status,markedAt:a.marked_at||''})),payments:(payments||[]).map((p:any)=>({status:p.payment_status,amount:p.amount,refunded:p.amount_refunded||0,date:p.payment_date||'',provider:p.provider||''})),memberships:(memberships||[]).map((m:any)=>({status:m.membership_status,paymentStatus:m.payment_status,season:m.membership_season,memberId:m.member_id||''})),membershipApplications:(applications||[]).map((a:any)=>({status:a.status,paymentStatus:a.payment_status,submittedAt:a.submitted_at||''})),identityLinked:!!personId});
+    }
+
     if(action==='admin_list'){
       const [requests,directory,sessionLinks,invites,bookings,membershipApps]=await Promise.all([
         base44.asServiceRole.entities.GuestBookingRequest.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',200),
