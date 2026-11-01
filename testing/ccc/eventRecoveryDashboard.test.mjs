@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {reviewEventRecoveryDashboard as review} from '../../base44/functions/eventRegistration/recoveryDashboard.mjs';
+const event={id:'e',tenant_id:'t',host_club_id:'c',event_capacity:4,event_reserved_count:1,event_waitlist_enabled:true};
+const row={id:'r',event_id:'e',tenant_id:'t',club_id:'c',registration_status:'approved_payment_hold',payment_status:'pending',payment_checkout_id:'checkout',payment_hold_expires_at:'2099-01-01T00:00:00.000Z',email:'a@example.ie'};
+const payment={id:'p',tenant_id:'t',club_id:'c',purpose_type:'event',purpose_id:'r',provider_checkout_id:'checkout',payment_status:'pending'};
+const run=(override={})=>review({event,rows:[row],payments:[payment],...override});
+test('single scoped snapshot combines provider, operational and notice recovery',()=>{const r=run();assert.equal(r.summary.checkoutVerification,1);assert.equal(r.summary.operationsActions,1);assert.equal(r.summary.confirmationDeliveryAudits,0);assert.equal(r.previewOnly,true)});
+test('capacity mismatch suppresses payment action shortcuts',()=>{const r=run({event:{...event,event_reserved_count:3}});assert.equal(r.summary.checkoutVerification,0);assert.equal(r.requiresManualReconciliation,true)});
+test('critical payment mismatch suppresses checkout action',()=>{const r=run({payments:[{...payment,provider_checkout_id:'different'}]});assert.equal(r.summary.checkoutVerification,0);assert.equal(r.summary.critical>0,true)});
+test('foreign ledger record fails the entire snapshot closed',()=>assert.throws(()=>run({payments:[{...payment,tenant_id:'other'}]}),/scope/i));
+test('confirmed paid booking yields delivery audit not a provider checkout retry',()=>{const r=run({rows:[{...row,registration_status:'confirmed',payment_status:'paid'}],payments:[{...payment,payment_status:'paid'}]});assert.equal(r.summary.checkoutVerification,0);assert.equal(r.summary.confirmationDeliveryAudits,1)});
