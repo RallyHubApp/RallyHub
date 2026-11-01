@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
+const src=readFileSync(new URL('../../base44/functions/eventRegistration/entry.ts',import.meta.url),'utf8');
+test('approval inspects scoped ledger before checkout creation',()=>{const approval=src.slice(src.indexOf("if(action==='admin_approve'){"),src.indexOf("if(!registration.payment_checkout_id)return fail('No checkout recorded'"));assert.ok(approval.indexOf('const priorPayments=await readAdminEventPayments')>=0);assert.ok(approval.indexOf('priorPayments.length||registration.payment_checkout_id')<approval.indexOf('const checkout=await createCheckout'));});
+test('approval rejects ambiguous existing payment before another charge',()=>assert.match(src,/Existing checkout or payment record requires reconciliation before approving again/));
