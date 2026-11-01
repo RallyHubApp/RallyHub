@@ -540,7 +540,8 @@ export default function GuestBookings(){
       const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_verify_payment',bookingId});
       if(res.data?.error)throw new Error(res.data.error);
       await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
-      toast.success(res.data.status==='paid'?'Payment confirmed':'Payment is still '+String(res.data.status||'pending'));
+      if(res.data?.ledgerNeedsReview || res.data?.confirmationNeedsReview)toast.warning('Payment settled, but ledger or confirmation delivery needs review');
+      else toast.success(res.data.status==='paid'?'Payment confirmed':'Payment is still '+String(res.data.status||'pending'));
     }catch(e){toast.error(e?.message||'Could not verify payment')}
     finally{setBusy('')}
   };
@@ -551,7 +552,8 @@ export default function GuestBookings(){
       const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_mark_cash_paid',bookingId});
       if(res.data?.error)throw new Error(res.data.error);
       await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
-      toast.success('Cash marked paid');
+      if(res.data?.ledgerNeedsReview || res.data?.confirmationNeedsReview)toast.warning('Cash settled, but ledger or confirmation delivery needs review');
+      else toast.success(res.data?.alreadySettled?'Cash was already marked paid':'Cash marked paid');
     }catch(e){toast.error(e?.message||'Could not update cash payment')}
     finally{setBusy('')}
   };
