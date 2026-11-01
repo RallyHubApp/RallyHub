@@ -33,7 +33,8 @@
     "qa:evidence": "node testing/control-pack/validateEvidence.mjs",
     "preview": "vite preview",
     "test:competition-fast": "npm run test:kotc-readiness && npm run test:interclub-readiness && npm run build",
-    "test:competition-browser": "playwright test e2e/kotc-host-journey.spec.mjs e2e/club-challenge-browser-robot.spec.mjs"
+    "test:competition-browser": "playwright test e2e/kotc-host-journey.spec.mjs e2e/club-challenge-browser-robot.spec.mjs",
+    "test:ccc-v21-acceptance": "node --test testing/release/*.test.mjs && node testing/release/runV21Acceptance.mjs --all"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.57",
