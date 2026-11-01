@@ -179,6 +179,19 @@ async function approvalNotificationEmail(base44:any,club:any,sessionId:string){
   return emailKey(club.public_contact_email||'');
 }
 
+async function sendGuestRequestAcknowledgement(base44:any,club:any,row:any,selected:any){
+  const brandKit=await tenantEmailBrandKit(base44,club.tenant_id,club.id);
+  if(!brandKit)throw Error('Clare Pickleball brand kit unavailable; guest acknowledgement not sent.');
+  const hello=firstName(row.full_name);
+  const venue=String(selected?.venueName||row.preferred_venue_key||'your preferred venue');
+  const subject=`${club.name} — We've received your guest session request`;
+  const textBody=`Hi ${hello},\n\nThank you for your interest in joining us for a Clare Pickleball session.\n\nWe've received your request for ${venue}.\n\nOur club members are given first priority for session places, so guest bookings are subject to availability and approval by the club.\n\nWe review guest requests once member availability is confirmed. If we can accommodate you, we'll email you a private link to complete your booking.\n\nIf your preferred session is full, we'll do our best to offer you an alternative date or session.\n\nPlease note that your place is not confirmed yet. There's nothing further you need to do at this stage, and no payment has been taken.`;
+  const content=`<p>Hi ${escapeHtml(hello)},</p><p>Thank you for your interest in joining us for a Clare Pickleball session.</p><p>We've received your request for <strong>${escapeHtml(venue)}</strong>.</p><p>Our club members are given first priority for session places, so guest bookings are <strong>subject to availability and approval by the club</strong>.</p><p>We review guest requests once member availability is confirmed. If we can accommodate you, we'll email you a private link to complete your booking.</p><p>If your preferred session is full, we'll do our best to offer you an alternative date or session.</p><p><strong>Please note that your place is not confirmed yet.</strong> There's nothing further you need to do at this stage, and no payment has been taken.</p><p>We look forward to hopefully welcoming you onto the court.</p>`;
+  // The approved tenant brand renderer owns the header, signature, utility links and footer.
+  const htmlBody=renderBasicBrandedEmail(content,brandKit,club,club.name||'Clare Pickleball','Guest request received — awaiting approval');
+  await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant' as const,purpose:'club_comms',tenantId:club.tenant_id,clubId:club.id},{to:row.email,subject,textBody,htmlBody,senderName:club.name});
+}
+
 async function sendPendingApprovalEmail(base44:any,club:any,row:any,selected:any){
   const to=await approvalNotificationEmail(base44,club,String(row.preferred_session_key||selected?.id||''));
   if(!to)return {sent:false,reason:'No club booking notification email is configured.'};
@@ -319,6 +332,7 @@ Deno.serve(async(req)=>{
         dupr_id:duprId,home_club:homeClub,submitted_at:new Date().toISOString(),admin_notes:`Requested ${selected.day} ${selected.start}${selected.end?'–'+selected.end:''} · ${selected.venueName}`,
       });
       try{await sendPendingApprovalEmail(base44,club,row,selected)}catch(error){console.error('guest approval email failed',error?.message||error)}
+      try{await sendGuestRequestAcknowledgement(base44,club,row,selected)}catch(error){console.error('guest acknowledgement email failed',error?.message||error)}
       return Response.json({success:true,pending:true,requestToken:row.request_token,message:'Thanks. Your guest request has been sent to Clare Pickleball for approval. No payment has been taken. If approved, you will receive a private booking/payment link.'});
     }
 
