@@ -10,3 +10,8 @@ test('foreign payment fails closed',()=>assert.throws(()=>run({payments:[{...pay
 test('foreign registration fails closed',()=>assert.throws(()=>run({rows:[{...row,tenant_id:'foreign'}]}),/scoped registration/));
 test('confirmed booking never triggers verification',()=>assert.equal(run({rows:[{...row,registration_status:'confirmed'}]}).verifyReady,0));
 test('unknown provider outcome requires manual review',()=>assert.equal(run({payments:[{...payment,payment_status:'unknown'}]}).tasks[0].issue,'ledger_conflict'));
+test('checkout shared across separate registrations blocks both verification shortcuts',()=>{
+ const second={...row,id:'r2'};const secondPayment={...payment,id:'p2',purpose_id:'r2'};
+ const result=run({rows:[row,second],payments:[payment,secondPayment]});
+ assert.equal(result.verifyReady,0);assert.equal(result.manualReview,2);
+});
