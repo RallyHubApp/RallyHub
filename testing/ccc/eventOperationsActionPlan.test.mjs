@@ -9,3 +9,5 @@ test('capacity mismatch blocks action shortcuts',()=>assert.equal(run([item('a',
 test('unknown issues stay manual',()=>assert.equal(run([item('a','paid_booking_not_confirmed',1)]).tasks[0].action,null));
 test('foreign or missing registration never linked',()=>assert.equal(run([item('outside','expired_hold_verify_provider')]).actionable,0));
 test('unverified review rejected',()=>assert.throws(()=>plan({rows,review:{queue:[]}}),/Verified/));
+
+test('active hold can be checked against SumUp without overriding status',()=>assert.equal(run([item('a','active_hold_verify_payment')]).tasks[0].action,'admin_verify'));
