@@ -1,0 +1,18 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {assessReleaseEvidence} from '../../src/lib/ccc/acceptanceGates.mjs';
+import {reviewGuestBookingIntegrity} from '../../src/lib/ccc/guestBookingIntegrity.mjs';
+import {reviewFinanceSettlement} from '../../src/lib/ccc/financeSettlementIntegrity.mjs';
+import {reviewCommunicationDelivery} from '../../src/lib/ccc/communicationsDeliveryIntegrity.mjs';
+import {reviewTournamentResults} from '../../src/lib/ccc/tournamentResultIntegrity.mjs';
+const base={id:'x',tenant_id:'t',club_id:'c'};
+test('release requires runtime evidence, not just source tests',()=>{const r=assessReleaseEvidence({membership_payment:{sourceTestsPassed:true}});assert.equal(r.ready,false);assert.equal(r.total,5);assert.ok(r.gates[0].issues.includes('base44_runtime_unverified'));});
+test('release gate requires payment and delivery provider evidence',()=>{const e=Object.fromEntries(['membership_payment','guest_booking','event_attendance','tournival_results','communications_delivery'].map(k=>[k,{sourceTestsPassed:true,runtimeVerified:true,crossTenantDenied:true,failureRecoveryVerified:true}]));const r=assessReleaseEvidence(e);assert.equal(r.passed,2);});
+test('guest payment before approval is flagged',()=>{const r=reviewGuestBookingIntegrity({registration:base,approval:{...base,status:'pending'},payment:{...base,payment_status:'paid'}});assert.ok(r.issues.includes('paid_without_approval'));});
+test('guest attendance without confirmation is flagged',()=>{const r=reviewGuestBookingIntegrity({registration:{...base,registration_status:'pending'},attendance:{...base,status:'attended'}});assert.ok(r.issues.includes('attendance_without_confirmation'));});
+test('finance flags paid member with no provider settlement',()=>{const r=reviewFinanceSettlement({membership:{...base,payment_status:'paid'},payments:[]});assert.ok(r.issues.includes('paid_member_no_settlement'));});
+test('finance detects cross-club payment leakage',()=>{const r=reviewFinanceSettlement({membership:base,payments:[{...base,membership_id:'x',club_id:'other',payment_status:'paid'}]});assert.ok(r.issues.includes('ledger_scope_mismatch'));});
+test('marketing without consent is blocked',()=>{const r=reviewCommunicationDelivery({message:{...base,person_id:'p',approved_template_id:'a',brand_scope:'tenant',purpose:'marketing'}});assert.ok(r.issues.includes('marketing_consent_missing'));});
+test('delivered email without provider receipt is flagged',()=>{const r=reviewCommunicationDelivery({message:{...base,person_id:'p',approved_template_id:'a',brand_scope:'tenant',delivery_status:'delivered'}});assert.ok(r.issues.includes('delivery_without_provider_receipt'));});
+test('tournament orphan result is rejected',()=>{const state={revision:1,matches:[{id:'m'}],results:[{match_id:'missing'}]};const r=reviewTournamentResults({tournament:{...base,host_club_id:'c',tournival_state:JSON.stringify(state)},session:{...base,tournament_id:'x',state_revision:1,state_json:JSON.stringify(state)}});assert.ok(r.issues.includes('orphan_result'));});
+test('tournament cross-tenant session is rejected',()=>{const state={revision:1,matches:[],results:[]};const r=reviewTournamentResults({tournament:{...base,host_club_id:'c',tournival_state:JSON.stringify(state)},session:{...base,tenant_id:'other',tournament_id:'x',state_revision:1,state_json:JSON.stringify(state)}});assert.ok(r.issues.includes('session_scope_mismatch'));});
