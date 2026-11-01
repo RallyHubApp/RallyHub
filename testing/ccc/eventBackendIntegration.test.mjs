@@ -175,3 +175,26 @@ test('admin delivery recovery denies unrelated club and never sends mail',async(
  const h=harness();const review=await h.call('admin_notice_recovery');assert.equal(review.status,200);assert.equal(review.data.eligible,1);assert.equal(h.calls.notice,0);
  const denied=harness({user:{id:'other',role:'admin',active_tenant_id:'t1',active_club_id:'other'}});assert.equal((await denied.call('admin_notice_recovery')).status,403);
 });
+test('refunded booking closure and waiting-list offer stay connected',async()=>{
+ const h=harness(),e=h.db.Tournament[0];e.event_capacity=2;e.event_reserved_count=1;e.event_waitlist_enabled=true;
+ h.db.EventRegistration[0].payment_status='refunded';h.db.PaymentRecord[0].payment_status='refunded';h.db.PaymentRecord[0].amount_refunded=10;
+ h.db.PaymentRefund.push({id:'refund1',tenant_id:'t1',club_id:'c1',payment_record_id:'p1',purpose_type:'event',purpose_id:'r1',amount:10,status:'succeeded'});
+ h.db.EventRegistration.push({id:'wait1',event_id:'event',tenant_id:'t1',club_id:'c1',registration_status:'waitlisted',payment_status:'pending',created_at:'2026-10-01'});
+ const closed=await h.call('admin_close_refunded_booking',{registrationId:'r1',confirmClosure:true});assert.equal(closed.status,200);assert.equal(e.event_reserved_count,0);
+ assert.equal(closed.data.waitlistFollowup.nextRegistrationId,'wait1');
+ const offered=await h.call('admin_offer_next_waitlisted',{confirmOffer:true});assert.equal(offered.status,200);assert.equal(e.event_reserved_count,1);
+});
+test('cancelling unpaid booking releases capacity then offers next place',async()=>{
+ const h=harness(),e=h.db.Tournament[0];e.event_capacity=1;e.event_reserved_count=1;e.event_waitlist_enabled=true;
+ h.db.EventRegistration[0].registration_status='pending_approval';h.db.EventRegistration[0].payment_status='pending';h.db.EventRegistration[0].payment_checkout_id='';h.db.EventRegistration[0].payment_record_id='';h.db.PaymentRecord.length=0;
+ h.db.EventRegistration.push({id:'wait1',event_id:'event',tenant_id:'t1',club_id:'c1',registration_status:'waitlisted',payment_status:'pending',created_at:'2026-10-01'});
+ const cancelled=await h.call('admin_cancel_unpaid',{registrationId:'r1',confirmCancellation:true});assert.equal(cancelled.status,200);assert.equal(e.event_reserved_count,0);
+ const offered=await h.call('admin_offer_next_waitlisted',{confirmOffer:true});assert.equal(offered.status,200);assert.equal(e.event_reserved_count,1);
+});
+test('capacity conflict prevents unsafe waitlist offer after refunded closure',async()=>{
+ const h=harness(),e=h.db.Tournament[0];e.event_capacity=1;e.event_reserved_count=2;e.event_waitlist_enabled=true;
+ h.db.EventRegistration[0].payment_status='refunded';h.db.PaymentRecord[0].payment_status='refunded';h.db.PaymentRecord[0].amount_refunded=10;
+ h.db.PaymentRefund.push({id:'refund1',tenant_id:'t1',club_id:'c1',payment_record_id:'p1',purpose_type:'event',purpose_id:'r1',amount:10,status:'succeeded'});
+ h.db.EventRegistration.push({id:'wait1',event_id:'event',tenant_id:'t1',club_id:'c1',registration_status:'waitlisted',payment_status:'pending'});
+ const closed=await h.call('admin_close_refunded_booking',{registrationId:'r1',confirmClosure:true});assert.equal(closed.status,200);assert.equal(closed.data.capacityNeedsReview,true);assert.equal(closed.data.waitlistFollowup.nextRegistrationId,null);
+});
