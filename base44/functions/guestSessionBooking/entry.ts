@@ -8,6 +8,7 @@ import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
 import { findUniqueSpondPersonRow } from './spondIdentityMatch.js';
 import {reviewGuestPaymentVerification,completeGuestPaymentConfirmation} from './paymentVerificationSafety.ts';
 import {reviewCashSettlement,selectBookingPaymentRecords} from './settlementWorkflow.ts';
+import {guestRefundPreflight} from './refundPreflight.ts';
 
 const PRIVACY_VERSION='clare-guest-session-privacy-v1-2026-09';
 const CANCELLATION_VERSION='clare-guest-session-cancellation-v1-2026-09';
@@ -1659,7 +1660,9 @@ ${detailRow('Fee',session.payment_method==='none'?'No payment required':session.
         if(!reason)return Response.json({error:'Enter a reason for the refund.'},{status:400});
 
         const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
-        let payment=payments?.[0]||null;
+        const selection=selectBookingPaymentRecords(payments,booking,session);
+        if(selection.reason)return Response.json({error:'Refund requires a single scoped payment record.',reason:selection.reason},{status:409});
+        let payment=selection.records[0]||null;
         if(!payment)return Response.json({error:'Payment record not found.'},{status:404});
         if(!['paid','partially_refunded','refund_failed'].includes(String(payment.payment_status||''))){
           return Response.json({error:'Only a completed online payment can be refunded.'},{status:409});
@@ -1690,6 +1693,8 @@ ${detailRow('Fee',session.payment_method==='none'?'No payment required':session.
 
         const requestedRaw=body.refundAmount===undefined||body.refundAmount===null||body.refundAmount===''?remaining:Number(body.refundAmount);
         const refundAmount=Math.round(requestedRaw*100)/100;
+        const preflight=guestRefundPreflight({booking,payment,history:previous,tenantId,clubId,amount:refundAmount});
+        if(!preflight.allowed)return Response.json({error:'Refund blocked pending financial reconciliation.',issues:preflight.issues},{status:409});
         if(!Number.isFinite(refundAmount)||refundAmount<=0||refundAmount>remaining){
           return Response.json({error:`Refund amount must be between €0.01 and €${remaining.toFixed(2)}.`},{status:400});
         }
