@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {confirmAndNotify,eventRefundProviderOutcome} from '../../base44/functions/eventRegistration/confirmationDelivery.mjs';
+test('confirmed event booking remains confirmed after notice failure',async()=>{let committed=false;const r=await confirmAndNotify({commit:async()=>{committed=true;return {id:'r'}},notify:async()=>{throw Error('SMTP down')}});assert.equal(committed,true);assert.equal(r.success,true);assert.equal(r.noticeNeedsReview,true)});
+test('commit failure cannot trigger confirmation notice',async()=>{let sent=false;await assert.rejects(confirmAndNotify({commit:async()=>{throw Error('db down')},notify:async()=>{sent=true}}));assert.equal(sent,false)});
+test('provider accepted refund is never reported as failed',()=>{const r=eventRefundProviderOutcome({refundId:'r',providerOutcome:{refundId:'sumup'},error:Error('db')});assert.equal(r.success,true);assert.equal(r.requiresReconciliation,true)});
+test('unknown provider outcome must not be retried automatically',()=>{const r=eventRefundProviderOutcome({refundId:'r',providerOutcome:null,error:Error('timeout')});assert.equal(r.success,false);assert.equal(r.requiresReconciliation,true)});
