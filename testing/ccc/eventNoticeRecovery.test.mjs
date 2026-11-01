@@ -1,0 +1,11 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {reviewEventNoticeRecovery as review} from '../../base44/functions/eventRegistration/noticeRecovery.mjs';
+const event={id:'e',tenant_id:'t',host_club_id:'c'};
+const row={id:'r',event_id:'e',tenant_id:'t',club_id:'c',registration_status:'confirmed',payment_status:'paid',email:'a@example.com'};
+const run=(override={})=>review({event,rows:[row],...override});
+test('confirmed paid booking may be reviewed but not sent',()=>{const r=run();assert.equal(r.eligible,1);assert.equal(r.previewOnly,true);assert.equal(r.tasks[0].requiresDeliveryAudit,true)});
+test('unpaid booking cannot claim confirmation',()=>assert.equal(run({rows:[{...row,payment_status:'pending'}]}).eligible,0));
+test('invalid email blocks notice review',()=>assert.equal(run({rows:[{...row,email:'bad'}]}).tasks[0].reason,'recipient_missing_or_invalid'));
+test('payment notice needs active checkout',()=>assert.equal(run({noticeType:'payment_required',rows:[{...row,registration_status:'approved_payment_hold',payment_status:'pending'}]}).eligible,0));
+test('waitlist place notice requires pending approval',()=>assert.equal(run({noticeType:'place_available',rows:[{...row,registration_status:'pending_approval'}]}).eligible,1));
+test('foreign registration fails closed',()=>assert.throws(()=>run({rows:[{...row,club_id:'foreign'}]}),/scope mismatch/));
+test('unknown notice type fails closed',()=>assert.throws(()=>run({noticeType:'not_real'}),/Valid scoped/));
