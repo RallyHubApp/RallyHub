@@ -14,6 +14,7 @@ import {countActiveEventRegistrations} from './availabilityCount.mjs';
 import {requireEventAdminGrant} from './adminAccess.mjs';
 import {confirmAndNotify,eventRefundProviderOutcome} from './confirmationDelivery.mjs';
 import {reviewWaitlistPromotion} from './waitlistPromotion.mjs';
+import {reviewEventCancellation} from './cancellationPolicy.mjs';
 const clean=(v:any,n=200)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,n);
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
 Deno.serve(async(req)=>{
@@ -24,7 +25,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_promote_waitlist'];
+  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_promote_waitlist','admin_cancel_unpaid'];
   const isAdminAction=adminActions.includes(action);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)))return fail('Bookings are not open for this event',404);
   if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||!t.tenant_id||!t.host_club_id||!await requireEventAdminGrant(base44,user,t))return fail('Active tenant or club administrator grant required',403);}
@@ -65,6 +66,20 @@ Deno.serve(async(req)=>{
   }
   stage='roster_verification';
   const rows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
+  if(action==='admin_cancel_unpaid'){
+   if(b.confirmCancellation!==true)return fail('Explicit cancellation confirmation required');
+   const registrationId=clean(b.registrationId,100);
+   const review=reviewEventCancellation({rows,event:t,registrationId});
+   if(!review.allowed)return Response.json({success:false,error:'Cancellation requires manual review',issues:review.issues},{status:409});
+   // Lock out stale concurrent status changes. Never cancel a paid registration through this route.
+   const updated=await base44.asServiceRole.entities.EventRegistration.updateMany({id:registrationId,event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,registration_status:review.row.registration_status,payment_status:review.row.payment_status},{$set:{registration_status:'cancelled',cancelled_at:new Date().toISOString(),cancellation_reason:clean(b.reason,500)||'Organiser cancelled unpaid application'}});
+   if(updated?.updated!==1)return fail('Registration changed; refresh before cancelling',409);
+   let capacityNeedsReview=false;
+   if(review.releasesCapacity){try{const released=await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$gt:0}},{$inc:{event_reserved_count:-1}});if(released?.updated!==1)capacityNeedsReview=true}catch(error){capacityNeedsReview=true;console.error('Cancellation saved but event capacity release needs review',error)}}
+   let noticeNeedsReview=false;
+   try{await deliverEventNotice(base44,t,review.row,'booking_cancelled')}catch(error){noticeNeedsReview=true;console.error('Cancellation saved but notification failed',error)}
+   return Response.json({success:true,status:'cancelled',capacityNeedsReview,noticeNeedsReview,releasesCapacity:review.releasesCapacity});
+  }
   if(action==='admin_promote_waitlist'){
    stage='waitlist_promotion';
    const registrationId=clean(b.registrationId,100);
