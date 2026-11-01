@@ -17,6 +17,7 @@ import {reviewWaitlistPromotion} from './waitlistPromotion.mjs';
 import {inspectWaitlistReadiness} from './waitlistReadiness.mjs';
 import {postReleaseWaitlist} from './postReleaseWaitlist.mjs';
 import {reviewEventOperations} from './operationalTriage.mjs';
+import {planEventOperations} from './operationsActionPlan.mjs';
 import {reviewEventCancellation} from './cancellationPolicy.mjs';
 import {reviewEventHoldExpiry} from './holdExpiryPolicy.mjs';
 import {releaseEventPlace} from './capacityRelease.mjs';
@@ -72,7 +73,7 @@ Deno.serve(async(req)=>{
   }
   stage='roster_verification';
   const rows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
-  if(action==='admin_operational_triage'){const payments=await readAdminEventPayments(base44.asServiceRole.entities.PaymentRecord,{tenantId:t.tenant_id,clubId:t.host_club_id,registrationIds:rows.map((r:any)=>r.id)});return Response.json({success:true,...reviewEventOperations({event:t,rows,payments})});}
+  if(action==='admin_operational_triage'){const payments=await readAdminEventPayments(base44.asServiceRole.entities.PaymentRecord,{tenantId:t.tenant_id,clubId:t.host_club_id,registrationIds:rows.map((r:any)=>r.id)});const review=reviewEventOperations({event:t,rows,payments});return Response.json({success:true,...review,plan:planEventOperations({review,rows})});}
   if(action==='admin_waitlist_readiness')return Response.json({success:true,...inspectWaitlistReadiness({rows,event:t}),message:'Preview only; use Offer place for an atomic capacity claim.'});
   if(action==='admin_close_refunded_booking'){
    if(b.confirmClosure!==true)return fail('Explicit refunded booking closure confirmation required');
