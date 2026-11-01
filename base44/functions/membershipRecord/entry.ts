@@ -691,6 +691,7 @@ Deno.serve(async(req)=>{
       if((emailMismatch||nameMismatch)&&!adminAttested&&!dobMatch&&!mobileMatch)return Response.json({
         error:'The registration details differ from the membership record. An authorised administrator must review both records and explicitly confirm identity.',code:'IDENTITY_CONFIRMATION_REQUIRED',account_name:target.full_name||'',record_name:person.full_name||player.full_name||'',account_email:accountEmail,record_email:recordEmail,account_mobile:loginMobile||null,record_mobile:recordMobile||null
       },{status:409});
+      if(person.linked_user_id&&String(person.linked_user_id)!==String(userId)) return Response.json({error:'This membership is linked to a different login account.'},{status:409});
       const otherPerson=await first(base44,'Person',{linked_user_id:userId});
       if(otherPerson&&String(otherPerson.id)!==String(personId)) return Response.json({error:'This user account is already linked to a different person record.'},{status:409});
       const otherPlayer=await first(base44,'Player',{user_id:userId});

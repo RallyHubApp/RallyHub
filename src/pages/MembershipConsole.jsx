@@ -1,4 +1,4 @@
-import { invokeReadWithDeadline, shouldRetryRead, readRetryDelay, READ_STALE_MS, READ_GC_MS } from '@/lib/ccc/readResilience';
+import { UserCheck, invokeReadWithDeadline, shouldRetryRead, readRetryDelay, READ_STALE_MS, READ_GC_MS } from '@/lib/ccc/readResilience';
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -725,6 +725,31 @@ export default function MembershipConsole() {
       toast.success(response.data?.reusedExistingPerson ? 'Membership added to the existing RallyHub person' : 'Member added');
     } catch (error) {
       toast.error(error?.response?.data?.error || error?.message || 'Could not add member');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const activateLinkedClubAccess = async () => {
+    const linkedUserId = detail?.person?.linked_user_id || detail?.player?.user_id;
+    if (!personId || !linkedUserId || !canManage) return;
+    if (!window.confirm('Activate ordinary Clare Pickleball member access for this already-linked account? No payment, membership or Directory permissions will be changed.')) return;
+    setSaving(true);
+    try {
+      const response = await base44.functions.invoke('membershipRecord', {
+        action: 'admin_connect_account', personId, userId: linkedUserId,
+        identityConfirmedByAdmin: user?.role === 'admin'
+      });
+      if (response.data?.error) throw new Error(response.data.error);
+      await Promise.all([
+        refetchDetail(),
+        queryClient.invalidateQueries({ queryKey: ['membership-console-list'] }),
+        queryClient.invalidateQueries({ queryKey: ['all-users'] }),
+        queryClient.invalidateQueries({ queryKey: ['all-club-user-accesses'] })
+      ]);
+      toast.success('Existing RallyHub account approved with ordinary Club Member access');
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not activate Club access');
     } finally {
       setSaving(false);
     }
@@ -1498,6 +1523,7 @@ export default function MembershipConsole() {
                 {(detail.person?.linked_user_id || detail.player?.user_id) ? <Badge className="bg-primary/15 text-primary"><Link2 className="w-3 h-3 mr-1" />RallyHub linked</Badge> : <Badge variant="outline">Not linked</Badge>}
                 <div className="ml-auto flex flex-wrap gap-2">
                   {!(detail.person?.linked_user_id || detail.player?.user_id) ? <Button size="sm" variant="outline" disabled={saving} onClick={connectAccount}><Link2 className="w-3.5 h-3.5 mr-1.5" />Link RallyHub account</Button> : null}
+                  {(detail.person?.linked_user_id || detail.player?.user_id) && canManage ? <Button size="sm" variant="outline" disabled={saving} onClick={activateLinkedClubAccess}><UserCheck className="w-3.5 h-3.5 mr-1.5" />Verify / activate Club access</Button> : null}
                   <Button size="sm" onClick={() => setEditOpen(true)}><Pencil className="w-3.5 h-3.5 mr-1.5" />Edit record</Button>
                 </div>
               </div>
