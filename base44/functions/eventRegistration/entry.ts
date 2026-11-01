@@ -16,6 +16,7 @@ import {confirmAndNotify,eventRefundProviderOutcome} from './confirmationDeliver
 import {reviewWaitlistPromotion} from './waitlistPromotion.mjs';
 import {reviewEventCancellation} from './cancellationPolicy.mjs';
 import {reviewEventHoldExpiry} from './holdExpiryPolicy.mjs';
+import {releaseEventPlace} from './capacityRelease.mjs';
 const clean=(v:any,n=200)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,n);
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
 Deno.serve(async(req)=>{
@@ -81,7 +82,7 @@ Deno.serve(async(req)=>{
    const changed=await base44.asServiceRole.entities.EventRegistration.updateMany({id:registration.id,event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,registration_status:'approved_payment_hold',payment_status:'pending'},{$set:{registration_status:'expired',payment_status:provider.normalizedStatus,payment_hold_expires_at:registration.payment_hold_expires_at}});
    if(changed?.updated!==1)return fail('Payment hold changed. Refresh and verify again.',409);
    let capacityNeedsReview=false;
-   try{const observed=occupied(rows.filter((r:any)=>r.id!==registration.id));const reset=await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$gte:observed}},{$set:{event_reserved_count:observed}});if(reset?.updated!==1)capacityNeedsReview=true}catch(error){capacityNeedsReview=true;console.error('Expired hold saved but capacity counter needs review',error)}
+   const release=await releaseEventPlace(base44.asServiceRole.entities.Tournament,{eventId:id,tenantId:t.tenant_id,expectedOccupied:occupied(rows)});capacityNeedsReview=release.requiresReconciliation;
    return Response.json({success:true,status:'expired',providerStatus:provider.normalizedStatus,capacityNeedsReview});
   }
   if(action==='admin_cancel_unpaid'){
@@ -93,7 +94,7 @@ Deno.serve(async(req)=>{
    const updated=await base44.asServiceRole.entities.EventRegistration.updateMany({id:registrationId,event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,registration_status:review.row.registration_status,payment_status:review.row.payment_status},{$set:{registration_status:'cancelled',cancelled_at:new Date().toISOString(),cancellation_reason:clean(b.reason,500)||'Organiser cancelled unpaid application'}});
    if(updated?.updated!==1)return fail('Registration changed; refresh before cancelling',409);
    let capacityNeedsReview=false;
-   if(review.releasesCapacity){try{const released=await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$gt:0}},{$inc:{event_reserved_count:-1}});if(released?.updated!==1)capacityNeedsReview=true}catch(error){capacityNeedsReview=true;console.error('Cancellation saved but event capacity release needs review',error)}}
+   if(review.releasesCapacity){const release=await releaseEventPlace(base44.asServiceRole.entities.Tournament,{eventId:id,tenantId:t.tenant_id,expectedOccupied:review.occupied});capacityNeedsReview=release.requiresReconciliation}
    let noticeNeedsReview=false;
    try{await deliverEventNotice(base44,t,review.row,'booking_cancelled')}catch(error){noticeNeedsReview=true;console.error('Cancellation saved but notification failed',error)}
    return Response.json({success:true,status:'cancelled',capacityNeedsReview,noticeNeedsReview,releasesCapacity:review.releasesCapacity});
