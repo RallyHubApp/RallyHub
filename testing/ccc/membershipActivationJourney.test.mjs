@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
+const backend=readFileSync(new URL('../../base44/functions/membershipRecord/entry.ts',import.meta.url),'utf8');const ui=readFileSync(new URL('../../src/pages/MembershipConsole.jsx',import.meta.url),'utf8');
+test('admin membership activation requires confirmation and scoped settled ledger',()=>{assert.match(backend,/admin_reconcile_paid_membership/);assert.match(backend,/confirmReconciliation!==true/);assert.match(backend,/reviewMembershipActivationReconciliation/);assert.match(backend,/ClubMembership.updateMany/)});
+test('membership console only offers reconciliation after payment health detects mismatch',()=>{assert.match(ui,/paymentHealth\?\.issues\?\.includes\('settled_payment_membership_not_paid'\)/);assert.match(ui,/window.confirm\('Reconcile this membership/)});
+test('membership activation reports relationship synchronisation failure separately',()=>{assert.match(backend,/relationshipNeedsReview/);assert.match(ui,/Membership activated; club relationship requires review/)});
