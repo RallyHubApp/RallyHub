@@ -249,6 +249,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
       correctionReason, tournival_state: JSON.stringify(newState), status: tournamentStatus,
     });
     if (response?.data?.error) throw new Error(response.data.error);
+    if (response?.data?.requiresReconciliation) toast.warning('Scores saved; tournament display needs organiser reconciliation');
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
     // The sporting-state save has finished. DUPR UAT is optional, asynchronous and
     // must never hold up results, the final standings or player links.
