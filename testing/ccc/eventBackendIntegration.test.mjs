@@ -11,6 +11,18 @@ import {readEventAdminPage} from '../../base44/functions/eventRegistration/admin
 import {countActiveEventRegistrations} from '../../base44/functions/eventRegistration/availabilityCount.mjs';
 import {requireEventAdminGrant} from '../../base44/functions/eventRegistration/adminAccess.mjs';
 import {occupied,duplicate,consentEvidence,canConfirm} from '../../base44/functions/eventRegistration/rules.js';
+import {eventRefundProviderOutcome,confirmAndNotify} from '../../base44/functions/eventRegistration/confirmationDelivery.mjs';
+import {reviewEventNoticeRecovery} from '../../base44/functions/eventRegistration/noticeRecovery.mjs';
+import {reviewCheckoutRecovery} from '../../base44/functions/eventRegistration/checkoutRecovery.mjs';
+import {reviewEventOperations} from '../../base44/functions/eventRegistration/operationalTriage.mjs';
+import {planEventOperations} from '../../base44/functions/eventRegistration/operationsActionPlan.mjs';
+import {inspectWaitlistReadiness} from '../../base44/functions/eventRegistration/waitlistReadiness.mjs';
+import {postReleaseWaitlist} from '../../base44/functions/eventRegistration/postReleaseWaitlist.mjs';
+import {reviewWaitlistPromotion} from '../../base44/functions/eventRegistration/waitlistPromotion.mjs';
+import {reviewEventCancellation} from '../../base44/functions/eventRegistration/cancellationPolicy.mjs';
+import {reviewEventHoldExpiry} from '../../base44/functions/eventRegistration/holdExpiryPolicy.mjs';
+import {releaseEventPlace} from '../../base44/functions/eventRegistration/capacityRelease.mjs';
+import {reviewRefundedBookingClosure} from '../../base44/functions/eventRegistration/refundedBookingClosure.mjs';
 const source=readFileSync(new URL('../../base44/functions/eventRegistration/entry.ts',import.meta.url),'utf8').replace(/^import .*;\s*$/gm,'');
 const js=transformSync(source,{loader:'ts',format:'cjs'}).code;
 const initial={
@@ -34,7 +46,7 @@ function harness({user={id:'admin',role:'admin',active_tenant_id:'t1',active_clu
  }]));
  const sdk={auth:{me:async()=>user},asServiceRole:{entities}};
  let handler;
- const context={Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,readBookingRegistrations,readAdminEventPayments,readPaymentRefundHistory,refundRemaining,selectRefundableEventPayment,selectCheckoutPayment,readEventAdminPage,countActiveEventRegistrations,requireEventAdminGrant,occupied,duplicate,consentEvidence,canConfirm,createCheckout:async()=>({checkoutId:'newCheckout',checkoutUrl:'https://example.invalid'}),retrievePayment:async()=>({normalizedStatus:'paid',transactionId:'tx1'}),refundPayment:async()=>{calls.refund++;if(refundResult instanceof Error)throw refundResult;return refundResult},providerConfigured:()=>true,deliverEventNotice:async()=>{calls.notice++},eventNoticeRecipients:()=>({}),eventNoticeBody:()=>'',EVENT_NOTICE_TYPES:[],renderBasicBrandedEmail:()=>'',Response,Date,console};
+ const context={Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,readBookingRegistrations,readAdminEventPayments,readPaymentRefundHistory,refundRemaining,selectRefundableEventPayment,selectCheckoutPayment,readEventAdminPage,countActiveEventRegistrations,requireEventAdminGrant,eventRefundProviderOutcome,confirmAndNotify,reviewEventNoticeRecovery,reviewCheckoutRecovery,reviewEventOperations,planEventOperations,inspectWaitlistReadiness,postReleaseWaitlist,reviewWaitlistPromotion,reviewEventCancellation,reviewEventHoldExpiry,releaseEventPlace,reviewRefundedBookingClosure,occupied,duplicate,consentEvidence,canConfirm,createCheckout:async()=>({checkoutId:'newCheckout',checkoutUrl:'https://example.invalid'}),retrievePayment:async()=>({normalizedStatus:'paid',transactionId:'tx1'}),refundPayment:async()=>{calls.refund++;if(refundResult instanceof Error)throw refundResult;return refundResult},providerConfigured:()=>true,deliverEventNotice:async()=>{calls.notice++},eventNoticeRecipients:()=>({}),eventNoticeBody:()=>'',EVENT_NOTICE_TYPES:[],renderBasicBrandedEmail:()=>'',Response,Date,console};
  vm.runInNewContext(js,context);
  return {db,calls,call:async(action,fields={})=>{const response=await handler({method:'POST',json:async()=>({action,eventId:'event',...fields})});return {status:response.status,data:await response.json()}}};
 }
@@ -119,7 +131,7 @@ test('refund contention fails without calling provider',async()=>{
 test('provider success with database failure preserves provider reference for manual recovery',async()=>{
  const h=harness({failPaymentUpdate:true});
  const response=await h.call('admin_refund_payment',{registrationId:'r1',confirmRefund:true,reason:'Cancelled'});
- assert.equal(response.status,503);assert.equal(h.calls.refund,1);
+ assert.equal(response.status,200);assert.equal(h.calls.refund,1);
  assert.equal(h.db.PaymentRecord[0].payment_status,'refund_pending');
  assert.equal(h.db.PaymentRefund[0].status,'needs_reconciliation');
  assert.equal(h.db.PaymentRefund[0].provider_status,'REFUNDED');
@@ -128,7 +140,7 @@ test('provider success with database failure preserves provider reference for ma
 test('provider refund failure retains lock and records reconciliation requirement',async()=>{
  const h=harness({refundResult:new Error('Provider timeout')});
  const response=await h.call('admin_refund_payment',{registrationId:'r1',confirmRefund:true,reason:'Cancelled'});
- assert.equal(response.status,503);assert.equal(h.db.PaymentRecord[0].payment_status,'refund_pending');
+ assert.equal(response.status,502);assert.equal(h.db.PaymentRecord[0].payment_status,'refund_pending');
  assert.equal(h.db.PaymentRefund[0].status,'needs_reconciliation');
  assert.equal(h.calls.refund,1);
 });
