@@ -1,4 +1,4 @@
-import { UserCheck, invokeReadWithDeadline, shouldRetryRead, readRetryDelay, READ_STALE_MS, READ_GC_MS } from '@/lib/ccc/readResilience';
+import { invokeReadWithDeadline, shouldRetryRead, readRetryDelay, READ_STALE_MS, READ_GC_MS } from '@/lib/ccc/readResilience';
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
