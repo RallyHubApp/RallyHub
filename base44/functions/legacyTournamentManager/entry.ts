@@ -1,4 +1,5 @@
 import { validateTournivalStateTransition } from './tournivalStateValidation.ts';
+import {projectCommittedTournivalState} from './tournivalMirrorCommit.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 import { safelyQueueTournivalNotice } from './tournivalNoticeBridge.ts';
 import {refundPayment,retrievePayment} from './payments.ts';
@@ -314,7 +315,7 @@ Deno.serve(async (req) => {
         registrationId:earliest.id,waitlistPosition:earliest.waitlist_position
       });
       // A promotion requires a freshly issued opaque private player link.
-      // Existing bearer tokens are hashed and cannot be reconstructed.
+      // Existing bearer ****** are hashed and cannot be reconstructed.
       const promotedBytes=crypto.getRandomValues(new Uint8Array(24));
       const promotedToken='trp_'+Array.from(promotedBytes,
         b=>b.toString(16).padStart(2,'0')).join('');
@@ -712,10 +713,10 @@ Deno.serve(async (req) => {
       }
       // Backwards-compatible projection only. TournivalSession is the
       // authoritative sporting record; a failed projection can be repaired.
-      await base44.asServiceRole.entities.Tournament.update(tournament.id, {
-        tournival_state: JSON.stringify(next),
-        ...(mappedStatus === undefined ? {} : { status: mappedStatus }),
-      });
+      const projection=await projectCommittedTournivalState(
+        (id,patch)=>base44.asServiceRole.entities.Tournament.update(id,patch),
+        tournament,next,mappedStatus);
+
       await audit(base44, user, tournament, 'tournival_state_updated', {
         correctionReason:clean(body.correctionReason,500)||undefined,
         rounds: next.numRounds, courts: next.numCourts, currentRound: next.currentRound,
@@ -738,7 +739,7 @@ Deno.serve(async (req) => {
           });
         }
       }
-      return Response.json({ success: true });
+      return Response.json({ success: true, revision:next.revision, mirrorSynced:projection.mirrorSynced, requiresReconciliation:projection.requiresReconciliation });
     }
 
     if (action === 'update_kotc' || action === 'start_kotc') {
