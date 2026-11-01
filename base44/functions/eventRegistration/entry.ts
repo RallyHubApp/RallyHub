@@ -14,6 +14,7 @@ import {countActiveEventRegistrations} from './availabilityCount.mjs';
 import {requireEventAdminGrant} from './adminAccess.mjs';
 import {confirmAndNotify,eventRefundProviderOutcome} from './confirmationDelivery.mjs';
 import {reviewWaitlistPromotion} from './waitlistPromotion.mjs';
+import {inspectWaitlistReadiness} from './waitlistReadiness.mjs';
 import {reviewEventCancellation} from './cancellationPolicy.mjs';
 import {reviewEventHoldExpiry} from './holdExpiryPolicy.mjs';
 import {releaseEventPlace} from './capacityRelease.mjs';
@@ -28,7 +29,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_promote_waitlist','admin_cancel_unpaid','admin_expire_hold','admin_close_refunded_booking'];
+  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_promote_waitlist','admin_cancel_unpaid','admin_expire_hold','admin_close_refunded_booking','admin_waitlist_readiness'];
   const isAdminAction=adminActions.includes(action);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)))return fail('Bookings are not open for this event',404);
   if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||!t.tenant_id||!t.host_club_id||!await requireEventAdminGrant(base44,user,t))return fail('Active tenant or club administrator grant required',403);}
@@ -69,6 +70,7 @@ Deno.serve(async(req)=>{
   }
   stage='roster_verification';
   const rows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
+  if(action==='admin_waitlist_readiness')return Response.json({success:true,...inspectWaitlistReadiness({rows,event:t}),message:'Preview only; use Offer place for an atomic capacity claim.'});
   if(action==='admin_close_refunded_booking'){
    if(b.confirmClosure!==true)return fail('Explicit refunded booking closure confirmation required');
    const registration=rows.find((r:any)=>r.id===clean(b.registrationId,100));
