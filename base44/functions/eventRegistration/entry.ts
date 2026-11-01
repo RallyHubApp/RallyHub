@@ -89,9 +89,10 @@ Deno.serve(async(req)=>{
    const refunds=await readPaymentRefundHistory(base44.asServiceRole.entities.PaymentRefund,{paymentId:payment.id,tenantId:t.tenant_id,clubId:t.host_club_id});
    const review=reviewRefundedBookingClosure({registration,payment,refunds,event:t});
    if(!review.allowed)return Response.json({success:false,error:'Refund reconciliation required before closing booking',issues:review.issues},{status:409});
+   const occupiedBeforeClosure=occupied(rows);
    const changed=await base44.asServiceRole.entities.EventRegistration.updateMany({id:registration.id,event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,registration_status:'confirmed',payment_status:'refunded'},{$set:{registration_status:'cancelled',cancelled_at:new Date().toISOString(),cancellation_reason:clean(b.reason,500)||'Fully refunded booking closed'}});
    if(changed?.updated!==1)return fail('Registration changed during closure; refresh and review',409);
-   const release=await releaseEventPlace(base44.asServiceRole.entities.Tournament,{eventId:id,tenantId:t.tenant_id,expectedOccupied:occupied(rows)});
+   const release=await releaseEventPlace(base44.asServiceRole.entities.Tournament,{eventId:id,tenantId:t.tenant_id,expectedOccupied:occupiedBeforeClosure});
    let noticeNeedsReview=false;
    try{await deliverEventNotice(base44,t,registration,'booking_cancelled')}catch(error){noticeNeedsReview=true;console.error('Refunded booking closed; notice needs review',error)}
    return Response.json({success:true,status:'cancelled',capacityNeedsReview:release.requiresReconciliation,noticeNeedsReview,waitlistFollowup:postReleaseWaitlist({rows,event:t,registrationId:registration.id,capacityReleased:release.released})});
@@ -107,10 +108,11 @@ Deno.serve(async(req)=>{
    const provider=await retrievePayment('sumup',registration.payment_checkout_id,account);
    const review=reviewEventHoldExpiry({registration,event:t,payments,providerStatus:provider.normalizedStatus});
    if(!review.allowed)return Response.json({success:false,error:'Payment hold cannot safely expire',issues:review.issues,providerStatus:provider.normalizedStatus},{status:409});
+   const occupiedBeforeExpiry=occupied(rows);
    const changed=await base44.asServiceRole.entities.EventRegistration.updateMany({id:registration.id,event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,registration_status:'approved_payment_hold',payment_status:'pending'},{$set:{registration_status:'expired',payment_status:provider.normalizedStatus,payment_hold_expires_at:registration.payment_hold_expires_at}});
    if(changed?.updated!==1)return fail('Payment hold changed. Refresh and verify again.',409);
    let capacityNeedsReview=false;
-   const release=await releaseEventPlace(base44.asServiceRole.entities.Tournament,{eventId:id,tenantId:t.tenant_id,expectedOccupied:occupied(rows)});capacityNeedsReview=release.requiresReconciliation;
+   const release=await releaseEventPlace(base44.asServiceRole.entities.Tournament,{eventId:id,tenantId:t.tenant_id,expectedOccupied:occupiedBeforeExpiry});capacityNeedsReview=release.requiresReconciliation;
    return Response.json({success:true,status:'expired',providerStatus:provider.normalizedStatus,capacityNeedsReview,waitlistFollowup:postReleaseWaitlist({rows,event:t,registrationId:registration.id,capacityReleased:release.released})});
   }
   if(action==='admin_cancel_unpaid'){
