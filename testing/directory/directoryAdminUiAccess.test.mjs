@@ -10,7 +10,7 @@ test('capability probe uses server side directory policy',()=>{
 });
 test('frontend never uses generic admin flag for directory queries',()=>{
  assert.match(code,/const canAccessDirectoryAdmin = canAccessAdmin && directoryCapability === true/);
- assert.match(code,/enabled: canAccessDirectoryAdmin,\s*staleTime: 0/);
+ assert.match(code,/enabled: canAccessDirectoryAdmin && \[.*?'directory-command'[\s\S]*?\]\.includes\(activeAdminTab\),\s*staleTime: 60_000/);
  assert.match(code,/enabled: canAccessDirectoryAdmin && \['directory-command', 'directory-crm', 'directory-players'\]\.includes\(activeAdminTab\)/);
 });
 test('admin tabs are hidden unless capability is permitted',()=>{
