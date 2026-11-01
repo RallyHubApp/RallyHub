@@ -15,6 +15,7 @@ import {requireEventAdminGrant} from './adminAccess.mjs';
 import {confirmAndNotify,eventRefundProviderOutcome} from './confirmationDelivery.mjs';
 import {reviewWaitlistPromotion} from './waitlistPromotion.mjs';
 import {reviewEventCancellation} from './cancellationPolicy.mjs';
+import {reviewEventHoldExpiry} from './holdExpiryPolicy.mjs';
 const clean=(v:any,n=200)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,n);
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
 Deno.serve(async(req)=>{
@@ -25,7 +26,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_promote_waitlist','admin_cancel_unpaid'];
+  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_promote_waitlist','admin_cancel_unpaid','admin_expire_hold'];
   const isAdminAction=adminActions.includes(action);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)))return fail('Bookings are not open for this event',404);
   if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||!t.tenant_id||!t.host_club_id||!await requireEventAdminGrant(base44,user,t))return fail('Active tenant or club administrator grant required',403);}
@@ -66,6 +67,23 @@ Deno.serve(async(req)=>{
   }
   stage='roster_verification';
   const rows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
+  if(action==='admin_expire_hold'){
+   if(b.confirmExpiry!==true)return fail('Explicit hold expiry confirmation required');
+   const registration=rows.find((r:any)=>r.id===clean(b.registrationId,100));
+   if(!registration)return fail('Registration not found',404);
+   const payments=await readAdminEventPayments(base44.asServiceRole.entities.PaymentRecord,{tenantId:t.tenant_id,clubId:t.host_club_id,registrationIds:[registration.id]});
+   const accounts=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
+   const a=accounts?.[0],account=a?{provider:'sumup',merchantAccountId:a.merchant_account_id||'',credentialSecretName:a.credential_reference||'SUMUP_API_KEY',connectionMode:a.connection_mode||'api_key'}:null;
+   if(!account||!registration.payment_checkout_id)return fail('SumUp checkout verification unavailable',503);
+   const provider=await retrievePayment('sumup',registration.payment_checkout_id,account);
+   const review=reviewEventHoldExpiry({registration,event:t,payments,providerStatus:provider.normalizedStatus});
+   if(!review.allowed)return Response.json({success:false,error:'Payment hold cannot safely expire',issues:review.issues,providerStatus:provider.normalizedStatus},{status:409});
+   const changed=await base44.asServiceRole.entities.EventRegistration.updateMany({id:registration.id,event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,registration_status:'approved_payment_hold',payment_status:'pending'},{$set:{registration_status:'expired',payment_status:provider.normalizedStatus,payment_hold_expires_at:registration.payment_hold_expires_at}});
+   if(changed?.updated!==1)return fail('Payment hold changed. Refresh and verify again.',409);
+   let capacityNeedsReview=false;
+   try{const observed=occupied(rows.filter((r:any)=>r.id!==registration.id));const reset=await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$gte:observed}},{$set:{event_reserved_count:observed}});if(reset?.updated!==1)capacityNeedsReview=true}catch(error){capacityNeedsReview=true;console.error('Expired hold saved but capacity counter needs review',error)}
+   return Response.json({success:true,status:'expired',providerStatus:provider.normalizedStatus,capacityNeedsReview});
+  }
   if(action==='admin_cancel_unpaid'){
    if(b.confirmCancellation!==true)return fail('Explicit cancellation confirmation required');
    const registrationId=clean(b.registrationId,100);
