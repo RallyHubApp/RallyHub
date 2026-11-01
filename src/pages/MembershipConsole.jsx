@@ -23,7 +23,7 @@ import { paidSpondMissing, createSpondMemberWorkbook } from '@/lib/spondMemberEx
 import {
   AlertTriangle, CheckCircle2, ClipboardCopy, Columns3, Download, ExternalLink, FileText, Filter, Link2,
   Mail, MessageCircle, Pencil, Plus, Printer, RefreshCw, Save, Search, ShieldCheck, Users, WalletCards, X,
-  Megaphone, Share2, Send, Smartphone
+  Megaphone, Share2, Send, Smartphone, UserCheck
 } from 'lucide-react';
 
 const EMPTY_FILTERS = { membershipStatus: 'all', paymentStatus: 'all', account: 'all', quality: 'all', sport: 'all', renewal: 'all', ageBand: 'all', field: 'all', fieldValue: '', dateFrom: '', dateTo: '' };
