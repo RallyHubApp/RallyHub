@@ -1,5 +1,6 @@
 import { validateTournivalStateTransition } from './tournivalStateValidation.ts';
 import {projectCommittedTournivalState} from './tournivalMirrorCommit.ts';
+import {runTournivalPostCommitNotices} from './tournivalPostCommit.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 import { safelyQueueTournivalNotice } from './tournivalNoticeBridge.ts';
 import {refundPayment,retrievePayment} from './payments.ts';
@@ -722,12 +723,12 @@ Deno.serve(async (req) => {
         rounds: next.numRounds, courts: next.numCourts, currentRound: next.currentRound,
         status: mappedStatus || tournament.status,
       });
+      let notices={noticesComplete:true,requiresCommunicationReview:false};
       if(next.status==='Completed'&&current?.status!=='Completed'){
-        const confirmed=await base44.asServiceRole.entities.TournivalRegistration.filter({
+        notices=await runTournivalPostCommitNotices(async()=>await base44.asServiceRole.entities.TournivalRegistration.filter({
           tournament_id:tournament.id,tenant_id:tournament.tenant_id,
           registration_status:'confirmed'
-        },'-registered_at',500);
-        for(const r of confirmed||[]){
+        },'-registered_at',500),async(r:any)=>{
           await safelyQueueTournivalNotice(base44,{
             tenantId:tournament.tenant_id,clubId:tournament.host_club_id||tournament.tenant_id,
             eventId:tournament.id,sourceRecordId:'results:'+r.id,
@@ -737,9 +738,9 @@ Deno.serve(async (req) => {
               EVENT_NAME:String(tournament.name||''),
               RESULTS_LINK:'https://rallyhub.ie/tournival/hall/'+tournament.id}
           });
-        }
+        });
       }
-      return Response.json({ success: true, revision:next.revision, mirrorSynced:projection.mirrorSynced, requiresReconciliation:projection.requiresReconciliation });
+      return Response.json({ success: true, revision:next.revision, mirrorSynced:projection.mirrorSynced, requiresReconciliation:projection.requiresReconciliation, requiresCommunicationReview:notices.requiresCommunicationReview });
     }
 
     if (action === 'update_kotc' || action === 'start_kotc') {
