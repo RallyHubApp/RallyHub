@@ -6,6 +6,7 @@ import { createCheckout, retrievePayment, refundPayment, providerConfigured, ver
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
 import { findUniqueSpondPersonRow } from './spondIdentityMatch.js';
+import {reviewGuestPaymentVerification,completeGuestPaymentConfirmation} from './paymentVerificationSafety.ts';
 
 const PRIVACY_VERSION='clare-guest-session-privacy-v1-2026-09';
 const CANCELLATION_VERSION='clare-guest-session-cancellation-v1-2026-09';
@@ -1620,15 +1621,17 @@ ${detailRow('Fee',session.payment_method==='none'?'No payment required':session.
         if(booking.payment_method!=='sumup'||!booking.sumup_checkout_id)return Response.json({error:'No SumUp checkout is attached to this booking.'},{status:409});
         const checkout=await retrieveProviderCheckout(base44,session,booking.sumup_checkout_id);
         const status=String(checkout?.status||'PENDING').toUpperCase();
-        if(status==='PAID'){
+        const decision=reviewGuestPaymentVerification(booking,status);
+        if(decision.action==='preserve_settlement'||decision.action==='already_settled')return Response.json({success:true,status:decision.status,booking,alreadySettled:true});
+        if(decision.action==='settle'){
           const now=new Date().toISOString();
           let updated=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:'paid',booking_status:'confirmed',paid_at:now});
           const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
           if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10),provider:checkout?.provider||'sumup',provider_account_id:checkout?.merchant_account_id||'',provider_transaction_id:checkout?.transaction_id||checkout?.transactions?.[0]?.id||'',provider_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||'',provider_status:checkout?.status||'PAID',external_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||''});
-          updated=await sendConfirmations(base44,session,updated);
-          return Response.json({success:true,status:'paid',booking:updated});
+          const confirmation=await completeGuestPaymentConfirmation(updated,(record:any)=>sendConfirmations(base44,session,record));
+          return Response.json({success:true,status:'paid',booking:confirmation.booking,confirmationNeedsReview:confirmation.confirmationNeedsReview});
         }
-        if(status==='FAILED'||status==='EXPIRED'){
+        if(decision.action==='mark_failed'){
           const localStatus=status.toLowerCase();
           const updated=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:localStatus,booking_status:'pending_payment'});
           const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
