@@ -6,6 +6,7 @@ import ClubAttendanceReconciliation from './ClubAttendanceReconciliation';
 import ClubRegistrationExports from './ClubRegistrationExports';
 import ClubEventClosureReview from './ClubEventClosureReview';
 import {summariseLoadedRegistrations} from '@/lib/ccc/pagedEventOverview';
+import {mergeRegistrationPages,updateRegistrationAttendance,registrationPageDecision} from '@/lib/ccc/registrationPageJourney.mjs';
 
 /** Scoped roster with explicit approval, payment verification and attendance controls; no refund control. */
 export default function ClubEventRegistrationOverview({activityId,tenantId,clubId,activityStatus=''}){
@@ -17,29 +18,41 @@ export default function ClubEventRegistrationOverview({activityId,tenantId,clubI
  const [actionError,setActionError]=useState('');
  const [actionResult,setActionResult]=useState('');
  const [extraRows,setExtraRows]=useState([]);
+ const [snapshot,setSnapshot]=useState(null);
+ const [seenCursors,setSeenCursors]=useState([]);
  const [pageCursor,setPageCursor]=useState(undefined);
  const [paging,setPaging]=useState(false);
  const [extraPaymentReview,setExtraPaymentReview]=useState(false);
  const [extraPages,setExtraPages]=useState([]);
  const activeScope=useRef('');
  activeScope.current=[tenantId,clubId,activityId].join('|');
- useEffect(()=>{setExtraRows([]);setPageCursor(undefined);setExtraPaymentReview(false);setExtraPages([]);setSelected(null);setActionError('');setActionResult('')},[activityId,tenantId,clubId]);
+ useEffect(()=>{setExtraRows([]);setSnapshot(null);setSeenCursors([]);setPageCursor(undefined);setExtraPaymentReview(false);setExtraPages([]);setSelected(null);setActionError('');setActionResult('')},[activityId,tenantId,clubId]);
  const queryClient=useQueryClient();
  const {data,isLoading,isError,error,refetch,isFetching}=useQuery({
   queryKey:['ccc-event-registration-overview',tenantId,clubId,activityId],
   queryFn:async()=>{const res=await base44.functions.invoke('cccActivity',{action:'registration_overview',id:activityId});if(!res.data?.success)throw Error(res.data?.error||'Registration overview unavailable');return res.data},
   enabled:!!activityId&&!!tenantId&&!!clubId,retry:false,staleTime:30000
  });
- const markAttendance=async(r,attendance)=>{if(busy)return;setBusy(true);setActionError('');setActionResult('');try{const res=await base44.functions.invoke('cccActivity',{action:'mark_attendance',id:activityId,registrationId:r.id,attendance,expectedRevision:r.attendanceRevision});if(!res.data?.success)throw Error(res.data?.error||'Unable to record attendance');setActionResult(r.name+' · '+attendance.replaceAll('_',' '));setExtraRows([]);setPageCursor(undefined);setExtraPaymentReview(false);setExtraPages([]);await queryClient.invalidateQueries({queryKey:['ccc-event-registration-overview',tenantId,clubId,activityId]});await queryClient.invalidateQueries({queryKey:['ccc-followup-candidates',tenantId,clubId,activityId]});}catch(e){setActionError(e?.response?.data?.error||e?.message||'Unable to record attendance')}finally{setBusy(false)}};
- const runAction=async()=>{if(!selected||busy||!data?.event?.id)return;setBusy(true);setActionError('');setActionResult('');try{const res=await base44.functions.invoke('eventRegistration',{action:selected.action,eventId:data.event.id,registrationId:selected.id});if(!res.data?.success)throw Error(res.data?.error||'Action failed');setActionResult(selected.action==='admin_approve'?'Approval processed. Check payment and message delivery records.':'Payment verification checked: '+String(res.data.paymentStatus||res.data.status||'unknown'));setSelected(null);setExtraRows([]);setPageCursor(undefined);setExtraPaymentReview(false);setExtraPages([]);await queryClient.invalidateQueries({queryKey:['ccc-event-registration-overview',tenantId,clubId,activityId]});await queryClient.invalidateQueries({queryKey:['ccc-followup-candidates',tenantId,clubId,activityId]});}catch(e){setActionError(e?.response?.data?.error||e?.message||'Action failed')}finally{setBusy(false)}};
+ const markAttendance=async(r,attendance)=>{if(busy)return;setBusy(true);setActionError('');setActionResult('');try{const res=await base44.functions.invoke('cccActivity',{action:'mark_attendance',id:activityId,registrationId:r.id,attendance,expectedRevision:r.attendanceRevision});if(!res.data?.success)throw Error(res.data?.error||'Unable to record attendance');setActionResult(r.name+' · '+attendance.replaceAll('_',' '));setSnapshot(updateRegistrationAttendance(loaded,{id:r.id,attendance,revision:res.data.revision}));await queryClient.invalidateQueries({queryKey:['ccc-event-registration-overview',tenantId,clubId,activityId]});await queryClient.invalidateQueries({queryKey:['ccc-followup-candidates',tenantId,clubId,activityId]});}catch(e){setActionError(e?.response?.data?.error||e?.message||'Unable to record attendance')}finally{setBusy(false)}};
+ const runAction=async()=>{if(!selected||busy||!data?.event?.id)return;setBusy(true);setActionError('');setActionResult('');try{const res=await base44.functions.invoke('eventRegistration',{action:selected.action,eventId:data.event.id,registrationId:selected.id});if(!res.data?.success)throw Error(res.data?.error||'Action failed');setActionResult(selected.action==='admin_approve'?'Approval processed. Check payment and message delivery records.':'Payment verification checked: '+String(res.data.paymentStatus||res.data.status||'unknown'));setSelected(null);setExtraRows([]);setSnapshot(null);setSeenCursors([]);setPageCursor(undefined);setExtraPaymentReview(false);setExtraPages([]);await queryClient.invalidateQueries({queryKey:['ccc-event-registration-overview',tenantId,clubId,activityId]});await queryClient.invalidateQueries({queryKey:['ccc-followup-candidates',tenantId,clubId,activityId]});}catch(e){setActionError(e?.response?.data?.error||e?.message||'Action failed')}finally{setBusy(false)}};
  if(!activityId)return null;
  const nextCursor=pageCursor===undefined?data?.registrationNextCursor:pageCursor;
- const loadMore=async()=>{if(!nextCursor||paging||busy)return;const requestScope=activeScope.current;setPaging(true);setActionError('');try{const result=await base44.functions.invoke('cccActivity',{action:'registration_page',id:activityId,cursor:nextCursor});if(!result.data?.success)throw Error(result.data?.error||'Unable to load next page');if(activeScope.current!==requestScope)return;setExtraRows(current=>{const ids=new Set([...data.registrations,...current].map(r=>r.id));return [...current,...result.data.registrations.filter(r=>!ids.has(r.id))]});setPageCursor(result.data.nextCursor||null);setExtraPages(current=>[...current,{cursor:nextCursor,finance:result.data.finance||null}]);if(result.data.paymentReviewRequired)setExtraPaymentReview(true)}catch(e){setActionError(e?.response?.data?.error||e?.message||'Unable to load next page')}finally{setPaging(false)}};
- const loaded=[...(data?.registrations||[]),...extraRows];
+ const loadMore=async()=>{if(!nextCursor||paging||busy)return;const requestScope=activeScope.current,requestedCursor=nextCursor;setPaging(true);setActionError('');try{
+  const result=await base44.functions.invoke('cccActivity',{action:'registration_page',id:activityId,cursor:requestedCursor});
+  if(activeScope.current!==requestScope)return;
+  if(!result.data?.success)throw Error(result.data?.error||'Unable to load next page');
+  const decision=registrationPageDecision({scope:activeScope.current,requestScope,cursor:requestedCursor,nextCursor:result.data.nextCursor,seenCursors});
+  if(!decision.allowed)throw Error('Registration pagination did not advance; refresh before continuing');
+  setSnapshot(mergeRegistrationPages(loaded,result.data.registrations||[]));
+  setPageCursor(result.data.nextCursor||null);setSeenCursors(current=>[...current,requestedCursor]);
+  setExtraPages(current=>[...current,{cursor:requestedCursor,finance:result.data.finance||null}]);
+  if(result.data.paymentReviewRequired)setExtraPaymentReview(true);
+ }catch(e){if(activeScope.current===requestScope)setActionError(e?.response?.data?.error||e?.message||'Unable to load next page')}finally{if(activeScope.current===requestScope)setPaging(false)}};
+ const loaded=snapshot||mergeRegistrationPages(data?.registrations||[],extraRows);
  const rollup=data?summariseLoadedRegistrations(loaded,extraPages,{hasMore:!!nextCursor,initialPaymentReadComplete:data.initialPaymentReadComplete,initialFinance:data.finance,extraReview:extraPaymentReview}):null;
  const rows=loaded.filter(r=>(status==='all'||r.status===status)&&(attendanceFilter==='all'||r.attendance===attendanceFilter)&&(!search||[r.name,r.email,r.mobile].some(v=>String(v||'').toLowerCase().includes(search.toLowerCase().trim()))));
  return <section className="mt-4 rounded-xl border p-3" aria-label="Event registrations">
-  <div className="flex items-center justify-between gap-2"><h3 className="font-semibold">Linked event registrations</h3><button type="button" onClick={()=>{setExtraRows([]);setPageCursor(undefined);setExtraPaymentReview(false);setExtraPages([]);refetch()}} disabled={isFetching} className="rounded-lg border px-3 py-1 text-sm disabled:opacity-50">Refresh</button></div>
+  <div className="flex items-center justify-between gap-2"><h3 className="font-semibold">Linked event registrations</h3><button type="button" onClick={()=>{setExtraRows([]);setSnapshot(null);setSeenCursors([]);setPageCursor(undefined);setExtraPaymentReview(false);setExtraPages([]);refetch()}} disabled={isFetching} className="rounded-lg border px-3 py-1 text-sm disabled:opacity-50">Refresh</button></div>
   {isLoading&&<p className="text-sm">Loading registrations…</p>}
   {isError&&<p role="alert" className="text-sm text-destructive">{error?.message||'Unable to load registrations'}</p>}
   {data&&<><p className="mt-1 text-xs text-muted-foreground">Club management · {data.event?.name} · Capacity {data.event?.capacity}</p>{nextCursor&&<p role="alert" className="text-sm text-amber-700">Totals cover {rollup.loaded} loaded registrations only. Continue loading pages for the complete event.</p>}{extraPaymentReview&&<p role="alert" className="text-sm text-amber-700">Some payment pages contain discrepancies or incomplete reads. All figures remain provisional.</p>}{!rollup.complete&&<p role="alert" className="text-sm text-amber-700">Registration or payment totals are not fully verified. Do not use these figures for settlement reconciliation.</p>}
