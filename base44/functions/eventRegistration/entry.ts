@@ -15,6 +15,7 @@ import {requireEventAdminGrant} from './adminAccess.mjs';
 import {confirmAndNotify,eventRefundProviderOutcome} from './confirmationDelivery.mjs';
 import {reviewWaitlistPromotion} from './waitlistPromotion.mjs';
 import {inspectWaitlistReadiness} from './waitlistReadiness.mjs';
+import {postReleaseWaitlist} from './postReleaseWaitlist.mjs';
 import {reviewEventCancellation} from './cancellationPolicy.mjs';
 import {reviewEventHoldExpiry} from './holdExpiryPolicy.mjs';
 import {releaseEventPlace} from './capacityRelease.mjs';
@@ -86,7 +87,7 @@ Deno.serve(async(req)=>{
    const release=await releaseEventPlace(base44.asServiceRole.entities.Tournament,{eventId:id,tenantId:t.tenant_id,expectedOccupied:occupied(rows)});
    let noticeNeedsReview=false;
    try{await deliverEventNotice(base44,t,registration,'booking_cancelled')}catch(error){noticeNeedsReview=true;console.error('Refunded booking closed; notice needs review',error)}
-   return Response.json({success:true,status:'cancelled',capacityNeedsReview:release.requiresReconciliation,noticeNeedsReview});
+   return Response.json({success:true,status:'cancelled',capacityNeedsReview:release.requiresReconciliation,noticeNeedsReview,waitlistFollowup:postReleaseWaitlist({rows,event:t,registrationId:registration.id,capacityReleased:release.released})});
   }
   if(action==='admin_expire_hold'){
    if(b.confirmExpiry!==true)return fail('Explicit hold expiry confirmation required');
@@ -103,7 +104,7 @@ Deno.serve(async(req)=>{
    if(changed?.updated!==1)return fail('Payment hold changed. Refresh and verify again.',409);
    let capacityNeedsReview=false;
    const release=await releaseEventPlace(base44.asServiceRole.entities.Tournament,{eventId:id,tenantId:t.tenant_id,expectedOccupied:occupied(rows)});capacityNeedsReview=release.requiresReconciliation;
-   return Response.json({success:true,status:'expired',providerStatus:provider.normalizedStatus,capacityNeedsReview});
+   return Response.json({success:true,status:'expired',providerStatus:provider.normalizedStatus,capacityNeedsReview,waitlistFollowup:postReleaseWaitlist({rows,event:t,registrationId:registration.id,capacityReleased:release.released})});
   }
   if(action==='admin_cancel_unpaid'){
    if(b.confirmCancellation!==true)return fail('Explicit cancellation confirmation required');
@@ -114,10 +115,11 @@ Deno.serve(async(req)=>{
    const updated=await base44.asServiceRole.entities.EventRegistration.updateMany({id:registrationId,event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,registration_status:review.row.registration_status,payment_status:review.row.payment_status},{$set:{registration_status:'cancelled',cancelled_at:new Date().toISOString(),cancellation_reason:clean(b.reason,500)||'Organiser cancelled unpaid application'}});
    if(updated?.updated!==1)return fail('Registration changed; refresh before cancelling',409);
    let capacityNeedsReview=false;
-   if(review.releasesCapacity){const release=await releaseEventPlace(base44.asServiceRole.entities.Tournament,{eventId:id,tenantId:t.tenant_id,expectedOccupied:review.occupied});capacityNeedsReview=release.requiresReconciliation}
+   let capacityReleased=false;
+   if(review.releasesCapacity){const release=await releaseEventPlace(base44.asServiceRole.entities.Tournament,{eventId:id,tenantId:t.tenant_id,expectedOccupied:review.occupied});capacityNeedsReview=release.requiresReconciliation;capacityReleased=release.released}
    let noticeNeedsReview=false;
    try{await deliverEventNotice(base44,t,review.row,'booking_cancelled')}catch(error){noticeNeedsReview=true;console.error('Cancellation saved but notification failed',error)}
-   return Response.json({success:true,status:'cancelled',capacityNeedsReview,noticeNeedsReview,releasesCapacity:review.releasesCapacity});
+   return Response.json({success:true,status:'cancelled',capacityNeedsReview,noticeNeedsReview,releasesCapacity:review.releasesCapacity,waitlistFollowup:review.releasesCapacity?postReleaseWaitlist({rows,event:t,registrationId,capacityReleased}):null});
   }
   if(action==='admin_promote_waitlist'||action==='admin_offer_next_waitlisted'){
    stage='waitlist_promotion';
