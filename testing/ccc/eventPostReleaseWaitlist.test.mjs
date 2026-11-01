@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {postReleaseWaitlist as followup} from '../../base44/functions/eventRegistration/postReleaseWaitlist.mjs';
+const event={id:'e',tenant_id:'t',host_club_id:'c',event_capacity:1,event_waitlist_enabled:true};
+const row=(id,status,date)=>({id,event_id:'e',tenant_id:'t',club_id:'c',registration_status:status,created_at:date});
+const rows=[row('old','confirmed','2026-10-01'),row('next','waitlisted','2026-10-02')];
+test('successful release identifies next waiting applicant',()=>{const r=followup({rows,event,registrationId:'old',capacityReleased:true});assert.equal(r.nextRegistrationId,'next');assert.equal(r.advisoryOnly,true)});
+test('uncertain release never recommends an offer',()=>{const r=followup({rows,event,registrationId:'old',capacityReleased:false});assert.equal(r.nextRegistrationId,null);assert.equal(r.requiresReview,true)});
+test('foreign applicant prevents a recommendation',()=>{const r=followup({rows:[rows[0],{...rows[1],tenant_id:'foreign'}],event,registrationId:'old',capacityReleased:true});assert.equal(r.nextRegistrationId,null);assert.equal(r.requiresReview,true)});
+test('missing registration cannot release a candidate',()=>assert.equal(followup({rows,event,registrationId:'unknown',capacityReleased:true}).nextRegistrationId,null));
