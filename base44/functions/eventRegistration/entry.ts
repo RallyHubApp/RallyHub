@@ -20,6 +20,7 @@ import {reviewEventOperations} from './operationalTriage.mjs';
 import {planEventOperations} from './operationsActionPlan.mjs';
 import {reviewCheckoutRecovery} from './checkoutRecovery.mjs';
 import {reviewEventNoticeRecovery} from './noticeRecovery.mjs';
+import {reviewEventRecoveryDashboard} from './recoveryDashboard.mjs';
 import {reviewEventCancellation} from './cancellationPolicy.mjs';
 import {reviewEventHoldExpiry} from './holdExpiryPolicy.mjs';
 import {releaseEventPlace} from './capacityRelease.mjs';
@@ -34,7 +35,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_promote_waitlist','admin_cancel_unpaid','admin_expire_hold','admin_close_refunded_booking','admin_waitlist_readiness','admin_offer_next_waitlisted','admin_operational_triage','admin_checkout_recovery','admin_notice_recovery'];
+  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_promote_waitlist','admin_cancel_unpaid','admin_expire_hold','admin_close_refunded_booking','admin_waitlist_readiness','admin_offer_next_waitlisted','admin_operational_triage','admin_checkout_recovery','admin_notice_recovery','admin_recovery_dashboard'];
   const isAdminAction=adminActions.includes(action);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)))return fail('Bookings are not open for this event',404);
   if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||!t.tenant_id||!t.host_club_id||!await requireEventAdminGrant(base44,user,t))return fail('Active tenant or club administrator grant required',403);}
@@ -75,6 +76,7 @@ Deno.serve(async(req)=>{
   }
   stage='roster_verification';
   const rows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
+  if(action==='admin_recovery_dashboard'){const payments=await readAdminEventPayments(base44.asServiceRole.entities.PaymentRecord,{tenantId:t.tenant_id,clubId:t.host_club_id,registrationIds:rows.map((r:any)=>r.id)});return Response.json({success:true,...reviewEventRecoveryDashboard({event:t,rows,payments})});}
   if(action==='admin_notice_recovery')return Response.json({success:true,...reviewEventNoticeRecovery({event:t,rows,noticeType:clean(b.noticeType||'booking_confirmed',50)})});
   if(action==='admin_checkout_recovery'){const payments=await readAdminEventPayments(base44.asServiceRole.entities.PaymentRecord,{tenantId:t.tenant_id,clubId:t.host_club_id,registrationIds:rows.map((r:any)=>r.id)});return Response.json({success:true,...reviewCheckoutRecovery({event:t,rows,payments})});}
   if(action==='admin_operational_triage'){const payments=await readAdminEventPayments(base44.asServiceRole.entities.PaymentRecord,{tenantId:t.tenant_id,clubId:t.host_club_id,registrationIds:rows.map((r:any)=>r.id)});const review=reviewEventOperations({event:t,rows,payments});return Response.json({success:true,...review,plan:planEventOperations({review,rows})});}
