@@ -12,6 +12,7 @@ import {readPaymentRefundHistory,refundRemaining} from './scopedRefundReader.mjs
 import {readEventAdminPage} from './adminPage.mjs';
 import {countActiveEventRegistrations} from './availabilityCount.mjs';
 import {requireEventAdminGrant} from './adminAccess.mjs';
+import {confirmAndNotify,eventRefundProviderOutcome} from './confirmationDelivery.mjs';
 const clean=(v:any,n=200)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,n);
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
 Deno.serve(async(req)=>{
@@ -95,19 +96,19 @@ Deno.serve(async(req)=>{
      await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{payment_status:full?'refunded':'partially_refunded',amount_refunded:total,last_refund_at:new Date().toISOString(),provider_status:result.providerStatus||'REFUNDED'});
      await base44.asServiceRole.entities.EventRegistration.update(registration.id,{payment_status:full?'refunded':'partially_refunded'});
      return Response.json({success:true,refundAmount:amount,refundId:refund.id,status:full?'refunded':'partially_refunded',bookingStatus:registration.registration_status});
-    }catch(error){await base44.asServiceRole.entities.PaymentRefund.update(refund.id,{status:'needs_reconciliation',provider_status:providerOutcome?.providerStatus||'UNKNOWN',provider_refund_id:providerOutcome?.refundId||''});throw error;}
+    }catch(error){try{await base44.asServiceRole.entities.PaymentRefund.update(refund.id,{status:'needs_reconciliation',provider_status:providerOutcome?.providerStatus||'UNKNOWN',provider_refund_id:providerOutcome?.refundId||''})}catch(markerError){console.error('Event refund reconciliation marker failed',markerError)}const outcome=eventRefundProviderOutcome({refundId:refund.id,providerOutcome,error});return Response.json(outcome,{status:outcome.success?200:502});}
    }
    if(action==='admin_approve'){
     if(registration.registration_status!=='pending_approval')return fail('Application is not awaiting approval',409);
     const amount=Number(t.event_fee_amount||0);
     if(amount>0&&(!account||!providerConfigured('sumup',account)))return fail('Tenant SumUp is not connected',503);
     const expires=new Date(Date.now()+Math.min(120,Math.max(1,Number(t.event_booking_policy?.payment_hold_minutes??30)))*60000).toISOString();
-    if(amount===0){await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'confirmed',payment_status:'not_required',approved_at:new Date().toISOString(),confirmed_at:new Date().toISOString()});await deliverEventNotice(base44,t,registration,'booking_confirmed');return Response.json({success:true,status:'confirmed'});}
+    if(amount===0){const outcome=await confirmAndNotify({commit:()=>base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'confirmed',payment_status:'not_required',approved_at:new Date().toISOString(),confirmed_at:new Date().toISOString()}),notify:(saved:any)=>deliverEventNotice(base44,t,saved,'booking_confirmed')});return Response.json(outcome);}
     const checkout=await createCheckout({provider:'sumup',account,amount,currency:t.event_currency||'EUR',reference:`ev_${registration.id}`.slice(0,64),description:t.name,redirectUrl:`https://rallyhub.ie/events/${t.event_slug}`,returnUrl:"https://rallyhub.ie/api/apps/6a01dc00702b7dd2a2978c28/functions/paymentGatewayWebhook?provider=sumup"});
     // Register checkout before customer pays: the SumUp webhook resolves this record.
     const payment=await base44.asServiceRole.entities.PaymentRecord.create({tenant_id:t.tenant_id,club_id:t.host_club_id,person_id:registration.person_id||'',purpose_type:'event',purpose_id:registration.id,payment_type:'event_registration',amount,currency:t.event_currency||'EUR',payment_method:'sumup',payment_status:'pending',provider:'sumup',provider_account_id:accountRow?.id||'',provider_checkout_id:checkout.checkoutId,provider_checkout_url:checkout.checkoutUrl,provider_status:'PENDING',source_system:'rallyhub_event'});
     await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'approved_payment_hold',payment_status:'pending',payment_record_id:payment.id,payment_hold_expires_at:expires,payment_checkout_id:checkout.checkoutId,payment_checkout_url:checkout.checkoutUrl,approved_at:new Date().toISOString()});
-    await deliverEventNotice(base44,t,{...registration,payment_hold_expires_at:expires},'payment_required',`Payment link: ${checkout.checkoutUrl}`);return Response.json({success:true,status:'approved_payment_hold',checkoutUrl:checkout.checkoutUrl,expiresAt:expires});
+    let noticeNeedsReview=false;try{await deliverEventNotice(base44,t,{...registration,payment_hold_expires_at:expires},'payment_required',`Payment link: ${checkout.checkoutUrl}`)}catch(error){noticeNeedsReview=true;console.error('Payment hold saved but event notice failed',error)}return Response.json({success:true,status:'approved_payment_hold',checkoutUrl:checkout.checkoutUrl,expiresAt:expires,noticeNeedsReview});
    }
    if(!registration.payment_checkout_id)return fail('No checkout recorded',409);
    const result=await retrievePayment('sumup',registration.payment_checkout_id,account);
@@ -119,7 +120,7 @@ Deno.serve(async(req)=>{
    if(!payment)payment=await base44.asServiceRole.entities.PaymentRecord.create({tenant_id:t.tenant_id,club_id:t.host_club_id,person_id:registration.person_id||'',purpose_type:'event',purpose_id:registration.id,payment_type:'event_registration',amount:Number(t.event_fee_amount||0),currency:t.event_currency||'EUR',payment_method:'sumup',payment_status:'paid',provider:'sumup',provider_account_id:accountRow?.id||'',provider_checkout_id:registration.payment_checkout_id,provider_checkout_url:registration.payment_checkout_url||'',provider_transaction_id:result.transactionId,provider_payment_reference:result.transactionCode||'',provider_status:result.providerStatus||'PAID',source_system:'rallyhub_event'});
    if(payment.payment_status!=='paid')await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{payment_status:'paid',payment_date:new Date().toISOString().slice(0,10),provider_status:result.providerStatus||'PAID',provider_transaction_id:result.transactionId,provider_payment_reference:result.transactionCode||'',external_payment_reference:result.transactionCode||''});
    await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'confirmed',payment_status:'paid',payment_record_id:payment.id,payment_transaction_id:result.transactionId,confirmed_at:registration.confirmed_at||new Date().toISOString()});
-   if(registration.registration_status!=='confirmed')await deliverEventNotice(base44,t,registration,'booking_confirmed');return Response.json({success:true,status:'confirmed',paymentStatus:'paid'});
+   let noticeNeedsReview=false;if(registration.registration_status!=='confirmed')try{await deliverEventNotice(base44,t,registration,'booking_confirmed')}catch(error){noticeNeedsReview=true;console.error('Paid event registration notice failed',error)}return Response.json({success:true,status:'confirmed',paymentStatus:'paid',noticeNeedsReview});
   }
   if(action!=='apply')return fail('Unsupported action');
   const name=clean(b.fullName,120),email=clean(b.email,180).toLowerCase(),mobile=clean(b.mobile,40),emergencyName=clean(b.emergencyContactName,120),emergencyMobile=clean(b.emergencyContactMobile,40),operationId=clean(b.operationId,100);
