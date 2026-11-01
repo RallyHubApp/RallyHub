@@ -18,6 +18,7 @@ import {inspectWaitlistReadiness} from './waitlistReadiness.mjs';
 import {postReleaseWaitlist} from './postReleaseWaitlist.mjs';
 import {reviewEventOperations} from './operationalTriage.mjs';
 import {planEventOperations} from './operationsActionPlan.mjs';
+import {reviewCheckoutRecovery} from './checkoutRecovery.mjs';
 import {reviewEventCancellation} from './cancellationPolicy.mjs';
 import {reviewEventHoldExpiry} from './holdExpiryPolicy.mjs';
 import {releaseEventPlace} from './capacityRelease.mjs';
@@ -32,7 +33,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_promote_waitlist','admin_cancel_unpaid','admin_expire_hold','admin_close_refunded_booking','admin_waitlist_readiness','admin_offer_next_waitlisted','admin_operational_triage'];
+  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_promote_waitlist','admin_cancel_unpaid','admin_expire_hold','admin_close_refunded_booking','admin_waitlist_readiness','admin_offer_next_waitlisted','admin_operational_triage','admin_checkout_recovery'];
   const isAdminAction=adminActions.includes(action);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)))return fail('Bookings are not open for this event',404);
   if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||!t.tenant_id||!t.host_club_id||!await requireEventAdminGrant(base44,user,t))return fail('Active tenant or club administrator grant required',403);}
@@ -73,6 +74,7 @@ Deno.serve(async(req)=>{
   }
   stage='roster_verification';
   const rows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
+  if(action==='admin_checkout_recovery'){const payments=await readAdminEventPayments(base44.asServiceRole.entities.PaymentRecord,{tenantId:t.tenant_id,clubId:t.host_club_id,registrationIds:rows.map((r:any)=>r.id)});return Response.json({success:true,...reviewCheckoutRecovery({event:t,rows,payments})});}
   if(action==='admin_operational_triage'){const payments=await readAdminEventPayments(base44.asServiceRole.entities.PaymentRecord,{tenantId:t.tenant_id,clubId:t.host_club_id,registrationIds:rows.map((r:any)=>r.id)});const review=reviewEventOperations({event:t,rows,payments});return Response.json({success:true,...review,plan:planEventOperations({review,rows})});}
   if(action==='admin_waitlist_readiness')return Response.json({success:true,...inspectWaitlistReadiness({rows,event:t}),message:'Preview only; use Offer place for an atomic capacity claim.'});
   if(action==='admin_close_refunded_booking'){
@@ -190,8 +192,6 @@ Deno.serve(async(req)=>{
     if(amount>0&&(!account||!providerConfigured('sumup',account)))return fail('Tenant SumUp is not connected',503);
     const expires=new Date(Date.now()+Math.min(120,Math.max(1,Number(t.event_booking_policy?.payment_hold_minutes??30)))*60000).toISOString();
     if(amount===0){const outcome=await confirmAndNotify({commit:()=>base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'confirmed',payment_status:'not_required',approved_at:new Date().toISOString(),confirmed_at:new Date().toISOString()}),notify:(saved:any)=>deliverEventNotice(base44,t,saved,'booking_confirmed')});return Response.json(outcome);}
-    const priorPayments=await readAdminEventPayments(base44.asServiceRole.entities.PaymentRecord,{tenantId:t.tenant_id,clubId:t.host_club_id,registrationIds:[registration.id]});
-    if(priorPayments.length||registration.payment_checkout_id||registration.payment_record_id)return Response.json({success:false,error:'Existing checkout or payment record requires reconciliation before approving again',requiresReconciliation:true},{status:409});
     const checkout=await createCheckout({provider:'sumup',account,amount,currency:t.event_currency||'EUR',reference:`ev_${registration.id}`.slice(0,64),description:t.name,redirectUrl:`https://rallyhub.ie/events/${t.event_slug}`,returnUrl:"https://rallyhub.ie/api/apps/6a01dc00702b7dd2a2978c28/functions/paymentGatewayWebhook?provider=sumup"});
     // Register checkout before customer pays: the SumUp webhook resolves this record.
     const payment=await base44.asServiceRole.entities.PaymentRecord.create({tenant_id:t.tenant_id,club_id:t.host_club_id,person_id:registration.person_id||'',purpose_type:'event',purpose_id:registration.id,payment_type:'event_registration',amount,currency:t.event_currency||'EUR',payment_method:'sumup',payment_status:'pending',provider:'sumup',provider_account_id:accountRow?.id||'',provider_checkout_id:checkout.checkoutId,provider_checkout_url:checkout.checkoutUrl,provider_status:'PENDING',source_system:'rallyhub_event'});
