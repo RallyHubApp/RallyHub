@@ -9,3 +9,7 @@ test('payment notice needs active checkout',()=>assert.equal(run({noticeType:'pa
 test('waitlist place notice requires pending approval',()=>assert.equal(run({noticeType:'place_available',rows:[{...row,registration_status:'pending_approval'}]}).eligible,1));
 test('foreign registration fails closed',()=>assert.throws(()=>run({rows:[{...row,club_id:'foreign'}]}),/scope mismatch/));
 test('unknown notice type fails closed',()=>assert.throws(()=>run({noticeType:'not_real'}),/Valid scoped/));
+test('confirmed free booking is eligible for a confirmation notice audit',()=>{
+ const result=run({rows:[{...row,payment_status:'not_required'}]});
+ assert.equal(result.eligible,1);assert.equal(result.previewOnly,true);
+});
