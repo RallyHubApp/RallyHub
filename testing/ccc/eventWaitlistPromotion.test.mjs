@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {reviewWaitlistPromotion} from '../../base44/functions/eventRegistration/waitlistPromotion.mjs';
+const event={id:'event',tenant_id:'tenant',host_club_id:'club',event_capacity:2,event_waitlist_enabled:true};
+const row=(id,status,created_at)=>({id,event_id:'event',tenant_id:'tenant',club_id:'club',registration_status:status,created_at});
+const rows=[row('booked','confirmed','2026-10-01'),row('first','waitlisted','2026-10-02'),row('second','waitlisted','2026-10-03')];
+test('first waitlisted participant can be promoted when capacity verified',()=>assert.equal(reviewWaitlistPromotion({rows,event,registrationId:'first'}).allowed,true));
+test('cannot skip earlier waitlisted participant',()=>assert.ok(reviewWaitlistPromotion({rows,event,registrationId:'second'}).issues.includes('earlier_waitlist_candidate')));
+test('cannot overbook full event',()=>assert.ok(reviewWaitlistPromotion({rows:[...rows,row('other','confirmed','2026-10-01')],event,registrationId:'first'}).issues.includes('no_verified_capacity')));
+test('cannot promote foreign club record',()=>assert.ok(reviewWaitlistPromotion({rows:[...rows,{...row('foreign','waitlisted','2026-10-01'),club_id:'other'}],event,registrationId:'first'}).issues.includes('registration_scope')));
+test('missing roster fails closed',()=>assert.equal(reviewWaitlistPromotion({rows:null,event,registrationId:'first'}).allowed,false));
+test('expired payment holds free capacity',()=>{const r=[row('expired','approved_payment_hold','2026-10-01'),row('first','waitlisted','2026-10-02')];r[0].payment_hold_expires_at='2026-10-01T00:00:00Z';assert.equal(reviewWaitlistPromotion({rows:r,event:{...event,event_capacity:1},registrationId:'first',now:Date.parse('2026-10-03')}).allowed,true)});
