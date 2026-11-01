@@ -852,6 +852,20 @@ export default function MembershipConsole() {
     }
   };
 
+  const reconcilePaidMembership = async () => {
+    if (!personId || saving || !window.confirm('Reconcile this membership against its settled payment record? This activates the membership but does not charge the member.')) return;
+    setSaving(true);
+    try {
+      const response = await base44.functions.invoke('membershipRecord', { action: 'admin_reconcile_paid_membership', personId, confirmReconciliation: true, reason: 'Administrator reviewed paid membership ledger' });
+      if (response.data?.error) throw new Error(response.data.error);
+      await Promise.all([refetchDetail(), queryClient.invalidateQueries({ queryKey: ['membership-console-list'] })]);
+      setPaymentHealth(null);
+      if (response.data?.relationshipNeedsReview) toast.warning('Membership activated; club relationship requires review');
+      else toast.success(response.data?.alreadyActive ? 'Membership is already active' : 'Paid membership activated from verified ledger');
+    } catch (error) { toast.error(error?.response?.data?.error || error?.message || 'Membership reconciliation requires finance review'); }
+    finally { setSaving(false); }
+  };
+
   const previewApplicationReminder = async (application, channel = 'email') => {
     if (!application?.id) return;
     setApplicationBusyId(application.id);
@@ -1599,6 +1613,7 @@ export default function MembershipConsole() {
                   <div className="flex flex-wrap justify-end gap-2">
                     <Button size="sm" variant="outline" disabled={paymentHealthBusy} onClick={checkPaymentHealth}><ShieldCheck className="w-3.5 h-3.5 mr-1.5" />{paymentHealthBusy ? 'Checking…' : 'Review payment integrity'}</Button>
                     {detail.membership?.payment_status !== 'paid' && gateway?.supports_payments !== false ? <Button size="sm" onClick={createMembershipPayment} disabled={saving}><WalletCards className="w-3.5 h-3.5 mr-1.5" />Create / copy payment link</Button> : null}
+                    {paymentHealth?.issues?.includes('settled_payment_membership_not_paid') && <Button size="sm" variant="outline" disabled={saving} onClick={reconcilePaidMembership}><ShieldCheck className="w-3.5 h-3.5 mr-1.5" />Reconcile paid membership</Button>}
                     {(detail.payments || []).some(payment => payment.purpose_type === 'membership' && payment.provider_checkout_id && payment.payment_status !== 'paid') ? <Button size="sm" variant="outline" onClick={verifyMembershipPayment} disabled={saving}><ShieldCheck className="w-3.5 h-3.5 mr-1.5" />Verify payment</Button> : null}
                   </div>
                   {paymentHealth && <div role="status" className={`rounded-lg border p-3 text-sm ${paymentHealth.healthy ? 'border-green-500/30' : 'border-amber-500/40'}`}>
