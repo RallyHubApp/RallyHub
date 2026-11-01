@@ -7,6 +7,7 @@ import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
 import { findUniqueSpondPersonRow } from './spondIdentityMatch.js';
 import {reviewGuestPaymentVerification,completeGuestPaymentConfirmation} from './paymentVerificationSafety.ts';
+import {reviewCashSettlement,selectBookingPaymentRecords} from './settlementWorkflow.ts';
 
 const PRIVACY_VERSION='clare-guest-session-privacy-v1-2026-09';
 const CANCELLATION_VERSION='clare-guest-session-cancellation-v1-2026-09';
@@ -1582,13 +1583,18 @@ ${detailRow('Fee',session.payment_method==='none'?'No payment required':session.
       if(!session)return Response.json({error:'Session not found.'},{status:404});
 
       if(action==='admin_mark_cash_paid'){
-        if(booking.payment_method!=='cash')return Response.json({error:'This is not a cash booking.'},{status:409});
+        const decision=reviewCashSettlement(booking);
+        if(!decision.allowed)return Response.json({error:'Cash settlement is not permitted for this booking.',reason:decision.reason},{status:409});
+        if(decision.alreadySettled)return Response.json({success:true,booking,alreadySettled:true});
+        const rawPayments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
+        const selection=selectBookingPaymentRecords(rawPayments,booking,session);
+        if(selection.reason)return Response.json({error:'Payment ledger requires review before settlement.',reason:selection.reason},{status:409});
         const now=new Date().toISOString();
-        let updated=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:'paid',booking_status:'confirmed',paid_at:now});
-        const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
-        if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10)});
-        updated=await sendConfirmations(base44,session,updated);
-        return Response.json({success:true,booking:updated});
+        const updated=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:'paid',booking_status:'confirmed',paid_at:now});
+        let ledgerNeedsReview=false;
+        if(selection.records[0])try{await base44.asServiceRole.entities.PaymentRecord.update(selection.records[0].id,{payment_status:'paid',payment_date:now.slice(0,10)});}catch(error){ledgerNeedsReview=true;console.warn('Cash booking settled; ledger requires review',error instanceof Error?error.message:'ledger unavailable')}
+        const confirmation=await completeGuestPaymentConfirmation(updated,(record:any)=>sendConfirmations(base44,session,record));
+        return Response.json({success:true,booking:confirmation.booking,ledgerNeedsReview,confirmationNeedsReview:confirmation.confirmationNeedsReview});
       }
 
       if(action==='admin_resend_emails'||action==='admin_resend_host_email'){
@@ -1624,18 +1630,23 @@ ${detailRow('Fee',session.payment_method==='none'?'No payment required':session.
         const decision=reviewGuestPaymentVerification(booking,status);
         if(decision.action==='preserve_settlement'||decision.action==='already_settled')return Response.json({success:true,status:decision.status,booking,alreadySettled:true});
         if(decision.action==='settle'){
+          const rawPayments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
+          const selection=selectBookingPaymentRecords(rawPayments,booking,session);
+          if(selection.reason)return Response.json({error:'Payment ledger requires review before settlement.',reason:selection.reason},{status:409});
           const now=new Date().toISOString();
           let updated=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:'paid',booking_status:'confirmed',paid_at:now});
-          const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
-          if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10),provider:checkout?.provider||'sumup',provider_account_id:checkout?.merchant_account_id||'',provider_transaction_id:checkout?.transaction_id||checkout?.transactions?.[0]?.id||'',provider_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||'',provider_status:checkout?.status||'PAID',external_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||''});
+          let ledgerNeedsReview=false;
+          if(selection.records[0])try{await base44.asServiceRole.entities.PaymentRecord.update(selection.records[0].id,{payment_status:'paid',payment_date:now.slice(0,10),provider:checkout?.provider||'sumup',provider_account_id:checkout?.merchant_account_id||'',provider_transaction_id:checkout?.transaction_id||checkout?.transactions?.[0]?.id||'',provider_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||'',provider_status:checkout?.status||'PAID',external_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||''});}catch(error){ledgerNeedsReview=true;console.warn('Online booking settled; ledger requires review',error instanceof Error?error.message:'ledger unavailable')}
           const confirmation=await completeGuestPaymentConfirmation(updated,(record:any)=>sendConfirmations(base44,session,record));
-          return Response.json({success:true,status:'paid',booking:confirmation.booking,confirmationNeedsReview:confirmation.confirmationNeedsReview});
+          return Response.json({success:true,status:'paid',booking:confirmation.booking,confirmationNeedsReview:confirmation.confirmationNeedsReview,ledgerNeedsReview});
         }
         if(decision.action==='mark_failed'){
           const localStatus=status.toLowerCase();
           const updated=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:localStatus,booking_status:'pending_payment'});
-          const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
-          if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:localStatus,provider_status:status});
+          const rawPayments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
+          const selection=selectBookingPaymentRecords(rawPayments,booking,session);
+          if(selection.reason)return Response.json({error:'Payment ledger requires review.',reason:selection.reason},{status:409});
+          if(selection.records[0])await base44.asServiceRole.entities.PaymentRecord.update(selection.records[0].id,{payment_status:localStatus,provider_status:status});
           return Response.json({success:true,status:localStatus,booking:updated});
         }
         return Response.json({success:true,status:status.toLowerCase()});
