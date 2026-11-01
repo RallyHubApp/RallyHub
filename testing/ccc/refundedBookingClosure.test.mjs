@@ -1,0 +1,12 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {reviewRefundedBookingClosure as review} from '../../base44/functions/eventRegistration/refundedBookingClosure.mjs';
+const event={id:'e',tenant_id:'t',host_club_id:'c'};
+const registration={id:'r',event_id:'e',tenant_id:'t',club_id:'c',registration_status:'confirmed',payment_status:'refunded'};
+const payment={id:'p',purpose_type:'event',purpose_id:'r',tenant_id:'t',club_id:'c',payment_status:'refunded',amount:5.5,amount_refunded:5.5};
+const refund={id:'f',payment_record_id:'p',tenant_id:'t',club_id:'c',status:'succeeded',amount:5.5};
+const run=(override={})=>review({event,registration,payment,refunds:[refund],...override});
+test('fully reconciled refund permits closure',()=>assert.equal(run().allowed,true));
+test('partial refund cannot release confirmed booking',()=>assert.equal(run({payment:{...payment,payment_status:'partially_refunded'}}).allowed,false));
+test('unresolved provider refund blocks closure',()=>assert.ok(run({refunds:[{...refund,status:'needs_reconciliation'}]}).issues.includes('unresolved_refund')));
+test('mismatched refund amounts block closure',()=>assert.ok(run({refunds:[{...refund,amount:2}]}).issues.includes('refund_ledger_mismatch')));
+test('foreign club refund blocks closure',()=>assert.ok(run({refunds:[{...refund,club_id:'foreign'}]}).issues.includes('refund_scope')));
+test('repeat closure blocked by status',()=>assert.ok(run({registration:{...registration,registration_status:'cancelled'}}).issues.includes('not_confirmed')));
