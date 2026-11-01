@@ -155,3 +155,23 @@ test('active club admin grant authorises event admin even without platform role'
  h.db.ClubUserAccess.push({id:'club-admin',tenant_id:'t1',club_id:'c1',user_id:'admin',permission_bundle:'club_admin',status:'active'});
  const result=await h.call('admin_list');assert.equal(result.status,200);
 });
+test('application to SumUp checkout to verified confirmation, including safe retry',async()=>{
+ const h=harness(),payload=setupApply(h,10);h.db.EventRegistration.length=0;h.db.PaymentRecord.length=0;
+ const applied=await h.call('apply',payload);assert.equal(applied.status,200);
+ const registration=h.db.EventRegistration[0];assert.equal(registration.registration_status,'pending_approval');
+ const approved=await h.call('admin_approve',{registrationId:registration.id});assert.equal(approved.status,200);
+ assert.equal(h.db.PaymentRecord.length,1);assert.equal(registration.payment_checkout_id,'newCheckout');
+ const verified=await h.call('admin_verify',{registrationId:registration.id});assert.equal(verified.status,200);
+ assert.equal(registration.registration_status,'confirmed');assert.equal(h.db.PaymentRecord[0].payment_status,'paid');
+ const repeated=await h.call('admin_verify',{registrationId:registration.id});assert.equal(repeated.status,200);assert.equal(h.db.PaymentRecord.length,1);
+});
+test('payment retry and delivery recovery cannot silently duplicate charges or notices',async()=>{
+ const h=harness();h.db.EventRegistration[0].registration_status='pending_approval';h.db.EventRegistration[0].payment_status='pending';
+ const retry=await h.call('admin_approve',{registrationId:'r1'});assert.equal(retry.status,409);assert.equal(h.db.PaymentRecord.length,1);
+ const notices=await h.call('admin_notice_recovery');assert.equal(notices.status,200);assert.equal(notices.data.eligible,0);
+ const checkouts=await h.call('admin_checkout_recovery');assert.equal(checkouts.status,200);assert.equal(checkouts.data.verifyReady,0);assert.equal(h.calls.notice,0);
+});
+test('admin delivery recovery denies unrelated club and never sends mail',async()=>{
+ const h=harness();const review=await h.call('admin_notice_recovery');assert.equal(review.status,200);assert.equal(review.data.eligible,1);assert.equal(h.calls.notice,0);
+ const denied=harness({user:{id:'other',role:'admin',active_tenant_id:'t1',active_club_id:'other'}});assert.equal((await denied.call('admin_notice_recovery')).status,403);
+});
