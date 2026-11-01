@@ -1307,10 +1307,15 @@ Deno.serve(async(req)=>{
     if(['admin_templates','admin_list','admin_create','admin_close','admin_archive_session','admin_restore_session','admin_delete_session','admin_delete_booking','admin_send_invite','admin_create_magic_invite','admin_mark_cash_paid','admin_verify_payment','admin_refund_payment','admin_resend_emails','admin_resend_host_email'].includes(action)){
       const user=await base44.auth.me();
       if(!user)return Response.json({error:'Unauthorized'},{status:401});
-      if(user.role!=='admin')return Response.json({error:'Admin access required.'},{status:403});
       const tenantId=clean(user.active_tenant_id,100);
       const clubId=clean(user.active_club_id,100);
       if(!tenantId||!clubId)return Response.json({error:'Choose an active RallyHub club first.'},{status:400});
+      if(user.role!=='admin'){
+        if(user.approval_status!=='approved')return Response.json({error:'Club administrator approval required.'},{status:403});
+        const grants=await base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:tenantId,club_id:clubId,user_id:user.id,status:'active',permission_bundle:'club_admin'},'-updated_date',20);
+        const now=Date.now();
+        if(!(grants||[]).some((g:any)=>(!g.starts_at||Date.parse(g.starts_at)<=now)&&(!g.ends_at||Date.parse(g.ends_at)>=now)))return Response.json({error:'Club administrator access required.'},{status:403});
+      }
       const sumupGateway=await gatewayAccount(base44,tenantId,clubId,'sumup');
       let sumupConfigured=providerConfigured('sumup',sumupGateway?.account||null);
       let sumupMerchantName='';
