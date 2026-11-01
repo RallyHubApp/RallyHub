@@ -13,6 +13,7 @@ import {requireEventAdminGrant} from '../../base44/functions/eventRegistration/a
 import {occupied,duplicate,consentEvidence,canConfirm} from '../../base44/functions/eventRegistration/rules.js';
 import {eventRefundProviderOutcome,confirmAndNotify} from '../../base44/functions/eventRegistration/confirmationDelivery.mjs';
 import {reviewEventNoticeRecovery} from '../../base44/functions/eventRegistration/noticeRecovery.mjs';
+import {reviewEventRecoveryDashboard} from '../../base44/functions/eventRegistration/recoveryDashboard.mjs';
 import {reviewCheckoutRecovery} from '../../base44/functions/eventRegistration/checkoutRecovery.mjs';
 import {reviewEventOperations} from '../../base44/functions/eventRegistration/operationalTriage.mjs';
 import {planEventOperations} from '../../base44/functions/eventRegistration/operationsActionPlan.mjs';
@@ -46,7 +47,7 @@ function harness({user={id:'admin',role:'admin',active_tenant_id:'t1',active_clu
  }]));
  const sdk={auth:{me:async()=>user},asServiceRole:{entities}};
  let handler;
- const context={Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,readBookingRegistrations,readAdminEventPayments,readPaymentRefundHistory,refundRemaining,selectRefundableEventPayment,selectCheckoutPayment,readEventAdminPage,countActiveEventRegistrations,requireEventAdminGrant,eventRefundProviderOutcome,confirmAndNotify,reviewEventNoticeRecovery,reviewCheckoutRecovery,reviewEventOperations,planEventOperations,inspectWaitlistReadiness,postReleaseWaitlist,reviewWaitlistPromotion,reviewEventCancellation,reviewEventHoldExpiry,releaseEventPlace,reviewRefundedBookingClosure,occupied,duplicate,consentEvidence,canConfirm,createCheckout:async()=>({checkoutId:'newCheckout',checkoutUrl:'https://example.invalid'}),retrievePayment:async()=>({normalizedStatus:'paid',transactionId:'tx1'}),refundPayment:async()=>{calls.refund++;if(refundResult instanceof Error)throw refundResult;return refundResult},providerConfigured:()=>true,deliverEventNotice:async()=>{calls.notice++},eventNoticeRecipients:()=>({}),eventNoticeBody:()=>'',EVENT_NOTICE_TYPES:[],renderBasicBrandedEmail:()=>'',Response,Date,console};
+ const context={Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,readBookingRegistrations,readAdminEventPayments,readPaymentRefundHistory,refundRemaining,selectRefundableEventPayment,selectCheckoutPayment,readEventAdminPage,countActiveEventRegistrations,requireEventAdminGrant,eventRefundProviderOutcome,confirmAndNotify,reviewEventNoticeRecovery,reviewEventRecoveryDashboard,reviewCheckoutRecovery,reviewEventOperations,planEventOperations,inspectWaitlistReadiness,postReleaseWaitlist,reviewWaitlistPromotion,reviewEventCancellation,reviewEventHoldExpiry,releaseEventPlace,reviewRefundedBookingClosure,occupied,duplicate,consentEvidence,canConfirm,createCheckout:async()=>({checkoutId:'newCheckout',checkoutUrl:'https://example.invalid'}),retrievePayment:async()=>({normalizedStatus:'paid',transactionId:'tx1'}),refundPayment:async()=>{calls.refund++;if(refundResult instanceof Error)throw refundResult;return refundResult},providerConfigured:()=>true,deliverEventNotice:async()=>{calls.notice++},eventNoticeRecipients:()=>({}),eventNoticeBody:()=>'',EVENT_NOTICE_TYPES:[],renderBasicBrandedEmail:()=>'',Response,Date,console};
  vm.runInNewContext(js,context);
  return {db,calls,call:async(action,fields={})=>{const response=await handler({method:'POST',json:async()=>({action,eventId:'event',...fields})});return {status:response.status,data:await response.json()}}};
 }
@@ -197,4 +198,11 @@ test('capacity conflict prevents unsafe waitlist offer after refunded closure',a
  h.db.PaymentRefund.push({id:'refund1',tenant_id:'t1',club_id:'c1',payment_record_id:'p1',purpose_type:'event',purpose_id:'r1',amount:10,status:'succeeded'});
  h.db.EventRegistration.push({id:'wait1',event_id:'event',tenant_id:'t1',club_id:'c1',registration_status:'waitlisted',payment_status:'pending'});
  const closed=await h.call('admin_close_refunded_booking',{registrationId:'r1',confirmClosure:true});assert.equal(closed.status,200);assert.equal(closed.data.capacityNeedsReview,true);assert.equal(closed.data.waitlistFollowup.nextRegistrationId,null);
+});
+test('admin consolidated recovery dashboard uses scoped ledger without sending',async()=>{
+ const h=harness();const response=await h.call('admin_recovery_dashboard');assert.equal(response.status,200);
+ assert.equal(response.data.previewOnly,true);assert.equal(response.data.summary.confirmationDeliveryAudits,1);
+ assert.equal(response.data.summary.checkoutVerification,0);assert.equal(h.calls.notice,0);
+ const denied=harness({user:{id:'other',role:'admin',active_tenant_id:'t1',active_club_id:'other'}});
+ assert.equal((await denied.call('admin_recovery_dashboard')).status,403);
 });
