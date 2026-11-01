@@ -1,0 +1,7 @@
+import {strict as assert} from 'node:assert';
+import {reviewCashSettlement as cash,selectBookingPaymentRecords as select} from './settlementWorkflow.ts';
+Deno.test('cash booking can be settled once',()=>{assert.equal(cash({payment_method:'cash',payment_status:'pending',booking_status:'cash_due'}).allowed,true);assert.equal(cash({payment_method:'cash',payment_status:'paid',booking_status:'confirmed'}).alreadySettled,true)});
+Deno.test('cash settlement refuses refund and unapproved bookings',()=>{assert.equal(cash({payment_method:'cash',payment_status:'refunded'}).allowed,false);assert.equal(cash({payment_method:'cash',payment_status:'pending',booking_status:'pending_approval'}).allowed,false)});
+Deno.test('payment selection rejects cross tenant records',()=>{const booking={id:'b'},session={tenant_id:'t',club_id:'c'};assert.equal(select([{purpose_type:'booking',purpose_id:'b',tenant_id:'other',club_id:'c'}],booking,session).reason,'cross_scope_payment_record')});
+Deno.test('payment selection rejects ambiguous duplicate ledger',()=>{const b={id:'b'},s={tenant_id:'t',club_id:'c'},p={purpose_type:'booking',purpose_id:'b',tenant_id:'t',club_id:'c'};assert.equal(select([p,p],b,s).reason,'multiple_payment_records')});
+Deno.test('single scoped ledger record is accepted',()=>{const b={id:'b'},s={tenant_id:'t',club_id:'c'},p={purpose_type:'booking',purpose_id:'b',tenant_id:'t',club_id:'c'};assert.equal(select([p],b,s).records.length,1)});
