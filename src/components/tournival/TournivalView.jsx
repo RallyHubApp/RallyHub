@@ -179,8 +179,9 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
   const [recoveryPreview, setRecoveryPreview] = useState(null);
   const [recoveryEvidence, setRecoveryEvidence] = useState(null);
   const [recoveryBusy, setRecoveryBusy] = useState(false);
+  const [recoveryConfirmed, setRecoveryConfirmed] = useState(false);
   const integrityRequest = useRef(0);
-  useEffect(() => { integrityRequest.current += 1; setOrganiserHealth(null); setRecoveryPreview(null); setRecoveryEvidence(null); setOrganiserHealthBusy(false); setRecoveryBusy(false); }, [tournament.id]);
+  useEffect(() => { integrityRequest.current += 1; setOrganiserHealth(null); setRecoveryPreview(null); setRecoveryEvidence(null); setRecoveryConfirmed(false); setOrganiserHealthBusy(false); setRecoveryBusy(false); }, [tournament.id]);
   const reviewOrganiserHealth = async () => {
     if (organiserHealthBusy || !isAdmin) return;
     const requestId = ++integrityRequest.current;
@@ -188,6 +189,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
     setOrganiserHealth(null);
     setRecoveryPreview(null);
     setRecoveryEvidence(null);
+    setRecoveryConfirmed(false);
     try {
       const response = await base44.functions.invoke('tournivalOrganiserHealth', {
         action:'review', tenantId:tournament.tenant_id, clubId:tournament.host_club_id, tournamentId:tournament.id
@@ -209,6 +211,26 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
       if (!response?.data?.success) throw Error(response?.data?.error || 'Preview unavailable');
       if (integrityRequest.current === requestId) { setRecoveryPreview(response.data.preview); setRecoveryEvidence(response.data.evidence); }
     } catch (error) { if (integrityRequest.current === requestId) toast.error(error?.message || 'Preview unavailable'); }
+    finally { if (integrityRequest.current === requestId) setRecoveryBusy(false); }
+  };
+
+  const commitRecovery = async () => {
+    if (!isAdmin || recoveryBusy || !recoveryConfirmed || !recoveryEvidence?.valid) return;
+    const requestId = ++integrityRequest.current;
+    setRecoveryBusy(true);
+    try {
+      const response = await base44.functions.invoke('tournivalOrganiserHealth', {
+        action:'commit_recovery', tenantId:tournament.tenant_id, clubId:tournament.host_club_id, tournamentId:tournament.id,
+        expectedSessionRevision:recoveryEvidence.toRevision, expectedMirrorRevision:recoveryEvidence.fromRevision,
+        confirmRecovery:true
+      });
+      if (!response?.data?.success) throw Error(response?.data?.reason || response?.data?.error || 'Recovery not committed');
+      if (integrityRequest.current === requestId) {
+        setRecoveryPreview(null); setRecoveryEvidence(null); setRecoveryConfirmed(false); setOrganiserHealth(null);
+        toast.success('Tournament mirror reconciled; review integrity again');
+        queryClient.invalidateQueries({queryKey:['tournament',tournament.id]});
+      }
+    } catch (error) { if (integrityRequest.current === requestId) toast.error(error?.message || 'Recovery failed'); }
     finally { if (integrityRequest.current === requestId) setRecoveryBusy(false); }
   };
 
@@ -460,6 +482,8 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
           <strong>{recoveryPreview.available ? 'Manual recovery candidate' : 'Recovery unavailable'}</strong>
           {recoveryPreview.available && <p>Session revision {recoveryPreview.toRevision}; mirror revision {recoveryPreview.fromRevision}. No records were changed.</p>}
           {recoveryEvidence?.valid && <p className="mt-1 text-xs">Revision gap: {recoveryEvidence.revisionGap}; matches: {recoveryEvidence.matchCount}; results: {recoveryEvidence.resultCount}. Manual approval is required before any repair.</p>}
+          {recoveryEvidence?.valid && <label className="flex items-center gap-2 mt-2 text-xs"><input type="checkbox" checked={recoveryConfirmed} onChange={e=>setRecoveryConfirmed(e.target.checked)} />I authorise restoring the tournament display from the authoritative session. No scores will be changed.</label>}
+          {recoveryEvidence?.valid && <Button size="sm" variant="outline" disabled={!recoveryConfirmed || recoveryBusy} onClick={commitRecovery}>{recoveryBusy ? 'Reconciling…' : 'Apply approved recovery'}</Button>}
         </div>}
         {organiserHealth && <div role="status" className={`text-sm rounded-lg p-2 ${organiserHealth.healthy ? 'bg-green-500/10' : 'bg-amber-500/10'}`}>
           <strong>{organiserHealth.healthy ? 'Session and results are consistent' : 'Organiser review required'}</strong>
