@@ -30,6 +30,7 @@ function whatsappNumber(value){
 
 export default function GuestBookings(){
   const { user }=useAuth();
+  const isClubAdmin=user?.role==='admin'||(user?.approval_status==='approved'&&user?.active_club_role==='club_admin'&&!!user?.active_club_id&&!!user?.active_tenant_id);
   const qc=useQueryClient();
   const [templateKey,setTemplateKey]=useState('');
   const [sessionDate,setSessionDate]=useState('');
@@ -72,7 +73,7 @@ export default function GuestBookings(){
       if(res.data?.error)throw new Error(res.data.error);
       return res.data;
     },
-    enabled:user?.role==='admin',
+    enabled:isClubAdmin,
   });
 
   const {data:listData={sessions:[],sumupConfigured:false},isLoading:listLoading,isError:listError,refetch:retryList}=useQuery({
@@ -87,7 +88,7 @@ export default function GuestBookings(){
       if(res.data?.error)throw new Error(res.data.error);
       return res.data;
     },
-    enabled:user?.role==='admin',
+    enabled:isClubAdmin,
   });
 
   const {data:requestData={requests:[]},isLoading:requestsLoading,isError:requestsError,refetch:retryRequests}=useQuery({
@@ -102,7 +103,7 @@ export default function GuestBookings(){
       if(res.data?.error)throw new Error(res.data.error);
       return res.data;
     },
-    enabled:user?.role==='admin',
+    enabled:isClubAdmin,
   });
 
   const selected=useMemo(()=>templateData.templates?.find(t=>t.key===templateKey)||null,[templateData,templateKey]);
@@ -608,7 +609,7 @@ export default function GuestBookings(){
   };
 
   const serviceStates = /** @type {[string,boolean,unknown,()=>Promise<any>][]} */ ([["Session settings",templatesLoading,templatesError,retryTemplates],["Session list",listLoading,listError,retryList],["Guest requests",requestsLoading,requestsError,retryRequests]]);
-  if(user?.role!=='admin')return <div className="min-h-[50vh] grid place-items-center text-center"><div><ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground/40"/><p className="mt-3 font-semibold">Admin access required</p></div></div>;
+  if(!isClubAdmin)return <div className="min-h-[50vh] grid place-items-center text-center"><div><ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground/40"/><p className="mt-3 font-semibold">Admin access required</p></div></div>;
   if(templatesLoading&&listLoading&&requestsLoading)return <div className="mx-auto max-w-3xl p-6 space-y-3" role="status"><h1 className="text-xl font-bold">Session Bookings</h1><p className="text-sm text-muted-foreground">Some booking services are still loading or unavailable. You can retry them individually.</p>{serviceStates.map(([name,loading,failed,retry])=><div key={name} className="flex items-center justify-between gap-3 rounded-lg border p-3"><span>{name}: {failed?'Unavailable':loading?'Loading…':'Ready'}</span>{failed&&<Button type="button" variant="outline" size="sm" onClick={()=>retry()}>Retry</Button>}</div>)}</div>;
 
   return <div className="mx-auto max-w-6xl space-y-6">
