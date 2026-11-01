@@ -17,6 +17,7 @@ import {reviewWaitlistPromotion} from './waitlistPromotion.mjs';
 import {reviewEventCancellation} from './cancellationPolicy.mjs';
 import {reviewEventHoldExpiry} from './holdExpiryPolicy.mjs';
 import {releaseEventPlace} from './capacityRelease.mjs';
+import {reviewRefundedBookingClosure} from './refundedBookingClosure.mjs';
 const clean=(v:any,n=200)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,n);
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
 Deno.serve(async(req)=>{
@@ -27,7 +28,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_promote_waitlist','admin_cancel_unpaid','admin_expire_hold'];
+  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_promote_waitlist','admin_cancel_unpaid','admin_expire_hold','admin_close_refunded_booking'];
   const isAdminAction=adminActions.includes(action);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)))return fail('Bookings are not open for this event',404);
   if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||!t.tenant_id||!t.host_club_id||!await requireEventAdminGrant(base44,user,t))return fail('Active tenant or club administrator grant required',403);}
@@ -68,6 +69,23 @@ Deno.serve(async(req)=>{
   }
   stage='roster_verification';
   const rows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
+  if(action==='admin_close_refunded_booking'){
+   if(b.confirmClosure!==true)return fail('Explicit refunded booking closure confirmation required');
+   const registration=rows.find((r:any)=>r.id===clean(b.registrationId,100));
+   if(!registration)return fail('Registration not found',404);
+   const payments=await readAdminEventPayments(base44.asServiceRole.entities.PaymentRecord,{tenantId:t.tenant_id,clubId:t.host_club_id,registrationIds:[registration.id]});
+   if(payments.length!==1)return fail('Payment ledger requires manual reconciliation',409);
+   const payment=payments[0];
+   const refunds=await readPaymentRefundHistory(base44.asServiceRole.entities.PaymentRefund,{paymentId:payment.id,tenantId:t.tenant_id,clubId:t.host_club_id});
+   const review=reviewRefundedBookingClosure({registration,payment,refunds,event:t});
+   if(!review.allowed)return Response.json({success:false,error:'Refund reconciliation required before closing booking',issues:review.issues},{status:409});
+   const changed=await base44.asServiceRole.entities.EventRegistration.updateMany({id:registration.id,event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,registration_status:'confirmed',payment_status:'refunded'},{$set:{registration_status:'cancelled',cancelled_at:new Date().toISOString(),cancellation_reason:clean(b.reason,500)||'Fully refunded booking closed'}});
+   if(changed?.updated!==1)return fail('Registration changed during closure; refresh and review',409);
+   const release=await releaseEventPlace(base44.asServiceRole.entities.Tournament,{eventId:id,tenantId:t.tenant_id,expectedOccupied:occupied(rows)});
+   let noticeNeedsReview=false;
+   try{await deliverEventNotice(base44,t,registration,'booking_cancelled')}catch(error){noticeNeedsReview=true;console.error('Refunded booking closed; notice needs review',error)}
+   return Response.json({success:true,status:'cancelled',capacityNeedsReview:release.requiresReconciliation,noticeNeedsReview});
+  }
   if(action==='admin_expire_hold'){
    if(b.confirmExpiry!==true)return fail('Explicit hold expiry confirmation required');
    const registration=rows.find((r:any)=>r.id===clean(b.registrationId,100));
