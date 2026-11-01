@@ -10,6 +10,6 @@ test('host roster pagination discards responses from previously selected session
 });
 test('host roster remains scoped and does not expose contact or payment fields',()=>{
  assert.match(source,/action:'host_roster_page'/);
- assert.match(source,/id:selected,cursor:nextCursor/);
+ assert.match(source,/id:selected,cursor:requestedCursor/);
  assert.doesNotMatch(source,/r\.email|r\.phone|r\.medical_note|r\.payment_method/);
 });
