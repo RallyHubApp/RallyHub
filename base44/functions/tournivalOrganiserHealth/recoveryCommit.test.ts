@@ -1,0 +1,12 @@
+import {strict as assert} from 'node:assert';
+import {commitTournivalMirrorRecovery as commit} from './recoveryCommit.ts';
+const state={revision:4,matches:[{id:'m'}],results:[],status:'In Progress'};
+const tournament={id:'e',tenant_id:'t',host_club_id:'c',format:'tournival',tournival_state:JSON.stringify({...state,revision:3})};
+const sessions=[{id:'s',tenant_id:'t',club_id:'c',tournament_id:'e',state_revision:4,state_json:JSON.stringify(state)}];
+const args=(extra:any={})=>({tournament,sessions,expectedSessionRevision:4,expectedMirrorRevision:3,confirm:true,updateMirror:async()=>({updated:1}),...extra});
+Deno.test('approved candidate repairs only tournament mirror',async()=>{let query:any,patch:any;const r=await commit(args({updateMirror:async(q:any,p:any)=>{query=q;patch=p;return {updated:1}}}));assert.equal(r.committed,true);assert.equal(query.tournival_state,tournament.tournival_state);assert.equal(patch.$set.tournival_state,sessions[0].state_json);});
+Deno.test('unconfirmed recovery cannot write',async()=>assert.equal((await commit(args({confirm:false}))).committed,false));
+Deno.test('stale preview cannot write',async()=>assert.equal((await commit(args({expectedMirrorRevision:2}))).reason,'stale_preview'));
+Deno.test('concurrent update cannot overwrite',async()=>assert.equal((await commit(args({updateMirror:async()=>({updated:0})}))).reason,'concurrent_change'));
+Deno.test('cross club session cannot recover',async()=>assert.equal((await commit(args({sessions:[{...sessions[0],club_id:'other'}]}))).reason,'recovery_not_safe'));
+Deno.test('mirror ahead cannot recover',async()=>assert.equal((await commit(args({tournament:{...tournament,tournival_state:JSON.stringify({...state,revision:5})}}))).reason,'recovery_not_safe'));
