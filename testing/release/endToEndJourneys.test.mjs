@@ -32,7 +32,7 @@ test('beginner guest denied restricted venue; experienced guest remains eligible
 test('membership -> scoped ledger -> settlement detects duplicate provider transactions and scope drift',()=>{
  const payments=[{id:'p1',tenant_id:tenantId,club_id:clubId,membership_id:'m',purpose_type:'membership',payment_status:'paid',provider:'sumup',provider_transaction_id:'tx',amount:25},{id:'p2',tenant_id:tenantId,club_id:clubId,membership_id:'m',purpose_type:'membership',payment_status:'paid',provider:'sumup',provider_transaction_id:'tx',amount:25}];
  const ledger=paymentLedger({tenantId,clubId,payments});assert.equal(paymentReconciliationSummary(ledger).duplicates,1);
- const integrity=reviewFinanceSettlement({membership:{id:'m',tenant_id:tenantId,club_id:clubId,payment_status:'paid'},payments});assert.ok(integrity.issues.includes('multiple_settlements'));
+ const integrity=reviewFinanceSettlement({membership:{id:'m',tenant_id:tenantId,club_id:clubId,payment_status:'paid'},payments});assert.ok(integrity.issues.includes('duplicate_provider_settlement'));
 });
 test('communication delivery requires approved template, valid consent and provider receipt',()=>{
  const message={tenant_id:tenantId,club_id:clubId,person_id:'person',purpose:'marketing',brand_scope:'tenant',approved_template_id:'template',delivery_status:'delivered'};
