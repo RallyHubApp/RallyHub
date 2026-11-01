@@ -1,0 +1,12 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {reviewCheckoutRecovery as review} from '../../base44/functions/eventRegistration/checkoutRecovery.mjs';
+const event={id:'e',tenant_id:'t',host_club_id:'c'};
+const row={id:'r',event_id:'e',tenant_id:'t',club_id:'c',registration_status:'approved_payment_hold',payment_status:'pending',payment_checkout_id:'checkout'};
+const payment={id:'p',tenant_id:'t',club_id:'c',purpose_type:'event',purpose_id:'r',provider_checkout_id:'checkout',payment_status:'pending'};
+const run=(override={})=>review({event,rows:[row],payments:[payment],...override});
+test('pending checkout offers provider verification only',()=>{const r=run();assert.equal(r.verifyReady,1);assert.equal(r.tasks[0].action,'admin_verify')});
+test('settled payment cannot be verified again',()=>assert.equal(run({payments:[{...payment,payment_status:'paid'}]}).verifyReady,0));
+test('duplicate payment records block verification',()=>assert.equal(run({payments:[payment,{...payment,id:'p2'}]}).tasks[0].issue,'ledger_conflict'));
+test('foreign payment fails closed',()=>assert.throws(()=>run({payments:[{...payment,club_id:'foreign'}]}),/scoped payment/));
+test('foreign registration fails closed',()=>assert.throws(()=>run({rows:[{...row,tenant_id:'foreign'}]}),/scoped registration/));
+test('confirmed booking never triggers verification',()=>assert.equal(run({rows:[{...row,registration_status:'confirmed'}]}).verifyReady,0));
+test('unknown provider outcome requires manual review',()=>assert.equal(run({payments:[{...payment,payment_status:'unknown'}]}).tasks[0].issue,'ledger_conflict'));
