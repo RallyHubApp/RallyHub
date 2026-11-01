@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {reviewFinanceSettlement} from '../../src/lib/ccc/financeSettlementIntegrity.mjs';
+import {reviewCommunicationDelivery} from '../../src/lib/ccc/communicationsDeliveryIntegrity.mjs';
+const membership={id:'m',tenant_id:'t',club_id:'c',payment_status:'paid'};
+const payment=(id,tx)=>({id,membership_id:'m',tenant_id:'t',club_id:'c',payment_status:'paid',provider:'sumup',provider_transaction_id:tx});
+test('separate paid instalments do not count as duplicate provider settlements',()=>assert.equal(reviewFinanceSettlement({membership,payments:[payment('1','tx1'),payment('2','tx2')]}).healthy,true));
+test('repeated provider transaction across records is flagged',()=>assert.ok(reviewFinanceSettlement({membership,payments:[payment('1','tx1'),payment('2','tx1')]}).issues.includes('duplicate_provider_settlement')));
+const message={tenant_id:'t',club_id:'c',person_id:'p',channel:'email',purpose:'operational',approved_template_id:'a',brand_scope:'tenant',delivery_status:'pending'};
+test('cross-tenant or different-channel suppression cannot block recipient',()=>{for(const suppression of [{person_id:'p',tenant_id:'other',club_id:'c',active:true,channel:'email'},{person_id:'p',tenant_id:'t',club_id:'c',active:true,channel:'sms'}])assert.equal(reviewCommunicationDelivery({message,suppression}).healthy,true)});
+test('matching active recipient suppression blocks communication',()=>assert.ok(reviewCommunicationDelivery({message,suppression:{person_id:'p',tenant_id:'t',club_id:'c',channel:'email',active:true}}).issues.includes('recipient_suppressed')));
