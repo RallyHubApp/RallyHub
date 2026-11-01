@@ -5,6 +5,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { createCheckout, retrievePayment, providerConfigured, type ProviderAccount } from './payments.ts';
 import {assessMemberAccountLink} from './accountLinkGuard.ts';
 import {assessMembershipIdentityHealth} from './identityHealth.ts';
+import {reviewMembershipActivationReconciliation} from './activationReconciliation.ts';
 
 const clean=(v:any,max=500)=>String(v??'').trim().slice(0,max);
 const lower=(v:any)=>clean(v,240).toLowerCase();
@@ -677,6 +678,27 @@ Deno.serve(async(req)=>{
         if(relationship) await base44.asServiceRole.entities.ClubRelationship.update(relationship.id,{status:'active',payment_status:'paid',payment_date:now.slice(0,10)});
       }
       return Response.json({success:true,status:result.normalizedStatus});
+    }
+
+    if(action==='admin_reconcile_paid_membership'){
+      if(body.confirmReconciliation!==true)return Response.json({error:'Explicit finance reconciliation confirmation required'},{status:400});
+      const personId=clean(body.personId,180);
+      const membership=await first(base44,'ClubMembership',{tenant_id:tenantId,club_id:clubId,person_id:personId});
+      if(!membership)return Response.json({error:'Membership not found in active club'},{status:404});
+      let payments;
+      try{payments=(await readScopedMembershipLedger(base44.asServiceRole.entities.PaymentRecord,{
+        tenant_id:tenantId,club_id:clubId,person_id:personId,club_membership_id:membership.id,purpose_type:'membership'
+      })).rows;}catch{return Response.json({error:'Complete payment ledger unavailable'},{status:503})}
+      const review=reviewMembershipActivationReconciliation({membership,payments,tenantId,clubId,personId});
+      if(review.alreadyActive)return Response.json({success:true,alreadyActive:true});
+      if(!review.allowed)return Response.json({error:'Activation requires finance review',issues:review.issues},{status:409});
+      const now=new Date().toISOString(),date=review.payment.payment_date||now.slice(0,10);
+      const updated=await base44.asServiceRole.entities.ClubMembership.updateMany({id:membership.id,tenant_id:tenantId,club_id:clubId,payment_status:membership.payment_status,membership_status:membership.membership_status},{$set:{payment_status:'paid',membership_status:'paid_active',payment_date:date}});
+      if(updated?.updated!==1)return Response.json({error:'Membership changed during reconciliation. Refresh and review.'},{status:409});
+      let relationshipNeedsReview=false;
+      try{const relationship=await first(base44,'ClubRelationship',{tenant_id:tenantId,club_id:clubId,person_id:personId});if(relationship)await base44.asServiceRole.entities.ClubRelationship.update(relationship.id,{status:'active',payment_status:'paid',payment_date:date})}catch(error){relationshipNeedsReview=true;console.error('Membership active but relationship sync requires review',error)}
+      try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:tenantId,club_id:clubId,user_id:user.id,action:'membership_paid_ledger_reconciled',entity_type:'ClubMembership',entity_id:membership.id,scope_type:'Person',scope_id:personId,after_state:JSON.stringify({payment_record_id:review.payment.id,relationshipNeedsReview}),reason:clean(body.reason,500)||'Reconciled settled membership ledger'})}catch(error){console.error('Membership reconciliation audit needs review',error)}
+      return Response.json({success:true,activated:true,relationshipNeedsReview});
     }
 
     if(action==='admin_account_candidate'){
