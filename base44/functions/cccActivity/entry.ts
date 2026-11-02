@@ -301,7 +301,11 @@ Deno.serve(async req=>{
   }
   if(body.action==='operations_summary'){
    const result=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});
-   return Response.json({success:true,...summariseClubOperations(result.activities,{complete:result.complete})});
+   const [requests,bookings]=await Promise.all([sdk.asServiceRole.entities.GuestBookingRequest.filter({tenant_id,club_id},'-created_date',200),sdk.asServiceRole.entities.GuestSessionBooking.filter({tenant_id,club_id},'-created_date',200)]);
+   if(!Array.isArray(requests)||!Array.isArray(bookings))return fail('Guest operations read unavailable',503);
+   const count=(rows:any[],key:string)=>rows.reduce((acc:any,r:any)=>{const k=String(r[key]||'unspecified');acc[k]=(acc[k]||0)+1;return acc},{});
+   const guestOperations={requests:{loaded:requests.length,byStatus:count(requests,'status'),complete:requests.length<200},bookings:{loaded:bookings.length,byStatus:count(bookings,'booking_status'),byPaymentStatus:count(bookings,'payment_status'),complete:bookings.length<200},recentRequests:requests.slice(0,8).map((r:any)=>({id:r.id,name:s(r.full_name,100),status:r.status,submittedAt:r.submitted_at||r.created_date||''})),recentBookings:bookings.slice(0,8).map((r:any)=>({id:r.id,name:s(r.full_name,100),status:r.booking_status,paymentStatus:r.payment_status,registeredAt:r.registered_at||r.created_date||''})),readOnly:true};
+   return Response.json({success:true,...summariseClubOperations(result.activities,{complete:result.complete}),guestOperations});
   }
   if(body.action==='list'){
    const result=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});
