@@ -165,7 +165,8 @@ Deno.serve(async req=>{try{
       const pending=(rows||[]).filter((v:any)=>v.delivery_channel==='host'&&v.status==='pending'&&Date.parse(v.expires_at)>Date.now());
       const participants=await base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id});
       const devices:any[]=[];
-      for(const participant of participants||[]){const linked=await memberForParticipant(base44,session,participant);if(!linked)continue;const rows=await base44.asServiceRole.entities.KotcMemberDevice.filter({membership_id:linked.membership.id,status:'active'});for(const d of rows||[])devices.push({id:d.id,participant_id:participant.id,display_name:participant.display_name,approved_at:d.approved_at,verification_method:d.verification_method});}
+      // Pending approvals are the priority. Do not perform a player/person/membership/device lookup for every participant on each refresh.
+      // Existing trusted devices are managed separately via the member_devices action.
       return Response.json({success:true,devices,requests:pending.map((v:any)=>({id:v.id,participant_id:v.participant_id,display_name:(participants||[]).find((p:any)=>p.id===v.participant_id)?.display_name||'Player',destination:v.destination_hint,requested_at:v.requested_at}))});
     }
     if(action==='member_host_approve'||action==='member_host_revoke'){
