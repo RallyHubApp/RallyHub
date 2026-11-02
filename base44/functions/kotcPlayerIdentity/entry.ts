@@ -103,7 +103,8 @@ async function handleMemberAction(base44:any,user:any,action:string,body:any,ses
    const clientId=clean(body.clientId,180);if(!clientId||!rawToken.startsWith('kpd_'))return Response.json({error:'Device credential required.'},{status:400});
    const recent=await base44.asServiceRole.entities.KotcMemberVerification.filter({membership_id:linked.membership.id},'-requested_at',20);
    if((recent||[]).some((v:any)=>Date.now()-Date.parse(v.requested_at)<60000))return Response.json({error:'Wait one minute before another request.'},{status:429});
-   const now=new Date().toISOString();await base44.asServiceRole.entities.KotcMemberVerification.create({tenant_id:session.tenant_id,club_id:session.club_id,membership_id:linked.membership.id,participant_id:participant.id,session_id:session.id,client_id:clientId,device_token_hash:await sha256(rawToken),code_hash:await sha256(randomHex(16)),delivery_channel:'host',destination_hint:'Host identity check',status:'pending',attempts:0,requested_at:now,expires_at:new Date(Date.now()+HOST_APPROVAL_MS).toISOString()});
+   const deviceHash=await sha256(rawToken);const existing=(recent||[]).find((v:any)=>v.delivery_channel==='host'&&v.session_id===session.id&&v.participant_id===participant.id&&v.device_token_hash===deviceHash&&v.status==='pending'&&Date.parse(v.expires_at)>Date.now());if(existing)return Response.json({success:true,status:'pending',hostApproval:true,alreadyPending:true});
+   const now=new Date().toISOString();await base44.asServiceRole.entities.KotcMemberVerification.create({tenant_id:session.tenant_id,club_id:session.club_id,membership_id:linked.membership.id,participant_id:participant.id,session_id:session.id,client_id:clientId,device_token_hash:deviceHash,code_hash:await sha256(randomHex(16)),delivery_channel:'host',destination_hint:'Host identity check',status:'pending',attempts:0,requested_at:now,expires_at:new Date(Date.now()+HOST_APPROVAL_MS).toISOString()});
    return Response.json({success:true,status:'pending',hostApproval:true});
  }
  if(action==='member_request'){
@@ -162,12 +163,12 @@ Deno.serve(async req=>{try{
     }
     if(action==='member_host_list'){
       const rows=await base44.asServiceRole.entities.KotcMemberVerification.filter({session_id:session.id},'-requested_at',100);
-      const pending=(rows||[]).filter((v:any)=>v.delivery_channel==='host'&&v.status==='pending'&&Date.parse(v.expires_at)>Date.now());
+      const pendingRaw=(rows||[]).filter((v:any)=>v.delivery_channel==='host'&&v.status==='pending'&&Date.parse(v.expires_at)>Date.now());const seenDevices=new Set<string>();const pending=pendingRaw.filter((v:any)=>{const key=`${v.participant_id}:${v.device_token_hash}`;if(seenDevices.has(key))return false;seenDevices.add(key);return true;});const approved=(rows||[]).filter((v:any)=>v.delivery_channel==='host'&&v.status==='verified').slice(0,10);
       const participants=await base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id});
       const devices:any[]=[];
       // Pending approvals are the priority. Do not perform a player/person/membership/device lookup for every participant on each refresh.
       // Existing trusted devices are managed separately via the member_devices action.
-      return Response.json({success:true,devices,requests:pending.map((v:any)=>({id:v.id,participant_id:v.participant_id,display_name:(participants||[]).find((p:any)=>p.id===v.participant_id)?.display_name||'Player',destination:v.destination_hint,requested_at:v.requested_at}))});
+      return Response.json({success:true,devices,requests:pending.map((v:any)=>({id:v.id,participant_id:v.participant_id,display_name:(participants||[]).find((p:any)=>p.id===v.participant_id)?.display_name||'Player',destination:v.destination_hint,requested_at:v.requested_at})),approved:approved.map((v:any)=>({id:v.id,display_name:(participants||[]).find((p:any)=>p.id===v.participant_id)?.display_name||'Player',verified_at:v.verified_at}))});
     }
     if(action==='member_host_approve'||action==='member_host_revoke'){
       const requestId=clean(body.requestId,180);const v=(await base44.asServiceRole.entities.KotcMemberVerification.filter({id:requestId,session_id:session.id}))?.[0];
