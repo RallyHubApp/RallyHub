@@ -34,7 +34,7 @@ test('real Base44 array response provides scoped people data',async()=>{
  assert.equal(result.rows.length,1);assert.equal(result.complete,true);
 });
 test('full SDK array is flagged partial rather than silently truncating',async()=>{
- const sdk={filter:async(query,options)=>Array.from({length:options.limit},(_,i)=>({id:String(i),tenant_id:'t1'}))};
+ const sdk={filter:async(query,sort,limit,skip)=>Array.from({length:limit},(_,i)=>({id:String(i),tenant_id:'t1'}))};
  const result=await readScopedInventory(sdk,{tenant_id:'t1'});
  assert.equal(result.complete,false);
 });
