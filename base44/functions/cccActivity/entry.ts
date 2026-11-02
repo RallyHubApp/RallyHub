@@ -165,7 +165,12 @@ Deno.serve(async req=>{
   }
   if(body.action==='people_summary'){
    const [access,applications]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.ClubUserAccess,{tenant_id,club_id}),readScopedInventory(sdk.asServiceRole.entities.MembershipApplication,{tenant_id,club_id})]);
-   return Response.json({success:true,...summarisePeopleInventory(access,applications),integrity:identityIntegrity(access.rows,{tenantId:tenant_id,clubId:club_id,complete:access.complete})});
+   const [memberships,players]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.ClubMembership,{tenant_id,club_id}),readScopedInventory(sdk.asServiceRole.entities.Player,{tenant_id,club_id})]);
+   const byStatus=(rows:any[],field:string)=>rows.reduce((acc:any,r:any)=>{const key=String(r[field]||'unspecified');acc[key]=(acc[key]||0)+1;return acc},{});
+   const linkedMemberIds=new Set(memberships.rows.filter((r:any)=>r.person_id).map((r:any)=>r.person_id));
+   const linkedPlayerIds=new Set(players.rows.filter((r:any)=>r.person_id).map((r:any)=>r.person_id));
+   const crm={memberships:{total:memberships.rows.length,statuses:byStatus(memberships.rows,'membership_status'),complete:memberships.complete},players:{total:players.rows.length,statuses:byStatus(players.rows,'status'),complete:players.complete},identity:{memberPersonLinks:linkedMemberIds.size,playerPersonLinks:linkedPlayerIds.size,sharedPersonLinks:[...linkedPlayerIds].filter(id=>linkedMemberIds.has(id)).length,unlinkedPlayers:players.rows.filter((r:any)=>!r.person_id).length},separateSourceRecords:true,automaticMerging:false};
+   return Response.json({success:true,...summarisePeopleInventory(access,applications),integrity:identityIntegrity(access.rows,{tenantId:tenant_id,clubId,complete:access.complete}),crm});
   }
   if(body.action==='person_communication_review'){
    const personId=s(body.personId),channel=s(body.channel),purpose=s(body.purpose);
