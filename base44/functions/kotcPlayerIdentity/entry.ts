@@ -14,6 +14,7 @@ async function hostAllowed(base44:any,user:any,session:any){if(user?.role==='adm
 async function resolveShare(base44:any,shareToken:string){const share=(await base44.asServiceRole.entities.KotcSessionShare.filter({token:shareToken,status:'active'}))?.[0];if(!share)throw new Error('Player Link is invalid or revoked.');if(share.expires_at&&Date.parse(share.expires_at)<Date.now())throw new Error('Player Link has expired.');const session=(await base44.asServiceRole.entities.KotcSession.filter({id:share.session_id}))?.[0];if(!session)throw new Error('KOTC session not found.');return {share,session};}
 
 
+function emailCode8(){const b=new Uint32Array(1);crypto.getRandomValues(b);return String(10000000+(b[0]%90000000));}
 const CODE_MS=10*60*1000;
 const MAX_ATTEMPTS=5;
 function maskEmail(s:string){const [local,domain]=s.split('@');return local&&domain?`${local.slice(0,2)}***@${domain}`:'registered email';}
@@ -116,7 +117,7 @@ async function handleMemberAction(base44:any,user:any,action:string,body:any,ses
    const recent=await base44.asServiceRole.entities.KotcMemberVerification.filter({membership_id:linked.membership.id},'-requested_at',20);
    if((recent||[]).some((v:any)=>v.delivery_channel===channel&&Date.now()-Date.parse(v.requested_at)<60000))return Response.json({error:'Please wait one minute before requesting another code through this channel.'},{status:429});
    for(const v of recent||[])if(v.status==='pending'&&v.client_id===clientId)await base44.asServiceRole.entities.KotcMemberVerification.update(v.id,{status:'revoked'});
-   const code=code4(),now=new Date().toISOString();const row=await base44.asServiceRole.entities.KotcMemberVerification.create({tenant_id:session.tenant_id,club_id:session.club_id,membership_id:linked.membership.id,participant_id:participant.id,session_id:session.id,client_id:clientId,device_token_hash:await sha256(rawToken),code_hash:await sha256(`${rowlessSalt(session)}:${code}`),delivery_channel:channel,destination_hint:channel==='sms'?maskMobile(mobile!):maskEmail(email),status:'pending',attempts:0,requested_at:now,expires_at:new Date(Date.now()+CODE_MS).toISOString()});
+   const code=emailCode8(),now=new Date().toISOString();const row=await base44.asServiceRole.entities.KotcMemberVerification.create({tenant_id:session.tenant_id,club_id:session.club_id,membership_id:linked.membership.id,participant_id:participant.id,session_id:session.id,client_id:clientId,device_token_hash:await sha256(rawToken),code_hash:await sha256(`${rowlessSalt(session)}:${code}`),delivery_channel:channel,destination_hint:channel==='sms'?maskMobile(mobile!):maskEmail(email),status:'pending',attempts:0,requested_at:now,expires_at:new Date(Date.now()+CODE_MS).toISOString()});
    try{if(channel==='sms')await sendSmsCode(mobile!,code);else await sendCodeEmail(base44,session,email,participant.display_name,code);}catch(e){await base44.asServiceRole.entities.KotcMemberVerification.update(row.id,{status:'revoked'});throw e;}
    return Response.json({success:true,status:'pending',requestId:row.id,destination:channel==='sms'?maskMobile(mobile!):maskEmail(email),channel});
  }
