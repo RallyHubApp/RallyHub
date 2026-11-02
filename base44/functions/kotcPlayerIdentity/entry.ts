@@ -16,6 +16,7 @@ async function resolveShare(base44:any,shareToken:string){const share=(await bas
 
 function emailCode8(){const b=new Uint32Array(1);crypto.getRandomValues(b);return String(10000000+(b[0]%90000000));}
 const CODE_MS=10*60*1000;
+const HOST_APPROVAL_MS=30*60*1000;
 const MAX_ATTEMPTS=5;
 function maskEmail(s:string){const [local,domain]=s.split('@');return local&&domain?`${local.slice(0,2)}***@${domain}`:'registered email';}
 async function memberForParticipant(base44:any,session:any,participant:any){
@@ -102,7 +103,7 @@ async function handleMemberAction(base44:any,user:any,action:string,body:any,ses
    const clientId=clean(body.clientId,180);if(!clientId||!rawToken.startsWith('kpd_'))return Response.json({error:'Device credential required.'},{status:400});
    const recent=await base44.asServiceRole.entities.KotcMemberVerification.filter({membership_id:linked.membership.id},'-requested_at',20);
    if((recent||[]).some((v:any)=>Date.now()-Date.parse(v.requested_at)<60000))return Response.json({error:'Wait one minute before another request.'},{status:429});
-   const now=new Date().toISOString();await base44.asServiceRole.entities.KotcMemberVerification.create({tenant_id:session.tenant_id,club_id:session.club_id,membership_id:linked.membership.id,participant_id:participant.id,session_id:session.id,client_id:clientId,device_token_hash:await sha256(rawToken),code_hash:await sha256(randomHex(16)),delivery_channel:'host',destination_hint:'Host identity check',status:'pending',attempts:0,requested_at:now,expires_at:new Date(Date.now()+CODE_MS).toISOString()});
+   const now=new Date().toISOString();await base44.asServiceRole.entities.KotcMemberVerification.create({tenant_id:session.tenant_id,club_id:session.club_id,membership_id:linked.membership.id,participant_id:participant.id,session_id:session.id,client_id:clientId,device_token_hash:await sha256(rawToken),code_hash:await sha256(randomHex(16)),delivery_channel:'host',destination_hint:'Host identity check',status:'pending',attempts:0,requested_at:now,expires_at:new Date(Date.now()+HOST_APPROVAL_MS).toISOString()});
    return Response.json({success:true,status:'pending',hostApproval:true});
  }
  if(action==='member_request'){
@@ -161,7 +162,7 @@ Deno.serve(async req=>{try{
     }
     if(action==='member_host_list'){
       const rows=await base44.asServiceRole.entities.KotcMemberVerification.filter({session_id:session.id},'-requested_at',100);
-      const pending=(rows||[]).filter((v:any)=>v.status==='pending'&&Date.parse(v.expires_at)>Date.now());
+      const pending=(rows||[]).filter((v:any)=>v.delivery_channel==='host'&&v.status==='pending'&&Date.parse(v.expires_at)>Date.now());
       const participants=await base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id});
       const devices:any[]=[];
       for(const participant of participants||[]){const linked=await memberForParticipant(base44,session,participant);if(!linked)continue;const rows=await base44.asServiceRole.entities.KotcMemberDevice.filter({membership_id:linked.membership.id,status:'active'});for(const d of rows||[])devices.push({id:d.id,participant_id:participant.id,display_name:participant.display_name,approved_at:d.approved_at,verification_method:d.verification_method});}
