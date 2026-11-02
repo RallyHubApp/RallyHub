@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Upload, Search, Users, Plus } from 'lucide-react';
@@ -12,6 +13,7 @@ import ImportPlayersModal from '@/components/players/ImportPlayersModal';
 import AddPlayerModal from '@/components/players/AddPlayerModal';
 
 export default function Players() {
+  const { user } = useAuth();
   const [importOpen, setImportOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -20,8 +22,9 @@ export default function Players() {
   const queryClient = useQueryClient();
 
   const { data: players = [], isLoading } = useQuery({
-    queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list('-skill_rating', 200)
+    queryKey: ['players', user?.active_tenant_id, user?.active_club_id],
+    enabled: !!user?.active_tenant_id && !!user?.active_club_id,
+    queryFn: () => base44.entities.Player.filter({ tenant_id: user.active_tenant_id, club_id: user.active_club_id, status: 'Active', relationship_status: 'active' }, '-skill_rating', 500)
   });
 
   const clubs = [...new Set(players.map(p => p.club).filter(Boolean))];

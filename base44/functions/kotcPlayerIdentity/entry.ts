@@ -20,13 +20,14 @@ const MAX_ATTEMPTS=5;
 function maskEmail(s:string){const [local,domain]=s.split('@');return local&&domain?`${local.slice(0,2)}***@${domain}`:'registered email';}
 async function memberForParticipant(base44:any,session:any,participant:any){
  if(!participant?.player_id)return null;
- const members=await base44.asServiceRole.entities.Member.filter({tenant_id:session.tenant_id,club_id:session.club_id,player_id:participant.player_id});
- const eligible=(members||[]).filter((m:any)=>m.membership_status==='paid_active'&&m.club_membership_id);
- if(eligible.length!==1)return null;
- const member=eligible[0];
- const membership=(await base44.asServiceRole.entities.ClubMembership.filter({id:member.club_membership_id,tenant_id:session.tenant_id,club_id:session.club_id}))?.[0];
- if(!membership||membership.membership_status!=='paid_active'||membership.relationship_type!=='member')return null;
- return {member,membership};
+ const player=(await base44.asServiceRole.entities.Player.filter({id:participant.player_id,tenant_id:session.tenant_id,club_id:session.club_id}))?.[0];
+ if(!player||player.status!=='Active'||player.relationship_status==='archived'||!player.person_id)return null;
+ const memberships=await base44.asServiceRole.entities.ClubMembership.filter({tenant_id:session.tenant_id,club_id:session.club_id,person_id:player.person_id,membership_status:'paid_active',relationship_type:'member'});
+ if(memberships.length!==1)return null;
+ const membership=memberships[0];
+ const person=(await base44.asServiceRole.entities.Person.filter({id:player.person_id,tenant_id:session.tenant_id}))?.[0];
+ if(!person)return null;
+ return {member:{id:membership.member_id||membership.id,primary_email:person.primary_email,mobile:person.mobile},membership};
 }
 async function verifiedDevice(base44:any,session:any,participant:any,rawToken:string){
  if(!rawToken)return null;
