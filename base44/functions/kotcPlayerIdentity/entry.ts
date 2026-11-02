@@ -56,6 +56,19 @@ async function handleMemberAction(base44:any,user:any,action:string,body:any,ses
  if(!participant||['withdrawn','replaced','no_show'].includes(participant.status))return Response.json({error:'Select a current player.'},{status:404});
  const linked=await memberForParticipant(base44,session,participant);
  if(!linked)return Response.json({error:'This player has no uniquely linked active membership record. Ask the host to check the membership link.'},{status:409});
+ if(action==='member_account_link'){
+   if(!user?.id)return Response.json({error:'Sign in to your RallyHub account first, or use the email verification code.'},{status:401});
+   if(!rawToken)return Response.json({error:'Device token required.'},{status:400});
+   const player=(await base44.asServiceRole.entities.Player.filter({id:participant.player_id,tenant_id:session.tenant_id,club_id:session.club_id}))?.[0];
+   if(!player)return Response.json({error:'Club player record unavailable.'},{status:409});
+   const personId=clean(linked.membership.person_id);
+   if(!personId||String(player.person_id||'')!==personId)return Response.json({error:'Player and membership Person links require review. Use email verification.'},{status:409});
+   const person=(await base44.asServiceRole.entities.Person.filter({id:personId,tenant_id:session.tenant_id,linked_user_id:user.id}))?.[0];
+   const grants=await base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:session.tenant_id,club_id:session.club_id,person_id:personId,user_id:user.id,status:'active'});
+   if(!person||grants.length!==1||String(player.user_id||'')!==String(user.id))return Response.json({error:'This RallyHub account is not fully linked to the selected player. Use email verification.'},{status:403});
+   await issueDevice(base44,session,participant,rawToken,'rallyhub_account');
+   return Response.json({success:true,verified:true,identity:{participant_id:participant.id,player_id:participant.player_id,display_name:participant.display_name}});
+ }
  if(action==='member_results'){
    const verified=await verifiedDevice(base44,session,participant,rawToken);
    if(!verified)return Response.json({error:'Verify this device before viewing personal results.'},{status:403});
