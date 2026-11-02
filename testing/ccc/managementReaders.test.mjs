@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readScopedInventory,summarisePeopleInventory,summariseManagementInventory} from '../../base44/functions/cccActivity/managementReaders.mjs';
-const entity=rows=>({filter:async(query,options)=>{assert.equal(typeof options,'object');const {limit,cursor}=options;const matching=rows.filter(r=>Object.entries(query).every(([k,v])=>r[k]===v));const start=Number(cursor||0);return {items:matching.slice(start,start+limit),has_more:start+limit<matching.length,next_cursor:start+limit<matching.length?String(start+limit):null}}});
+const entity=rows=>({filter:async(query,sort,limit,skip)=>{const matching=rows.filter(r=>Object.entries(query).every(([k,v])=>r[k]===v));return matching.slice(skip||0,(skip||0)+limit)}});
 test('inventory reads every scoped page without duplication',async()=>{
  const rows=Array.from({length:451},(_,i)=>({id:'id'+i,tenant_id:'t1',club_id:'c1'}));rows.push({id:'other',tenant_id:'t1',club_id:'c2'});
  const result=await readScopedInventory(entity(rows),{tenant_id:'t1',club_id:'c1'});
