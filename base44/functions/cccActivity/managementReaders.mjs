@@ -5,7 +5,7 @@ export async function readScopedInventory(entity,query,{pageSize=200,maxPages=20
  while(pages<maxPages){
   // Base44's SDK returns an array from filter(query, sort, limit).
   // Preserve paginated-adapter compatibility, but never treat a full array as complete.
-  const page=await entity.filter(query,'-created_date',pageSize,rows.length);
+  const page=await entity.filter(query,{sort:'-created_date',limit:pageSize,...(cursor?{cursor}:{})});
   const arrayResult=Array.isArray(page);
   if(!arrayResult&&(!page||!Array.isArray(page.items)))throw Error('Inventory pagination unavailable');
   const items=arrayResult?page:page.items;
