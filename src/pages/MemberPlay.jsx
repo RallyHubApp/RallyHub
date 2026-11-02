@@ -214,6 +214,7 @@ export default function MemberPlay({ previewData = null }) {
                     {responseLabel(item.response_status) && <Badge className="bg-primary/15 text-primary text-[10px]">{responseLabel(item.response_status)}</Badge>}
                     <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => addToCalendar(item)}><Download className="w-3.5 h-3.5" /> Add to calendar</Button>
                     {item.venueMapUrl && <a href={item.venueMapUrl} target="_blank" rel="noreferrer"><Button variant="ghost" size="sm" className="h-8 text-xs">Directions</Button></a>}
+                    {item.player_link_url && <a href={item.player_link_url}><Button size="sm" className="h-8 text-xs">Open Player Link</Button></a>}
                     {item.public_event_url && <a href={item.public_event_url} target="_blank" rel="noreferrer"><Button variant="ghost" size="sm" className="h-8 text-xs">View public event</Button></a>}
                   </div>
                 </div>
