@@ -47,7 +47,7 @@ const records={
  EventRegistration:[{id:'r1',event_id:'e1',tenant_id:'t1',club_id:'c1',full_name:'Player One',email:'private@example.ie',medical_note:'private',registration_status:'confirmed',attendance_status:'not_marked'}],
  GuestSessionLink:[],MembershipApplicationConfig:[],ClubPolicy:[],ClubLegalDocument:[],PaymentGatewayAccount:[],
  ConsentRecord:[],CommunicationPreference:[],CommunicationSuppression:[],
- CommunicationTemplate:[{id:'template1',tenant_id:'t1',owner_scope:'tenant',status:'approved',club_id:'c1'}],ClubUserAccess:[],MembershipApplication:[],PaymentRecord:[],PaymentRefund:[],AuditLog:[]
+ CommunicationTemplate:[{id:'template1',tenant_id:'t1',owner_scope:'tenant',status:'approved',club_id:'c1'}],ClubUserAccess:[],MembershipApplication:[],ClubMembership:[],Player:[],PaymentRecord:[],PaymentRefund:[],AuditLog:[]
 };
 const matches=(item,query)=>Object.entries(query).every(([k,v])=>v&&typeof v==='object'&&'$in'in v?v.$in.includes(item[k]):v&&typeof v==='object'&&'$exists'in v?(v.$exists?item[k]!==undefined:item[k]===undefined):item[k]===v);
 function makeHarness(user=records.User[0]){
