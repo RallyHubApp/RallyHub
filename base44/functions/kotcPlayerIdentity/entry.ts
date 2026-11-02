@@ -123,7 +123,7 @@ async function handleMemberAction(base44:any,user:any,action:string,body:any,ses
    return Response.json({success:true,status:'pending',requestId:row.id,destination:channel==='sms'?maskMobile(mobile!):maskEmail(email),channel});
  }
  if(action==='member_verify'){
-   const code=clean(body.code,8),clientId=clean(body.clientId,180);if(!/^\d{4}$/.test(code))return Response.json({error:'Enter the four-digit code.'},{status:400});
+   const code=clean(body.code,8),clientId=clean(body.clientId,180);if(!/^\d{8}$/.test(code))return Response.json({error:'Enter the eight-digit code.'},{status:400});
    const rows=await base44.asServiceRole.entities.KotcMemberVerification.filter({membership_id:linked.membership.id,participant_id:participant.id,client_id:clientId,device_token_hash:await sha256(rawToken)},'-requested_at',10);
    const v=(rows||[]).find((x:any)=>x.status==='pending');if(!v)return Response.json({error:'Request a fresh verification code.'},{status:409});
    if(Date.parse(v.expires_at)<Date.now()){await base44.asServiceRole.entities.KotcMemberVerification.update(v.id,{status:'expired'});return Response.json({error:'Code expired. Request a new code.'},{status:410});}
