@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { CheckCircle2,LockKeyhole,RefreshCw,ShieldCheck,X } from 'lucide-react';
+import { CheckCircle2,LockKeyhole,ShieldCheck,X } from 'lucide-react';
 
 function err(e){return e?.response?.data?.error||e?.data?.error||e?.message||'Player verification failed.';}
 function storageKey(token){return 'rallyhub-kotc-member-device-v1';}
@@ -17,7 +17,7 @@ export default function KotcMyPlayerPanel({shareToken,data,onRefresh,onIdentity=
  const participants=data?.participants||[];const config=data?.player_link||{};const scoringEnabled=config.scoring_access==='verified_players';
  const loadIdentity=async({silent=false}={})=>{if(!deviceToken){setIdentityState(null);onIdentity?.(null);return null;}try{if(!silent)setBusy(true);const r=await base44.functions.invoke('kotcPlayerIdentity',{action:'member_state',shareToken,participantId:selected||localStorage.getItem('rallyhub-kotc-member-participant:'+data?.session?.id),clientId,deviceToken});const state=r.data||null;setIdentityState(state);setSmsAvailable(!!state?.sms_available);onIdentity?.(state?.verified?state.identity:null);if(state?.verified){setEmailPending(false);setHostPending(false);} return state;}catch(e){if(!silent)toast.error(err(e));return null;}finally{if(!silent)setBusy(false);}};
  const loadScore=async({silent=false}={})=>{if(!deviceToken||!identityState?.verified||!scoringEnabled){setScoreState(null);return null;}try{const r=await base44.functions.invoke('kotcPlayerScore',{action:'state',shareToken,deviceToken});setScoreState(r.data||null);const m=r.data?.match;if(m&&!editing){setA(m.team_a_score??'');setB(m.team_b_score??'');setServing(m.serving_side_at_horn||'');}return r.data;}catch(e){if(!silent)toast.error(err(e));return null;}};
- useEffect(()=>{if(selected||localStorage.getItem('rallyhub-kotc-member-participant:'+data?.session?.id))loadIdentity();},[deviceToken,shareToken,selected,data?.session?.id]);
+ useEffect(()=>{if(!busy&&(selected||localStorage.getItem('rallyhub-kotc-member-participant:'+data?.session?.id)))loadIdentity({silent:true});},[deviceToken,shareToken,selected,data?.session?.id]);
  useEffect(()=>{if(identityState?.verified){base44.functions.invoke('kotcPlayerIdentity',{action:'member_results',shareToken,participantId:identityState.identity?.participant_id,deviceToken}).then(r=>setPersonalResults(r.data)).catch(()=>setPersonalResults(null));}},[identityState?.verified,identityState?.identity?.participant_id,shareToken,data?.matches?.length]);
  useEffect(()=>{if(identityState?.verified)loadScore();},[identityState?.verified,data?.session?.current_round_number,data?.current_matches?.map(m=>`${m.id}:${m.revision}`).join('|'),scoringEnabled]);
  useEffect(()=>{if(identityState?.status!=='pending')return;const t=setInterval(async()=>{const state=await loadIdentity({silent:true});if(state?.verified)toast.success('You are verified for this KOTC');},4000);return()=>clearInterval(t);},[identityState?.status,deviceToken]);
