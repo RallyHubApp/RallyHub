@@ -1,4 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react';
+import {useSearchParams} from 'react-router-dom';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {base44} from '@/api/base44Client';
 import {invokeReadWithDeadline,shouldRetryRead,readRetryDelay,READ_STALE_MS,READ_GC_MS} from '@/lib/ccc/readResilience';
@@ -14,7 +15,9 @@ const whatsappNumber=v=>{let digits=String(v||'').replace(/\D/g,'');if(digits.st
 /** Club-scoped guest CRM. All mutations reuse the authoritative guestAccessJourney backend. */
 export default function ClubGuestBookingCRM({tenantId,clubId}){
  const qc=useQueryClient();
- const [filter,setFilter]=useState('pending_approval'),[search,setSearch]=useState(''),[selected,setSelected]=useState('');
+ const [urlParams]=useSearchParams();
+ const requestedGuestId=urlParams.get('guestRequestId')||'',requestedSearch=urlParams.get('guestSearch')||'';
+ const [filter,setFilter]=useState(requestedGuestId||requestedSearch?'all':'pending_approval'),[search,setSearch]=useState(requestedSearch),[selected,setSelected]=useState(requestedGuestId);
  const [slot,setSlot]=useState(''),[date,setDate]=useState(''),[editing,setEditing]=useState(false),[fields,setFields]=useState({});
  const [busy,setBusy]=useState(''),[feedback,setFeedback]=useState(null),[showPolicy,setShowPolicy]=useState(false);
  const queryKey=['ccc-guest-crm',tenantId,clubId];
@@ -23,6 +26,7 @@ export default function ClubGuestBookingCRM({tenantId,clubId}){
  const all=data?.requests||[],templates=templatesData?.templates||[];
  const {data:lifecycle,isLoading:lifecycleLoading,isError:lifecycleError,refetch:refreshLifecycle}=useQuery({queryKey:['ccc-guest-lifecycle',tenantId,clubId,selected],enabled:!!tenantId&&!!clubId&&!!selected,queryFn:async()=>{const r=await invokeReadWithDeadline((name,args)=>base44.functions.invoke(name,args),'guestAccessJourney',{action:'admin_lifecycle',requestId:selected});if(r.data?.error)throw Error(r.data.error);if(!r.data?.success)throw Error('Lifecycle response unavailable');return r.data},retry:shouldRetryRead,retryDelay:readRetryDelay,staleTime:READ_STALE_MS,gcTime:READ_GC_MS,refetchOnWindowFocus:false});
 
+ useEffect(()=>{if(requestedGuestId){setFilter('all');setSearch('');setSelected(requestedGuestId)}else if(requestedSearch){setFilter('all');setSearch(requestedSearch);setSelected('')}},[requestedGuestId,requestedSearch]);
  const shown=all.filter(r=>(filter==='all'||r.status===filter)&&[r.fullName,r.email,r.venueName].some(x=>String(x||'').toLowerCase().includes(search.toLowerCase())));
  const active=all.find(r=>r.id===selected)||shown[0];
  useEffect(()=>{if(active?.id&&!selected)setSelected(active.id)},[active?.id,selected]);
