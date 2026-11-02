@@ -531,5 +531,5 @@ Deno.serve(async req=>{
   if(prior?.length)return Response.json({success:true,id:prior[0].id,revision:prior[0].revision,status:prior[0].status,reused:true});
   const created=await entity.create({...payload,status:'draft',revision:1,idempotency_key:key,created_by_user_id:user.id});
   return Response.json({success:true,id:created.id,revision:1,status:'draft'});
- }catch(e:any){return fail('Activity service unavailable',500)}
+ }catch(e:any){console.error('cccActivity failed',String(e?.message||e).slice(0,240));return fail('Activity service unavailable',500)}
 });
