@@ -5,17 +5,18 @@ export async function readScopedInventory(entity,query,{pageSize=200,maxPages=20
  while(pages<maxPages){
   // Base44's SDK returns an array from filter(query, sort, limit).
   // Preserve paginated-adapter compatibility, but never treat a full array as complete.
-  const page=await entity.filter(query,'-created_date',pageSize,cursor?{cursor}:undefined);
+  const page=await entity.filter(query,'-created_date',pageSize,rows.length);
   const arrayResult=Array.isArray(page);
   if(!arrayResult&&(!page||!Array.isArray(page.items)))throw Error('Inventory pagination unavailable');
   const items=arrayResult?page:page.items;
+  const priorCount=rows.length;
   for(const row of items){
    if(!row?.id)throw Error('Inventory row ID missing');
    if(Object.entries(query).some(([key,value])=>row[key]!==value))throw Error('Inventory scope violation');
    if(!seen.has(row.id)){seen.add(row.id);rows.push(row)}
   }
   pages++;
-  if(arrayResult){complete=items.length<pageSize;break}
+  if(arrayResult){if(items.length<pageSize){complete=true;break}if(rows.length===priorCount)break;continue}
   if(page.has_more!==true){complete=true;break}
   if(!page.next_cursor||page.next_cursor===cursor)throw Error('Inventory cursor stalled');
   cursor=page.next_cursor;
