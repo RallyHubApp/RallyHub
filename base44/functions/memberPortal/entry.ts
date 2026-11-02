@@ -778,7 +778,22 @@ Deno.serve(async (req) => {
           public_event_url:event.event_slug?`https://rallyhub.ie/events/${event.event_slug}`:null,
         });
       }
-      const items = [...(spond.sessions || []), ...competitionItems, ...memberEventItems, ...sharedEventItems]
+      const kotcItems:any[]=[];
+      if(snapshot.player?.id && tenantId && clubId){
+        const entries=await base44.asServiceRole.entities.KotcSessionParticipant.filter({player_id:snapshot.player.id},'-created_date',60).catch(()=>[]);
+        const sessionIds=[...new Set((entries||[]).filter((p:any)=>!['withdrawn','replaced','no_show'].includes(p.status)).map((p:any)=>String(p.session_id)))].slice(0,20);
+        if(sessionIds.length){
+          const [sessions,shares]=await Promise.all([base44.asServiceRole.entities.KotcSession.filter({id:{$in:sessionIds},tenant_id:tenantId,club_id:clubId}).catch(()=>[]),base44.asServiceRole.entities.KotcSessionShare.filter({session_id:{$in:sessionIds},status:'active'}).catch(()=>[])]);
+          for(const session of sessions||[]){
+            if(['cancelled','archived'].includes(String(session.status||'').toLowerCase()))continue;
+            const share=(shares||[]).find((s:any)=>String(s.session_id)===String(session.id)&&(!s.expires_at||Date.parse(s.expires_at)>Date.now()));
+            if(!share)continue;
+            const start=session.starts_at||session.start_at||session.created_date;
+            kotcItems.push({id:`kotc:${session.id}`,source_id:String(session.id),source:'kotc',title:session.name||'King of the Court',start,venue:session.venue||null,response_status:'entered',player_link_url:`/kotc-live/${encodeURIComponent(share.token)}`});
+          }
+        }
+      }
+      const items = [...(spond.sessions || []), ...competitionItems, ...memberEventItems, ...sharedEventItems, ...kotcItems]
         .filter((item:any) => item.start)
         .sort((a:any,b:any) => String(a.start).localeCompare(String(b.start)));
       return Response.json({ success:true, play:{ items, spond, club:snapshot.club } });
