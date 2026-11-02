@@ -47,7 +47,10 @@ const chapters = [
     'Open Session tools, then the Live Roster Controls / player controls.',
     'Select the affected player and choose the relevant action: Late / Not Arrived, No-show, Injured, Leave After This Round, Sit Out 1 Round, Temporarily Unavailable or Arrived / Back Available.',
     'When a round is live, many changes take effect from the next round so completed scores are preserved. Check the confirmation message.',
-    'For an unstarted round, make a court-to-bench swap in the proposed round where necessary instead of redrawing all courts.',
+    'To add someone after the draw, open Live Roster Controls and choose Add to Bench. Search for an existing club player or enter a one-off guest. The player appears on the bench without changing any court.',
+    'Before a round starts, tap the outgoing court player in Manage tonight’s players. Under Replace player · one step, choose the incoming bench player and press Confirm Replacement. They take exactly the same court position; partners, opponents and other courts remain unchanged.',
+    'Once the round has started, choose Change players / bench · Live round. Tap the outgoing court player, then the incoming bench player, and save the live layout. Courts already being scored or with saved scores are protected; do not try to rewrite a result.',
+    'A court/bench swap does not itself mark someone as withdrawn or injured. If the outgoing player has left, also set their roster status so they are excluded from later draws.',
     'If a change was accidental, use the available roster Undo control promptly. Confirm the new court/bench layout before starting the next round.'
   ]},
   { title: '7. Finish and share results', steps: [
@@ -60,7 +63,9 @@ const problems = [
   ['A score is missing', 'Check the player scoring device, use Refresh Player Scores, then record the missing score on the host score card if necessary.'],
   ['A score is wrong', 'Open the saved court result, select Edit result, correct it and save before moving to the next round.'],
   ['A player leaves during play', 'Use Live Roster Controls and Leave After This Round or Injured, as appropriate. Check when the change takes effect.'],
-  ['Somebody arrives late', 'Mark Arrived / Back Available in roster controls, then review the next proposed round and bench.'],
+  ['Somebody arrives late', 'Open Live Roster Controls and Add to Bench. For someone already registered, use Arrived / Back Available. No redraw is needed.'],
+  ['Replace a player before the round starts', 'Select the outgoing court player, choose an available bench player under Replace player · one step, then Confirm Replacement.'],
+  ['Replace a player during a live round', 'Open Change players / bench · Live round. Select the outgoing court player and incoming bench player, then Save. Scored or claimed courts cannot be changed.'],
   ['The round will not advance', 'Check for outstanding results and any visible error. If the screen is still processing, wait and refresh the session state rather than repeatedly triggering the command.'],
   ['The timer or sound is not working', 'Check Bluetooth pairing, selected audio output and both volume controls, then try Sound Check. If the horn is still inaudible, use the on-screen timer and manually announce time. Do not assume an audible signal played.'],
 ];
