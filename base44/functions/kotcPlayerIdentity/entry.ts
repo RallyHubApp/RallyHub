@@ -195,7 +195,7 @@ Deno.serve(async req=>{try{
 
   const shareToken=clean(body.shareToken||body.token,180);if(!shareToken)return Response.json({error:'Player Link token required.'},{status:400});
   const {share,session}=await resolveShare(base44,shareToken);
-  if(['member_state','member_request','member_verify','member_host_request','member_results'].includes(action))return await handleMemberAction(base44,user,action,body,session,share);
+  if(['member_state','member_request','member_verify','member_host_request','member_results','member_account_link'].includes(action))return await handleMemberAction(base44,user,action,body,session,share);
 
   if(action==='request'){
     const participantId=clean(body.participantId,180),clientId=clean(body.clientId,180);if(!participantId||!clientId)return Response.json({error:'Choose your name and try again.'},{status:400});
