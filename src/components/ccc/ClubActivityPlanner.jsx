@@ -37,7 +37,7 @@ export default function ClubActivityPlanner({tenantId,clubId}){
  const scope={tenant_id:tenantId,club_id:clubId};
  const activity={...form,tenant_id:tenantId||'',club_id:clubId||''};
  const venue=venues.find(v=>v.id===activity.venue_id)||null;
- const clareSessionCourts=tenantId==='6a9b7790bc4a8d299938bda9'&&clubId==='6a9b779684daba85b3ffdeb5'?({'6a9b779ebc2c8ee4295771d3':4,'6a9b779ebc2c8ee4295771d5':3,'6a9b779ebc2c8ee4295771d4':3,'6abd10c1c806c45540277e19':3,'6abd10c1c806c45540277e18':1})[form.venue_id]:null;
+ const clareSessionCourts=tenantId==='6a9b7790bc4a8d299938bda9'&&clubId==='6a9b779684daba85b3ffdeb5'?({'6a9b779ebc2c8ee4295771d3':4,'6a9b779ebc2c8ee4295771d5':3,'6a9b779ebc2c8ee4295771d4':3,'6abd10c1c806c45540277e19':3,'6abd10c1c806c45540277e18':1})[form.venue_id]??0:null;
  const host=options.hosts.find(h=>h.id===hostId)||null;
  const template=options.templates.find(t=>t.id===templateId)||null;
  const review=activityWizardReview({form:activity,scope,venue,host,registrationMode,paymentMethod,approvedTemplate:template});
