@@ -8,3 +8,5 @@ for(const [source,id] of Object.entries({membership:'membership_invitation',sess
 for(const source of ['events','tournival'])test(`${source} routes to existing central workspace`,()=>{assert.match(command,new RegExp(`source=${source}&tab=`));assert.match(page,new RegExp(`source==="${source}"|source:'${source}'|${source}:`));});
 test('tournival keeps audience and delivery actions',()=>assert.match(page,/source==="tournival"\?"Audiences"/));
 test('central routing does not introduce new sending endpoints',()=>assert.doesNotMatch(page,/SOURCE_DEFAULT_TEMPLATE[\s\S]{0,500}functions\.invoke/));
+
+test("events editor appears only in events context on Compose tab",()=>{assert.match(page,/tab==="Compose"&&senderScope==="tenant"&&journeyContext.source==="events"&&<EventEmailDraftEditor/);assert.doesNotMatch(page,/tab==="Compose"&&senderScope==="tenant"&&<EventEmailDraftEditor/);});
