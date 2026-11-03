@@ -8,7 +8,7 @@ function mock(rows){const calls=[];return {calls,async filter(query,opts){calls.
 test('booking roster reads all 1250 registrations and counts capacity beyond former 500 cap',async()=>{
  const rows=Array.from({length:1250},(_,i)=>({id:'r'+i,event_id:'event',tenant_id:'tenant',club_id:'club',registration_status:'confirmed',email:'guest'+i+'@example.ie'}));
  const sdk=mock(rows);const result=await readBookingRegistrations(sdk,{eventId:'event',tenantId:'tenant',clubId:'club'});
- assert.equal(result.length,1250);assert.equal(occupied(result),1250);assert.equal(sdk.calls.length,5);
+ assert.equal(result.length,1250);assert.equal(occupied(result),1250);assert.equal(sdk.calls.length,6);
  for(const call of sdk.calls)assert.deepEqual(call.query,{event_id:'event',tenant_id:'tenant',club_id:'club'});
 });
 test('duplicate application beyond first 500 records is still rejected',async()=>{
@@ -22,7 +22,7 @@ test('booking reader fails closed on incomplete pagination',async()=>{
 });
 test('booking reader fails closed on cursor loops and invalid SDK response',async()=>{
  await assert.rejects(()=>readBookingRegistrations({async filter(){return {items:[],has_more:true,next_cursor:'stuck'}}},{eventId:'e',tenantId:'t',clubId:'c'}),/stalled/);
- await assert.rejects(()=>readBookingRegistrations({async filter(){return []}},{eventId:'e',tenantId:'t',clubId:'c'}),/unavailable/);
+ assert.deepEqual(await readBookingRegistrations({async filter(){return []}},{eventId:'e',tenantId:'t',clubId:'c'}),[]);
 });
 test('booking reader enforces complete tenant club event scope',async()=>{
  await assert.rejects(()=>readBookingRegistrations(mock([]),{eventId:'e',tenantId:'t',clubId:''}),/scope required/);
@@ -33,4 +33,10 @@ test('live booking service uses full cursor roster for initial and pre-commit ch
  assert.doesNotMatch(source,/EventRegistration\.filter\(\{event_id:id,tenant_id:t\.tenant_id\},'-created_date',500\)/);
  assert.match(source,/const current=await readBookingRegistrations/);
  assert.match(source,/const candidateUsed=await countActiveEventRegistrations/);
+});
+
+test('Base44 SDK array roster accepts small event and fails closed at its 500-row ceiling',async()=>{
+ const one={id:'r',event_id:'e',tenant_id:'t',club_id:'c'};
+ assert.equal((await readBookingRegistrations({filter:async(q,sort,limit)=>{assert.equal(sort,'-created_date');assert.equal(limit,500);return [one]}},{eventId:'e',tenantId:'t',clubId:'c'})).length,1);
+ await assert.rejects(()=>readBookingRegistrations({filter:async()=>Array.from({length:500},(_,i)=>({...one,id:String(i)}))},{eventId:'e',tenantId:'t',clubId:'c'}),/safe SDK page limit/);
 });
