@@ -16,6 +16,8 @@ import {acquireEventApprovalLock} from './approvalLock.mjs';
 import {claimPaidEventConfirmation} from './confirmationLock.mjs';
 import {reviewVerifiedEventCheckout} from './verifiedCheckout.mjs';
 import {resolveEventCheckoutUrls} from './checkoutUrls.mjs';
+import {sendWithConfiguredEmailTransport} from './emailRouter.ts';
+import {eventTemplateValues} from './templateResolver.js';
 const clean=(v:any,n=200)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,n);
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
 Deno.serve(async(req)=>{
@@ -26,7 +28,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_resend_payment_link','admin_alternative_dates'];
+  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_resend_payment_link','admin_alternative_dates','admin_comms_templates','admin_comms_save_draft','admin_comms_send'];
   const isAdminAction=adminActions.includes(action);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)))return fail('Bookings are not open for this event',404);
   if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||!t.tenant_id||!t.host_club_id||!await requireEventAdminGrant(base44,user,t))return fail('Active tenant or club administrator grant required',403);}
@@ -43,6 +45,44 @@ Deno.serve(async(req)=>{
    if(!operationId)return fail('Application reference required');
    const matches=await base44.asServiceRole.entities.EventRegistration.filter({event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,operation_id:operationId},'-created_date',2);
    return Response.json({success:true,saved:matches.length>0});
+  }
+  if(['admin_comms_templates','admin_comms_save_draft','admin_comms_send'].includes(action)){
+   const templateEntity=base44.asServiceRole.entities.CommunicationTemplate;
+   if(action==='admin_comms_save_draft'){
+    const name=clean(b.name,120),subject=clean(b.subject,200),body=String(b.body||'').trim().slice(0,12000);
+    if(!name||!subject||!body)return fail('Template name, subject and body required');
+    const user=await base44.auth.me();
+    const draft=await templateEntity.create({owner_scope:'tenant',tenant_id:t.tenant_id,club_id:t.host_club_id,module:'Events',name,purpose:'event_manual_followup',version:'1.0',status:'draft',subject_template:subject,plain_text_template:body,created_by_user_id:user.id});
+    return Response.json({success:true,draftId:draft.id,status:'draft',sent:false});
+   }
+   const templates=await templateEntity.filter({tenant_id:t.tenant_id,status:'approved'},'-updated_date',100);
+   if(!Array.isArray(templates)||templates.length>=100)return fail('Approved template inventory incomplete',503);
+   const eligible=templates.filter((x:any)=>x.owner_scope==='tenant'&&(!x.club_id||x.club_id===t.host_club_id)&&x.subject_template&&(x.plain_text_template||x.html_template));
+   if(action==='admin_comms_templates')return Response.json({success:true,templates:eligible.map((x:any)=>({id:x.id,name:x.name,purpose:x.purpose,subject:x.subject_template,body:x.plain_text_template||''}))});
+   const registrationId=clean(b.registrationId,100);
+   const registrations=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
+   const registration=registrations.find((x:any)=>x.id===registrationId);
+   if(!registration||!registration.email||!/^\S+@\S+\.\S+$/.test(registration.email))return fail('Verified event recipient required',400);
+   const template=eligible.find((x:any)=>x.id===clean(b.templateId,100));
+   if(!template)return fail('Approved tenant template required',409);
+   const values=eventTemplateValues(t,registration,registration.payment_checkout_url?`Payment link: ${registration.payment_checkout_url}`:'');
+   const interpolate=(v:string)=>String(v||'').replace(/\{\{\s*([A-Z_]+)\s*\}\}/g,(_:string,k:string)=>String(values[k]??''));
+   const subject=interpolate(template.subject_template);
+   const body=String(b.bodyOverride||'').trim()?clean(b.bodyOverride,12000):interpolate(template.plain_text_template);
+   if(!subject||!body)return fail('Message content missing',409);
+   if(b.confirmSend!==true)return Response.json({success:true,preview:true,recipient:registration.email,subject,body,templateId:template.id});
+   if(clean(b.confirmRecipient,200).toLowerCase()!==String(registration.email).toLowerCase())return fail('Recipient confirmation does not match',409);
+   const club=(await base44.asServiceRole.entities.Club.filter({id:t.host_club_id},'-created_date',1))?.[0];
+   if(!club)return fail('Club branding unavailable',503);
+   const kits=await base44.asServiceRole.entities.CommunicationBrandKit.filter({tenant_id:t.tenant_id,owner_scope:'tenant',status:'active'},'-updated_date',30);
+   const kit=kits.find((x:any)=>!x.club_id||x.club_id===t.host_club_id);
+   if(!kit)return fail('Approved club brand kit missing',503);
+   const safe=body.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n','<br>');
+   const html=renderBasicBrandedEmail(`<p>${safe}</p>`,kit,club,club.name,'Event communication');
+   const delivery=await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant',purpose:'event',tenantId:t.tenant_id,clubId:t.host_club_id},{to:registration.email,subject,textBody:body,htmlBody:html,senderName:club.name});
+   const user=await base44.auth.me();
+   await base44.asServiceRole.entities.CommunicationMessage.create({campaign_id:`event_${id}`,tenant_id:t.tenant_id,channel:'email',template_id:template.id,template_version:template.version||'1.0',subject,plain_text_body:body,status:'sent',created_by_user_id:user.id,metadata:{event_id:id,registration_id:registration.id,recipient_email:registration.email,provider:delivery.provider,kind:'event_manual_send'}});
+   return Response.json({success:true,sent:true,recipient:registration.email});
   }
   if(action==='admin_alternative_dates'){
    const candidates=await base44.asServiceRole.entities.Tournament.filter({tenant_id:t.tenant_id,host_club_id:t.host_club_id,event_registration_mode:'rallyhub',event_booking_enabled:true,event_publish_status:'published',event_public_visible:true},'start_date',100);
