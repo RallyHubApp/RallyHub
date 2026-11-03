@@ -341,6 +341,13 @@ Deno.serve(async(req)=>{
           return new Response('',{status:204});
         }
       }
+      // Validate event payments before writing a paid ledger entry.
+      if(payment.purpose_type==='event'&&payment.payment_type==='event_registration'&&payment.purpose_id){
+        if(!Number.isFinite(verified.amount)||Math.round(verified.amount*100)!==Math.round(Number(payment.amount)*100)||verified.currency!==String(payment.currency||'EUR').toUpperCase()){
+          console.error('Event checkout amount/currency mismatch',payment.id);
+          return new Response('',{status:409});
+        }
+      }
       await base44.asServiceRole.entities.PaymentRecord.update(payment.id,update);
 
       if(payment.purpose_type==='event'&&payment.payment_type==='event_registration'&&payment.purpose_id){
