@@ -1,3 +1,4 @@
+import {claimPaidEventConfirmation} from './confirmationLock.mjs';
 import {deliverEventNotice} from './eventDelivery.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
@@ -360,8 +361,8 @@ Deno.serve(async(req)=>{
         if(reg&&reg.payment_status!=='paid'&&reg.registration_status==='approved_payment_hold'){
           const events=await base44.asServiceRole.entities.Tournament.filter({id:reg.event_id,tenant_id:reg.tenant_id},'-created_date',1);
           const tournament=events?.[0];
-          await base44.asServiceRole.entities.EventRegistration.update(reg.id,{registration_status:'confirmed',payment_status:'paid',payment_record_id:payment.id,payment_transaction_id:verified.transactionId,confirmed_at:now});
-          if(tournament){try{await deliverEventNotice(base44,tournament,reg,'booking_confirmed')}catch(e){console.error('Event payment confirmed but email failed',e)}}
+          const claimed=await claimPaidEventConfirmation(base44.asServiceRole.entities.EventRegistration,{registration:reg,tenantId:reg.tenant_id,clubId:reg.club_id,eventId:reg.event_id,paymentId:payment.id,transactionId:verified.transactionId,now});
+          if(claimed&&tournament){try{await deliverEventNotice(base44,tournament,reg,'booking_confirmed')}catch(e){console.error('Event payment confirmed but email failed',e)}}
         }
       }
 
