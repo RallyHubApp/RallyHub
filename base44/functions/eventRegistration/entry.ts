@@ -71,6 +71,8 @@ Deno.serve(async(req)=>{
    const body=String(b.bodyOverride||'').trim()?clean(b.bodyOverride,12000):interpolate(template.plain_text_template);
    if(!subject||!body)return fail('Message content missing',409);
    if(b.confirmSend!==true)return Response.json({success:true,preview:true,recipient:registration.email,subject,body,templateId:template.id});
+   // Fail closed until the shared Communications Engine checks endpoint-level suppression, consent and idempotency.
+   return fail('Manual sending is unavailable until consent, suppression and duplicate-send checks are integrated',503);
    if(clean(b.confirmRecipient,200).toLowerCase()!==String(registration.email).toLowerCase())return fail('Recipient confirmation does not match',409);
    const club=(await base44.asServiceRole.entities.Club.filter({id:t.host_club_id},'-created_date',1))?.[0];
    if(!club)return fail('Club branding unavailable',503);
