@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const page=readFileSync('src/pages/CommunicationsCentre.jsx','utf8');
+const command=readFileSync('src/pages/ClubCommandCentre.jsx','utf8');
+const templates=readFileSync('src/services/communications/legacyApprovedTemplates.js','utf8');
+for(const [source,id] of Object.entries({membership:'membership_invitation',sessions:'session_booking_guest',guests:'guest_approved',kotc:'kotc_player_link'}))test(`${source} routes to approved existing template`,()=>{assert.match(page,new RegExp(`${source}:'${id}'`));assert.match(templates,new RegExp(`id:"${id}"[^\\n]*status:"approved"`));assert.match(command,new RegExp(`source=${source}&tab=Compose`));});
+for(const source of ['events','tournival'])test(`${source} routes to existing central workspace`,()=>{assert.match(command,new RegExp(`source=${source}&tab=`));assert.match(page,new RegExp(`source==="${source}"|source:'${source}'|${source}:`));});
+test('tournival keeps audience and delivery actions',()=>assert.match(page,/source==="tournival"\?"Audiences"/));
+test('central routing does not introduce new sending endpoints',()=>assert.doesNotMatch(page,/SOURCE_DEFAULT_TEMPLATE[\s\S]{0,500}functions\.invoke/));
