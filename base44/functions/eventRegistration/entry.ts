@@ -79,7 +79,7 @@ Deno.serve(async(req)=>{
    if(!kit)return fail('Approved club brand kit missing',503);
    const safe=body.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n','<br>');
    const html=renderBasicBrandedEmail(`<p>${safe}</p>`,kit,club,club.name,'Event communication');
-   const delivery=await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant',purpose:'event',tenantId:t.tenant_id,clubId:t.host_club_id},{to:registration.email,subject,textBody:body,htmlBody:html,senderName:club.name});
+   const delivery=await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant',purpose:'club_comms',tenantId:t.tenant_id,clubId:t.host_club_id},{to:registration.email,subject,textBody:body,htmlBody:html,senderName:club.name});
    const user=await base44.auth.me();
    await base44.asServiceRole.entities.CommunicationMessage.create({campaign_id:`event_${id}`,tenant_id:t.tenant_id,channel:'email',template_id:template.id,template_version:template.version||'1.0',subject,plain_text_body:body,status:'sent',created_by_user_id:user.id,metadata:{event_id:id,registration_id:registration.id,recipient_email:registration.email,provider:delivery.provider,kind:'event_manual_send'}});
    return Response.json({success:true,sent:true,recipient:registration.email});
