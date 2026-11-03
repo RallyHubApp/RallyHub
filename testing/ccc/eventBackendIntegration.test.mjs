@@ -57,7 +57,7 @@ function setupApply(h,capacity=700){
  for(const type of ['liability_waiver','code_of_conduct','health_declaration','privacy_data'])h.db.ClubLegalDocument.push({id:type,tenant_id:'t1',club_id:'c1',active:true,document_type:type,version:'v1',consent_label:type});
  return {fullName:'New Guest',email:'newguest@example.ie',mobile:'0870000000',emergencyContactName:'Emergency',emergencyContactMobile:'0871111111',operationId:'new-op',consents:Object.fromEntries(['liability_waiver','code_of_conduct','health_declaration','privacy_data'].map(t=>[t,'v1']))};
 }
-test('public availability counts active and unexpired holds without scanning entire roster',async()=>{
+test('public availability counts active and unexpired holds from scoped roster',async()=>{
  const h=harness();
  h.db.EventRegistration.push({...h.db.EventRegistration[0],id:'r2',registration_status:'approved_payment_hold',payment_hold_expires_at:'2099-01-01T00:00:00.000Z'});
  h.db.EventRegistration.push({...h.db.EventRegistration[0],id:'r3',registration_status:'approved_payment_hold',payment_hold_expires_at:'2020-01-01T00:00:00.000Z'});
@@ -65,7 +65,7 @@ test('public availability counts active and unexpired holds without scanning ent
  const result=await h.call('get');
  assert.equal(result.status,200);
  assert.equal(result.data.event.placesRemaining,1998);
- assert.equal(h.calls.reads.EventRegistration,2);
+ assert.equal(h.calls.reads.EventRegistration,1);
 });
 test('booking corrects stale under-counted capacity counter before accepting applications',async()=>{
  const h=harness(),payload=setupApply(h,600);
