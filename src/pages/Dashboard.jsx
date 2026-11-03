@@ -87,7 +87,7 @@ export default function Dashboard() {
     refetchOnWindowFocus: true
   });
 
-  const { data: membershipAttention = { approvalCount: 0, paymentFollowUpCount: 0 } } = useQuery({
+  const { data: membershipAttention = { approvalCount: 0, paymentFollowUpCount: 0 }, isError: membershipAttentionError } = useQuery({
     queryKey: ['membership-application-attention-count', currentUser?.active_tenant_id, currentUser?.active_club_id],
     queryFn: async () => {
       const res = await base44.functions.invoke('membershipApplication', { action: 'admin_count' });
@@ -100,6 +100,7 @@ export default function Dashboard() {
   });
 
   const pendingMembershipApplicationCount = membershipAttention.paymentFollowUpCount;
+  // A failed count is not zero pending approvals: surface the failure prominently.
   const pendingMembershipDecisionCount = membershipAttention.approvalCount;
 
   const { data: pendingDirectoryApprovalCount = 0 } = useQuery({
@@ -221,6 +222,7 @@ export default function Dashboard() {
 
       {currentUser?.role === 'admin' && <ClubPostEventPanel tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} sessions={clubSessions} bookings={guestBookings} attendance={guestAttendance} attempts={followupAttempts} fromDate={format(addDays(new Date(), -14), 'yyyy-MM-dd')} toDate={scheduleFrom} loading={sessionsLoading||bookingsLoading||attendanceLoading||followupLoading} error={sessionsError||bookingsError||attendanceError||followupError} />}
 
+      {membershipAttentionError && <div role="alert" className="rounded-lg border border-red-500 p-3 text-sm font-semibold text-red-700">Membership approval status could not be loaded. Open Membership Console to review applications; the displayed zero count may be incorrect.</div>}
       {((currentUser?.role === 'admin' && (pendingMembershipApprovalCount > 0 || pendingDirectoryApprovalCount > 0)) || pendingMembershipApplicationCount > 0 || pendingMembershipDecisionCount > 0 || pendingSessionBookingCount > 0) && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {pendingSessionBookingCount > 0 && (
