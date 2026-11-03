@@ -1,7 +1,7 @@
 /** Fast public availability read; final booking still requires full roster and atomic capacity claim. */
 export async function countActiveEventRegistrations(entity,{eventId,tenantId,clubId,now=new Date().toISOString()}){
  if(!eventId||!tenantId||!clubId)throw Error('Availability scope required');
- if(typeof entity.count!=='function')throw Error('Availability count unavailable');
+ if(typeof entity.filter!=='function')throw Error('Availability count unavailable');
  const scope={event_id:eventId,tenant_id:tenantId,club_id:clubId};
  // Base44 entity SDK does not reliably expose count(). Use bounded scoped rows
  // for the public event window; never report an unverified remaining capacity.
