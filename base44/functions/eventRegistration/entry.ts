@@ -26,7 +26,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview'];
+  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_resend_payment_link'];
   const isAdminAction=adminActions.includes(action);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)))return fail('Bookings are not open for this event',404);
   if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||!t.tenant_id||!t.host_club_id||!await requireEventAdminGrant(base44,user,t))return fail('Active tenant or club administrator grant required',403);}
@@ -67,7 +67,7 @@ Deno.serve(async(req)=>{
   }
   stage='roster_verification';
   const rows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
-  if(action==='admin_approve'||action==='admin_verify'||action==='admin_refund_payment'){
+  if(action==='admin_approve'||action==='admin_verify'||action==='admin_refund_payment'||action==='admin_resend_payment_link'){
    const registration=rows.find((r:any)=>r.id===clean(b.registrationId,100));if(!registration)return fail('Registration not found',404);
    const accountRows=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
    const accountRow=accountRows?.[0];const account=accountRow?{provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'}:null;
@@ -100,6 +100,19 @@ Deno.serve(async(req)=>{
      await base44.asServiceRole.entities.EventRegistration.update(registration.id,{payment_status:full?'refunded':'partially_refunded'});
      return Response.json({success:true,refundAmount:amount,refundId:refund.id,status:full?'refunded':'partially_refunded',bookingStatus:registration.registration_status});
     }catch(error){await base44.asServiceRole.entities.PaymentRefund.update(refund.id,{status:'needs_reconciliation',provider_status:providerOutcome?.providerStatus||'UNKNOWN',provider_refund_id:providerOutcome?.refundId||''});throw error;}
+   }
+   if(action==='admin_resend_payment_link'){
+    if(registration.registration_status!=='approved_payment_hold'||registration.payment_status!=='pending')return fail('No outstanding approved payment request',409);
+    const expires=Date.parse(registration.payment_hold_expires_at||'');
+    if(!Number.isFinite(expires)||expires<=Date.now())return fail('Payment hold expired. Do not resend an expired checkout; reconcile before creating a new one.',409);
+    if(!registration.payment_checkout_id||!registration.payment_checkout_url)return fail('No existing checkout to resend',409);
+    const paymentRows=await base44.asServiceRole.entities.PaymentRecord.filter({id:registration.payment_record_id,tenant_id:t.tenant_id,club_id:t.host_club_id,purpose_type:'event',purpose_id:registration.id},'-created_date',2);
+    if(paymentRows.length!==1||paymentRows[0].payment_status!=='pending'||paymentRows[0].provider_checkout_id!==registration.payment_checkout_id)return fail('Payment record needs reconciliation before resend',409);
+    const result=await retrievePayment('sumup',registration.payment_checkout_id,account);
+    if(result.normalizedStatus==='paid')return fail('Payment may already be complete. Verify payment before resending.',409);
+    if(!['pending','unpaid','unknown'].includes(String(result.normalizedStatus||'').toLowerCase()))return fail('Provider checkout is not confirmed outstanding',409);
+    await deliverEventNotice(base44,t,registration,'payment_required',`Payment link: ${registration.payment_checkout_url}`);
+    return Response.json({success:true,resent:true,checkoutUrl:registration.payment_checkout_url,expiresAt:registration.payment_hold_expires_at});
    }
    if(action==='admin_approve'){
     if(registration.registration_status!=='pending_approval')return fail('Application is not awaiting approval',409);
