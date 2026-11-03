@@ -5,12 +5,13 @@ const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const page=read('../../src/pages/ClubCommandCentre.jsx');
 const people=read('../../src/components/ccc/ClubPeopleBoard.jsx');
 const management=read('../../src/components/ccc/ClubManagementBoard.jsx');
-test('People and Management panels require permitted club administration access',()=>{
- assert.match(page,/const permitted=access\?\.admin===true/);
- assert.match(page,/action:'self_access'/);
- assert.match(page,/active==='people'&&permitted&&<ClubPeopleBoard/);
- assert.match(page,/active==='management'&&permitted&&<ClubManagementBoard/);
- assert.match(page,/Verifying club permissions/);
+test('People and Management panels require administrator navigation access and backend grants',()=>{
+ assert.match(page,/const permitted=admin\|\|clubAdmin/);
+ assert.match(page,/if\(!permitted\)return/);
+ assert.match(page,/active==='people'&&permitted&&/);
+ assert.match(page,/active==='management'&&permitted&&/);
+ const backend=read('../../base44/functions/cccActivity/entry.ts');
+ assert.match(backend,/self_access/);
 });
 test('People overview uses scoped server inventory without direct PII queries',()=>{
  assert.match(people,/action:'people_summary'/);
