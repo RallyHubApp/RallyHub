@@ -30,3 +30,12 @@ test('attendance uses tenant/club/event-scoped compare-and-set and confirmed boo
  assert.match(section,/Attendance changed; reload/);
  for(const field of ['attendance_status','attendance_revision','attendance_marked_at','attendance_marked_by_user_id'])assert.ok(JSON.parse(schema).properties[field]);
 });
+
+test('authoritative approval acquires a scoped atomic lock before checkout or free confirmation',()=>{
+ const a=event.indexOf("if(action==='admin_approve'){"),b=event.indexOf("if(!registration.payment_checkout_id)",a);const block=event.slice(a,b);
+ assert.match(block,/acquireEventApprovalLock\(base44\.asServiceRole\.entities\.EventRegistration/);
+ assert.match(read('../../base44/functions/eventRegistration/approvalLock.mjs'),/payment_status:'approval_processing'/);
+ assert.match(block,/if\(!approvalLocked\)/);
+ assert.ok(block.indexOf('if(!approvalLocked)')<block.indexOf('createCheckout('));
+ assert.ok(block.indexOf('if(!approvalLocked)')<block.indexOf("if(amount===0)"));
+});

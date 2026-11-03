@@ -1,20 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readScopedInventory,summarisePeopleInventory,summariseManagementInventory} from '../../base44/functions/cccActivity/managementReaders.mjs';
-const entity=rows=>({filter:async(query,sort,limit,skip)=>{const matching=rows.filter(r=>Object.entries(query).every(([k,v])=>r[k]===v));return matching.slice(skip||0,(skip||0)+limit)}});
-test('inventory reads every scoped page without duplication',async()=>{
- const rows=Array.from({length:451},(_,i)=>({id:'id'+i,tenant_id:'t1',club_id:'c1'}));rows.push({id:'other',tenant_id:'t1',club_id:'c2'});
+const entity=rows=>({filter:async(query,sort,limit)=>rows.filter(r=>Object.entries(query).every(([k,v])=>r[k]===v)).slice(0,limit)});
+test('SDK positional filter returns scoped array',async()=>{
+ const rows=[{id:'a',tenant_id:'t1',club_id:'c1'},{id:'b',tenant_id:'t1',club_id:'c2'}];
  const result=await readScopedInventory(entity(rows),{tenant_id:'t1',club_id:'c1'});
- assert.equal(result.rows.length,451);assert.equal(result.complete,true);
+ assert.equal(result.rows.length,1);assert.equal(result.complete,true);
 });
-test('inventory fails closed on missing tenant or invalid cursor',async()=>{
+test('SDK array at limit is incomplete rather than falsely claiming total',async()=>{
+ const rows=Array.from({length:451},(_,i)=>({id:'id'+i,tenant_id:'t1'}));
+ const result=await readScopedInventory(entity(rows),{tenant_id:'t1'});
+ assert.equal(result.rows.length,200);assert.equal(result.complete,false);
+});
+test('missing tenant and malformed paginated response fail closed',async()=>{
  await assert.rejects(()=>readScopedInventory(entity([]),{club_id:'c1'}),/Tenant scope required/);
  await assert.rejects(()=>readScopedInventory({filter:async()=>({items:[{id:'x',tenant_id:'t1'}],has_more:true,next_cursor:null})},{tenant_id:'t1'}),/cursor stalled/);
-});
-test('partial inventory cannot be represented as complete',async()=>{
- const rows=Array.from({length:401},(_,i)=>({id:'id'+i,tenant_id:'t1'}));
- const result=await readScopedInventory(entity(rows),{tenant_id:'t1'},{maxPages:2});
- assert.equal(result.complete,false);assert.equal(result.rows.length,400);
 });
 test('people overview counts independent records and never returns contact data',()=>{
  const result=summarisePeopleInventory({rows:[{id:'a',status:'active',person_id:'p1',email:'secret@example.ie'},{id:'b',status:'pending'}],complete:true},{rows:[{id:'m',status:'submitted',full_name:'Private Person'}],complete:true});
@@ -26,15 +26,4 @@ test('management overview strips message bodies and host email addresses',()=>{
  assert.equal(result.hosts[0].configuredHosts,1);assert.equal(result.hosts[0].usesLegacyVenueKey,true);
  assert.equal(result.templates[0].brandKitAssigned,true);assert.equal(result.sendingEnabled,false);
  assert.equal(JSON.stringify(result).includes('secret@example.ie'),false);assert.equal(JSON.stringify(result).includes('private HTML'),false);
-});
-
-test('real Base44 array response provides scoped people data',async()=>{
- const sdk={filter:async(query,options)=>[{id:'a',tenant_id:'t1',club_id:'c1',status:'active'}]};
- const result=await readScopedInventory(sdk,{tenant_id:'t1',club_id:'c1'});
- assert.equal(result.rows.length,1);assert.equal(result.complete,true);
-});
-test('full SDK array is flagged partial rather than silently truncating',async()=>{
- const sdk={filter:async(query,sort,limit,skip)=>Array.from({length:limit},(_,i)=>({id:String(i),tenant_id:'t1'}))};
- const result=await readScopedInventory(sdk,{tenant_id:'t1'});
- assert.equal(result.complete,false);
 });

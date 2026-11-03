@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validateEventLink} from '../../base44/functions/cccActivity/eventLinkPolicy.mjs';
 const activity={tenant_id:'t1',club_id:'c1',venue_id:'v1',host_user_id:'host',communication_template_id:'template',capacity:16,starts_at:'2026-11-04T19:00:00',registration_mode:'approval',payment_method:'none'};
-const event={tenant_id:'t1',host_club_id:'c1',venue_id:'v1',event_capacity:16,start_date:'2026-11-04',event_registration_mode:'rallyhub',event_fee_amount:0};
+const event={id:'event-same',tenant_id:'t1',host_club_id:'c1',venue_id:'v1',event_capacity:16,start_date:'2026-11-04',event_registration_mode:'rallyhub',event_fee_amount:0};
 const context={venue:{id:'v1',tenant_id:'t1',club_id:'c1',status:'active'},hostVerified:true,templateVerified:true};
 test('valid same-club linked event passes conservative checks',()=>assert.deepEqual(validateEventLink(activity,event,context),[]));
 test('rejects event without explicit matching venue ID',()=>{
@@ -25,4 +25,8 @@ test('paid events require online and free events cannot be linked to online poli
  assert.ok(validateEventLink(activity,{...event,event_fee_amount:5},context).includes('paid_event_requires_online'));
  assert.ok(validateEventLink({...activity,payment_method:'online'},event,context).includes('free_event_payment_mismatch'));
  assert.deepEqual(validateEventLink({...activity,payment_method:'online'},{...event,event_fee_amount:5},context),[]);
+});
+
+test('existing event linkage cannot be silently overwritten or linked twice',()=>{
+ for(const linked of ['event-old','event-another'])assert.ok(validateEventLink({...activity,linked_event_id:linked},event,context).includes('activity already linked'));
 });

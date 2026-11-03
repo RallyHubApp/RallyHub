@@ -1,0 +1,11 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {reviewBookingRecovery as review} from '../../base44/functions/cccActivity/bookingRecovery.mjs';
+const scope={tenantId:'t',clubId:'c',eventId:'e',complete:true};
+const r={id:'r',tenant_id:'t',club_id:'c',event_id:'e',registration_status:'approved_payment_hold',payment_status:'pending',payment_checkout_id:'checkout'};
+const p={id:'p',tenant_id:'t',club_id:'c',purpose_type:'event',purpose_id:'r',provider_checkout_id:'checkout',payment_status:'pending'};
+test('normal active checkout does not require recovery',()=>{assert.equal(review([r],[p],scope).requiresReview,false)});
+test('uncertain approval checkout remains locked and requires manual reconciliation',()=>{const v=review([{...r,payment_status:'approval_processing'}],[],scope);assert.equal(v.caseCount,1);assert.equal(v.automaticRetryAllowed,false);assert.ok(v.cases[0].issues.includes('approval_lock_stuck_reconcile_before_retry'))});
+test('provider-paid booking without confirmation is a recovery case',()=>{const v=review([r],[{...p,payment_status:'paid'}],scope);assert.ok(v.cases[0].issues.includes('provider_paid_booking_not_confirmed'))});
+test('confirmed booking without paid ledger is a recovery case',()=>{const v=review([{...r,registration_status:'confirmed',payment_status:'paid'}],[p],scope);assert.ok(v.cases[0].issues.includes('confirmed_payment_missing_ledger'))});
+test('missing payment and incomplete pagination fail closed',()=>{const v=review([r],[],{...scope,complete:false});assert.equal(v.requiresReview,true);assert.ok(v.cases[0].issues.includes('checkout_missing_payment_record'))});
+test('cross-club payment never satisfies scoped checkout',()=>{const v=review([r],[{...p,club_id:'other'}],scope);assert.ok(v.cases[0].issues.includes('checkout_missing_payment_record'))});

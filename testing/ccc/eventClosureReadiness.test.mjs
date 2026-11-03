@@ -26,5 +26,5 @@ test('unknown activity state cannot be treated as completed',()=>{
 test('close-out UI is integrated without mutations or sends',()=>{
  const parent=readFileSync(new URL('../../src/components/ccc/ClubEventRegistrationOverview.jsx',import.meta.url),'utf8');
  const ui=readFileSync(new URL('../../src/components/ccc/ClubEventClosureReview.jsx',import.meta.url),'utf8');
- assert.match(parent,/ClubEventClosureReview/);assert.match(parent,/registrations=\{loaded\}/);assert.doesNotMatch(ui,/base44\.functions|sendEmail|\.create\(/);
+ assert.match(parent,/ClubEventClosureReview/);assert.match(parent,/registrations=\{loaded\}/);assert.match(ui,/action:'closure_review'/);assert.doesNotMatch(ui,/sendEmail|\.create\(|action:'transition'/);
 });

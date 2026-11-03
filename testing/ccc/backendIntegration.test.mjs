@@ -28,6 +28,7 @@ import {reviewWeeklyRecurrence} from '../../base44/functions/cccActivity/recurre
 import {reviewLegacySessionOverlaps} from '../../base44/functions/cccActivity/legacySessionReview.mjs';
 import {reviewDublinOccurrences} from '../../base44/functions/cccActivity/localTimeReview.mjs';
 import {reviewActivityCancellation} from '../../base44/functions/cccActivity/cancellationReview.mjs';
+import {reviewCancellationImpact} from '../../base44/functions/cccActivity/cancellationImpact.mjs';
 import {buildRecurrenceManifest} from '../../base44/functions/cccActivity/recurrenceManifest.mjs';
 import {createScopedRecurrenceDrafts} from '../../base44/functions/cccActivity/recurrenceService.mjs';
 import {inspectRecurrenceBatch} from '../../base44/functions/cccActivity/recurrenceRecovery.mjs';
@@ -47,7 +48,7 @@ const records={
  EventRegistration:[{id:'r1',event_id:'e1',tenant_id:'t1',club_id:'c1',full_name:'Player One',email:'private@example.ie',medical_note:'private',registration_status:'confirmed',attendance_status:'not_marked'}],
  GuestSessionLink:[],MembershipApplicationConfig:[],ClubPolicy:[],ClubLegalDocument:[],PaymentGatewayAccount:[],
  ConsentRecord:[],CommunicationPreference:[],CommunicationSuppression:[],
- CommunicationTemplate:[{id:'template1',tenant_id:'t1',owner_scope:'tenant',status:'approved',club_id:'c1'}],ClubUserAccess:[],MembershipApplication:[],ClubMembership:[],Player:[],PaymentRecord:[],PaymentRefund:[],AuditLog:[]
+ CommunicationTemplate:[{id:'template1',tenant_id:'t1',owner_scope:'tenant',status:'approved',club_id:'c1'}],ClubUserAccess:[],MembershipApplication:[],PaymentRecord:[],PaymentRefund:[],AuditLog:[]
 };
 const matches=(item,query)=>Object.entries(query).every(([k,v])=>v&&typeof v==='object'&&'$in'in v?v.$in.includes(item[k]):v&&typeof v==='object'&&'$exists'in v?(v.$exists?item[k]!==undefined:item[k]===undefined):item[k]===v);
 function makeHarness(user=records.User[0]){
@@ -61,7 +62,7 @@ function makeHarness(user=records.User[0]){
  }]));
  let handler;
  const sdk={auth:{me:async()=>user},asServiceRole:{entities}};
- vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,readEventRegistrations,readScopedActivities,buildFollowupReview,validateEventLink,readActivityAudit,summariseClubOperations,readScopedInventory,summarisePeopleInventory,summariseManagementInventory,validateHostVenueMapping,validatePersonAccessLink,communicationReadiness,reviewHostRevocation,activityScheduleConflicts,reviewPersonCommunications,readPersonInventory,refundRecoveryQueue,identityIntegrity,readCccAccess,cccAccessDecision,guestVenueReview,membershipReadiness,reviewWeeklyRecurrence,reviewLegacySessionOverlaps,reviewDublinOccurrences,reviewActivityCancellation,buildRecurrenceManifest,createScopedRecurrenceDrafts,inspectRecurrenceBatch,reviewRecurrenceCompletion,readRecurrenceQueue,Response,Date,console});
+ vm.runInNewContext(js,{Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,summariseEventFinance,isConfiguredHost,readEventPayments,readEventRegistrations,readScopedActivities,buildFollowupReview,validateEventLink,readActivityAudit,summariseClubOperations,readScopedInventory,summarisePeopleInventory,summariseManagementInventory,validateHostVenueMapping,validatePersonAccessLink,communicationReadiness,reviewHostRevocation,activityScheduleConflicts,reviewPersonCommunications,readPersonInventory,refundRecoveryQueue,identityIntegrity,readCccAccess,cccAccessDecision,guestVenueReview,membershipReadiness,reviewWeeklyRecurrence,reviewLegacySessionOverlaps,reviewDublinOccurrences,reviewActivityCancellation,reviewCancellationImpact,buildRecurrenceManifest,createScopedRecurrenceDrafts,inspectRecurrenceBatch,reviewRecurrenceCompletion,readRecurrenceQueue,Response,Date,console});
  const call=async(action,fields={})=>{const response=await handler({method:'POST',json:async()=>({action,...fields})});return {status:response.status,data:await response.json()}};
  return {call,db,reads};
 }
@@ -97,13 +98,13 @@ test('host activity discovery uses batched lookups, not one query per activity',
  assert.equal(result.data.activities.length,31);
  assert.equal(h.reads.User,1);assert.equal(h.reads.Venue,1);assert.equal(h.reads.MembershipVenueHostConfig,1);
 });
-test('host discovery reads more than 100 activities with cursor paging',async()=>{
+test('host discovery fails closed on SDK array limit',async()=>{
  const h=makeHarness();
  for(let i=2;i<303;i++)h.db.ClubActivity.push({...h.db.ClubActivity[0],id:'a'+i});
  const result=await h.call('host_activities');
- assert.equal(result.status,200);assert.equal(result.data.activities.length,302);
- assert.equal(result.data.resultsMayBeTruncated,false);
- assert.equal(h.reads.ClubActivity,2);
+ assert.equal(result.status,200);assert.equal(result.data.activities.length,200);
+ assert.equal(result.data.resultsMayBeTruncated,true);
+ assert.equal(h.reads.ClubActivity,1);
 });
 test('delegated host is denied admin options and cross-club activity access',async()=>{
  const h=makeHarness();
@@ -241,11 +242,11 @@ test('event link fails closed if approved template or venue ID is missing',async
  const missingTemplate=await h.call('link_event',{id:'a1',eventId:'e1',expectedRevision:1});
  assert.equal(missingTemplate.status,409);assert.equal(h.db.ClubActivity[0].revision,1);
 });
-test('activity list reads more than 100 drafts without silently truncating',async()=>{
+test('activity list reports incomplete SDK array at limit',async()=>{
  const h=makeHarness({...records.User[0],role:'admin'});
  for(let i=2;i<=305;i++)h.db.ClubActivity.push({...h.db.ClubActivity[0],id:'a'+i});
  const result=await h.call('list');assert.equal(result.status,200);
- assert.equal(result.data.activities.length,305);assert.equal(result.data.resultsMayBeTruncated,false);
+ assert.equal(result.data.activities.length,200);assert.equal(result.data.resultsMayBeTruncated,true);
 });
 test('operations summary is club-scoped, admin-only and read-only',async()=>{
  const admin=makeHarness({...records.User[0],role:'admin'});

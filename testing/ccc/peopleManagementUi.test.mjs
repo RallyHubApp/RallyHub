@@ -6,10 +6,11 @@ const page=read('../../src/pages/ClubCommandCentre.jsx');
 const people=read('../../src/components/ccc/ClubPeopleBoard.jsx');
 const management=read('../../src/components/ccc/ClubManagementBoard.jsx');
 test('People and Management panels require permitted club administration access',()=>{
- assert.match(page,/const permitted=admin\|\|clubAdmin/);
+ assert.match(page,/const permitted=access\?\.admin===true/);
+ assert.match(page,/action:'self_access'/);
  assert.match(page,/active==='people'&&permitted&&<ClubPeopleBoard/);
  assert.match(page,/active==='management'&&permitted&&<ClubManagementBoard/);
- assert.match(page,/every CCC backend action checks live tenant\/club grants/);
+ assert.match(page,/Verifying club permissions/);
 });
 test('People overview uses scoped server inventory without direct PII queries',()=>{
  assert.match(people,/action:'people_summary'/);

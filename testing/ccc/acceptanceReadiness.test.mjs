@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {block4AcceptanceInventory} from './acceptanceReadiness.mjs';
+test('no journey can be declared complete from source presence alone',()=>{const r=block4AcceptanceInventory();assert.equal(r.releaseApproved,false);assert.ok(r.journeys.every(j=>j.journeyBuilt===false&&j.status==='requires_integrated_uat'))});
+test('journey 12 exposes missing two-way inbound/reply path rather than treating outbound as inbox',()=>{const j=block4AcceptanceInventory().journeys.find(j=>j.id==='A12');assert.equal(j.checks.find(c=>c.name==='backend outbound').present,true);assert.ok(j.checks.some(c=>!c.present));assert.equal(j.sourceComponentsPresent,false)});
+test('acceptance inventory covers booking, operations, communications and finance',()=>assert.deepEqual(block4AcceptanceInventory().journeys.map(j=>j.id),['A03-A07','A08-A10','A12','A18']));

@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {buildPersonTimeline as build} from '../../base44/functions/cccActivity/personTimeline.mjs';
+const scope={tenantId:'t',clubId:'c',personId:'p'};
+test('timeline joins only explicit scoped Person sources in descending order',()=>{const r=build({EventRegistration:{complete:true,rows:[{id:'e',tenant_id:'t',club_id:'c',person_id:'p',created_date:'2026-10-01',registration_status:'confirmed'}]},PaymentRecord:{complete:true,rows:[{id:'x',tenant_id:'t',club_id:'c',person_id:'p',created_date:'2026-10-02',payment_status:'paid'}]}},scope);assert.deepEqual(r.entries.map(x=>x.sourceId),['x','e']);assert.equal(r.complete,true)});
+test('cross tenant and cross person records fail closed',()=>{for(const field of ['tenant_id','club_id','person_id'])assert.throws(()=>build({PaymentRecord:{complete:true,rows:[{id:'x',tenant_id:'t',club_id:'c',person_id:'p',[field]:'wrong'}]}},scope))});
+test('partial source is not reported complete',()=>assert.equal(build({ConsentRecord:{complete:false,rows:[]}},scope).complete,false));

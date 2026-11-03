@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
+const backend=readFileSync(new URL('../../base44/functions/cccActivity/entry.ts',import.meta.url),'utf8');const ui=readFileSync(new URL('../../src/components/ccc/ClubFinanceConsolidation.jsx',import.meta.url),'utf8');
+test('finance reuses authoritative existing refund recovery logic and source',()=>{const section=backend.slice(backend.indexOf("if(body.action==='finance_consolidation')"),backend.indexOf("if(body.action==='person_timeline')"));assert.match(section,/entities.PaymentRefund/);assert.match(section,/refundRecoveryQueue\(/);assert.match(section,/refundReconciliation/)});
+test('finance UI links refund exceptions without executing a refund',()=>{assert.match(ui,/refundReconciliation\?\.requiresReview/);assert.match(ui,/no automatic refunds or retries/)});

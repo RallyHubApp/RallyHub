@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {financeEvidenceCsv} from '../../src/lib/ccc/financeExports.mjs';
+const data={complete:true,readOnly:true,centres:[{centreId:'centre1',venueIds:['v'],legacyIncomeAmount:10,legacyCostAmount:3,providerNetAmount:7,unresolvedPayments:2}],issues:['missing_provider_transaction_p'],refundReconciliation:{caseCount:1,orphanRefundCount:0}};
+test('finance export preserves separate legacy and provider evidence',()=>{const csv=financeEvidenceCsv(data);assert.match(csv,/Legacy income EUR.*Provider ledger net EUR/);assert.match(csv,/"10.00","3.00","7.00"/);assert.match(csv,/NOT VERIFIED/);assert.match(csv,/missing_provider_transaction_p/)});
+test('finance export fails closed on partial inventory',()=>assert.throws(()=>financeEvidenceCsv({...data,complete:false}),/Complete authoritative/));
+test('finance export neutralises spreadsheet formula injection',()=>assert.match(financeEvidenceCsv({...data,centres:[{...data.centres[0],centreId:'=HYPERLINK(1)'}]}),/"'=HYPERLINK/));
