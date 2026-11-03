@@ -7,7 +7,10 @@ export async function readBookingRegistrations(entity,{eventId,tenantId,clubId,p
  // rather than treating a potentially truncated roster as complete.
  const sdkRows=await entity.filter(query,'-created_date',500);
  if(Array.isArray(sdkRows)){
-  if(sdkRows.length>=500)throw Error('Event registration verification exceeds safe SDK page limit');
+  if(sdkRows.length>=500){
+   // A full SDK page may be truncated. Use a verified cursor reader where available;
+   // otherwise the existing paginated path below fails closed.
+  }else{
   const unique=new Map();
   for(const row of sdkRows){
    if(!row?.id)throw Error('Event registration missing ID');
@@ -15,6 +18,7 @@ export async function readBookingRegistrations(entity,{eventId,tenantId,clubId,p
    unique.set(row.id,row);
   }
   return [...unique.values()];
+  }
  }
 
  const rows=[],seen=new Set();let cursor,hasMore=false,pages=0;

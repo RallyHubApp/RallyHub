@@ -38,5 +38,5 @@ test('live booking service uses full cursor roster for initial and pre-commit ch
 test('Base44 SDK array roster accepts small event and fails closed at its 500-row ceiling',async()=>{
  const one={id:'r',event_id:'e',tenant_id:'t',club_id:'c'};
  assert.equal((await readBookingRegistrations({filter:async(q,sort,limit)=>{assert.equal(sort,'-created_date');assert.equal(limit,500);return [one]}},{eventId:'e',tenantId:'t',clubId:'c'})).length,1);
- await assert.rejects(()=>readBookingRegistrations({filter:async()=>Array.from({length:500},(_,i)=>({...one,id:String(i)}))},{eventId:'e',tenantId:'t',clubId:'c'}),/safe SDK page limit/);
+ await assert.rejects(()=>readBookingRegistrations({filter:async()=>Array.from({length:500},(_,i)=>({...one,id:String(i)}))},{eventId:'e',tenantId:'t',clubId:'c'}),/pagination unavailable/);
 });
