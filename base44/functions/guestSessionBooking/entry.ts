@@ -683,10 +683,14 @@ async function legal(base44:any,session:any){
     activeGuestJourneyConfig(base44,session.tenant_id,session.club_id)
   ]);
   return {
+    waiverDocumentId:waiver.id,
+    waiverWording:waiver.body_text||'',
     waiverVersion:waiver.version,
     waiverTitle:waiver.title,
     waiverText:waiver.body_text,
     waiverConsentLabel:waiver.consent_label||'I have read and accept the Clare Pickleball Participation Declaration, Assumption of Risk & Liability Notice.',
+    codeDocumentId:code.id,
+    codeWording:code.body_text||'',
     codeVersion:code.version,
     codeTitle:code.title,
     codeText:code.body_text,
@@ -2089,10 +2093,12 @@ ${detailRow('Reason',reason)}
       confirmation_code:confirmation(),source_system:'rallyhub_guest_session',
     });
 
+    const waiverHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(legalBundle.waiverWording)))).map(x=>x.toString(16).padStart(2,'0')).join('');
+    const codeHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(legalBundle.codeWording)))).map(x=>x.toString(16).padStart(2,'0')).join('');
     for(const c of [
       {consent_type:'adult_age_confirmation',status:'accepted',response_text:'Confirmed 18 or over',consent_version:ADULT_AGE_VERSION},
-      {consent_type:'guest_session_waiver',status:'accepted',response_text:'Accepted',consent_version:legalBundle.waiverVersion},
-      {consent_type:'guest_session_code_of_conduct',status:'accepted',response_text:'Accepted',consent_version:legalBundle.codeVersion},
+      {consent_type:'guest_session_waiver',status:'accepted',response_text:'Accepted',consent_version:legalBundle.waiverVersion,legal_document_id:legalBundle.waiverDocumentId,wording_hash:waiverHash},
+      {consent_type:'guest_session_code_of_conduct',status:'accepted',response_text:'Accepted',consent_version:legalBundle.codeVersion,legal_document_id:legalBundle.codeDocumentId,wording_hash:codeHash},
       {consent_type:'guest_session_privacy_notice',status:'accepted',response_text:'Acknowledged',consent_version:PRIVACY_VERSION},
       {consent_type:'guest_session_cancellation_policy',status:'accepted',response_text:'Accepted',consent_version:CANCELLATION_VERSION},
       {consent_type:'guest_session_photo_video',status:photo==='yes'?'accepted':'declined',response_text:photo==='yes'?'Yes':'No',consent_version:PRIVACY_VERSION},

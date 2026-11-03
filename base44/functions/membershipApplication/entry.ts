@@ -900,6 +900,27 @@ Deno.serve(async(req)=>{
             emergencyContactRelationship:p.emergency_contact_relationship||'',emergencyMobile:p.emergency_mobile||''};
         }
       }
+      // Reuse only consent evidence for the exact current legal document and wording.
+      // An invitation is a private bearer credential; never reveal consent on a public request.
+      if(invite&&prefill&&invite.intended_email){
+        const people=await base44.asServiceRole.entities.Person.filter({tenant_id:config.tenant_id,primary_email:emailKey(invite.intended_email)},'-updated_date',20);
+        const matching=(people||[]).filter((p:any)=>(!invite.intended_name||clean(p.full_name,160).toLowerCase()===clean(invite.intended_name,160).toLowerCase())&&(!invite.intended_mobile||samePhone(p.mobile,invite.intended_mobile)));
+        if(matching.length===1){
+          const history=await base44.asServiceRole.entities.ConsentRecord.filter({tenant_id:config.tenant_id,club_id:config.club_id,person_id:matching[0].id},'-recorded_at',100);
+          const reused:any={};
+          for(const [key,doc] of Object.entries(docs) as any){
+            if(!doc?.id)continue;
+            const currentHash=await hashText(doc.bodyText||'');
+            const records=(history||[]).filter((r:any)=>r.legal_document_id===doc.id&&r.consent_version===doc.version&&r.wording_hash===currentHash);
+            const latest=records[0];
+            if(!latest)continue;
+            const consentKey=key==='waiver'?'liability_waiver':key==='code'?'code_of_conduct':key==='health'?'health_declaration':key==='terms'?'membership_terms':key==='photo'?'photoVideo':key;
+            if(consentKey==='photoVideo')reused.photoVideo=latest.status==='accepted'?'yes':'no';
+            else if(latest.status==='accepted')reused[consentKey]=true;
+          }
+          prefill.consents={...(prefill.consents||{}),...reused};
+        }
+      }
       return Response.json({success:true,config:safeConfig(config,club,docs,adultPolicy),inviteApproved:!!invite,inviteEmail:invite?.intended_email||'',inviteMobile:invite?.intended_mobile||'',prefill});
     }
 
