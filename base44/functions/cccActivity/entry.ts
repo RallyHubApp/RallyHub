@@ -239,8 +239,8 @@ Deno.serve(async req=>{
   }
   if(body.action==='refund_recovery_queue'){
    const [payments,refunds]=await Promise.all([
-    readScopedInventory(sdk.asServiceRole.entities.PaymentRecord,{tenant_id,club_id},{pageSize:200,maxPages:30}),
-    readScopedInventory(sdk.asServiceRole.entities.PaymentRefund,{tenant_id,club_id},{pageSize:200,maxPages:30})
+    readScopedInventory(sdk.asServiceRole.entities.PaymentRecord,{tenant_id,club_id},{pageSize:500,maxPages:30}),
+    readScopedInventory(sdk.asServiceRole.entities.PaymentRefund,{tenant_id,club_id},{pageSize:500,maxPages:30})
    ]);
    return Response.json({success:true,...refundRecoveryQueue(payments.rows,refunds.rows,{tenantId:tenant_id,clubId:club_id,complete:payments.complete&&refunds.complete})});
   }
