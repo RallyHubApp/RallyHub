@@ -11,4 +11,6 @@ test('central routing does not introduce new sending endpoints',()=>assert.doesN
 
 test("events editor appears only in events context on Compose tab",()=>{assert.match(page,/tab==="Compose"&&senderScope==="tenant"&&journeyContext.source==="events"&&<EventEmailDraftEditor/);assert.doesNotMatch(page,/tab==="Compose"&&senderScope==="tenant"&&<EventEmailDraftEditor/);});
 
-test("selected specialist composers retain a template selector and template management access",()=>{assert.match(page,/tab==="Compose"&&selectedId&&<div/);assert.match(page,/id="central-template-selector"/);assert.match(page,/Manage templates \/ create a draft/);});
+test("selected specialist composers retain a template selector and template management access",()=>{assert.match(page,/tab==="Compose"&&<div/);assert.match(page,/id="central-template-selector"/);assert.match(page,/Manage templates \/ create a draft/);});
+
+test("Compose template selector is always visible and Management return is available",()=>{assert.match(page,/tab==="Compose"&&<div className="rounded-xl border bg-white p-4 space-y-3"/);assert.match(page,/Back to Management/);assert.match(page,/club-command-centre\?section=management/);});
