@@ -683,7 +683,7 @@ Deno.serve(async(req)=>{
         const invite=await createMembershipInvite(base44,config,user,recipientEmail,recipientName,'',recipientMobile);
         const magicInviteUrl=`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`;
         let emailSent=false;
-        if(recipientEmail){try{await sendMembershipInviteEmail(base44,config,club,recipientEmail,recipientName,magicInviteUrl,false,recipientMobile);emailSent=true}catch(e:any){console.error('membership invitation email failed',e?.message||e)}}
+        if(recipientEmail&&body.sendEmail!==false){try{await sendMembershipInviteEmail(base44,config,club,recipientEmail,recipientName,magicInviteUrl,false,recipientMobile);emailSent=true}catch(e:any){console.error('membership invitation email failed',e?.message||e)}}
         return Response.json({success:true,magicInviteUrl,expiresAt:invite.expires_at,emailSent,boundTo:{email:invite.intended_email||'',mobile:invite.intended_mobile||''}});
       }
 

@@ -50,6 +50,14 @@ export default function ClubGuestBookingCRM({tenantId,clubId}){
   }catch(e){setFeedback({kind:'error',message:e?.response?.data?.error||e?.message||'Action failed; refresh before retrying.'});return null}
   finally{setBusy('')}
  };
+ const [membershipLink,setMembershipLink]=useState('');
+ const createMembershipLink=async()=>{
+  if(busy||!active||!active.email||!active.fullName)return;
+  if(lifecycle?.memberships?.some(m=>m.status==='paid_active')){setFeedback({kind:'info',message:'This guest is already a paid member. No new membership invitation is needed.'});return}
+  if(!window.confirm(`Generate a private membership application link for ${active.fullName}? No email will be sent.`))return;
+  setBusy('membership_invite');setMembershipLink('');
+  try{const r=await base44.functions.invoke('membershipApplication',{action:'admin_create_invite',recipientEmail:active.email,recipientMobile:active.mobile||'',recipientName:active.fullName,sendEmail:false});if(r.data?.error)throw Error(r.data.error);if(!r.data?.success||!r.data?.magicInviteUrl)throw Error('Membership invitation could not be created');setMembershipLink(r.data.magicInviteUrl);setFeedback({kind:'success',message:'Private membership link created. Review and share it with the verified guest when ready. No email sent.'})}catch(e){setFeedback({kind:'error',message:e?.response?.data?.error||e?.message||'Membership link could not be created.'})}finally{setBusy('')}
+ };
  const copyLink=async()=>{if(!active?.privateInviteUrl){setFeedback({kind:'error',message:'No active invitation link. Refresh or generate a link using the existing authorised service.'});return}try{await navigator.clipboard.writeText(active.privateInviteUrl);setFeedback({kind:'success',message:'Private invitation link copied.'})}catch{setFeedback({kind:'error',message:'Could not copy link.'})}};
  const whatsapp=()=>{if(!active?.privateInviteUrl){setFeedback({kind:'error',message:'No active invitation link. Generate or resend a private link first.'});return}const number=whatsappNumber(active.mobile);if(!number){setFeedback({kind:'error',message:'No valid WhatsApp mobile number recorded.'});return}const message=`Hi ${active.fullName?.split(' ')[0]||'there'}, your Clare Pickleball guest session invitation is here: ${active.privateInviteUrl}`;window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`,'_blank','noopener,noreferrer')};
  return <section className="rounded-xl border bg-card p-4" aria-label="Guest booking CRM">
@@ -70,6 +78,7 @@ export default function ClubGuestBookingCRM({tenantId,clubId}){
     </div>
     {feedback&&<p role="status" aria-live="polite" className={'rounded-lg border p-3 text-sm '+(feedback.kind==='error'?'border-red-500 text-destructive':feedback.kind==='warning'?'border-amber-500':'border-green-500')}>{feedback.message}</p>}
    </>:<p className="rounded-lg border p-4 text-sm text-muted-foreground">Select a guest to manage their booking.</p>}</div></div>}
+  {active?.status==='approved'&&<div className="mt-4 rounded-lg border p-3 text-sm"><h4 className="font-semibold">Guest to membership</h4><p className="mt-1 text-muted-foreground">Generate a contact-bound membership link. The existing membership wizard prefills verified Person details and still requires current membership declarations, approval and payment. Existing members do not need another invitation.</p><button type="button" className={control} disabled={!!busy||lifecycleLoading||lifecycleError||!lifecycle||lifecycle.memberships?.some(m=>m.status==='paid_active')} onClick={createMembershipLink}>{busy==='membership_invite'?'Generating…':'Generate membership link (no email)'}</button>{membershipLink&&<div className="mt-2 break-all"><a href={membershipLink} target="_blank" rel="noopener noreferrer" className="underline">Preview membership link</a><button type="button" className={control+' ml-2'} onClick={()=>navigator.clipboard.writeText(membershipLink).then(()=>setFeedback({kind:'success',message:'Membership link copied.'})).catch(()=>setFeedback({kind:'error',message:'Copy failed.'}))}>Copy link</button></div>}</div>}
   <div className="mt-4 border-t pt-4"><button type="button" className={control} onClick={()=>setShowPolicy(v=>!v)}>{showPolicy?'Hide venue policy review':'Guest eligibility and venue policy review'}</button>{showPolicy&&<ClubGuestEligibilityReview tenantId={tenantId} clubId={clubId}/>}</div>
  </section>;
 }
