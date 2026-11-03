@@ -12,7 +12,7 @@ const sections=[
  {id:'people',name:'People',description:'Membership, guests, players and club access',links:[['Membership applications','/app/membership'],['Guest booking approvals','/app/guest-bookings'],['Players','/app/players'],['Waiting list','/app/waiting-list']]},
  {id:'activities',name:'Activities',description:'Plan and manage club sessions, clinics and events',links:[['Existing events','/app/events'],['Tournaments','/app/tournaments'],['Session bookings','/app/guest-bookings']]},
  {id:'operations',name:'Operations',description:'Host check-in, activity health and finance review',links:[['Guest attendance','/app/guest-bookings'],['Finance summary','/app/finance'],['Club analytics','/app/analytics']]},
- {id:'management',name:'Management',description:'Approved communications, administration and controls',links:[['Communications Centre','/app/communications'],['Administration','/app/admin'],['Learning resources','/app/learn/manage']]}
+ {id:'management',name:'Management',description:'Approved communications, administration and controls',links:[['Communications Centre','/app/communications'],['Tournival communications','/app/communications?source=tournival&tab=Audiences'],['Administration','/app/admin'],['Learning resources','/app/learn/manage']]}
 ];
 /** Native CCC workspace. Links preserve the existing authoritative workflows. */
 export default function ClubCommandCentre(){
