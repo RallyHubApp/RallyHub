@@ -26,7 +26,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_resend_payment_link'];
+  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_resend_payment_link','admin_alternative_dates'];
   const isAdminAction=adminActions.includes(action);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||!t.event_public_visible)))return fail('Bookings are not open for this event',404);
   if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||!t.tenant_id||!t.host_club_id||!await requireEventAdminGrant(base44,user,t))return fail('Active tenant or club administrator grant required',403);}
@@ -43,6 +43,16 @@ Deno.serve(async(req)=>{
    if(!operationId)return fail('Application reference required');
    const matches=await base44.asServiceRole.entities.EventRegistration.filter({event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,operation_id:operationId},'-created_date',2);
    return Response.json({success:true,saved:matches.length>0});
+  }
+  if(action==='admin_alternative_dates'){
+   const candidates=await base44.asServiceRole.entities.Tournament.filter({tenant_id:t.tenant_id,host_club_id:t.host_club_id,event_registration_mode:'rallyhub',event_booking_enabled:true,event_publish_status:'published',event_public_visible:true},'start_date',100);
+   const alternatives=[];
+   for(const candidate of candidates){
+    if(candidate.id===t.id||candidate.location!==t.location||!candidate.event_capacity||!candidate.event_slug||String(candidate.start_date||'')<new Date().toISOString().slice(0,10))continue;
+    const used=await countActiveEventRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:candidate.id,tenantId:t.tenant_id,clubId:t.host_club_id});
+    if(used<Number(candidate.event_capacity))alternatives.push({id:candidate.id,name:candidate.name,date:candidate.start_date,slug:candidate.event_slug,placesRemaining:Number(candidate.event_capacity)-used});
+   }
+   return Response.json({success:true,alternatives,readOnly:true});
   }
   if(action==='admin_notice_preview'){
    const noticeType=clean(b.noticeType||'booking_confirmed',50);
