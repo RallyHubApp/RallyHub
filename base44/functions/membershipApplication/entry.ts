@@ -1038,6 +1038,20 @@ Deno.serve(async(req)=>{
           full_name:fullName,email,mobile,date_of_birth:dob,payload_json:JSON.stringify(payload),submitted_at:new Date().toISOString(),
           notes:`Public new-member request for ${config.season_label}. Approval required before payment.`
         });
+        // An approval request is not a MembershipApplication yet, so the normal
+        // sendSubmittedEmails() hook never runs. Alert the configured club inbox here.
+        if(config.notification_email){
+          try{
+            const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:config.tenant_id,clubId:config.club_id};
+            const content=await membershipComms(base44,config,club,'membership_admin_received',{
+              FIRST_NAME:firstName(fullName),FULL_NAME:fullName,APPLICATION_TYPE:'new application',
+              MEMBERSHIP_SEASON:config.season_label,MEMBERSHIP_FEE:'Pending approval',
+              APPLICATION_REFERENCE:request.id,PAYMENT_STATUS:'awaiting approval',
+              APPLICANT_EMAIL:email,APPLICANT_MOBILE:mobile
+            });
+            await sendWithConfiguredEmailTransport(base44,scope,{to:config.notification_email,...content});
+          }catch(noticeError:any){console.error('membership approval request saved but admin alert failed',noticeError?.message||noticeError)}
+        }else console.error('membership approval request saved but no admin notification email configured');
         return Response.json({success:true,pendingApproval:true,requestId:request.id,message:'Thanks. Your membership request has been sent to Clare Pickleball for approval. No payment has been taken. If approved, you will receive a private link to complete the membership payment.'});
       }
     }
