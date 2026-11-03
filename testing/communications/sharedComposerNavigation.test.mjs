@@ -10,3 +10,5 @@ test('tournival keeps audience and delivery actions',()=>assert.match(page,/sour
 test('central routing does not introduce new sending endpoints',()=>assert.doesNotMatch(page,/SOURCE_DEFAULT_TEMPLATE[\s\S]{0,500}functions\.invoke/));
 
 test("events editor appears only in events context on Compose tab",()=>{assert.match(page,/tab==="Compose"&&senderScope==="tenant"&&journeyContext.source==="events"&&<EventEmailDraftEditor/);assert.doesNotMatch(page,/tab==="Compose"&&senderScope==="tenant"&&<EventEmailDraftEditor/);});
+
+test("selected specialist composers retain a template selector and template management access",()=>{assert.match(page,/tab==="Compose"&&selectedId&&<div/);assert.match(page,/id="central-template-selector"/);assert.match(page,/Manage templates \/ create a draft/);});
