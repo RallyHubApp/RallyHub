@@ -67,7 +67,7 @@ Deno.serve(async(req)=>{
    if(!template)return fail('Approved tenant template required',409);
    const values=eventTemplateValues(t,registration,registration.payment_checkout_url?`Payment link: ${registration.payment_checkout_url}`:'');
    const interpolate=(v:string)=>String(v||'').replace(/\{\{\s*([A-Z_]+)\s*\}\}/g,(_:string,k:string)=>String(values[k]??''));
-   const subject=interpolate(template.subject_template);
+   const subject=String(b.subjectOverride||'').trim()?clean(b.subjectOverride,200):interpolate(template.subject_template);
    const body=String(b.bodyOverride||'').trim()?clean(b.bodyOverride,12000):interpolate(template.plain_text_template);
    if(!subject||!body)return fail('Message content missing',409);
    if(b.confirmSend!==true)return Response.json({success:true,preview:true,recipient:registration.email,subject,body,templateId:template.id});
