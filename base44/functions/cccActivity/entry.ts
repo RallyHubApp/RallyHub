@@ -1,8 +1,12 @@
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
 import {summariseEventFinance} from './reconciliation.mjs';
+import {assessEventCloseout} from './closureReadiness.mjs';
 import {isConfiguredHost} from './hostPolicy.mjs';
 import {readEventPayments} from './eventPaymentReader.mjs';
 import {readEventRegistrations} from './registrationReader.mjs';
+import {registrationActionReview} from './registrationActionReview.mjs';
+import {reviewScopedEventClosure} from './closureGate.mjs';
+import {reviewBookingRecovery} from './bookingRecovery.mjs';
 import {readScopedActivities} from './activityReader.mjs';
 import {buildFollowupReview} from './followupReview.mjs';
 import {validateEventLink} from './eventLinkPolicy.mjs';
@@ -31,6 +35,11 @@ import {createScopedRecurrenceDrafts} from './recurrenceService.mjs';
 import {inspectRecurrenceBatch} from './recurrenceRecovery.mjs';
 import {reviewRecurrenceCompletion} from './recurrenceRecoveryDecision.mjs';
 import {readRecurrenceQueue} from './recurrenceQueue.mjs';
+import {buildPersonTimeline} from './personTimeline.mjs';
+import {consolidateClubFinance} from './financeConsolidation.mjs';
+import {financeCentreAccess,scopedFinanceEvidence} from './financeAccess.mjs';
+import {registrationGate} from './registrationGate.mjs';
+import {reviewCancellationImpact} from './cancellationImpact.mjs';
 const s=(v:any,n=180)=>String(v??'').trim().slice(0,n);
 const types=new Set(['session','guest_session','taster','open_day','clinic','training','quick_play','tournament','tournival','kotc','interclub']);
 const fail=(error:string,status=400)=>Response.json({success:false,error},{status});
@@ -54,7 +63,16 @@ Deno.serve(async req=>{
   const body=await req.json().catch(()=>({})),entity=sdk.asServiceRole.entities.ClubActivity;
   const hostAction=['host_activities','host_roster','host_roster_page','host_checkin'].includes(body.action);
   const access=await readCccAccess(sdk,user,tenant_id,club_id);
-  if(!access.admin&&!hostAction)return fail('Active tenant or club administrator grant required',403);
+  if(body.action==='self_access')return Response.json({success:true,tenantId:tenant_id,clubId:club_id,admin:access.admin,member:access.member,reason:access.reason});
+  const centreFinanceRequest=body.action==='finance_consolidation'&&!!s(body.centreId);
+  let delegatedFinance=false;
+  if(centreFinanceRequest&&!access.admin){
+   const centreId=s(body.centreId);
+   const grants=await sdk.asServiceRole.entities.ClubFinanceCentreAccess.filter({tenant_id,club_id,centre_id:centreId,user_id:user.id},'-created_date',100);
+   if(!Array.isArray(grants)||grants.length===100)return fail('Finance access review incomplete',403);
+   delegatedFinance=financeCentreAccess({user,tenantId:tenant_id,clubId:club_id,centreId,grants});
+  }
+  if(!access.admin&&!hostAction&&!delegatedFinance)return fail('Active administrator or approved centre finance grant required',403);
   if(hostAction&&!access.member)return fail('Active club access required',403);
   if(body.action==='host_activities'){
    if(!access.admin&&user.approval_status&&user.approval_status!=='approved')return fail('Host access denied',403);
@@ -165,12 +183,39 @@ Deno.serve(async req=>{
   }
   if(body.action==='people_summary'){
    const [access,applications]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.ClubUserAccess,{tenant_id,club_id}),readScopedInventory(sdk.asServiceRole.entities.MembershipApplication,{tenant_id,club_id})]);
-   const [memberships,players]=await Promise.all([readScopedInventory(sdk.asServiceRole.entities.ClubMembership,{tenant_id,club_id}),readScopedInventory(sdk.asServiceRole.entities.Player,{tenant_id,club_id})]);
-   const byStatus=(rows:any[],field:string)=>rows.reduce((acc:any,r:any)=>{const key=String(r[field]||'unspecified');acc[key]=(acc[key]||0)+1;return acc},{});
-   const linkedMemberIds=new Set(memberships.rows.filter((r:any)=>r.person_id).map((r:any)=>r.person_id));
-   const linkedPlayerIds=new Set(players.rows.filter((r:any)=>r.person_id).map((r:any)=>r.person_id));
-   const crm={memberships:{total:memberships.rows.length,statuses:byStatus(memberships.rows,'membership_status'),complete:memberships.complete},players:{total:players.rows.length,statuses:byStatus(players.rows,'status'),complete:players.complete},identity:{memberPersonLinks:linkedMemberIds.size,playerPersonLinks:linkedPlayerIds.size,sharedPersonLinks:[...linkedPlayerIds].filter(id=>linkedMemberIds.has(id)).length,unlinkedPlayers:players.rows.filter((r:any)=>!r.person_id).length},separateSourceRecords:true,automaticMerging:false};
-   return Response.json({success:true,...summarisePeopleInventory(access,applications),integrity:identityIntegrity(access.rows,{tenantId:tenant_id,clubId:club_id,complete:access.complete}),crm});
+   return Response.json({success:true,...summarisePeopleInventory(access,applications),integrity:identityIntegrity(access.rows,{tenantId:tenant_id,clubId:club_id,complete:access.complete})});
+  }
+  if(body.action==='finance_consolidation'){
+   const [entries,payments,activities,registrations,refunds,financeAudit]=await Promise.all([
+    readScopedInventory(sdk.asServiceRole.entities.ClubFinanceEntry,{tenant_id,club_id}),
+    readScopedInventory(sdk.asServiceRole.entities.PaymentRecord,{tenant_id,club_id}),
+    readScopedInventory(sdk.asServiceRole.entities.ClubActivity,{tenant_id,club_id}),
+    readScopedInventory(sdk.asServiceRole.entities.EventRegistration,{tenant_id,club_id}),
+    readScopedInventory(sdk.asServiceRole.entities.PaymentRefund,{tenant_id,club_id}),
+    readScopedInventory(sdk.asServiceRole.entities.AuditLog,{tenant_id,club_id})
+   ]);
+   const complete=entries.complete&&payments.complete&&activities.complete&&registrations.complete&&refunds.complete;
+   const finance=consolidateClubFinance({entries:entries.rows,payments:payments.rows,activities:activities.rows,registrations:registrations.rows,tenantId:tenant_id,clubId:club_id,complete});
+   const refundReview=refundRecoveryQueue(payments.rows,refunds.rows,{tenantId:tenant_id,clubId:club_id,complete:payments.complete&&refunds.complete});
+   const centreId=s(body.centreId);
+   const centres=centreId?finance.centres.filter((c:any)=>c.centreId===centreId):finance.centres;
+   const auditActions=new Set(['ClubFinanceEntry','PaymentRecord','PaymentRefund','ClubFinanceSettings','ClubFinanceVenueRule']);
+   const auditRows=financeAudit.rows.filter((a:any)=>auditActions.has(a.entity_type)).map((a:any)=>({id:a.id,action:a.action,entityType:a.entity_type,entityId:a.entity_id,actorId:a.user_id,createdAt:a.created_date||''}));
+   if(delegatedFinance){if(!finance.complete)return fail('Centre finance inventory incomplete',409);if(!centres.length)return fail('Centre finance evidence unavailable',404);return Response.json({success:true,...scopedFinanceEvidence(finance,centreId)});}
+   return Response.json({success:true,...finance,centres,financeAudit:{entries:centreId?[]:auditRows,complete:financeAudit.complete,centreFilterSupported:false},financeAccess:{scope:'club_admin',centreDelegationVerified:false,centreFilterApplied:!!centreId},refundReconciliation:{caseCount:refundReview.caseCount,orphanRefundCount:refundReview.orphanRefundCount,complete:refundReview.complete,requiresReview:refundReview.requiresReview}});
+  }
+  if(body.action==='person_timeline'){
+   const personId=s(body.personId);
+   if(!personId)return fail('Person ID required');
+   const [person,access]=await Promise.all([
+    sdk.asServiceRole.entities.Person.filter({id:personId,tenant_id},'-created_date',1),
+    readScopedInventory(sdk.asServiceRole.entities.ClubUserAccess,{tenant_id,club_id,person_id:personId},{pageSize:100,maxPages:5})
+   ]);
+   if(!person?.length||!access.complete||!access.rows.some((a:any)=>a.status==='active'))return fail('Verified active club Person link required',409);
+   const names=['EventRegistration','GuestSessionBooking','MembershipApplication','ClubMembership','PaymentRecord','ConsentRecord','CommunicationEvent','TrainingRecord'];
+   const reads=await Promise.all(names.map(name=>readScopedInventory(sdk.asServiceRole.entities[name],{tenant_id,club_id,person_id:personId},{pageSize:100,maxPages:10})));
+   const inventories=Object.fromEntries(names.map((name,i)=>[name,reads[i]]));
+   return Response.json({success:true,personId,...buildPersonTimeline(inventories,{tenantId:tenant_id,clubId:club_id,personId})});
   }
   if(body.action==='person_communication_review'){
    const personId=s(body.personId),channel=s(body.channel),purpose=s(body.purpose);
@@ -306,11 +351,7 @@ Deno.serve(async req=>{
   }
   if(body.action==='operations_summary'){
    const result=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});
-   const [requests,bookings]=await Promise.all([sdk.asServiceRole.entities.GuestBookingRequest.filter({tenant_id,club_id},'-created_date',200),sdk.asServiceRole.entities.GuestSessionBooking.filter({tenant_id,club_id},'-created_date',200)]);
-   if(!Array.isArray(requests)||!Array.isArray(bookings))return fail('Guest operations read unavailable',503);
-   const count=(rows:any[],key:string)=>rows.reduce((acc:any,r:any)=>{const k=String(r[key]||'unspecified');acc[k]=(acc[k]||0)+1;return acc},{});
-   const guestOperations={requests:{loaded:requests.length,byStatus:count(requests,'status'),complete:requests.length<200},bookings:{loaded:bookings.length,byStatus:count(bookings,'booking_status'),byPaymentStatus:count(bookings,'payment_status'),complete:bookings.length<200},recentRequests:requests.slice(0,8).map((r:any)=>({id:r.id,name:s(r.full_name,100),status:r.status,submittedAt:r.submitted_at||r.created_date||''})),recentBookings:bookings.slice(0,8).map((r:any)=>({id:r.id,name:s(r.full_name,100),status:r.booking_status,paymentStatus:r.payment_status,registeredAt:r.registered_at||r.created_date||''})),readOnly:true};
-   return Response.json({success:true,...summariseClubOperations(result.activities,{complete:result.complete}),guestOperations});
+   return Response.json({success:true,...summariseClubOperations(result.activities,{complete:result.complete})});
   }
   if(body.action==='list'){
    const result=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});
@@ -369,6 +410,20 @@ Deno.serve(async req=>{
    await audit(sdk,tenant_id,club_id,user.id,'ccc.attendance.mark','EventRegistration',registrationId,{status:registration.attendance_status||'not_marked',revision:current},{status:attendance,revision:current+1});
    return Response.json({success:true,registrationId,attendance,revision:current+1});
   }
+  if(body.action==='closure_readiness'){
+   const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!record||!record.linked_event_id)return fail('Linked activity not found',404);
+   const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
+   if(!event)return fail('Linked event not found',404);
+   const roster=await readEventRegistrations(sdk.asServiceRole.entities.EventRegistration,{tenantId:tenant_id,clubId:club_id,eventId:event.id,maxPages:40});
+   const paymentRead=await readEventPayments(sdk.asServiceRole.entities.PaymentRecord,{tenantId:tenant_id,clubId:club_id,registrationIds:roster.registrations.map((r:any)=>r.id)});
+   const finance=summariseEventFinance(roster.registrations,paymentRead.payments);
+   finance.complete=roster.complete&&!paymentRead.possiblyTruncated;
+   finance.requiresReview=!finance.complete||finance.anomalies.length>0;
+   const review=assessEventCloseout({activity:record,registrations:roster.registrations,payments:paymentRead.payments,registrationComplete:roster.complete,paymentComplete:!paymentRead.possiblyTruncated,finance});
+   const recovery=reviewBookingRecovery(roster.registrations,paymentRead.payments,{tenantId:tenant_id,clubId:club_id,eventId:event.id,complete:finance.complete});
+   return Response.json({success:true,activityId:id,eventId:event.id,...review,recovery,finance:{gross:finance.gross,refunded:finance.refunded,net:finance.net,anomalies:finance.anomalies.slice(0,30),complete:finance.complete}});
+  }
   if(body.action==='registration_overview'){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!record)return fail('Activity not found',404);
@@ -407,6 +462,33 @@ Deno.serve(async req=>{
    const review=buildFollowupReview(registrations);
    return Response.json({success:true,activityId:id,...review,resultsMayBeTruncated:!registrationRead.complete});
   }
+  if(body.action==='closure_review'){
+   const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!record?.linked_event_id)return fail('Linked activity not found',404);
+   const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
+   if(!event)return fail('Linked event not found',404);
+   const inventory=await readEventRegistrations(sdk.asServiceRole.entities.EventRegistration,{tenantId:tenant_id,clubId:club_id,eventId:event.id,maxPages:40});
+   const paymentRead=await readEventPayments(sdk.asServiceRole.entities.PaymentRecord,{tenantId:tenant_id,clubId:club_id,registrationIds:inventory.registrations.map((r:any)=>r.id)});
+   const finance=summariseEventFinance(inventory.registrations,paymentRead.payments);
+   const review=reviewScopedEventClosure({activity:record,event,registrations:inventory.registrations,payments:paymentRead.payments,registrationComplete:inventory.complete,paymentComplete:!paymentRead.possiblyTruncated});
+   const recovery=reviewBookingRecovery(inventory.registrations,paymentRead.payments,{tenantId:tenant_id,clubId:club_id,eventId:event.id,complete:inventory.complete&&!paymentRead.possiblyTruncated});
+   if(recovery.requiresReview)review.issues.push('booking_recovery_required');
+   if(finance.anomalies.length)review.issues.push('financial_discrepancies');
+   review.operationallyReady=review.issues.length===0;
+   return Response.json({success:true,activityId:id,eventId:event.id,...review,recovery,finance:{gross:finance.gross,refunded:finance.refunded,net:finance.net,anomalies:finance.anomalies,authoritative:false}});
+  }
+  if(body.action==='registration_action_review'){
+   const id=s(body.id),registrationId=s(body.registrationId),action=s(body.registrationAction);
+   const record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!record||!record.linked_event_id)return fail('Linked activity not found',404);
+   const event=(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0];
+   if(!event)return fail('Linked event not found',404);
+   const registration=(await sdk.asServiceRole.entities.EventRegistration.filter({id:registrationId,event_id:event.id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!registration)return fail('Registration not found',404);
+   const inventory=await readEventRegistrations(sdk.asServiceRole.entities.EventRegistration,{tenantId:tenant_id,clubId:club_id,eventId:event.id,maxPages:40});
+   const review=registrationActionReview({activity:record,event,registration,registrations:inventory.registrations,complete:inventory.complete,action});
+   return Response.json({success:true,...review,activityId:id,registrationId,eventId:event.id});
+  }
   if(body.action==='registration_preflight'){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!record)return fail('Activity not found',404);
@@ -440,14 +522,19 @@ Deno.serve(async req=>{
      if(Number(linked.event_fee_amount||0)>0&&record.payment_method!=='online')issues.push('paid_event_requires_online_payment');
     }
    }
-   issues.push('booking_capacity_payment_and_notification_integration_pending');
-   return Response.json({success:true,ready:false,issues,activityId:id,revision:record.revision});
+   // Read-only preflight: the linked event registration backend owns capacity, approval, checkout and notifications.
+   // This checks configuration readiness, not provider settlement or actual email delivery.
+   return Response.json({success:true,ready:issues.length===0,issues,activityId:id,revision:record.revision,providerSettlementVerified:false,communicationDeliveryVerified:false});
   }
   if(body.action==='cancellation_review'){
    const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
    if(!record)return fail('Activity not found',404);
    const linked=record.linked_event_id?(await sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1))?.[0]:null;
-   return Response.json({success:true,activityId:id,...reviewActivityCancellation(record,{linkedEvent:linked})});
+   if(!linked)return Response.json({success:true,activityId:id,...reviewActivityCancellation(record,{linkedEvent:linked})});
+   const regRead=await readEventRegistrations(sdk.asServiceRole.entities.EventRegistration,{tenantId:tenant_id,clubId:club_id,eventId:linked.id});
+   const payRead=await readEventPayments(sdk.asServiceRole.entities.PaymentRecord,{tenantId:tenant_id,clubId:club_id,registrationIds:regRead.registrations.map((r:any)=>r.id)});
+   const impact=reviewCancellationImpact({registrations:regRead.registrations,payments:payRead.payments,registrationComplete:regRead.complete,paymentComplete:!payRead.possiblyTruncated});
+   return Response.json({success:true,activityId:id,...reviewActivityCancellation(record,{linkedEvent:linked}),impact});
   }
   if(body.action==='transition'){
    const id=s(body.id),to=s(body.to),revision=Number(body.expectedRevision);
@@ -491,6 +578,15 @@ Deno.serve(async req=>{
     if(to==='registration_closed'&&event.event_booking_enabled)return fail('Close registration in the existing event service first',409);
     if(to==='completed'&&Date.parse(record.ends_at)>Date.now())return fail('Cannot complete activity before scheduled end',409);
    }
+   if(to==='registration_open'){
+    const [venue,templates,linked]=await Promise.all([
+     sdk.asServiceRole.entities.Venue.filter({id:record.venue_id,tenant_id,club_id,status:'active'},'-created_date',1),
+     record.communication_template_id?sdk.asServiceRole.entities.CommunicationTemplate.filter({id:record.communication_template_id,tenant_id,owner_scope:'tenant',status:'approved'},'-created_date',1):Promise.resolve([]),
+     sdk.asServiceRole.entities.Tournament.filter({id:record.linked_event_id,tenant_id,host_club_id:club_id},'-created_date',1)
+    ]);
+    const gate=registrationGate(record,{event:linked?.[0],venue:venue?.[0],hostVerified:record.host_user_id?await isClubHost(sdk,tenant_id,club_id,record.venue_id,record.host_user_id):false,templateApproved:!!templates?.[0]&&(!templates[0].club_id||templates[0].club_id===club_id)});
+    if(!gate.ready)return fail('Registration cannot open: '+gate.issues.join(', '),409);
+   }
    const updated=await entity.updateMany({id,tenant_id,club_id,status:record.status,revision},{$set:{status:to,revision:revision+1,updated_by_user_id:user.id}});
    if(updated.updated!==1)return fail('Activity changed; reload',409);
    await audit(sdk,tenant_id,club_id,user.id,'ccc.activity.transition','ClubActivity',id,{status:record.status,revision},{status:to,revision:revision+1});
@@ -531,5 +627,5 @@ Deno.serve(async req=>{
   if(prior?.length)return Response.json({success:true,id:prior[0].id,revision:prior[0].revision,status:prior[0].status,reused:true});
   const created=await entity.create({...payload,status:'draft',revision:1,idempotency_key:key,created_by_user_id:user.id});
   return Response.json({success:true,id:created.id,revision:1,status:'draft'});
- }catch(e:any){console.error('cccActivity failed',String(e?.message||e).slice(0,240));return fail('Activity service unavailable',500)}
+ }catch(e:any){return fail('Activity service unavailable',500)}
 });

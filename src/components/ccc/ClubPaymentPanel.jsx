@@ -1,4 +1,5 @@
 import React from 'react';
+import ClubFinanceConsolidation from './ClubFinanceConsolidation';
 import { paymentLedger, paymentReconciliationSummary } from '@/lib/ccc/paymentReconciliation';
 
 /** Read-only payment status summary; no financial operations or payment verification. */
@@ -14,5 +15,6 @@ export default function ClubPaymentPanel({tenantId,clubId,payments=[],loading=fa
    {summary.unknownAmount>0&&<p className="mt-2 text-sm text-muted-foreground">{summary.unknownAmount} records have an unverified amount.</p>}
    <p className="mt-3 text-xs text-muted-foreground">Status counts are not revenue totals. Confirm payments against the provider before taking action.</p>
   </>}
+ <ClubFinanceConsolidation tenantId={tenantId} clubId={clubId}/>
  </section>;
 }

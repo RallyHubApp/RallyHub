@@ -2,6 +2,7 @@
 export function validateEventLink(activity,event,{venue,hostVerified,templateVerified}={}){
  const issues=[];
  if(!activity||!event)return ['missing_activity_or_event'];
+ if(activity.linked_event_id&&activity.linked_event_id!==event.id)issues.push('activity already linked');
  if(!activity.tenant_id||!activity.club_id||event.tenant_id!==activity.tenant_id||event.host_club_id!==activity.club_id)issues.push('event_scope_mismatch');
  if(event.event_registration_mode!=='rallyhub')issues.push('event_registration_mode_mismatch');
  if(!Number.isSafeInteger(Number(activity.capacity))||Number(activity.capacity)<1||Number(event.event_capacity)!==Number(activity.capacity))issues.push('event_capacity_mismatch');

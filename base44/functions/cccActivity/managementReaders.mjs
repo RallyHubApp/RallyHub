@@ -3,20 +3,16 @@ export async function readScopedInventory(entity,query,{pageSize=200,maxPages=20
  if(!query?.tenant_id)throw Error('Tenant scope required');
  const rows=[],seen=new Set();let cursor,complete=false,pages=0;
  while(pages<maxPages){
-  // Use the same established array/offset SDK endpoint as Membership Console.
-  // The v2 cursor endpoint can return an empty inventory for existing club records.
-  const page=await entity.filter(query,'-created_date',pageSize,rows.length);
-  const arrayResult=Array.isArray(page);
-  if(!arrayResult&&(!page||!Array.isArray(page.items)))throw Error('Inventory pagination unavailable');
-  const items=arrayResult?page:page.items;
-  const priorCount=rows.length;
-  for(const row of items){
-   if(!row?.id)throw Error('Inventory row ID missing');
-   if(Object.entries(query).some(([key,value])=>row[key]!==value))throw Error('Inventory scope violation');
-   if(!seen.has(row.id)){seen.add(row.id);rows.push(row)}
-  }
+  // Base44 entity SDK uses filter(query, sort, limit) and normally returns an array.
+  // Some paginated adapters return {items, has_more, next_cursor}; support both.
+  const page=await entity.filter(query,'-created_date',pageSize,cursor?{cursor}:undefined);
+  const legacyArray=Array.isArray(page);
+  if(!legacyArray&&(!page||!Array.isArray(page.items)))throw Error('Inventory pagination unavailable');
+  const items=legacyArray?page:page.items;
+  for(const row of items){if(!row?.id)throw Error('Inventory row ID missing');if(Object.entries(query).some(([key,value])=>row[key]!==value))throw Error('Inventory scope violation');if(!seen.has(row.id)){seen.add(row.id);rows.push(row)}}
   pages++;
-  if(arrayResult){if(items.length<pageSize){complete=true;break}if(rows.length===priorCount)break;continue}
+  // Array results have no cursor. A full page is deliberately marked incomplete.
+  if(legacyArray){complete=items.length<pageSize;break}
   if(page.has_more!==true){complete=true;break}
   if(!page.next_cursor||page.next_cursor===cursor)throw Error('Inventory cursor stalled');
   cursor=page.next_cursor;
