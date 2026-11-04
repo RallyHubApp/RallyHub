@@ -13,6 +13,8 @@ import PageHeader from '@/components/shared/PageHeader';
 import { toast } from 'sonner';
 import { EVENT_AGE_GROUPS, EVENT_DISCIPLINES, EVENT_LEVELS, EVENT_TYPES, registrationState, slugifyEvent } from '@/lib/event-utils';
 
+const REGISTRATION_FIELDS=[['fullName','Full name'],['email','Email address'],['mobile','Mobile number'],['emergencyContactName','Emergency contact name'],['emergencyContactMobile','Emergency contact mobile'],['previousExperience','Pickleball experience'],['previousSports','Previous racket sports'],['healthDeclaration','Health declaration']];
+
 const blank = {
   name:'', category:'other', date:'', endDate:'', start:'', end:'', venue_id:'', location:'', county:'', country:'Ireland', setting:'',
   summary:'', description:'', internal:'', contact:'', contactPhone:'', phoneHiddenUntil:'', phoneKeepPrivate:false, statusOverride:'', registrationMode:'external', registration:'', regOpen:'', regClose:'', feeText:'', capacity:'', waitlist:false, bookingApproval:true, bookingHoldMinutes:15, bookingProvider:'sumup', bookingRefundHours:24,bookingConfirmationCc:'',bookingFormFields:REGISTRATION_FIELDS.map(([id])=>id),
@@ -32,7 +34,6 @@ function RegistrationDateTime({label,value,onChange}){
  return <fieldset className="space-y-1"><legend className="text-sm font-semibold">{label}</legend><div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-2"><label className="text-xs">Date<input aria-label={`${label} date`} type="date" className="mt-1 h-10 w-full rounded-md border bg-background px-2 text-sm" value={date} onChange={e=>apply(e.target.value,typed||'00:00')}/></label><label className="text-xs">Time (24h)<input aria-label={`${label} time in 24-hour format`} type="text" inputMode="numeric" maxLength={5} placeholder="HH:MM" className="mt-1 h-10 w-full rounded-md border bg-background px-2 font-mono text-sm" value={typed} onChange={e=>{setTyped(e.target.value);if(validClock(e.target.value))apply(date,e.target.value)}} onBlur={()=>{if(typed&&!validClock(typed))setTyped(time)}}/></label></div></fieldset>;
 }
 const parseEuroFee=value=>{const raw=String(value||'').trim();if(!raw)return 0;const match=raw.match(/(?:€|EUR\s*)?\s*(\d+(?:[.,:]\d{1,2})?)/i);if(!match)return null;const amount=Number(match[1].replace(/[,:]/g,'.'));return Number.isFinite(amount)&&amount>=0?Math.round(amount*100)/100:null};
-const REGISTRATION_FIELDS=[['fullName','Full name'],['email','Email address'],['mobile','Mobile number'],['emergencyContactName','Emergency contact name'],['emergencyContactMobile','Emergency contact mobile'],['previousExperience','Pickleball experience'],['previousSports','Previous racket sports'],['healthDeclaration','Health declaration']];
 const numberOrNull=value=>value===''||value===null||value===undefined?null:Number(value);
 const eventSort=(a,b)=>(a.start_date||'9999-12-31').localeCompare(b.start_date||'9999-12-31');
 const blankCollaborator=()=>({name:'',listing_slug:'',url:'',role:'Partner'});
