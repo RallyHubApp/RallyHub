@@ -42,7 +42,7 @@ function EventPreview({draft,mode,onClose,hostName}){
   return <div className="overflow-hidden rounded-2xl border bg-card shadow-sm"><div className="grid md:grid-cols-[42%_58%]">{image?<div className="flex min-h-64 max-h-[620px] items-center justify-center overflow-hidden bg-secondary"><img src={image} alt="Event poster preview" className="block max-h-[620px] w-full object-contain" style={{objectPosition:`${draft.imageX}% ${draft.imageY}%`,transform:`scale(${draft.imageZoom})`,transformOrigin:`${draft.imageX}% ${draft.imageY}%`}}/></div>:<div className="flex min-h-64 items-center justify-center bg-secondary text-muted-foreground">Full artwork</div>}<div className="space-y-4 p-5"><div className="flex items-center justify-between gap-3"><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">{typeLabels[draft.category]||'Event'}</span><span className="text-xs text-muted-foreground">{member?'Member preview':'Public detail preview'}</span></div><h2 className="text-2xl font-black">{draft.name||'Event name'}</h2><div className="space-y-1 text-sm text-muted-foreground"><p className="flex gap-2"><CalendarDays className="h-4 w-4"/>{draft.date||'Date'}{draft.endDate&&draft.endDate!==draft.date?` – ${draft.endDate}`:''}{draft.start?` · ${draft.start}`:''}{draft.end?`–${draft.end}`:''}</p><p className="flex gap-2"><MapPin className="h-4 w-4"/>{draft.location||'Venue'}</p></div>{draft.summary&&<p className="text-sm leading-6">{draft.summary}</p>}{member&&draft.internal&&<div className="rounded-xl border border-primary/20 bg-primary/5 p-3"><p className="text-xs font-black uppercase tracking-wide text-primary">Member information</p><p className="mt-1 whitespace-pre-wrap text-sm">{draft.internal}</p></div>}<div className="grid grid-cols-2 gap-2"><Button>Register / Book</Button><Button variant="outline">Save event</Button></div><Button variant="ghost" className="w-full" onClick={onClose}>Back to editor</Button></div></div></div>;
 }
 
-export default function TenantEvents({directoryListingSlug=''}){
+export default function TenantEvents({directoryListingSlug='',activityPrefill=null,embedded=false}){
   const directoryMode=!!directoryListingSlug;
   const [searchParams,setSearchParams]=useSearchParams();
   const requestedEdit=searchParams.get('edit')||'';
@@ -59,6 +59,14 @@ export default function TenantEvents({directoryListingSlug=''}){
   const deepLinkLoaded=useRef(false);
   const deepLinkId=!directoryMode?new URLSearchParams(window.location.search).get('editEvent'):null;
   const {data:deepLinkEvent}=useQuery({queryKey:['event-editor-deep-link',deepLinkId],queryFn:async()=>{const rows=await base44.entities.Tournament.filter({id:deepLinkId},'-created_date',1);return rows?.[0]||null},enabled:!!deepLinkId});
+  const appliedActivity=useRef('');
+  useEffect(()=>{
+   if(!embedded||!activityPrefill?.id||appliedActivity.current===activityPrefill.id)return;
+   appliedActivity.current=activityPrefill.id;
+   const a=activityPrefill;
+   setDraft(d=>({...d,name:a.title||'',category:a.type==='taster'?'clinic':a.type==='tournament'?'tournament':'other',date:String(a.starts_at||'').slice(0,10),endDate:String(a.ends_at||'').slice(0,10),start:String(a.starts_at||'').slice(11,16),end:String(a.ends_at||'').slice(11,16),venue_id:a.venue_id||'',capacity:a.capacity||'',registrationMode:'rallyhub',bookingApproval:a.registration_mode!=='automatic',bookingProvider:'sumup',waitlist:true}));
+   setEditorOpen(true);
+  },[embedded,activityPrefill]);
   const [showOlder,setShowOlder]=useState(false);
   const [adminHostClubId,setAdminHostClubId]=useState('');
   const [saveState,setSaveState]=useState('');

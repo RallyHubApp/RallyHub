@@ -1,4 +1,5 @@
-import React from 'react';
+import React,{useState} from 'react';
+import TenantEvents from './TenantEvents';
 import {Link,useSearchParams} from 'react-router-dom';
 import {useAuth} from '@/lib/AuthContext';
 import ClubActivityPlanner from '@/components/ccc/ClubActivityPlanner';
@@ -17,6 +18,7 @@ const sections=[
 /** Native CCC workspace. Links preserve the existing authoritative workflows. */
 export default function ClubCommandCentre(){
  const {user}=useAuth();
+ const [eventSetup,setEventSetup]=useState(null);
  const [params,setParams]=useSearchParams();
  const active=sections.some(s=>s.id===params.get('section'))?params.get('section'):'activities';
  const admin=user?.role==='admin';
@@ -31,7 +33,7 @@ export default function ClubCommandCentre(){
    <nav aria-label="Command Centre workspaces" className="grid grid-cols-2 gap-2 md:grid-cols-4">{sections.map(section=><button key={section.id} type="button" aria-current={active===section.id?'page':undefined} onClick={()=>setParams({section:section.id})} className={'rounded-xl border p-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary '+(active===section.id?'bg-primary text-primary-foreground':'bg-card hover:bg-muted')}><span className="block font-semibold">{section.name}</span><span className="mt-1 block text-xs opacity-80">{section.description}</span></button>)}</nav>
    <section aria-label={sections.find(x=>x.id===active)?.name+' workspace'} className="space-y-4">
     <div className="rounded-xl border bg-card p-4"><h2 className="text-lg font-semibold">{sections.find(x=>x.id===active)?.name}</h2><p className="mt-1 text-sm text-muted-foreground">{sections.find(x=>x.id===active)?.description}</p><div className="mt-3 flex flex-wrap gap-2">{sections.find(x=>x.id===active)?.links.filter(([name,path])=>admin||!['/app/admin','/app/communications'].includes(path)).map(([name,path])=><Link key={path} to={path} className="rounded-lg border px-3 py-2 text-sm text-primary hover:bg-muted">{name}</Link>)}</div></div>
-    {active==='activities'&&permitted&&<ClubActivityPlanner tenantId={tenantId} clubId={clubId}/>}
+    {active==='activities'&&permitted&&<><div className="rounded-xl border bg-card p-4"><h3 className="font-semibold">One club event setup</h3><p className="mt-1 text-sm text-muted-foreground">Plan the activity, then continue directly into registration, fees, refunds, artwork and publication. Both stages stay in the Club Command Centre.</p><div className="mt-3 flex gap-2"><button type="button" className="rounded-lg border px-3 py-2" onClick={()=>setEventSetup(null)}>1 · Plan activity</button><button type="button" className="rounded-lg border px-3 py-2" onClick={()=>setEventSetup({id:'manual'})}>2 · Event setup and booking</button></div></div>{eventSetup?<TenantEvents embedded activityPrefill={eventSetup.id==='manual'?null:eventSetup}/>:<ClubActivityPlanner tenantId={tenantId} clubId={clubId} onContinueEvent={setEventSetup}/>}</>}
     {active==='activities'&&!permitted&&<p className="text-sm text-muted-foreground">Activity planning requires an authorised administrator. Existing event and booking tools remain available above.</p>}
     {active==='operations'&&<><ClubHostWorkspace tenantId={tenantId} clubId={clubId}/>{permitted&&<ClubOperationsBoard tenantId={tenantId} clubId={clubId}/>}</>}
     {active==='management'&&permitted&&<ClubManagementBoard tenantId={tenantId} clubId={clubId}/>}
