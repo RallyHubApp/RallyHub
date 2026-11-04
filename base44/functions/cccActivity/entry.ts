@@ -87,7 +87,7 @@ Deno.serve(async req=>{
    const exclusions=new Set(excludedIds);
    const eligible=result.recipients.filter((x:any)=>!exclusions.has(`${x.source}:${x.id}`));
    const excludedSummary={...result.excluded,manually_excluded:result.recipients.length-eligible.length};
-   if(body.action==='audience_preview')return Response.json({success:true,count:eligible.length,excluded:excludedSummary,recipients:result.recipients.map((x:any)=>({id:x.id,name:x.name,source:x.source,email:x.email,previous_sports:x.previous_sports,created_date:x.created_date,gender:x.gender,manuallyExcluded:exclusions.has(`${x.source}:${x.id}`)}))});
+   if(body.action==='audience_preview')return Response.json({success:true,count:eligible.length,excluded:excludedSummary,recipients:result.recipients.map((x:any)=>({id:x.id,name:x.name,source:x.source,email:x.email,previous_sports:x.previous_sports,created_date:x.created_date,gender:x.gender,phone:x.phone,date_of_birth:x.date_of_birth,manuallyExcluded:exclusions.has(`${x.source}:${x.id}`)}))});
    if(activity.status!=='draft')return fail('Audience can only be saved on a draft activity',409);
    const name=s(body.name,160);if(!name)return fail('Audience name required');
    const campaignEntity=sdk.asServiceRole.entities.CommunicationCampaign;
