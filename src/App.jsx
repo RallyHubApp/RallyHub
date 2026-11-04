@@ -38,6 +38,7 @@ const About = lazy(() => import('@/pages/About'));
 const Contact = lazy(() => import('@/pages/Contact'));
 const DirectoryLegalDocument = lazy(() => import('@/pages/DirectoryLegalDocument'));
 const Events = lazy(() => import('@/pages/Events'));
+const PrivateEventBooking = React.lazy(() => import('./pages/PrivateEventBooking'));
 const PublicEventDetail = lazy(() => import('@/pages/PublicEventDetail'));
 const MyEvents = lazy(() => import('@/pages/MyEvents'));
 import PendingApprovalScreen from '@/components/PendingApprovalScreen';
