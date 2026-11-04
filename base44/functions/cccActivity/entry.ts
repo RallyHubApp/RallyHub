@@ -635,7 +635,13 @@ Deno.serve(async req=>{
    const templates=await sdk.asServiceRole.entities.CommunicationTemplate.filter({id:communication_template_id,tenant_id,owner_scope:'tenant',status:'approved'},'-created_date',1);
    if(!templates?.length||(templates[0].club_id&&templates[0].club_id!==club_id))return fail('Select an approved club template',403);
   }
-  const payload={tenant_id,club_id,sport,type,title,venue_id,court_id,starts_at,ends_at,capacity,registration_mode,payment_method,host_user_id,communication_template_id,updated_by_user_id:user.id};
+  const rawOffer=f.configuration?.membership_offer||{};
+  const offer={day:s(rawOffer.day,40),start_time:s(rawOffer.start_time,5),end_time:s(rawOffer.end_time,5),venue:s(rawOffer.venue,180)};
+  if([offer.day,offer.start_time,offer.end_time,offer.venue].some(Boolean)){
+   if(!Object.values(offer).every(Boolean)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(offer.start_time)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(offer.end_time)||offer.start_time>=offer.end_time)return fail('Complete membership opportunity with valid session times');
+  }
+  const configuration={membership_offer:offer};
+  const payload={tenant_id,club_id,sport,type,title,venue_id,court_id,starts_at,ends_at,capacity,registration_mode,payment_method,host_user_id,communication_template_id,configuration,updated_by_user_id:user.id};
   const id=s(body.id),revision=Number(body.expectedRevision);
   if(id){
    const existing=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
