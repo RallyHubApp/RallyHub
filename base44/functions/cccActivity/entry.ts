@@ -81,16 +81,21 @@ Deno.serve(async req=>{
    if(!activity)return fail('Save an activity draft before preparing its audience',404);
    let result;
    try{result=await resolveCampaignAudience(sdk,tenant_id,club_id,filters)}catch(e:any){return fail(e?.message||'Audience read incomplete',409)}
-   if(body.action==='audience_preview')return Response.json({success:true,count:result.count,excluded:result.excluded,recipients:result.recipients.map((x:any)=>({id:x.id,name:x.name,source:x.source}))});
+   const excludedIds=Array.isArray(filters.excludeRecipientIds)?filters.excludeRecipientIds:[];
+   if(excludedIds.length>1000||excludedIds.some((v:any)=>typeof v!=='string'||v.length>150))return fail('Invalid recipient exclusions',400);
+   const exclusions=new Set(excludedIds);
+   const eligible=result.recipients.filter((x:any)=>!exclusions.has(`${x.source}:${x.id}`));
+   const excludedSummary={...result.excluded,manually_excluded:result.recipients.length-eligible.length};
+   if(body.action==='audience_preview')return Response.json({success:true,count:eligible.length,excluded:excludedSummary,recipients:result.recipients.map((x:any)=>({id:x.id,name:x.name,source:x.source,email:x.email,previous_sports:x.previous_sports,created_date:x.created_date,gender:x.gender,manuallyExcluded:exclusions.has(`${x.source}:${x.id}`)}))});
    if(activity.status!=='draft')return fail('Audience can only be saved on a draft activity',409);
    const name=s(body.name,160);if(!name)return fail('Audience name required');
    const campaignEntity=sdk.asServiceRole.entities.CommunicationCampaign;
    const existing=(await campaignEntity.filter({tenant_id,club_id,owner_scope:'tenant',source_module:'club_activity_planner',source_record_id:activityId},'-created_date',10))||[];
    if(existing.length>1)return fail('Multiple activity campaigns found; reconcile before saving',409);
    if(existing.length&&existing[0].status!=='draft')return fail('Campaign is no longer a draft',409);
-   const campaign={tenant_id,club_id,owner_scope:'tenant',source_module:'club_activity_planner',source_record_id:activityId,kind:'campaign',purpose:'event_invitation',name,status:'draft',priority:'routine',audience_definition:{sources:filters.sources||['waiting_list'],sports:filters.sports||[],fromDate:filters.fromDate||'',toDate:filters.toDate||'',gender:filters.gender||''},audience_snapshot:{recipient_refs:result.recipients.map((x:any)=>({source:x.source,id:x.id})),generated_at:new Date().toISOString(),excluded:result.excluded},recipient_count:result.count,created_by_user_id:user.id};
+   const campaign={tenant_id,club_id,owner_scope:'tenant',source_module:'club_activity_planner',source_record_id:activityId,kind:'campaign',purpose:'event_invitation',name,status:'draft',priority:'routine',audience_definition:{sources:filters.sources||['waiting_list'],sports:filters.sports||[],fromDate:filters.fromDate||'',toDate:filters.toDate||'',gender:filters.gender||'',excludeRecipientIds:excludedIds},audience_snapshot:{recipient_refs:eligible.map((x:any)=>({source:x.source,id:x.id})),generated_at:new Date().toISOString(),excluded:excludedSummary},recipient_count:eligible.length,created_by_user_id:user.id};
    const saved=existing.length?await campaignEntity.update(existing[0].id,campaign):await campaignEntity.create(campaign);
-   return Response.json({success:true,id:saved.id,count:result.count,excluded:result.excluded,sendReady:false});
+   return Response.json({success:true,id:saved.id,count:eligible.length,excluded:excludedSummary,sendReady:false});
   }
   if(body.action==='host_activities'){
    if(!access.admin&&user.approval_status&&user.approval_status!=='approved')return fail('Host access denied',403);
