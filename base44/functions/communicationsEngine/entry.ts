@@ -378,8 +378,14 @@ Deno.serve(async(req)=>{
     const byId=new Map(rows.map((r:any)=>[r.id,r]));
     const ids=items.map((i:any)=>clean(i.recipientId,180));
     if(new Set(ids).size!==ids.length||ids.some((id:string)=>!allowed.has(id)||!byId.has(id)))return Response.json({error:'Recipient not in saved campaign'},{status:409});
+    const recent=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({campaign_id:campaignId,tenant_id:tenantId},'-created_date',200);
+    if(recent.length===200)return Response.json({error:'Delivery ledger pagination required; sending blocked'},{status:409});
+    const hourAgo=Date.now()-3600000;
+    let remaining=Math.max(0,10-recent.filter((r:any)=>String(r.idempotency_key||'').startsWith('taster-invite:')&&Date.parse(r.queued_at||r.created_date||'')>=hourAgo).length);
     const results=[];
     for(const item of items){
+      if(remaining<=0){results.push({id:clean(item.recipientId,180),status:'rate_limited'});continue;}
+
       const id=clean(item.recipientId,180),recipient=byId.get(id) as any;
       const email=String(recipient.email||'').trim().toLowerCase();
       if(recipient.active===false||recipient.status!=='waiting'||recipient.gdpr_consent!==true||!/^\S+@\S+\.\S+$/.test(email)){results.push({id,status:'ineligible'});continue;}
@@ -388,6 +394,7 @@ Deno.serve(async(req)=>{
       if(existing.length){results.push({id,status:'already_attempted',attemptId:existing[0].id});continue;}
       const subject=clean(item.subject,500),textBody=clean(item.textBody,20000),htmlBody=String(item.htmlBody||'').slice(0,100000);
       if(!subject||!textBody||!htmlBody||/{{[^}]+}}/.test(subject+textBody+htmlBody)){results.push({id,status:'invalid_render'});continue;}
+      remaining--;
       const attempt=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.create({campaign_id:campaignId,message_id:templateId,recipient_id:id,tenant_id:tenantId,channel:'email',provider:'pending',status:'sending',attempt_number:1,idempotency_key:idem,queued_at:new Date().toISOString(),metadata:{eventId,requested_by_user_id:user.id}});
       try{
         const sent=await sendWithConfiguredEmailTransport(base44,scope,{to:email,subject,textBody,htmlBody,senderName:'Clare Pickleball'});
