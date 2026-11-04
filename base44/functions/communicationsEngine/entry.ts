@@ -358,6 +358,48 @@ Deno.serve(async(req)=>{
     const config=await resolveEmailTransport(base44,scope);
     return Response.json({success:true,provider:config.provider,status:config.status,senderName:config.sender_name,senderEmail:config.sender_email,replyTo:config.reply_to||config.sender_email});
   }
+  if(action==='send_taster_batch'){
+    if(ownerScope!=='tenant'||purpose!=='event_invitation'||!clubId)return Response.json({error:'Tenant event invitation scope required'},{status:403});
+    const campaignId=clean(body.campaignId,180),eventId=clean(body.eventId,180),templateId=clean(body.templateId,180);
+    const items=body.items;
+    if(!campaignId||!eventId||!templateId||!Array.isArray(items)||!items.length||items.length>5)return Response.json({error:'Campaign, event, template and 1-5 recipients required'},{status:400});
+    const [campaigns,events,templates]=await Promise.all([
+      base44.asServiceRole.entities.CommunicationCampaign.filter({id:campaignId,tenant_id:tenantId,club_id:clubId},'-created_date',1),
+      base44.asServiceRole.entities.Tournament.filter({id:eventId,tenant_id:tenantId,host_club_id:clubId},'-created_date',1),
+      base44.asServiceRole.entities.CommunicationTemplate.filter({id:templateId,tenant_id:tenantId,status:'approved'},'-created_date',1)
+    ]);
+    const campaign=campaigns[0],event=events[0],template=templates[0];
+    if(!campaign||!event||!template||!event.event_private_invitation_token||!String(template.purpose||'').includes('invitation'))return Response.json({error:'Approved event invitation campaign/template missing'},{status:409});
+    const refs=campaign.audience_snapshot?.recipient_refs||[];
+    if(refs.some((r:any)=>r.source!=='waiting_list'))return Response.json({error:'Unsupported campaign audience source'},{status:409});
+    const allowed=new Set(refs.map((r:any)=>r.id));
+    const rows=await base44.asServiceRole.entities.WaitingListEntry.filter({tenant_id:tenantId,club_id:clubId},'-created_date',500);
+    if(rows.length===500)return Response.json({error:'Waiting list pagination required; sending blocked'},{status:409});
+    const byId=new Map(rows.map((r:any)=>[r.id,r]));
+    const ids=items.map((i:any)=>clean(i.recipientId,180));
+    if(new Set(ids).size!==ids.length||ids.some((id:string)=>!allowed.has(id)||!byId.has(id)))return Response.json({error:'Recipient not in saved campaign'},{status:409});
+    const results=[];
+    for(const item of items){
+      const id=clean(item.recipientId,180),recipient=byId.get(id) as any;
+      const email=String(recipient.email||'').trim().toLowerCase();
+      if(recipient.active===false||recipient.status!=='waiting'||recipient.gdpr_consent!==true||!/^\S+@\S+\.\S+$/.test(email)){results.push({id,status:'ineligible'});continue;}
+      const idem='taster-invite:'+campaignId+':'+eventId+':'+id;
+      const existing=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({idempotency_key:idem},'-created_date',1);
+      if(existing.length){results.push({id,status:'already_attempted',attemptId:existing[0].id});continue;}
+      const subject=clean(item.subject,500),textBody=clean(item.textBody,20000),htmlBody=String(item.htmlBody||'').slice(0,100000);
+      if(!subject||!textBody||!htmlBody||/{{[^}]+}}/.test(subject+textBody+htmlBody)){results.push({id,status:'invalid_render'});continue;}
+      const attempt=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.create({campaign_id:campaignId,message_id:templateId,recipient_id:id,tenant_id:tenantId,channel:'email',provider:'pending',status:'sending',attempt_number:1,idempotency_key:idem,queued_at:new Date().toISOString(),metadata:{eventId,requested_by_user_id:user.id}});
+      try{
+        const sent=await sendWithConfiguredEmailTransport(base44,scope,{to:email,subject,textBody,htmlBody,senderName:'Clare Pickleball'});
+        await base44.asServiceRole.entities.CommunicationDeliveryAttempt.update(attempt.id,{provider:sent.provider,status:'sent',sent_at:new Date().toISOString()});
+        results.push({id,status:'sent'});
+      }catch(e:any){
+        await base44.asServiceRole.entities.CommunicationDeliveryAttempt.update(attempt.id,{status:'sending',error_code:'unverified_provider_outcome',error_message:clean(e?.message||'Unknown provider outcome',500)});
+        results.push({id,status:'needs_reconciliation'});break;
+      }
+    }
+    return Response.json({success:true,results});
+  }
   if(action==='test_email'){
     const to=clean(body.to,240).toLowerCase(),subject=clean(body.subject,500),textBody=clean(body.textBody,20000);let htmlBody=String(body.htmlBody||'').slice(0,100000);
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)||!subject||!textBody||!htmlBody)return Response.json({error:'Valid test recipient, subject, HTML and plain text are required.'},{status:400});
