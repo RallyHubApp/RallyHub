@@ -84,7 +84,12 @@ Deno.serve(async req=>{
    if(body.action==='audience_preview')return Response.json({success:true,count:result.count,excluded:result.excluded,recipients:result.recipients.map((x:any)=>({id:x.id,name:x.name,source:x.source}))});
    if(activity.status!=='draft')return fail('Audience can only be saved on a draft activity',409);
    const name=s(body.name,160);if(!name)return fail('Audience name required');
-   const saved=await sdk.asServiceRole.entities.ClubCampaignAudience.create({tenant_id,club_id,activity_id:activityId,name,filters_json:JSON.stringify(filters),recipient_ids_json:JSON.stringify(result.recipients.map((x:any)=>({source:x.source,id:x.id}))),recipient_count:result.count,status:'draft',created_by_user_id:user.id});
+   const campaignEntity=sdk.asServiceRole.entities.CommunicationCampaign;
+   const existing=(await campaignEntity.filter({tenant_id,club_id,owner_scope:'tenant',source_module:'club_activity_planner',source_record_id:activityId},'-created_date',10))||[];
+   if(existing.length>1)return fail('Multiple activity campaigns found; reconcile before saving',409);
+   if(existing.length&&existing[0].status!=='draft')return fail('Campaign is no longer a draft',409);
+   const campaign={tenant_id,club_id,owner_scope:'tenant',source_module:'club_activity_planner',source_record_id:activityId,kind:'campaign',purpose:'event_invitation',name,status:'draft',priority:'routine',audience_definition:{sources:filters.sources||['waiting_list'],sports:filters.sports||[],fromDate:filters.fromDate||'',toDate:filters.toDate||'',gender:filters.gender||''},audience_snapshot:{recipient_refs:result.recipients.map((x:any)=>({source:x.source,id:x.id})),generated_at:new Date().toISOString(),excluded:result.excluded},recipient_count:result.count,created_by_user_id:user.id};
+   const saved=existing.length?await campaignEntity.update(existing[0].id,campaign):await campaignEntity.create(campaign);
    return Response.json({success:true,id:saved.id,count:result.count,excluded:result.excluded,sendReady:false});
   }
   if(body.action==='host_activities'){
