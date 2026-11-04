@@ -1,3 +1,4 @@
+import {resolveTasterInvitation} from './tasterInvitation.mjs';
 import {resolveCampaignAudience} from './campaignAudience.mjs';
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
 import {summariseEventFinance} from './reconciliation.mjs';
@@ -387,6 +388,12 @@ Deno.serve(async req=>{
    if(!record)return fail('Activity not found',404);
    const history=await readActivityAudit(sdk.asServiceRole.entities.AuditLog,{tenantId:tenant_id,clubId:club_id,activityId:id});
    return Response.json({success:true,activityId:id,...history});
+  }
+  if(body.action==='taster_invitation_preview'){
+   const id=s(body.id),record=(await entity.filter({id,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!record)return fail('Activity not found',404);
+   try{return Response.json({success:true,...await resolveTasterInvitation(sdk,record,{tenantId:tenant_id,clubId:club_id})})}
+   catch(error:any){return fail('Invitation preview unavailable: '+String(error?.message||'linked data incomplete'),409)}
   }
   if(body.action==='link_event'){
    const id=s(body.id),event_id=s(body.eventId),revision=Number(body.expectedRevision);
