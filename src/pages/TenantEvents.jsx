@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, CheckCircle2, Eye, Loader2, MapPin, Plus, Save, Trash2, Users, X } from 'lucide-react';
@@ -152,7 +152,7 @@ export default function TenantEvents({directoryListingSlug='',activityPrefill=nu
   if(directoryMode&&directoryLoading)return <div className="p-6 text-sm text-muted-foreground">Loading event manager…</div>;
   if(directoryMode&&directoryError)return <div className="p-6 text-sm text-destructive">{directoryError.message||'Could not load event manager.'}</div>;
   if(!canManage)return <div className="p-6">You do not have permission to manage events.</div>;
-  return <div className="space-y-6"><PageHeader title={directoryMode?`Events · ${directoryContext?.listing?.name||'Directory organiser'}`:'Events'} description={directoryMode?'Create and maintain public RallyHub events here. The editor is the same one clubs use inside RallyHub Club, so there is nothing new to relearn later.':'Create once. Use the same event for members, RallyHub public Events and club sharing.'}/>
+  return <div className="space-y-6">{!directoryMode&&<div className="flex flex-wrap items-center gap-2"><Link to="/app/club-command-centre?section=activities" className="rounded-lg border px-3 py-2 text-sm font-semibold">Back to Club Command Centre</Link>{embedded&&<span className="text-xs text-muted-foreground">Event setup is inside the Command Centre; use the Plan activity control above to return without leaving.</span>}</div>}<PageHeader title={directoryMode?`Events · ${directoryContext?.listing?.name||'Directory organiser'}`:'Events'} description={directoryMode?'Create and maintain public RallyHub events here. The editor is the same one clubs use inside RallyHub Club, so there is nothing new to relearn later.':'Create once. Use the same event for members, RallyHub public Events and club sharing.'}/>
     {embedded&&<div className="rounded-xl border bg-card p-4"><p className="font-bold">Unified club event setup · Registration, payments, promotion and publication</p><p className="mt-1 text-sm text-muted-foreground">Your event details are retained as a local working draft while you complete the existing editor. Use Save draft to persist the event to RallyHub; publishing remains a separate deliberate action.</p><p className="mt-2 text-xs">{localDraftRecovered?'Working draft recovery active':'Checking saved working draft…'}</p></div>}
     {!directoryMode&&!embedded&&isAdmin&&<EventSetupRehearsal draft={draft} setDraft={setDraft} editingId={editingId} tenantId={effectiveTenantId} clubId={effectiveHostClubId}/>}
     {!directoryMode&&isAdmin&&<EventDiscoveryQueue hostClubId={effectiveHostClubId} tenantId={effectiveTenantId}/>}
