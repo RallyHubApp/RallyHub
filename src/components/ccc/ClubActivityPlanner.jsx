@@ -37,6 +37,7 @@ export default function ClubActivityPlanner({tenantId,clubId}){
  const [saveError,setSaveError]=useState('');
  const [operationId,setOperationId]=useState(()=>globalThis.crypto?.randomUUID?.()||String(Date.now()));
  const [localDraftStatus,setLocalDraftStatus]=useState('');
+ const [saveFeedback,setSaveFeedback]=useState(null);
  const restoreDone=useRef(false);
  const localDraftKey=tenantId&&clubId?`rallyhub:activity-planner:v1:${tenantId}:${clubId}`:null;
  // Persist incomplete wizard steps locally; the backend only accepts complete, validated activities.
@@ -48,7 +49,7 @@ export default function ClubActivityPlanner({tenantId,clubId}){
    setRegistrationMode(draft.registrationMode||'approval');setPaymentMethod(draft.paymentMethod||'none');
    setHostId(draft.hostId||'');setTemplateId(draft.templateId||'');setEventId(draft.eventId||'');
    setSaved(draft.saved||null);setSavedStatus(draft.savedStatus||'draft');
-   setOperationId(draft.operationId||String(Date.now()));setLocalDraftStatus('Recovered your unsaved work on this device.');
+   setOperationId(draft.operationId||String(Date.now()));setLocalDraftStatus('Recovered your unsaved work on this device.');setSaveFeedback({kind:'local',message:'Recovered your previous draft on this device.'});
   }}}catch{setLocalDraftStatus('Could not restore the local draft.');}
   restoreDone.current=true;
  },[localDraftKey]);
@@ -73,7 +74,7 @@ export default function ClubActivityPlanner({tenantId,clubId}){
  const review=activityWizardReview({form:activity,scope,venue,host,registrationMode,paymentMethod,approvedTemplate:template});
  const draftCheck=planActivityDraft({activity:{...activity,capacity:Number(activity.capacity)},scope,venue});
  const draftValid=draftCheck.valid&&!!venue;
- const update=(key,value)=>{setForm(old=>({...old,[key]:value}));setCopied(false);setScheduleReview(null)};
+ const update=(key,value)=>{setSaveFeedback(null);setForm(old=>({...old,[key]:value}));setCopied(false);setScheduleReview(null)};
  const input=(key,label,type='text')=><label className="block text-sm font-medium">{label}<input type={type} value={form[key]??''} onChange={e=>update(key,e.target.value)} className="mt-1 block w-full rounded-lg border bg-background p-2 text-sm" /></label>;
  // Keep the existing YYYY-MM-DDTHH:mm contract; avoid the browser's clumsy native time spinner.
  const dateTimeInput=(key,label)=>{const value=String(form[key]||'');const date=value.slice(0,10);const time=value.slice(11,16);const setPart=(part,next)=>update(key,part==='date'?`${next}T${time||'00:00'}`:`${date}T${next}`);return <div className="grid gap-2 sm:grid-cols-2"><label className="block text-sm font-medium">{label} date<input aria-label={`${label} date`} type="date" value={date} onChange={e=>setPart('date',e.target.value)} className="mt-1 block w-full rounded-lg border bg-background p-2 text-sm"/></label><label className="block text-sm font-medium">{label} time (24-hour)<input aria-label={`${label} time, 24-hour HH:MM`} type="text" inputMode="numeric" placeholder="19:00" maxLength={5} value={time} onChange={e=>{const next=e.target.value;if(/^[0-9:]{0,5}$/.test(next))setPart('time',next)}} className="mt-1 block w-full rounded-lg border bg-background p-2 text-sm"/></label></div>};
@@ -83,18 +84,18 @@ export default function ClubActivityPlanner({tenantId,clubId}){
   if(!draftValid||saving)return;setSaving(true);setSaveError('');
   try{const res=await base44.functions.invoke('cccActivity',{action:'save_draft',draft:{...review.activity,registration_mode:registrationMode,payment_method:paymentMethod,host_user_id:hostId,communication_template_id:templateId},operationId,id:saved?.id,expectedRevision:saved?.revision});
    if(!res.data?.success)throw Error(res.data?.error||'Draft not saved');
-   setSaved({id:res.data.id,revision:res.data.revision});setSavedStatus('draft');queryClient.invalidateQueries({queryKey:['ccc-activity-drafts',tenantId,clubId]});
-  }catch(e){setSaveError(e?.response?.data?.error||e?.message||'Unable to save draft')}finally{setSaving(false)}
+   setSaved({id:res.data.id,revision:res.data.revision});setSavedStatus('draft');setSaveFeedback({kind:'server',message:'Draft saved to RallyHub. You can safely continue to the next stage.'});queryClient.invalidateQueries({queryKey:['ccc-activity-drafts',tenantId,clubId]});
+  }catch(e){setSaveFeedback({kind:'error',message:'RallyHub save failed. Your browser copy is retained.'});setSaveError(e?.response?.data?.error||e?.message||'Unable to save draft')}finally{setSaving(false)}
  };
  const saveProgress=()=>{
   if(!localDraftKey){setLocalDraftStatus('Select a club before saving.');return;}
   try{
    localStorage.setItem(localDraftKey,JSON.stringify({version:1,form:{...form,tenant_id:tenantId,club_id:clubId},step,registrationMode,paymentMethod,hostId,templateId,eventId,saved,savedStatus,operationId,updatedAt:new Date().toISOString()}));
-   setLocalDraftStatus(draftValid?'Progress saved on this device. You can also save to RallyHub.':'Progress saved on this device. Complete the schedule to enable saving to RallyHub.');
-  }catch{setLocalDraftStatus('Unable to save on this device. Check browser storage settings.');}
+   setLocalDraftStatus('Progress saved on this device.');setSaveFeedback({kind:'local',message:'Progress saved on this device only. Continue to Schedule; save to RallyHub once required fields are complete.'});
+  }catch{setLocalDraftStatus('Unable to save on this device. Check browser storage settings.');setSaveFeedback({kind:'error',message:'Save failed. Browser storage is unavailable.'});}
  };
  const testPush=async()=>{setPushTesting(true);setPushTestResult('');try{const r=await base44.functions.invoke('clubNotifications',{action:'test_delivery',category:form.type==='kotc'?'kotc':form.type==='tournival'?'tournival':form.type==='interclub'?'interclub':form.type==='session'?'session':'event',event:'invitation',title:form.title||'Club session'});if(!r.data?.success)throw Error(r.data?.error||'Test failed');setPushTestResult(r.data.sent?`Test sent to ${r.data.sent} registered device(s). Confirm receipt on your phone.`:'No registered push devices found for your account. Enable notifications in Member Messages first.')}catch(e){setPushTestResult(e?.response?.data?.error||e?.message||'Push test unavailable. The notification backend may not be deployed yet.')}finally{setPushTesting(false)}};
- const resetDraft=()=>{if(localDraftKey)try{localStorage.removeItem(localDraftKey)}catch{}setLocalDraftStatus('New draft started.');setForm(newActivityDraft({tenantId,clubId}));setStep(0);setRegistrationMode('approval');setPaymentMethod('none');setPushEnabled(false);setInvitationGroupId('');setGroupPreview('');setPushTestResult('');setHostId('');setTemplateId('');setSaved(null);setSavedStatus('draft');setEventId('');setServerPreflight(null);setScheduleReview(null);setCancellationReview(null);setSaveError('');setOperationId(globalThis.crypto?.randomUUID?.()||String(Date.now()))};
+ const resetDraft=()=>{setSaveFeedback(null);if(localDraftKey)try{localStorage.removeItem(localDraftKey)}catch{}setLocalDraftStatus('New draft started.');setForm(newActivityDraft({tenantId,clubId}));setStep(0);setRegistrationMode('approval');setPaymentMethod('none');setPushEnabled(false);setInvitationGroupId('');setGroupPreview('');setPushTestResult('');setHostId('');setTemplateId('');setSaved(null);setSavedStatus('draft');setEventId('');setServerPreflight(null);setScheduleReview(null);setCancellationReview(null);setSaveError('');setOperationId(globalThis.crypto?.randomUUID?.()||String(Date.now()))};
  const loadDraft=d=>{setForm({...d});setRegistrationMode(d.registration_mode||'approval');setPaymentMethod(d.payment_method||'none');setHostId(d.host_user_id||'');setTemplateId(d.communication_template_id||'');setSaved({id:d.id,revision:d.revision});setSavedStatus(d.status);setEventId(d.linked_event_id||'');setServerPreflight(null);setScheduleReview(null);setCancellationReview(null);setStep(3);setSaveError('')};
  useEffect(()=>{
   const requested=routeParams.get('activityId');if(!requested||!savedDrafts.length)return;
@@ -113,7 +114,8 @@ export default function ClubActivityPlanner({tenantId,clubId}){
  };
  return <section className="rounded-2xl border bg-card p-4 sm:p-5" aria-label="Activity planner">
   <div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-lg font-bold">Activity planner</h2><p className="text-sm text-muted-foreground">Create a club session first. Registration, member responses, payments and host rosters use existing RallyHub workflows.</p></div><span className="rounded-full border px-3 py-1 text-xs font-semibold">Internal lifecycle · No event publication or bulk messages</span></div>
-  {localDraftStatus&&<p role="status" className="mt-2 text-xs text-muted-foreground">{localDraftStatus} Autosave is local to this browser until you save the activity to RallyHub.</p>}
+  {saveFeedback&&<div role={saveFeedback.kind==='error'?'alert':'status'} aria-live="polite" className={'mt-3 rounded-lg border px-4 py-3 text-sm font-semibold '+(saveFeedback.kind==='error'?'border-red-400 bg-red-50 text-red-900':saveFeedback.kind==='server'?'border-emerald-400 bg-emerald-50 text-emerald-900':'border-amber-400 bg-amber-50 text-amber-900')}>{saveFeedback.kind==='error'?'Save failed':saveFeedback.kind==='server'?'✓ Saved to RallyHub':'✓ Saved on this device'} — {saveFeedback.message}</div>}
+  {!saveFeedback&&localDraftStatus&&<p role="status" className="mt-2 text-xs text-muted-foreground">{localDraftStatus} Autosave is local to this browser until you save the activity to RallyHub.</p>}
   {activityList.partial&&<p role="alert" className="mt-2 text-sm text-amber-700">Activity inventory is incomplete; some drafts may not appear in search. Contact an administrator before assuming a session is missing.</p>}
   {savedDrafts.length>0&&<div className="mt-3" aria-label="Saved activity drafts"><label className="block text-xs font-medium">Find a saved activity or recurring draft<input type="search" value={draftSearch} onChange={e=>setDraftSearch(e.target.value)} placeholder="Search title or activity ID" className="mt-1 w-full max-w-md rounded-lg border bg-background p-2 text-sm"/></label><div className="mt-2 flex max-h-48 flex-wrap gap-2 overflow-y-auto">{savedDrafts.filter(d=>['draft','ready','scheduled','registration_open','registration_closed','in_progress','completed','cancelled'].includes(d.status)&&(!draftSearch||String(d.title||'').toLowerCase().includes(draftSearch.toLowerCase())||String(d.id||'').toLowerCase().includes(draftSearch.toLowerCase()))).slice(0,40).map(d=><button type="button" key={d.id} onClick={()=>loadDraft(d)} className="rounded-lg border px-3 py-1 text-sm">{d.title} · {d.status}</button>)}</div><p className="mt-1 text-xs text-muted-foreground">Showing up to 40 matching activities. Search by exact ID for a specific recurring draft.</p></div>}
   <button type="button" onClick={resetDraft} className="mt-3 rounded-lg border px-3 py-2 text-sm font-semibold">New session or activity</button>
