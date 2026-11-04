@@ -1,0 +1,10 @@
+{
+ "name":"ClubCampaignAudience","type":"object",
+ "properties":{
+  "tenant_id":{"type":"string"},"club_id":{"type":"string"},"activity_id":{"type":"string"},
+  "name":{"type":"string"},"filters_json":{"type":"string"},"recipient_ids_json":{"type":"string"},
+  "recipient_count":{"type":"integer"},"created_by_user_id":{"type":"string"},"status":{"type":"string"}
+ },
+ "required":["tenant_id","club_id","activity_id","name"],
+ "rls":{"create":{"user_condition":{"role":"admin"}},"read":{"user_condition":{"role":"admin"}},"update":{"user_condition":{"role":"admin"}},"delete":{"user_condition":{"role":"admin"}}}
+}

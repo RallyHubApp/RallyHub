@@ -1,3 +1,4 @@
+import {resolveCampaignAudience} from './campaignAudience.mjs';
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
 import {summariseEventFinance} from './reconciliation.mjs';
 import {assessEventCloseout} from './closureReadiness.mjs';
@@ -74,6 +75,18 @@ Deno.serve(async req=>{
   }
   if(!access.admin&&!hostAction&&!delegatedFinance)return fail('Active administrator or approved centre finance grant required',403);
   if(hostAction&&!access.member)return fail('Active club access required',403);
+  if(body.action==='audience_preview'||body.action==='audience_save'){
+   const activityId=s(body.activityId),filters=body.filters||{};
+   const activity=(await entity.filter({id:activityId,tenant_id,club_id},'-created_date',1))?.[0];
+   if(!activity)return fail('Save an activity draft before preparing its audience',404);
+   let result;
+   try{result=await resolveCampaignAudience(sdk,tenant_id,club_id,filters)}catch(e:any){return fail(e?.message||'Audience read incomplete',409)}
+   if(body.action==='audience_preview')return Response.json({success:true,count:result.count,excluded:result.excluded,recipients:result.recipients.map((x:any)=>({id:x.id,name:x.name,source:x.source}))});
+   if(activity.status!=='draft')return fail('Audience can only be saved on a draft activity',409);
+   const name=s(body.name,160);if(!name)return fail('Audience name required');
+   const saved=await sdk.asServiceRole.entities.ClubCampaignAudience.create({tenant_id,club_id,activity_id:activityId,name,filters_json:JSON.stringify(filters),recipient_ids_json:JSON.stringify(result.recipients.map((x:any)=>({source:x.source,id:x.id}))),recipient_count:result.count,status:'draft',created_by_user_id:user.id});
+   return Response.json({success:true,id:saved.id,count:result.count,excluded:result.excluded,sendReady:false});
+  }
   if(body.action==='host_activities'){
    if(!access.admin&&user.approval_status&&user.approval_status!=='approved')return fail('Host access denied',403);
    const activityRead=await readScopedActivities(entity,{tenantId:tenant_id,clubId:club_id});const activities=activityRead.activities;
