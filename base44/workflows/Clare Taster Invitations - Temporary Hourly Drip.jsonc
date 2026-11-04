@@ -1,0 +1,41 @@
+{
+  "name": "Clare Taster Invitations - Temporary Hourly Drip",
+  "description": "Temporary approved 46-person waiting-list invitation campaign; max 10 sends per rolling hour, idempotent recipient ledger. Archive when complete.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "15 * * * *",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "clare_taster_invitation_hourly",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "tasterInvitationAutoBatch",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}
