@@ -110,7 +110,7 @@ Deno.serve(async(req)=>{
   }
   if(action==='get'){
    const used=await countActiveEventRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
-   const publicEvent={id:t.id,name:t.name,date:t.start_date,venue:t.location,capacity,placesRemaining:Math.max(0,capacity-used),fee:Number(t.event_fee_amount||0),currency:t.event_currency||'EUR',approvalRequired:t.event_booking_policy?.approval_required!==false};
+   const publicEvent={id:t.id,name:t.name,date:t.start_date,venue:t.location,capacity,placesRemaining:Math.max(0,capacity-used),fee:Number(t.event_fee_amount||0),currency:t.event_currency||'EUR',approvalRequired:t.event_booking_policy?.approval_required!==false,startTime:t.event_start_time||'',endTime:t.event_end_time||'',summary:t.event_public_summary||'',description:t.description||'',eligibility:t.event_eligibility||'',playerInfo:t.event_player_info||'',feesCancellation:t.event_fees_cancellation||'',levels:t.event_levels||[],mapUrl:t.event_map_url||'',imageUrl:t.event_image_url||''};
    const otherDates=await base44.asServiceRole.entities.Tournament.filter({tenant_id:t.tenant_id,host_club_id:t.host_club_id,event_registration_mode:'rallyhub',event_booking_enabled:true,event_publish_status:'published',event_public_visible:true},'-start_date',100);
    const alternatives=otherDates.filter((e:any)=>e.id!==id&&e.event_capacity>0&&e.location===t.location&&e.name?.includes('Taster')&&e.start_date>=new Date().toISOString().slice(0,10)).sort((a:any,b:any)=>String(a.start_date).localeCompare(String(b.start_date)));
    let alternative=null;
