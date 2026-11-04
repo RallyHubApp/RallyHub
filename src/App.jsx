@@ -285,6 +285,7 @@ function App() {
             <Route path="/events/quick-start" element={<EventQuickStart />} />
             <Route path="/events/my" element={<MyEvents />} />
             <Route path="/events/:slug" element={<PublicEventDetail />} />
+            <Route path="/private-event/:eventId/:token" element={<PrivateEventBooking />} />
             <Route path="/directory" element={<PublicDirectory />} />
             <Route path="/directory/category/clubs" element={<DirectoryCategoryClubs />} />
             <Route path="/directory/category/events" element={<DirectoryCategoryEvents />} />
