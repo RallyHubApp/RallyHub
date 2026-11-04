@@ -47,7 +47,7 @@ Deno.serve(async req=>{try{
   if(existing?.event_private_invitation_token&&updates.event_private_invitation_token!==undefined&&updates.event_private_invitation_token!==existing.event_private_invitation_token)return Response.json({error:'Invitation token cannot be replaced by the editor'},{status:409});
   if(updates.event_private_invitation_token&&!/^[a-f0-9]{64}$/.test(updates.event_private_invitation_token))return Response.json({error:'Invalid private invitation token'},{status:400});
   if(privateMode){updates.event_public_visible=false;updates.event_member_visible=false;}
-  updates.event_booking_enabled=body.mode!=='draft'&&updates.event_registration_mode==='rallyhub'&&Number(updates.event_capacity)>0;
+  updates.event_booking_enabled=body.mode!=='draft'&&privateMode&&updates.event_registration_mode==='rallyhub'&&Number(updates.event_capacity)>0?true:!!(existing?.event_booking_enabled&&body.mode!=='draft');
   if(updates.event_booking_enabled&&Number(updates.event_fee_amount)>0&&updates.event_booking_policy?.payment_provider!=='sumup')return Response.json({error:'Paid event requires SumUp'},{status:400});
   if(updates.event_fee_amount!=null&&(!Number.isFinite(updates.event_fee_amount)||updates.event_fee_amount<0))return Response.json({error:'Invalid numeric event fee'},{status:400});
 

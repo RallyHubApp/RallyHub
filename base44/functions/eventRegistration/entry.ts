@@ -249,6 +249,7 @@ Deno.serve(async(req)=>{
     const row=accounts?.[0];const account=row?{provider:'sumup',merchantAccountId:row.merchant_account_id||'',credentialSecretName:row.credential_reference||'SUMUP_API_KEY',connectionMode:row.connection_mode||'api_key'}:null;
     if(!account||!providerConfigured('sumup',account))return fail('SumUp unavailable. Your place is reserved; contact the organiser. Do not submit again.',503);
     const urls=resolveEventCheckoutUrls({callbackBase:Deno.env.get('RALLYHUB_EVENT_CALLBACK_BASE_URL'),publicBase:Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL'),slug:t.event_slug});
+    if(privateAccess){const site=new URL(Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL')||'');urls.redirectUrl=new URL('/private-event/'+encodeURIComponent(id)+'/'+encodeURIComponent(b.invitationToken),site).toString();}
     const locked=await acquireEventApprovalLock(base44.asServiceRole.entities.EventRegistration,{registration:persisted,eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
     if(!locked)return fail('Payment is being prepared. Contact the organiser before retrying.',409);
     const checkout=await createCheckout({provider:'sumup',account,amount,currency:t.event_currency||'EUR',reference:`ev_${saved.id}`.slice(0,64),description:t.name,...urls});

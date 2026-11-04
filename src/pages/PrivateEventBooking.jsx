@@ -1,8 +1,10 @@
-import React,{useState} from 'react';
+import React,{useEffect,useState} from 'react';
+import {base44} from '@/api/base44Client';
 import {useParams} from 'react-router-dom';
 import EventRegistrationDialog from '@/components/events/EventRegistrationDialog';
 export default function PrivateEventBooking(){
- const {eventId,token}=useParams();const [open,setOpen]=useState(true);
+ const {eventId,token}=useParams();const [open,setOpen]=useState(false),[status,setStatus]=useState('');
+ useEffect(()=>{const key=`rallyhub-event-pending-${eventId}`;const raw=sessionStorage.getItem(key);if(!raw){setOpen(true);return;}let pending;try{pending=JSON.parse(raw)}catch{setOpen(true);return;}if(pending.invitationToken!==token){setOpen(true);return;}let active=true;const refresh=async()=>{try{const r=await base44.functions.invoke('eventRegistration',{action:'payment_status',eventId,invitationToken:token,operationId:pending.operationId});if(!active)return;if(r.data?.confirmed){setStatus('Payment verified. Your booking is confirmed.');sessionStorage.removeItem(key);sessionStorage.removeItem(`rallyhub-event-operation-${eventId}`);}else setStatus('Payment confirmation pending. Please check your email. Do not submit another booking.');}catch{if(active)setStatus('Payment status could not be verified yet. Please check your email. Do not pay twice.')}};refresh();return()=>{active=false}},[eventId,token]);
  if(!/^[a-f0-9]{64}$/.test(token||''))return <main className="mx-auto max-w-xl p-8">Invalid invitation link.</main>;
- return <main className="mx-auto max-w-xl space-y-5 p-8"><h1 className="text-2xl font-bold">Clare Pickleball · Private event booking</h1><p>Complete the existing RallyHub registration and consents to reserve your place. Payment is securely processed by SumUp.</p><button type="button" className="rounded bg-blue-800 px-5 py-3 text-white" onClick={()=>setOpen(true)}>Book now</button><EventRegistrationDialog event={{id:eventId,name:'Clare Pickleball event'}} invitationToken={token} open={open} onOpenChange={setOpen}/></main>;
+ return <main className="mx-auto max-w-xl space-y-5 p-8"><h1 className="text-2xl font-bold">Clare Pickleball · Private event booking</h1><p>Complete the existing RallyHub registration and consents to reserve your place. Payment is securely processed by SumUp.</p>{status?<p role="status" className="rounded border p-4">{status}</p>:<button type="button" className="rounded bg-blue-800 px-5 py-3 text-white" onClick={()=>setOpen(true)}>Book now</button>}<EventRegistrationDialog event={{id:eventId,name:'Clare Pickleball event'}} invitationToken={token} open={open} onOpenChange={setOpen}/></main>;
 }
