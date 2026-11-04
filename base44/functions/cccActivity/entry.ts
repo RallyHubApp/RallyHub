@@ -81,6 +81,7 @@ Deno.serve(async req=>{
    if(!activity)return fail('Save an activity draft before preparing its audience',404);
    let result;
    try{result=await resolveCampaignAudience(sdk,tenant_id,club_id,filters)}catch(e:any){return fail(e?.message||'Audience read incomplete',409)}
+   result.recipients.sort((a:any,b:any)=>String(a.name||'').localeCompare(String(b.name||''),'en',{sensitivity:'base',numeric:true}));
    const excludedIds=Array.isArray(filters.excludeRecipientIds)?filters.excludeRecipientIds:[];
    if(excludedIds.length>1000||excludedIds.some((v:any)=>typeof v!=='string'||v.length>150))return fail('Invalid recipient exclusions',400);
    const exclusions=new Set(excludedIds);
