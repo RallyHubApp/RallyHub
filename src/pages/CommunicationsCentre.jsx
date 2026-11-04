@@ -371,12 +371,51 @@ function GuestChangeOfferEditor({user,brandKit}){
  return <section className="rounded-xl border bg-white p-5 space-y-4"><h2 className="text-lg font-bold">Clare Pickleball · Alternative session offer</h2><p className="text-sm text-muted-foreground">Edit tenant wording and preview email or WhatsApp with sample data. The club-branded header, signature and Powered by RallyHub footer are applied by the booking email renderer. Saving does not send anything.</p>{error&&<p role="alert" className="text-red-700">{error}</p>}<label className="block text-sm font-semibold">Email subject<input className="mt-1 w-full rounded-lg border p-2" value={content.subject} onChange={e=>setContent(c=>({...c,subject:e.target.value}))}/></label><label className="block text-sm font-semibold">Email message<textarea rows={9} className="mt-1 w-full rounded-lg border p-2" value={content.body} onChange={e=>setContent(c=>({...c,body:e.target.value}))}/></label><label className="block text-sm font-semibold">WhatsApp message<textarea rows={4} className="mt-1 w-full rounded-lg border p-2" value={content.whatsapp} onChange={e=>setContent(c=>({...c,whatsapp:e.target.value}))}/></label><div className="flex gap-2"><button type="button" onClick={()=>setView('email')} className="rounded-lg border px-3 py-2">Preview email</button><button type="button" onClick={()=>setView('whatsapp')} className="rounded-lg border px-3 py-2">Preview WhatsApp</button><button type="button" disabled={busy} onClick={save} className="rounded-lg bg-slate-900 px-4 py-2 text-white">{busy?'Saving…':'Save tenant template'}</button></div><div className="rounded-xl border bg-slate-50 p-4"><p className="mb-2 text-xs font-bold">Sample {view==='email'?'email':'WhatsApp'} preview · Not sent</p>{view==='email'&&<><p className="font-bold">Clare Pickleball</p><p className="text-sm">{render(content.subject)}</p></>}{view==='email'?(emailPreview?<iframe title="Actual Clare Pickleball email HTML preview" srcDoc={emailPreview} className="w-full h-[750px] rounded-lg border bg-white" sandbox=""/>:<p className="text-sm">Loading branded email preview…</p>):<p className="mt-3 whitespace-pre-wrap text-sm">{render(content.whatsapp)}</p>}</div></section>
 }
 
+const CLARE_TASTER_INVITE={name:'Event Invite, Clare Pickleball Taster',purpose:'event_waiting_list_taster_invitation',subject:'Clare Pickleball – Your Waiting List Invitation | {{EVENT_DATE}}',body:`Hi {{FIRST_NAME}},
+
+Thank you for your patience!
+
+You've been on the Clare Pickleball waiting list for some time, and we appreciate how long you've been waiting for an opportunity to join us.
+
+Clare Pickleball has grown to over 175 members, and demand for places continues to be very high.
+
+We're delighted to offer a small number of people on our waiting list the opportunity to attend a Pickleball Taster Session.
+
+YOUR INVITATION
+Event: {{EVENT_NAME}}
+Date: {{EVENT_DATE}}
+Time: {{EVENT_START_TIME}} – {{EVENT_END_TIME}}
+Venue: {{EVENT_VENUE}}
+Cost: €{{EVENT_FEE}} per person
+Places available: {{PLACES_REMAINING}} of {{EVENT_CAPACITY}}
+Host and trainer: Brian Moore
+
+WHAT TO EXPECT
+This is a friendly introduction to pickleball. You'll learn the basics of serving, scoring, court positioning and playing a few rallies. No previous experience is necessary and all equipment will be provided. Bring comfortable sportswear, suitable court shoes or runners, and water.
+
+Following the taster, we'll explain opportunities to join Clare Pickleball as membership places become available.
+
+BOOKING YOUR PLACE
+We have just four places for this session, offered on a first-come, first-served basis.
+Reserve your place here: {{PRIVATE_BOOKING_URL}}
+Complete your registration and pay securely through SumUp. Your place is confirmed once payment has been verified.
+
+If this date or time doesn't suit you, please don't book. We'll continue to consider you for future opportunities from the waiting list.
+
+We look forward to welcoming you on court!
+
+Kind regards,
+Brian Moore
+Founder & Chairman, Clare Pickleball
+
+Unsubscribe from promotional event invitations: {{UNSUBSCRIBE_URL}}`};
 function EventEmailDraftEditor({tenantId}){
- const purposes=['event_application_received','event_payment_required','event_booking_confirmed'];
+ const purposes=['event_application_received','event_payment_required','event_booking_confirmed','event_waiting_list_taster_invitation'];
  const [items,setItems]=useState([]),[selected,setSelected]=useState(''),[subject,setSubject]=useState(''),[html,setHtml]=useState(''),[plain,setPlain]=useState(''),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
  const refresh=async()=>{if(!tenantId)return;try{const rows=await base44.entities.CommunicationTemplate.filter({tenant_id:tenantId},'-updated_date',200);setItems((rows||[]).filter(x=>purposes.includes(x.purpose)));}catch(e){setNotice(e.message||'Could not load event templates')}};
  useEffect(()=>{refresh()},[tenantId]);
+ const createInvite=async()=>{if(!tenantId)return setNotice('Select Clare Pickleball tenant first.');setBusy(true);setNotice('');try{const existing=items.find(t=>t.purpose===CLARE_TASTER_INVITE.purpose);if(existing){choose(existing.id);setNotice('Existing taster invitation opened; no duplicate created.');return;}const created=await base44.entities.CommunicationTemplate.create({owner_scope:'tenant',tenant_id:tenantId,module:'Events',name:CLARE_TASTER_INVITE.name,purpose:CLARE_TASTER_INVITE.purpose,version:'1.0',status:'draft',subject_template:CLARE_TASTER_INVITE.subject,plain_text_template:CLARE_TASTER_INVITE.body,merge_schema:{required:['FIRST_NAME','EVENT_NAME','EVENT_DATE','EVENT_START_TIME','EVENT_END_TIME','EVENT_VENUE','EVENT_FEE','PLACES_REMAINING','EVENT_CAPACITY','PRIVATE_BOOKING_URL','UNSUBSCRIBE_URL']}});await refresh();setSelected(created.id);setSubject(CLARE_TASTER_INVITE.subject);setPlain(CLARE_TASTER_INVITE.body);setHtml('');setNotice('Invitation draft created. Dynamic mapping and unsubscribe must be verified before sending.')}catch(e){setNotice(e.message||'Could not create invitation')}finally{setBusy(false)}};
  const choose=id=>{const t=items.find(x=>x.id===id);setSelected(id);setSubject(t?.subject_template||'');setHtml(t?.html_template||'');setPlain(t?.plain_text_template||'');setNotice('')};
  const save=async(approve=false)=>{const t=items.find(x=>x.id===selected);if(!t)return;setBusy(true);setNotice('');try{if(approve&&!window.confirm('Approve this template for future event emails?'))return;await base44.entities.CommunicationTemplate.update(t.id,{subject_template:subject,html_template:html,plain_text_template:plain,...(approve?{status:'approved',approved_at:new Date().toISOString()}:{status:'draft'})});setNotice(approve?'Approved template saved.':'Draft saved.');await refresh()}catch(e){setNotice(e.message||'Save failed')}finally{setBusy(false)}};
- return <section className="rounded-xl border p-5 space-y-3"><h2 className="font-bold text-lg">Events — Approved email templates</h2><p className="text-sm">Edit the three draft messages below. The standard Clare Pickleball branding remains separate. Approval alone does not activate a sending integration.</p><select className="w-full border rounded-lg p-2" value={selected} onChange={e=>choose(e.target.value)}><option value="">Choose an event email…</option>{items.map(t=><option key={t.id} value={t.id}>{t.name} ({t.status})</option>)}</select>{selected&&<div className="space-y-3"><label className="block text-sm font-semibold">Subject<input className="block w-full border rounded p-2 mt-1" value={subject} onChange={e=>setSubject(e.target.value)}/></label><label className="block text-sm font-semibold">Heading, subheading and email body (HTML)<textarea rows={9} className="block w-full border rounded p-2 mt-1 font-mono text-xs" value={html} onChange={e=>setHtml(e.target.value)}/></label><label className="block text-sm font-semibold">Plain-text fallback<textarea rows={6} className="block w-full border rounded p-2 mt-1" value={plain} onChange={e=>setPlain(e.target.value)}/></label><div className="flex gap-2"><button disabled={busy} className="border rounded px-4 py-2" onClick={()=>save(false)}>Save draft</button><button disabled={busy} className="border rounded px-4 py-2" onClick={()=>save(true)}>Approve</button></div></div>}{notice&&<p role="status" className="text-sm">{notice}</p>}</section>
+ return <section className="rounded-xl border p-5 space-y-3"><h2 className="font-bold text-lg">Events — Email templates</h2><button type="button" disabled={busy} className="rounded border px-3 py-2 text-sm font-semibold" onClick={createInvite}>Create / open Clare Pickleball Taster invitation</button><p className="text-sm">Edit the three draft messages below. The standard Clare Pickleball branding remains separate. Approval alone does not activate a sending integration.</p><select className="w-full border rounded-lg p-2" value={selected} onChange={e=>choose(e.target.value)}><option value="">Choose an event email…</option>{items.map(t=><option key={t.id} value={t.id}>{t.name} ({t.status})</option>)}</select>{selected&&<div className="space-y-3"><label className="block text-sm font-semibold">Subject<input className="block w-full border rounded p-2 mt-1" value={subject} onChange={e=>setSubject(e.target.value)}/></label><label className="block text-sm font-semibold">Heading, subheading and email body (HTML)<textarea rows={9} className="block w-full border rounded p-2 mt-1 font-mono text-xs" value={html} onChange={e=>setHtml(e.target.value)}/></label><label className="block text-sm font-semibold">Plain-text fallback<textarea rows={6} className="block w-full border rounded p-2 mt-1" value={plain} onChange={e=>setPlain(e.target.value)}/></label><div className="flex gap-2"><button disabled={busy} className="border rounded px-4 py-2" onClick={()=>save(false)}>Save draft</button><button disabled={busy} className="border rounded px-4 py-2" onClick={()=>save(true)}>Approve</button></div></div>}{notice&&<p role="status" className="text-sm">{notice}</p>}</section>
 }
