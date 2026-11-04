@@ -366,12 +366,18 @@ function CustomTenantComposer({template,brandKit,user}){
   if(!window.confirm('Send up to 10 approved taster invitations now? The remaining recipients must be sent in later hourly batches.')){setNotice('Send cancelled. No emails submitted.');return;}
   setBusy(true);setError('');let sent=0,skipped=0;
   try{
-   for(let offset=0;offset<Math.min(10,eligible.length);offset+=5){
-    const batch=eligible.slice(offset,offset+5).map(recipient=>{const r=build(recipient);if(r.unresolved.length)throw Error('Unresolved merge fields for '+recipient.email);return {recipientId:recipient.id,subject:r.subject,textBody:r.text,htmlBody:r.html}});
+   const prior=await base44.entities.CommunicationDeliveryAttempt.filter({campaign_id:selectedAudience.id,tenant_id:user.active_tenant_id},'-created_date',200);
+   if(prior.length===200)throw Error('Delivery history requires pagination; sending stopped.');
+   const attempted=new Set(prior.filter(x=>String(x.idempotency_key||'').startsWith('taster-invite:')).map(x=>x.recipient_id));
+   const remainingRecipients=eligible.filter(x=>!attempted.has(x.id));
+   if(!remainingRecipients.length){setNotice('No unsent eligible recipients remain in this campaign.');return;}
+   setNotice('Starting next hourly batch: '+Math.min(10,remainingRecipients.length)+' of '+remainingRecipients.length+' remaining.');
+   for(let offset=0;offset<Math.min(10,remainingRecipients.length);offset+=5){
+    const batch=remainingRecipients.slice(offset,offset+5).map(recipient=>{const r=build(recipient);if(r.unresolved.length)throw Error('Unresolved merge fields for '+recipient.email);return {recipientId:recipient.id,subject:r.subject,textBody:r.text,htmlBody:r.html}});
     const response=await base44.functions.invoke('communicationsEngine',{action:'send_taster_batch',ownerScope:'tenant',purpose:'event_invitation',tenantId:user.active_tenant_id,clubId:user.active_club_id,campaignId:selectedAudience.id,eventId:selectedEvent.id,templateId:template.id,items:batch});
     if(response.data?.error)throw Error(response.data.error);
     const results=response.data?.results||[];sent+=results.filter(x=>x.status==='sent').length;skipped+=results.filter(x=>x.status!=='sent').length;
-    setNotice('Taster invitations: '+sent+' sent, '+skipped+' skipped/previously attempted. '+Math.min(offset+5,10,eligible.length)+' of '+eligible.length+' processed.');
+    setNotice('Taster invitations: '+sent+' sent, '+skipped+' skipped/previously attempted. '+Math.min(offset+5,10,remainingRecipients.length)+' of '+remainingRecipients.length+' remaining recipients processed.');
     if(results.some(x=>x.status==='rate_limited')){setNotice('Hourly limit reached. '+sent+' newly sent; '+skipped+' skipped. Return after one hour.');break;}
     if(results.some(x=>x.status==='needs_reconciliation'))throw Error('Delivery outcome uncertain; stopped. Reconcile before resending.');
    }
