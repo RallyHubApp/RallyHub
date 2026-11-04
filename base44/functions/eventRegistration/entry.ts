@@ -224,6 +224,13 @@ Deno.serve(async(req)=>{
   await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:null},{$set:{event_reserved_count:observedOccupied}});
   // Never trust a stale under-counted counter: raise it atomically to at least the observed active roster.
   await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$lt:observedOccupied}},{$set:{event_reserved_count:observedOccupied}});
+  // Validate checkout configuration before reserving a paid place; do not strand a capacity hold for a missing gateway.
+  if(t.event_booking_policy?.approval_required===false&&Number(t.event_fee_amount||0)>0){
+   const accounts=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
+   const row=accounts?.[0];const account=row?{provider:'sumup',merchantAccountId:row.merchant_account_id||'',credentialSecretName:row.credential_reference||'SUMUP_API_KEY',connectionMode:row.connection_mode||'api_key'}:null;
+   if(!account||!providerConfigured('sumup',account))return fail('The club SumUp connection is unavailable. No place has been reserved.',503);
+   try{resolveEventCheckoutUrls({callbackBase:Deno.env.get('RALLYHUB_EVENT_CALLBACK_BASE_URL'),publicBase:Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL'),slug:t.event_slug})}catch{return fail('SumUp callback configuration is unavailable. No place has been reserved.',503)}
+  }
   const claim=await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$lt:capacity}},{$inc:{event_reserved_count:1}});
   const accepted=claim.updated===1;
   const status=accepted?'pending_approval':'waitlisted';

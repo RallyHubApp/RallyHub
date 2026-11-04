@@ -17,7 +17,7 @@ const REGISTRATION_FIELDS=[['fullName','Full name'],['email','Email address'],['
 
 const blank = {
   name:'', category:'other', date:'', endDate:'', start:'', end:'', venue_id:'', location:'', county:'', country:'Ireland', setting:'',
-  summary:'', description:'', internal:'', contact:'', contactPhone:'', phoneHiddenUntil:'', phoneKeepPrivate:false, statusOverride:'', registrationMode:'external', registration:'', regOpen:'', regClose:'', feeText:'', capacity:'', waitlist:false, bookingApproval:true, bookingHoldMinutes:15, bookingProvider:'sumup', bookingRefundHours:24,bookingConfirmationCc:'',bookingFormFields:REGISTRATION_FIELDS.map(([id])=>id),
+  summary:'', description:'', internal:'', contact:'', contactPhone:'', phoneHiddenUntil:'', phoneKeepPrivate:false, statusOverride:'', registrationMode:'external', registration:'', regOpen:'', regClose:'', feeText:'', capacity:'', waitlist:false, bookingApproval:false, bookingHoldMinutes:15, bookingProvider:'sumup', bookingRefundHours:24,bookingConfirmationCc:'',bookingFormFields:REGISTRATION_FIELDS.map(([id])=>id),
   levels:[], ageGroups:[], disciplines:[], eligibility:'', playerInfo:'', feesCancellation:'', collaborators:[], schedule:[], sourceUrl:'', mapUrl:'', latitude:'', longitude:'',
   image:'', imageX:50, imageY:50, imageZoom:1, cardX:50, cardY:50, cardZoom:1, imageOriginal:'', imageSourceType:'',
   privateInvitation:false,privateToken:'', member:true, public:false, featured:false, featuredPublic:false, verifiedOrganiser:false,
