@@ -10,7 +10,10 @@ export async function deliverEventNotice(base44:any,event:any,registration:any,t
  if(!kit)throw Error('Active tenant email brand kit missing');
  const first=String(registration.full_name||'there').trim().split(' ')[0];
  const purpose=EVENT_TEMPLATE_PURPOSES[type];
- const templates=purpose?await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:event.tenant_id,purpose,status:'approved'},'-updated_date',20):[];
+ const isTasterConfirmation=type==='booking_confirmed'&&/\btaster\b/i.test(String(event.name||''));
+ const selectedPurpose=isTasterConfirmation?'event_booking_confirmed_taster_draft':purpose;
+ const selectedTemplates=selectedPurpose?await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:event.tenant_id,purpose:selectedPurpose,status:'approved'},'-updated_date',20):[];
+ const templates=isTasterConfirmation?selectedTemplates.map((template:any)=>({...template,purpose})):selectedTemplates;
  const approved=resolveEventTemplate(templates,type,eventTemplateValues(event,registration,detail));
  const body=approved?.body||eventNoticeBody(type,first,event.name,detail);
  const paymentUrl=type==='payment_required'?String(eventTemplateValues(event,registration,detail).PAYMENT_LINK||''):'';
