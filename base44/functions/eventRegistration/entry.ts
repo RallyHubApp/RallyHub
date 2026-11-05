@@ -28,7 +28,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_resend_payment_link','admin_alternative_dates','admin_comms_templates','admin_comms_save_draft','admin_comms_send'];
+  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_resend_payment_link','admin_reissue_payment_link','admin_alternative_dates','admin_comms_templates','admin_comms_save_draft','admin_comms_send'];
   const isAdminAction=adminActions.includes(action);
   const privateAccess=!!(t?.event_private_invitation_token&&clean(b.invitationToken,100)===t.event_private_invitation_token);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||(!t.event_public_visible&&!privateAccess))))return fail('Bookings are not open for this event',404);
@@ -120,7 +120,7 @@ Deno.serve(async(req)=>{
   }
   stage='roster_verification';
   const rows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
-  if(action==='admin_approve'||action==='admin_verify'||action==='admin_refund_payment'||action==='admin_resend_payment_link'){
+  if(action==='admin_approve'||action==='admin_verify'||action==='admin_refund_payment'||action==='admin_resend_payment_link'||action==='admin_reissue_payment_link'){
    const registration=rows.find((r:any)=>r.id===clean(b.registrationId,100));if(!registration)return fail('Registration not found',404);
    const accountRows=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
    const accountRow=accountRows?.[0];const account=accountRow?{provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'}:null;
@@ -153,6 +153,30 @@ Deno.serve(async(req)=>{
      await base44.asServiceRole.entities.EventRegistration.update(registration.id,{payment_status:full?'refunded':'partially_refunded'});
      return Response.json({success:true,refundAmount:amount,refundId:refund.id,status:full?'refunded':'partially_refunded',bookingStatus:registration.registration_status});
     }catch(error){await base44.asServiceRole.entities.PaymentRefund.update(refund.id,{status:'needs_reconciliation',provider_status:providerOutcome?.providerStatus||'UNKNOWN',provider_refund_id:providerOutcome?.refundId||''});throw error;}
+   }
+   if(action==='admin_reissue_payment_link'){
+    if(registration.registration_status!=='approved_payment_hold'||registration.payment_status!=='pending')return fail('Only outstanding unpaid registrations can be renewed',409);
+    if(!account||!providerConfigured('sumup',account))return fail('SumUp is not connected',503);
+    const payments=await base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,purpose_type:'event',purpose_id:registration.id},'-created_date',100);
+    if(payments.length>=100)return fail('Payment history requires reconciliation',409);
+    if(payments.some((p:any)=>['paid','refund_pending','partially_refunded'].includes(p.payment_status)))return fail('Existing payment requires reconciliation',409);
+    for(const payment of payments){
+     if(!payment.provider_checkout_id)continue;
+     const result=await retrievePayment('sumup',payment.provider_checkout_id,account);
+     if(result.normalizedStatus==='paid'||result.normalizedStatus==='unknown')return fail('Original checkout requires reconciliation before reissue',409);
+    }
+    const used=await countActiveEventRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
+    if(used>=capacity)return fail('Event is full; no payment link issued',409);
+    const locked=await base44.asServiceRole.entities.EventRegistration.updateMany({id:registration.id,event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,registration_status:'approved_payment_hold',payment_status:'pending',payment_checkout_id:registration.payment_checkout_id},{$set:{payment_status:'reissue_processing'}});
+    if(locked?.updated!==1)return fail('Payment renewal already in progress; refresh',409);
+    // Fail closed on uncertain provider outcomes. Never automatically retry a checkout creation.
+    const urls=resolveEventCheckoutUrls({callbackBase:Deno.env.get('RALLYHUB_EVENT_CALLBACK_BASE_URL'),publicBase:Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL'),slug:t.event_slug});
+    const amount=Number(t.event_fee_amount||0);
+    const checkout=await createCheckout({provider:'sumup',account,amount,currency:t.event_currency||'EUR',reference:`ev_${registration.id}_${Date.now()}`.slice(0,64),description:t.name,...urls});
+    const payment=await base44.asServiceRole.entities.PaymentRecord.create({tenant_id:t.tenant_id,club_id:t.host_club_id,person_id:registration.person_id||'',purpose_type:'event',purpose_id:registration.id,payment_type:'event_registration',amount,currency:t.event_currency||'EUR',payment_method:'sumup',payment_status:'pending',provider:'sumup',provider_account_id:accountRow?.id||'',provider_checkout_id:checkout.checkoutId,provider_checkout_url:checkout.checkoutUrl,provider_status:'PENDING',source_system:'rallyhub_event'});
+    const expires=new Date(Date.now()+30*60000).toISOString();
+    await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'approved_payment_hold',payment_status:'pending',payment_record_id:payment.id,payment_hold_expires_at:expires,payment_checkout_id:checkout.checkoutId,payment_checkout_url:checkout.checkoutUrl});
+    return Response.json({success:true,checkoutUrl:checkout.checkoutUrl,expiresAt:expires,status:'approved_payment_hold'});
    }
    if(action==='admin_resend_payment_link'){
     if(registration.registration_status!=='approved_payment_hold'||registration.payment_status!=='pending')return fail('No outstanding approved payment request',409);
