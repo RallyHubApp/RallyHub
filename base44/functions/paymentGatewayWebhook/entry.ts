@@ -1,4 +1,5 @@
 import {claimPaidEventConfirmation} from './confirmationLock.mjs';
+import {confirmWithinCapacity} from './capacityConfirmation.mjs';
 import {deliverEventNotice} from './eventDelivery.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
@@ -361,7 +362,9 @@ Deno.serve(async(req)=>{
         if(reg&&reg.payment_status!=='paid'&&reg.registration_status==='approved_payment_hold'){
           const events=await base44.asServiceRole.entities.Tournament.filter({id:reg.event_id,tenant_id:reg.tenant_id},'-created_date',1);
           const tournament=events?.[0];
-          const claimed=await claimPaidEventConfirmation(base44.asServiceRole.entities.EventRegistration,{registration:reg,tenantId:reg.tenant_id,clubId:reg.club_id,eventId:reg.event_id,paymentId:payment.id,transactionId:verified.transactionId,now});
+          const confirmation=await confirmWithinCapacity({tournaments:base44.asServiceRole.entities.Tournament,registrations:base44.asServiceRole.entities.EventRegistration,eventId:reg.event_id,tenantId:reg.tenant_id,clubId:reg.club_id,registration:reg,paymentId:payment.id,transactionId:verified.transactionId,claim:claimPaidEventConfirmation});
+          const claimed=confirmation.confirmed;
+          if(!claimed)console.error('Paid event requires capacity reconciliation',payment.id,confirmation.reason);
           if(claimed&&tournament){try{await deliverEventNotice(base44,tournament,reg,'booking_confirmed')}catch(e){console.error('Event payment confirmed but email failed',e)}}
         }
       }

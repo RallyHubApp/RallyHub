@@ -14,6 +14,7 @@ import {countActiveEventRegistrations} from './availabilityCount.mjs';
 import {requireEventAdminGrant} from './adminAccess.mjs';
 import {acquireEventApprovalLock} from './approvalLock.mjs';
 import {claimPaidEventConfirmation} from './confirmationLock.mjs';
+import {confirmWithinCapacity} from './capacityConfirmation.mjs';
 import {reviewVerifiedEventCheckout} from './verifiedCheckout.mjs';
 import {resolveEventCheckoutUrls} from './checkoutUrls.mjs';
 import {sendWithConfiguredEmailTransport} from './emailRouter.ts';
@@ -220,7 +221,8 @@ Deno.serve(async(req)=>{
    let payment=selectedCheckout.payment;
    if(!payment)payment=await base44.asServiceRole.entities.PaymentRecord.create({tenant_id:t.tenant_id,club_id:t.host_club_id,person_id:registration.person_id||'',purpose_type:'event',purpose_id:registration.id,payment_type:'event_registration',amount:Number(t.event_fee_amount||0),currency:t.event_currency||'EUR',payment_method:'sumup',payment_status:'paid',provider:'sumup',provider_account_id:accountRow?.id||'',provider_checkout_id:registration.payment_checkout_id,provider_checkout_url:registration.payment_checkout_url||'',provider_transaction_id:result.transactionId,provider_payment_reference:result.transactionCode||'',provider_status:result.providerStatus||'PAID',source_system:'rallyhub_event'});
    if(payment.payment_status!=='paid')await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{payment_status:'paid',payment_date:new Date().toISOString().slice(0,10),provider_status:result.providerStatus||'PAID',provider_transaction_id:result.transactionId,provider_payment_reference:result.transactionCode||'',external_payment_reference:result.transactionCode||''});
-   const claimed=await claimPaidEventConfirmation(base44.asServiceRole.entities.EventRegistration,{registration,tenantId:t.tenant_id,clubId:t.host_club_id,eventId:id,paymentId:payment.id,transactionId:result.transactionId});
+   const confirmation=await confirmWithinCapacity({tournaments:base44.asServiceRole.entities.Tournament,registrations:base44.asServiceRole.entities.EventRegistration,eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id,registration,paymentId:payment.id,transactionId:result.transactionId,claim:claimPaidEventConfirmation});
+   const claimed=confirmation.confirmed;
    if(claimed)await deliverEventNotice(base44,t,registration,'booking_confirmed');
    return Response.json({success:true,status:claimed?'confirmed':'confirmation_already_processed_or_changed',paymentStatus:'paid',notificationClaimed:claimed});
   }
