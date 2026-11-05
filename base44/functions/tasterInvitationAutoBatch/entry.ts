@@ -82,15 +82,15 @@ Deno.serve(async(req)=>{
   ]);
   const event=events[0],template=templates[0],campaign=campaigns[0],kit=kits[0];
   if(!campaign||!event||!template||!kit?.logos?.primary||!kit?.compliance_footer||!event.event_private_invitation_token||rows.length===500||history.length===200)throw Error('Campaign, approved template, brand kit or complete records unavailable');
-  if(event.start_date&&event.start_date<new Date().toISOString().slice(0,10))return Response.json({success:true,stopped:'event_date_passed'});
+  
   const refs=campaign.audience_snapshot?.recipient_refs||[];
   if(refs.some((r:any)=>r.source!=='waiting_list'))throw Error('Unexpected audience source');
   const allowed=new Set(refs.map((r:any)=>r.id)),attempted=new Set(history.filter((x:any)=>String(x.idempotency_key||'').startsWith('taster-invite:')).map((x:any)=>x.recipient_id));
   const cutoff=Date.now()-3600000;
-  const hourly=history.filter((x:any)=>String(x.idempotency_key||'').startsWith('taster-invite:')&&Date.parse(x.queued_at||x.created_date||'')>=cutoff).length;
+  const hourly=history.filter((x:any)=>Date.parse(x.queued_at||x.created_date||'')>=cutoff).length;
   const available=Math.max(0,10-hourly);
   if(!available)return Response.json({success:true,sent:0,reason:'hourly_limit',remaining:refs.length-attempted.size});
-  const url='******/private-event/'+encodeURIComponent(EVENT)+'/'+encodeURIComponent(event.event_private_invitation_token);
+  const url='https://rallyhub.ie/private-event/'+encodeURIComponent(EVENT)+'/'+encodeURIComponent(event.event_private_invitation_token);
   const date=event.start_date?new Intl.DateTimeFormat('en-IE',{day:'numeric',month:'long',year:'numeric',timeZone:'Europe/Dublin'}).format(new Date(event.start_date+'T12:00:00Z')):'';
   const unsubscribe='mailto:clarepb2025@gmail.com?subject='+encodeURIComponent('Unsubscribe from Clare Pickleball event invitations');
   const occupied=Number(event.event_reserved_count||0);
@@ -100,16 +100,20 @@ Deno.serve(async(req)=>{
    if(!allowed.has(r.id)||attempted.has(r.id)||r.active===false||r.status!=='waiting'||r.gdpr_consent!==true||!/^\S+@\S+\.\S+$/.test(r.email||''))continue;
    const fields:any={FIRST_NAME:String(r.full_name||'').trim().split(/\s+/)[0],EVENT_NAME:event.name||'',EVENT_DATE:date,EVENT_START_TIME:event.event_start_time||'',EVENT_END_TIME:event.event_end_time||'',EVENT_VENUE:event.location||'',EVENT_FEE:Number(event.event_fee_amount||0).toFixed(2),EVENT_CAPACITY:event.event_capacity||'',PLACES_REMAINING:Math.max(0,Number(event.event_capacity||0)-occupied),PRIVATE_BOOKING_URL:url,UNSUBSCRIBE_URL:unsubscribe};
    const replace=(s:string)=>String(s||'').replace(/{{\s*([A-Z_]+)\s*}}/g,(match,key)=>fields[key]===undefined?match:String(fields[key]));
-   const subject=replace(template.subject_template),body=replace(template.plain_text_template);
+   const subject='Correction: Your Clare Pickleball taster booking link — '+date;
+   const body=replace(template.plain_text_template).replace(/Unsubscribe from promotional event invitations:.*$/m,'To stop receiving Clare Pickleball event invitations, reply to this email with UNSUBSCRIBE in the subject.');
    if(/{{[^}]+}}/.test(subject+body))throw Error('Unresolved approved template field');
-   const paragraphs=body.split(/\n\s*\n/).filter(Boolean).map((p:string)=>p.includes(url)?'<p style="white-space:pre-line">'+esc(p).replace(esc(url),'<a href="'+esc(url)+'">BOOK YOUR PLACE</a>')+'</p>':'<p style="white-space:pre-line">'+esc(p)+'</p>').join('');
-   const html=renderBasicBrandedEmail(paragraphs,kit,null,'Clare Pickleball',esc(replace(template.channel_templates?.email?.heading||template.name)),esc(replace(template.channel_templates?.email?.subheading||'')));
-   const idem='taster-invite:'+CAMPAIGN+':'+EVENT+':'+r.id;
+   const cleanBody=body.replace(/BOOKING YOUR PLACE[\s\S]*?If this date or time/, 'BOOKING YOUR PLACE\nUse the booking button below to reserve your place. Complete your registration and pay securely through SumUp.\n\nIf this date or time');
+   const paragraphs=cleanBody.split(/\n\s*\n/).filter(Boolean).map((p:string)=>'<p style="white-space:pre-line">'+esc(p)+'</p>').join('');
+   const button='<div style="text-align:center;margin:24px 0"><a href="'+esc(url)+'" style="display:inline-block;background:#102a60;color:#ffffff;padding:16px 28px;border-radius:8px;text-decoration:none;font-size:16px;font-weight:700">BOOK YOUR PLACE</a></div>';
+   const html=renderBasicBrandedEmail('<p style="font-size:15px;font-weight:700">Important correction: the booking button in our earlier invitation did not work. We apologise. Please use the corrected button below.</p>'+button+paragraphs,kit,null,'Clare Pickleball',esc(replace(template.channel_templates?.email?.heading||template.name)),esc(replace(template.channel_templates?.email?.subheading||'')));
+   if(!html.includes('href="'+esc(url)+'"')||html.includes('http://******/private-event')||html.includes('{{'))throw Error('Corrected booking button validation failed');
+   const idem='taster-correction-v1:'+CAMPAIGN+':'+EVENT+':'+r.id;
    const old=await e.CommunicationDeliveryAttempt.filter({idempotency_key:idem},'-created_date',1);
    if(old.length)continue;
    const attempt=await e.CommunicationDeliveryAttempt.create({campaign_id:CAMPAIGN,message_id:TEMPLATE,recipient_id:r.id,tenant_id:TENANT,channel:'email',provider:'pending',status:'sending',attempt_number:1,idempotency_key:idem,queued_at:new Date().toISOString(),metadata:{eventId:EVENT,automated:true}});
    try{
-    const outcome=await sendWithConfiguredEmailTransport(b,{scopeType:'tenant',purpose:'event_invitation',tenantId:TENANT,clubId:CLUB},{to:String(r.email).trim().toLowerCase(),subject,textBody:body,htmlBody:html,senderName:'Clare Pickleball'});
+    const outcome=await sendWithConfiguredEmailTransport(b,{scopeType:'tenant',purpose:'event_invitation',tenantId:TENANT,clubId:CLUB},{to:String(r.email).trim().toLowerCase(),subject,textBody:'Correction: The previous booking link was faulty. Use this working link: '+url+'\n\n'+cleanBody,htmlBody:html,senderName:'Clare Pickleball'});
     await e.CommunicationDeliveryAttempt.update(attempt.id,{provider:outcome.provider,status:'sent',sent_at:new Date().toISOString()});
     sent++;
    }catch(err:any){
