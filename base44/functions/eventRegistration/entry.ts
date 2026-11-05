@@ -167,10 +167,10 @@ Deno.serve(async(req)=>{
     }
     const used=await countActiveEventRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
     if(used>=capacity)return fail('Event is full; no payment link issued',409);
+    const urls=resolveEventCheckoutUrls({callbackBase:Deno.env.get('RALLYHUB_EVENT_CALLBACK_BASE_URL'),publicBase:Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL'),slug:t.event_slug});
     const locked=await base44.asServiceRole.entities.EventRegistration.updateMany({id:registration.id,event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,registration_status:'approved_payment_hold',payment_status:'pending',payment_checkout_id:registration.payment_checkout_id},{$set:{payment_status:'reissue_processing'}});
     if(locked?.updated!==1)return fail('Payment renewal already in progress; refresh',409);
     // Fail closed on uncertain provider outcomes. Never automatically retry a checkout creation.
-    const urls=resolveEventCheckoutUrls({callbackBase:Deno.env.get('RALLYHUB_EVENT_CALLBACK_BASE_URL'),publicBase:Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL'),slug:t.event_slug});
     const amount=Number(t.event_fee_amount||0);
     const checkout=await createCheckout({provider:'sumup',account,amount,currency:t.event_currency||'EUR',reference:`ev_${registration.id}_${Date.now()}`.slice(0,64),description:t.name,...urls});
     const payment=await base44.asServiceRole.entities.PaymentRecord.create({tenant_id:t.tenant_id,club_id:t.host_club_id,person_id:registration.person_id||'',purpose_type:'event',purpose_id:registration.id,payment_type:'event_registration',amount,currency:t.event_currency||'EUR',payment_method:'sumup',payment_status:'pending',provider:'sumup',provider_account_id:accountRow?.id||'',provider_checkout_id:checkout.checkoutId,provider_checkout_url:checkout.checkoutUrl,provider_status:'PENDING',source_system:'rallyhub_event'});
