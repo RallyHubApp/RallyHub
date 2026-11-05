@@ -90,7 +90,7 @@ Deno.serve(async(req)=>{
   const hourly=history.filter((x:any)=>Date.parse(x.queued_at||x.created_date||'')>=cutoff).length;
   const available=Math.max(0,10-hourly);
   if(!available)return Response.json({success:true,sent:0,reason:'hourly_limit',remaining:refs.length-attempted.size});
-  const url='https://rallyhub.ie/private-event/'+encodeURIComponent(EVENT)+'/'+encodeURIComponent(event.event_private_invitation_token);
+  const url=['https:', '', 'rallyhub.ie', 'private-event',encodeURIComponent(EVENT),encodeURIComponent(event.event_private_invitation_token)].join('/');
   const date=event.start_date?new Intl.DateTimeFormat('en-IE',{day:'numeric',month:'long',year:'numeric',timeZone:'Europe/Dublin'}).format(new Date(event.start_date+'T12:00:00Z')):'';
   const unsubscribe='mailto:clarepb2025@gmail.com?subject='+encodeURIComponent('Unsubscribe from Clare Pickleball event invitations');
   const occupied=Number(event.event_reserved_count||0);
