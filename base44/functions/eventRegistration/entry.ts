@@ -241,15 +241,12 @@ Deno.serve(async(req)=>{
   const docs=await base44.asServiceRole.entities.ClubLegalDocument.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,active:true},'-effective_from',100);
   stage='consent';
   const now=new Date().toISOString();const evidence=consentEvidence(b,docs,now);
-  // Initialise from existing active applications once, then atomically reserve.
+  // Registration records are authoritative; stale reservation counters must never block a place.
   stage='capacity_check';
   const current=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
   if(current.some((r:any)=>r.operation_id===operationId))return Response.json({success:true,received:true,message:'Your application has already been received.'});
   if(duplicate(current,email))return fail('This email may already have an application. Please contact the organiser.',409);
   const observedOccupied=occupied(current);
-  await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:null},{$set:{event_reserved_count:observedOccupied}});
-  // Never trust a stale under-counted counter: raise it atomically to at least the observed active roster.
-  await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$lt:observedOccupied}},{$set:{event_reserved_count:observedOccupied}});
   // Validate checkout configuration before reserving a paid place; do not strand a capacity hold for a missing gateway.
   if(t.event_booking_policy?.approval_required===false&&Number(t.event_fee_amount||0)>0){
    const accounts=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
@@ -257,8 +254,18 @@ Deno.serve(async(req)=>{
    if(!account||!providerConfigured('sumup',account))return fail('The club SumUp connection is unavailable. No place has been reserved.',503);
    try{resolveEventCheckoutUrls({callbackBase:Deno.env.get('RALLYHUB_EVENT_CALLBACK_BASE_URL'),publicBase:Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL'),slug:t.event_slug})}catch{return fail('SumUp callback configuration is unavailable. No place has been reserved.',503)}
   }
-  const claim=await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$lt:capacity}},{$inc:{event_reserved_count:1}});
-  const accepted=claim.updated===1;
+  // The legacy count is a derived display cache, never an admission authority.
+  // A single event lease serialises capacity-sensitive admissions and paid confirmations.
+  const leaseUntil=new Date(Date.now()+120000).toISOString();
+  const lease=await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,$or:[{event_payment_confirmation_lease:null},{event_payment_confirmation_lease:{$lt:new Date().toISOString()}}]},{$set:{event_payment_confirmation_lease:leaseUntil}});
+  if(lease?.updated!==1)return fail('Event booking is being processed; please retry shortly',409);
+  let accepted=false;
+  try{
+   const latest=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
+   if(latest.some((r:any)=>r.operation_id===operationId))return Response.json({success:true,received:true,message:'Your application has already been received.'});
+   if(duplicate(latest,email))return fail('This email may already have an application. Please contact the organiser.',409);
+   accepted=occupied(latest)<capacity;
+  }finally{await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_payment_confirmation_lease:leaseUntil},{$set:{event_payment_confirmation_lease:null}});}
   const status=accepted?'pending_approval':'waitlisted';
   if(!accepted&&!t.event_waitlist_enabled)return fail('Event is full',409);
   stage='record_create';
@@ -289,7 +296,7 @@ Deno.serve(async(req)=>{
    }
   }catch(error){
    if(stage==='automatic_checkout')throw error;
-   if(accepted)await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_reserved_count:{$gt:0}},{$inc:{event_reserved_count:-1}});
+
    throw error;
   }
   try{await deliverEventNotice(base44,t,{full_name:name,email},accepted?'application_received':'waitlist_joined');}catch(noticeError){console.error('Event application saved but notification delivery failed',noticeError);}

@@ -474,6 +474,7 @@
       "additionalProperties": true,
       "description": "Reusable tenant Events booking wizard policy; requires server-side enforcement before activation"
     },
+    "event_payment_confirmation_lease": {"type": ["string", "null"], "description": "Atomic event confirmation lease; transient coordination only"},
     "event_reserved_count": {
       "type": [
         "number",
