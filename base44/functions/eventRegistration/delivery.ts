@@ -25,7 +25,12 @@ export async function deliverEventNotice(base44:any,event:any,registration:any,t
  const escaped=body.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n','<br>');
  const templateHtml=approved?.html||'<p style="line-height:1.7">'+escaped+'</p>';
  const paymentHtml=type==='payment_required'&&paymentButton?templateHtml.replace(/Please complete payment using the secure link below/gi,'Please click the blue payment button below').replace(/\{\{PAYMENT_LINK\}\}/g,paymentButton).replaceAll(paymentUrl,paymentButton):templateHtml;
- const html=renderBasicBrandedEmail(paymentHtml,kit,club,club.name,'Event booking update');
+ const mapUrl=String(eventTemplateValues(event,registration,detail).VENUE_MAP_URL||'');
+ const safeMapUrl=/^https:\/\/[^\s"'<>]+$/.test(mapUrl)?mapUrl.replaceAll('&','&amp;').replaceAll('"','&quot;'):'';
+ if(type==='booking_confirmed'&&!safeMapUrl)throw Error('Event confirmation requires a valid venue map URL');
+ const mapButton=safeMapUrl?`<div style="text-align:center;margin:24px 0"><a href="${safeMapUrl}" target="_blank" style="display:inline-block;background:#0755a8;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:14px 26px;border-radius:8px">Get Directions to the Venue</a></div>`:'';
+ const finalHtml=type==='booking_confirmed'?paymentHtml.replace(/<p[^>]*>\s*(?:Find Your Venue|Directions)\s*<\/p>/gi,'').replaceAll(mapUrl,mapButton).replaceAll(mapUrl.replaceAll('&','&amp;'),mapButton):paymentHtml;
+ const html=renderBasicBrandedEmail(finalHtml,kit,club,club.name,'Event booking update');
  const recipients=eventNoticeRecipients(type,registration.email,event.event_booking_policy||{});
  const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:event.tenant_id,clubId:event.host_club_id};
  const delivery=await sendWithConfiguredEmailTransport(base44,scope,{to:recipients.to,senderName:club.name,subject:approved?.subject||`${event.name} · ${type.replaceAll('_',' ')}`,textBody:body,htmlBody:html});
