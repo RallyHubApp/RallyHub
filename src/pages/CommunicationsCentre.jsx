@@ -352,7 +352,7 @@ function CustomTenantComposer({template,brandKit,user}){
  const substitute=(value,html=false)=>String(value||'').replace(/{{\s*([A-Z_]+)\s*}}/g,(match,key)=>values[key]===undefined?match:(html?esc(values[key]):String(values[key])));
  const raw=draft.body||'';const bookingMarker=/{{\s*PRIVATE_BOOKING_URL\s*}}/g;
  const bookingButton='<div style="text-align:center;margin:24px 0"><a href="'+esc(url)+'" style="display:inline-block;background:#102a60;color:#ffffff;padding:16px 28px;border-radius:8px;text-decoration:none;font-size:16px;font-weight:700">BOOK YOUR PLACE</a></div>';
- const cleanRaw=raw.replace(/Unsubscribe from promotional event invitations:\s*{{\s*UNSUBSCRIBE_URL\s*}}/gi,'').replace(/Reserve your place here:\s*{{\s*PRIVATE_BOOKING_URL\s*}}/gi,'Reserve your place using the button below.');
+ const cleanRaw=raw.split('\n').filter(line=>!/^\s*Unsubscribe from promotional event invitations\s*:/i.test(line)&&!/^\s*To stop receiving event invitations\s*:/i.test(line)).join('\n').replace(/Reserve your place here:\s*{{\s*PRIVATE_BOOKING_URL\s*}}/gi,'Reserve your place using the button below.');
  const paragraphs=cleanRaw.split(/\n\s*\n/).filter(Boolean).map(p=>'<p style="white-space:pre-line">'+esc(substitute(p))+'</p>').join('');
  const footer='<p style="font-size:12px;color:#64748b;margin-top:20px">To stop receiving event invitations, <a href="'+esc(unsubscribeUrl)+'" style="color:#102a60;text-decoration:underline">request to unsubscribe</a>.</p>';
  const html=renderBasicBrandedEmail(paragraphs+bookingButton+footer,brandKit,null,'Clare Pickleball',esc(substitute(draft.heading)),esc(substitute(draft.subheading)));
