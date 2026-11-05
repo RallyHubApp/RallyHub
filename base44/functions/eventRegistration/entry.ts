@@ -49,7 +49,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_resend_payment_link','admin_get_payment_link','admin_reissue_payment_link','admin_alternative_dates','admin_comms_templates','admin_comms_save_draft','admin_comms_send'];
+  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_resend_payment_link','admin_get_payment_link','admin_reissue_payment_link','admin_alternative_dates','admin_transfer_date','admin_comms_templates','admin_comms_save_draft','admin_comms_send'];
   const isAdminAction=adminActions.includes(action);
   const privateAccess=!!(t?.event_private_invitation_token&&clean(b.invitationToken,100)===t.event_private_invitation_token);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||(!t.event_public_visible&&!privateAccess))))return fail('Bookings are not open for this event',404);
@@ -109,7 +109,7 @@ Deno.serve(async(req)=>{
    return Response.json({success:true,sent:true,recipient:registration.email});
   }
   if(action==='admin_alternative_dates'){
-   const candidates=await base44.asServiceRole.entities.Tournament.filter({tenant_id:t.tenant_id,host_club_id:t.host_club_id,event_registration_mode:'rallyhub',event_booking_enabled:true,event_publish_status:'published',event_public_visible:true},'start_date',100);
+   const candidates=await base44.asServiceRole.entities.Tournament.filter({tenant_id:t.tenant_id,host_club_id:t.host_club_id,event_registration_mode:'rallyhub',event_booking_enabled:true,event_publish_status:'published'},'start_date',100);
    const alternatives=[];
    for(const candidate of candidates){
     if(candidate.id===t.id||candidate.location!==t.location||!candidate.event_capacity||!candidate.event_slug||String(candidate.start_date||'')<new Date().toISOString().slice(0,10))continue;
@@ -117,6 +117,43 @@ Deno.serve(async(req)=>{
     if(used<Number(candidate.event_capacity))alternatives.push({id:candidate.id,name:candidate.name,date:candidate.start_date,slug:candidate.event_slug,placesRemaining:Number(candidate.event_capacity)-used});
    }
    return Response.json({success:true,alternatives,readOnly:true});
+  }
+  if(action==='admin_transfer_date'){
+   const registrationId=clean(b.registrationId,100),destinationId=clean(b.destinationEventId,100);
+   if(!registrationId||!destinationId||destinationId===id||b.confirmTransfer!==true)return fail('Select another event and confirm transfer');
+   const sourceRows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
+   const source=sourceRows.find((r:any)=>r.id===registrationId);
+   if(!source)return fail('Original registration not found',404);
+   if(!['approved_payment_hold','waitlisted'].includes(source.registration_status))return fail('Only unpaid or waitlisted bookings can use this transfer. Paid bookings require payment reconciliation.',409);
+   const destination=(await base44.asServiceRole.entities.Tournament.filter({id:destinationId,tenant_id:t.tenant_id,host_club_id:t.host_club_id},'-created_date',1))?.[0];
+   if(!destination||destination.event_publish_status!=='published'||!destination.event_booking_enabled||destination.event_registration_mode!=='rallyhub'||destination.location!==t.location)return fail('Destination is not an available matching event',409);
+   if(String(destination.start_date||'')<new Date().toISOString().slice(0,10))return fail('Destination date has passed',409);
+   if(Math.round(Number(destination.event_fee_amount||0)*100)!==Math.round(Number(t.event_fee_amount||0)*100))return fail('Different event fee requires a new checkout',409);
+   const payments=source.payment_record_id?await base44.asServiceRole.entities.PaymentRecord.filter({id:source.payment_record_id,tenant_id:t.tenant_id,club_id:t.host_club_id,purpose_id:source.id},'-created_date',2):[];
+   if(source.registration_status==='approved_payment_hold'){
+    if(source.payment_status!=='pending'||payments.length!==1||payments[0].payment_status!=='pending'||payments[0].provider_checkout_id!==source.payment_checkout_id)return fail('Payment record needs reconciliation before transfer',409);
+    const accounts=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
+    const accountRow=accounts?.[0];
+    if(!accountRow)return fail('SumUp account unavailable',503);
+    const account={provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'};
+    const provider=await retrievePayment('sumup',source.payment_checkout_id,account);
+    if(provider.normalizedStatus!=='pending')return fail('Checkout is no longer confirmed unpaid. Reconcile payment before transfer.',409);
+   }
+   const now=new Date().toISOString(), leaseUntil=new Date(Date.now()+120000).toISOString();
+   const lock=await base44.asServiceRole.entities.Tournament.updateMany({id:destinationId,tenant_id:t.tenant_id,$or:[{event_payment_confirmation_lease:null},{event_payment_confirmation_lease:{$lt:now}}]},{$set:{event_payment_confirmation_lease:leaseUntil}});
+   if(lock?.updated!==1)return fail('Destination booking busy. Retry shortly.',409);
+   try{
+    const destRows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:destinationId,tenantId:t.tenant_id,clubId:t.host_club_id});
+    if(duplicate(destRows,String(source.email_key||source.email||'')))return fail('Person already registered for destination',409);
+    if(occupied(destRows)>=Number(destination.event_capacity||0))return fail('Destination is full',409);
+    const fresh=(await base44.asServiceRole.entities.EventRegistration.filter({id:registrationId,tenant_id:t.tenant_id,club_id:t.host_club_id},'-created_date',1))?.[0];
+    if(!fresh||fresh.event_id!==id||fresh.registration_status!==source.registration_status||fresh.payment_status!==source.payment_status)return fail('Registration changed. Refresh before transferring.',409);
+    if(source.registration_status==='waitlisted')return fail('Waiting-list transfer requires a new SumUp checkout and is not enabled yet',409);
+    const history=[...(Array.isArray(fresh.transfer_history)?fresh.transfer_history:[]),{from_event_id:id,to_event_id:destinationId,transferred_at:now,previous_status:fresh.registration_status,previous_waitlist_position:fresh.waitlist_position||null}];
+    const updated=await base44.asServiceRole.entities.EventRegistration.update(fresh.id,{event_id:destinationId,transfer_history:history,payment_hold_expires_at:new Date(Date.now()+86400000).toISOString()});
+    if(updated?.event_id!==destinationId)throw Error('Transfer persistence not verified');
+    return Response.json({success:true,transferred:true,registrationId:fresh.id,eventId:destinationId,eventName:destination.name,checkoutUrl:fresh.payment_checkout_url,fee:destination.event_fee_amount});
+   }finally{await base44.asServiceRole.entities.Tournament.updateMany({id:destinationId,tenant_id:t.tenant_id,event_payment_confirmation_lease:leaseUntil},{$set:{event_payment_confirmation_lease:null}});}
   }
   if(action==='admin_notice_preview'){
    const noticeType=clean(b.noticeType||'booking_confirmed',50);
