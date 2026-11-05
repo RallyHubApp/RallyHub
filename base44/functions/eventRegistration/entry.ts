@@ -174,7 +174,7 @@ Deno.serve(async(req)=>{
     const amount=Number(t.event_fee_amount||0);
     const checkout=await createCheckout({provider:'sumup',account,amount,currency:t.event_currency||'EUR',reference:`ev_${registration.id}_${Date.now()}`.slice(0,64),description:t.name,...urls});
     const payment=await base44.asServiceRole.entities.PaymentRecord.create({tenant_id:t.tenant_id,club_id:t.host_club_id,person_id:registration.person_id||'',purpose_type:'event',purpose_id:registration.id,payment_type:'event_registration',amount,currency:t.event_currency||'EUR',payment_method:'sumup',payment_status:'pending',provider:'sumup',provider_account_id:accountRow?.id||'',provider_checkout_id:checkout.checkoutId,provider_checkout_url:checkout.checkoutUrl,provider_status:'PENDING',source_system:'rallyhub_event'});
-    const expires=new Date(Date.now()+30*60000).toISOString();
+    const expires=new Date(Date.now()+24*60*60000).toISOString();
     await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'approved_payment_hold',payment_status:'pending',payment_record_id:payment.id,payment_hold_expires_at:expires,payment_checkout_id:checkout.checkoutId,payment_checkout_url:checkout.checkoutUrl});
     return Response.json({success:true,checkoutUrl:checkout.checkoutUrl,expiresAt:expires,status:'approved_payment_hold'});
    }
