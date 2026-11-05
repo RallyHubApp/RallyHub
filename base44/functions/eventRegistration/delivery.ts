@@ -13,8 +13,11 @@ export async function deliverEventNotice(base44:any,event:any,registration:any,t
  const isTasterConfirmation=type==='booking_confirmed'&&/\btaster\b/i.test(String(event.name||''));
  const selectedPurpose=isTasterConfirmation?'event_booking_confirmed_taster_draft':purpose;
  const selectedTemplates=selectedPurpose?await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:event.tenant_id,purpose:selectedPurpose,status:'approved'},'-updated_date',20):[];
+ if(isTasterConfirmation&&selectedTemplates.length!==1)throw Error('Exactly one approved taster confirmation template is required in Communications Centre');
+ if(type==='booking_confirmed'&&!isTasterConfirmation&&selectedTemplates.length!==1)throw Error('Exactly one approved event confirmation template is required in Communications Centre');
  const templates=isTasterConfirmation?selectedTemplates.map((template:any)=>({...template,purpose})):selectedTemplates;
  const approved=resolveEventTemplate(templates,type,eventTemplateValues(event,registration,detail));
+ if(type==='booking_confirmed'&&!approved)throw Error('Approved Communications Centre booking confirmation template required');
  const body=approved?.body||eventNoticeBody(type,first,event.name,detail);
  const paymentUrl=type==='payment_required'?String(eventTemplateValues(event,registration,detail).PAYMENT_LINK||''):'';
  const safePaymentUrl=/^https:\/\/[^\s"'<>]+$/.test(paymentUrl)?paymentUrl.replaceAll('&','&amp;').replaceAll('\"','&quot;'):'';
