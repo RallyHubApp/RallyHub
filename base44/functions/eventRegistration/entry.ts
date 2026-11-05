@@ -259,13 +259,13 @@ Deno.serve(async(req)=>{
   const leaseUntil=new Date(Date.now()+120000).toISOString();
   const lease=await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,$or:[{event_payment_confirmation_lease:null},{event_payment_confirmation_lease:{$lt:new Date().toISOString()}}]},{$set:{event_payment_confirmation_lease:leaseUntil}});
   if(lease?.updated!==1)return fail('Event booking is being processed; please retry shortly',409);
-  let accepted=false;let saved:any=null;let persisted:any=null;
+  let accepted=false;let saved:any=null;let persisted:any=null;let status='waitlisted';
   try{
    const latest=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
    if(latest.some((r:any)=>r.operation_id===operationId))return Response.json({success:true,received:true,message:'Your application has already been received.'});
    if(duplicate(latest,email))return fail('This email may already have an application. Please contact the organiser.',409);
    accepted=occupied(latest)<capacity;
-  const status=accepted?'pending_approval':'waitlisted';
+  status=accepted?'pending_approval':'waitlisted';
   if(!accepted&&!t.event_waitlist_enabled)return fail('Event is full',409);
   stage='record_create';
   saved=await base44.asServiceRole.entities.EventRegistration.create({tenant_id:t.tenant_id,club_id:t.host_club_id,event_id:id,full_name:name,email,email_key:email,mobile,emergency_contact_name:emergencyName,emergency_contact_mobile:emergencyMobile,previous_experience:clean(b.previousExperience,250),previous_sports:Array.isArray(b.previousSports)?b.previousSports.filter((x:any)=>typeof x==='string').slice(0,12):[],health_declaration_applies:b.healthDeclarationApplies===true,medical_note:clean(b.medicalNote,1000),consent_evidence:evidence,photo_video_consent:!!b.consents?.photo_video,registration_status:status,payment_status:'not_required',operation_id:operationId,created_at:now});
