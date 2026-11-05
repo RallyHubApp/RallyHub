@@ -47,6 +47,7 @@ const Login = lazy(() => import('@/pages/Login'));
 const Register = lazy(() => import('@/pages/Register'));
 const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
+const Mfa = lazy(() => import('@/pages/Mfa'));
 const PublicClubChallengeDisplay = lazy(() => import('@/pages/PublicClubChallengeDisplay'));
 const PublicInterclubParticipantResult = lazy(() => import('@/pages/PublicInterclubParticipantResult'));
 const PublicClubChallengeVote = lazy(() => import('@/pages/PublicClubChallengeVote'));
@@ -275,6 +276,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/mfa" element={<Mfa />} />
             <Route path="/trial/apply" element={<TrialApply />} />
 
             {/* Public landing — no auth check, always accessible */}

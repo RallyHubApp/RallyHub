@@ -15,29 +15,13 @@ import {countActiveEventRegistrations} from './availabilityCount.mjs';
 import {requireEventAdminGrant} from './adminAccess.mjs';
 import {acquireEventApprovalLock} from './approvalLock.mjs';
 import {claimPaidEventConfirmation} from './confirmationLock.mjs';
-import {confirmWithinCapacity} from './capacityConfirmation.mjs';
+import {admitAtomically} from './atomicAdmission.mjs';
+import {confirmWithinCapacity} from '../../shared/eventCapacityConfirmation.mjs';
 import {reviewVerifiedEventCheckout} from './verifiedCheckout.mjs';
 import {resolveEventCheckoutUrls} from './checkoutUrls.mjs';
 import {sendWithConfiguredEmailTransport} from './emailRouter.ts';
 import {eventTemplateValues} from './templateResolver.js';
 
-/** Hold the event lease until registration is durably readable. */
-async function admitAtomically({tournaments,registrations,eventId,tenantId,capacity,email,operationId,create,read,now=()=>Date.now()}){
- const stamp=new Date(now()).toISOString(), leaseUntil=new Date(now()+120000).toISOString();
- const lock=await tournaments.updateMany({id:eventId,tenant_id:tenantId,$or:[{event_payment_confirmation_lease:null},{event_payment_confirmation_lease:{$lt:stamp}}]},{$set:{event_payment_confirmation_lease:leaseUntil}});
- if(lock?.updated!==1)return {kind:'busy'};
- try{
-  const rows=await read();
-  if(rows.some(r=>r.operation_id===operationId))return {kind:'existing'};
-  if(duplicate(rows,email))return {kind:'duplicate'};
-  const accepted=occupied(rows,now())<capacity;
-  const saved=await create(accepted);
-  if(!saved?.id)throw Error('Registration not saved');
-  const verified=await registrations.get(saved.id);
-  if(!verified||verified.operation_id!==operationId)throw Error('Registration persistence verification failed');
-  return {kind:'created',accepted,saved,verified};
- }finally{await tournaments.updateMany({id:eventId,tenant_id:tenantId,event_payment_confirmation_lease:leaseUntil},{$set:{event_payment_confirmation_lease:null}});}
-}
 
 const clean=(v:any,n=200)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,n);
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
@@ -53,7 +37,8 @@ Deno.serve(async(req)=>{
   const isAdminAction=adminActions.includes(action);
   const privateAccess=!!(t?.event_private_invitation_token&&clean(b.invitationToken,100)===t.event_private_invitation_token);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||(!t.event_public_visible&&!privateAccess))))return fail('Bookings are not open for this event',404);
-  if(isAdminAction){const user=await base44.auth.me().catch(()=>null);if(!user||!t.tenant_id||!t.host_club_id||!await requireEventAdminGrant(base44,user,t))return fail('Active tenant or club administrator grant required',403);}
+  let currentUser:any=null;
+  if(isAdminAction){currentUser=await base44.auth.me().catch(()=>null);if(!currentUser||!t.tenant_id||!t.host_club_id||!await requireEventAdminGrant(base44,currentUser,t))return fail('Active tenant or club administrator grant required',403);}
   const capacity=Number(t.event_capacity||0);if(!Number.isSafeInteger(capacity)||capacity<1)return fail('Event capacity is not configured',503);
   if(action==='admin_list'||action==='admin_page'){
    const cursor=action==='admin_page'?clean(b.cursor,2048):'';
@@ -119,6 +104,7 @@ Deno.serve(async(req)=>{
    return Response.json({success:true,alternatives,readOnly:true});
   }
   if(action==='admin_transfer_date'){
+   if(currentUser?.role!=='admin')return fail('Super administrator access required for booking transfers',403);
    const registrationId=clean(b.registrationId,100),destinationId=clean(b.destinationEventId,100);
    if(!registrationId||!destinationId||destinationId===id||b.confirmTransfer!==true)return fail('Select another event and confirm transfer');
    const sourceRows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
@@ -368,7 +354,7 @@ Deno.serve(async(req)=>{
     if(!account||!providerConfigured('sumup',account))return fail('SumUp unavailable. Your place is reserved; contact the organiser. Do not submit again.',503);
     const urls=resolveEventCheckoutUrls({callbackBase:Deno.env.get('RALLYHUB_EVENT_CALLBACK_BASE_URL'),publicBase:Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL'),slug:t.event_slug});
     if(privateAccess){const site=new URL(Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL')||'');urls.redirectUrl=new URL('/private-event/'+encodeURIComponent(id)+'/'+encodeURIComponent(b.invitationToken),site).toString();}
-    const locked=await acquireEventApprovalLock(base44.asServiceRole.entities.EventRegistration,{registration:persisted,eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
+    const locked=await acquireEventApprovalLock(base44.asServiceRole.entities.EventRegistration,{registration:saved,eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
     if(!locked)return fail('Payment is being prepared. Contact the organiser before retrying.',409);
     stage='sumup_checkout_request';
     const checkout=await createCheckout({provider:'sumup',account,amount,currency:t.event_currency||'EUR',reference:`ev_${saved.id}`.slice(0,64),description:t.name,...urls});

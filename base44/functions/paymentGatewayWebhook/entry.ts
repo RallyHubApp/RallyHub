@@ -1,5 +1,5 @@
 import {claimPaidEventConfirmation} from './confirmationLock.mjs';
-import {confirmWithinCapacity} from './capacityConfirmation.mjs';
+import {confirmWithinCapacity} from '../../shared/eventCapacityConfirmation.mjs';
 import {deliverEventNotice} from './eventDelivery.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { renderBasicBrandedEmail } from './communicationsBasicRenderer.ts';
