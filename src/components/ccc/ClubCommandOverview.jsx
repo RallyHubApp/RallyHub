@@ -4,11 +4,12 @@ import { Link } from 'react-router-dom';
 /** Club Command Centre v2.1 overview. Uses existing authoritative count queries.
  * No new data access, permissions, booking decisions or payment side effects.
  */
-export default function ClubCommandOverview({membershipApprovals=0,membershipPayments=0,guestApprovals=0,directoryApprovals=0,isPlatformAdmin=false}){
+export default function ClubCommandOverview({membershipApprovals=0,membershipPayments=0,guestApprovals=0,eventActions=0,eventCountError=false,directoryApprovals=0,isPlatformAdmin=false}){
  const items=[
   {label:'Membership approvals',count:membershipApprovals,to:'/app/membership#membership-applications'},
   {label:'Membership follow-ups',count:membershipPayments,to:'/app/membership#membership-applications'},
   {label:'Guest booking approvals',count:guestApprovals,to:'/app/guest-bookings'},
+  {label:'Event actions',count:eventActions,to:'/app/events'},
   ...(isPlatformAdmin?[{label:'Directory approvals',count:directoryApprovals,to:'/app/admin?tab=directory&focus=pending-actions'}]:[])
  ];
  const total=items.reduce((sum,item)=>sum+Math.max(0,Number(item.count)||0),0);
@@ -28,6 +29,7 @@ export default function ClubCommandOverview({membershipApprovals=0,membershipPay
     <span className="block text-sm text-muted-foreground">{item.label}</span><span className="mt-1 block text-2xl font-bold tabular-nums">{Math.max(0,Number(item.count)||0)}</span>
    </Link>)}
   </div>
+  {eventCountError&&<p role="alert" className="mt-2 text-sm text-amber-700">Event action count unavailable — check Events directly.</p>}
   <nav aria-label="Club Command Centre sections" className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
    {sections.map(section=><div key={section.name} className="rounded-xl border p-3">
     <h3 className="text-sm font-semibold">{section.name}</h3><p className="mt-1 text-xs text-muted-foreground">{section.description}</p>

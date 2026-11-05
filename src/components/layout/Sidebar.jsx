@@ -12,6 +12,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import useKotcRole from '@/hooks/useKotcRole';
 import useMemberMessageUnread from '@/hooks/useMemberMessageUnread';
+import useEventActionCount from '@/hooks/useEventActionCount';
 
 const LOGO_URL = '/assets/brand/rallyhub-app-icon-approved.png';
 
@@ -36,6 +37,7 @@ export default function Sidebar({ isOpen, onToggle }) {
   const directoryWorkspaceTabs = new Set(['directory-command','directory-crm','directory','directory-contacts','directory-players','directory-analytics','directory-campaigns','directory-governance']);
   const inDirectoryWorkspace = location.pathname === '/app/admin' && directoryWorkspaceTabs.has(currentAdminTab);
   const { data: memberMessageUnread = 0 } = useMemberMessageUnread();
+  const {data:pendingEventActionCount=0}=useEventActionCount(user);
   const memberNavItems = [
     { path: '/app', label: 'Home', icon: Home },
     { path: '/app/play', label: 'Play', icon: CalendarDays },
@@ -58,7 +60,7 @@ export default function Sidebar({ isOpen, onToggle }) {
     { path: '/app/waiting-list', label: 'Waiting List', icon: ClipboardList, section: 'CLUB OPERATIONS' },
     { path: '/app/players', label: 'Players', icon: Users, section: 'CLUB OPERATIONS' },
     { path: '/app/guest-bookings', label: 'Session Bookings', icon: CalendarCheck, bookingApprovals: true, section: 'CLUB OPERATIONS' },
-    { path: '/app/events', label: 'Events', icon: CalendarDays, section: 'CLUB OPERATIONS' },
+    { path: '/app/events', label: 'Events', icon: CalendarDays, eventActions: true, section: 'CLUB OPERATIONS' },
     { path: '/app/tournaments', label: 'Tournaments', icon: Trophy, section: 'CLUB OPERATIONS' },
     { path: '/app/trials', label: 'Club Trials', icon: ClipboardList, section: 'CLUB OPERATIONS' },
     { path: '/app/leaderboard', label: 'Club Leaderboard', icon: Crown, section: 'CLUB OPERATIONS' },
@@ -84,7 +86,7 @@ export default function Sidebar({ isOpen, onToggle }) {
       { path: '/app/membership', label: 'Membership', icon: ContactRound },
       { path: '/app/finance', label: 'Finance Summary', icon: WalletCards },
       { path: '/app/waiting-list', label: 'Waiting List', icon: ClipboardList },
-      { path: '/app/events', label: 'Events', icon: CalendarDays },
+      { path: '/app/events', label: 'Events', icon: CalendarDays, eventActions: true },
       { path: '/app/learn/manage', label: 'Learn Resources', icon: BookOpen }
     ] : []),
     ...navItems.slice(1)
@@ -223,7 +225,9 @@ export default function Sidebar({ isOpen, onToggle }) {
                   {item.messages && memberMessageUnread > 0 && (
                     <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center">{memberMessageUnread > 99 ? '99+' : memberMessageUnread}</span>
                   )}
-                  {item.bookingApprovals && pendingBookingApprovalCount > 0 && (
+                  {item.eventActions && pendingEventActionCount > 0 && <span className="ml-auto rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground">{pendingEventActionCount}</span>}
+                  {item.eventActions && pendingEventActionCount > 0 && <span className="ml-auto rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground">{pendingEventActionCount}</span>}
+                {item.bookingApprovals && pendingBookingApprovalCount > 0 && (
                     <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center" aria-label={`${pendingBookingApprovalCount} session booking request${pendingBookingApprovalCount === 1 ? '' : 's'} awaiting approval`} title={`${pendingBookingApprovalCount} session booking request${pendingBookingApprovalCount === 1 ? '' : 's'} awaiting approval`}>{pendingBookingApprovalCount > 99 ? '99+' : pendingBookingApprovalCount}</span>
                   )}
                   {item.path === '/app/admin?tab=directory-crm' && directoryEnquiryAlertCount > 0 && <span className="ml-auto min-w-5 rounded-full bg-amber-400 px-1.5 text-center text-[11px] font-black text-black" aria-label={`${directoryEnquiryAlertCount} outstanding Directory enquiries`}>{directoryEnquiryAlertCount}</span>}
@@ -287,6 +291,7 @@ export default function Sidebar({ isOpen, onToggle }) {
               >
                 <item.icon className="w-4 h-4" />
                 {item.label}
+                {item.eventActions && pendingEventActionCount > 0 && <span className="ml-auto rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground">{pendingEventActionCount}</span>}
                 {item.bookingApprovals && pendingBookingApprovalCount > 0 && (
                   <span
                     className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center"

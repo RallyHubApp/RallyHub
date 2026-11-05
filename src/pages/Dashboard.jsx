@@ -11,6 +11,7 @@ import PageHeader from '@/components/shared/PageHeader';
 import { addDays, format } from 'date-fns';
 import MemberPortalDashboard from '@/components/member/MemberPortalDashboard';
 import ClubCommandOverview from '@/components/ccc/ClubCommandOverview';
+import useEventActionCount from '@/hooks/useEventActionCount';
 import ClubOperationsBoard from '@/components/ccc/ClubOperationsBoard';
 import ClubSchedulePanel from '@/components/ccc/ClubSchedulePanel';
 import ClubActivityPlanner from '@/components/ccc/ClubActivityPlanner';
@@ -25,6 +26,7 @@ export default function Dashboard() {
     queryFn: () => base44.auth.me().catch(() => null)
   });
 
+  const {data:pendingEventActionCount=0,isError:eventCountError}=useEventActionCount(currentUser);
   const isMemberView = !!currentUser && currentUser?.role !== 'admin' && currentUser?.active_club_role !== 'club_admin';
 
   const { data: memberCounts = null } = useQuery({
@@ -209,7 +211,7 @@ export default function Dashboard() {
         </Link>
       </PageHeader>
 
-      <ClubCommandOverview membershipApprovals={pendingMembershipDecisionCount} membershipPayments={pendingMembershipApplicationCount} guestApprovals={pendingSessionBookingCount} directoryApprovals={pendingDirectoryApprovalCount} isPlatformAdmin={currentUser?.role === 'admin'} />
+      <ClubCommandOverview membershipApprovals={pendingMembershipDecisionCount} membershipPayments={pendingMembershipApplicationCount} guestApprovals={pendingSessionBookingCount} eventActions={pendingEventActionCount} eventCountError={eventCountError} directoryApprovals={pendingDirectoryApprovalCount} isPlatformAdmin={currentUser?.role === 'admin'} />
 
       {currentUser?.active_tenant_id && currentUser?.active_club_id && <ClubHostWorkspace key={'host:'+currentUser.active_tenant_id+':'+currentUser.active_club_id} tenantId={currentUser.active_tenant_id} clubId={currentUser.active_club_id} />}
       {currentUser?.role === 'admin' && <ClubActivityPlanner key={`${currentUser?.active_tenant_id||''}:${currentUser?.active_club_id||''}`} tenantId={currentUser?.active_tenant_id} clubId={currentUser?.active_club_id} />}
