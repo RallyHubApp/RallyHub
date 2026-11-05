@@ -148,7 +148,36 @@ Deno.serve(async(req)=>{
     if(occupied(destRows)>=Number(destination.event_capacity||0))return fail('Destination is full',409);
     const fresh=(await base44.asServiceRole.entities.EventRegistration.filter({id:registrationId,tenant_id:t.tenant_id,club_id:t.host_club_id},'-created_date',1))?.[0];
     if(!fresh||fresh.event_id!==id||fresh.registration_status!==source.registration_status||fresh.payment_status!==source.payment_status)return fail('Registration changed. Refresh before transferring.',409);
-    if(source.registration_status==='waitlisted')return fail('Waiting-list transfer requires a new SumUp checkout and is not enabled yet',409);
+    if(source.registration_status==='waitlisted'){
+     if(source.payment_checkout_id||source.payment_record_id||source.payment_status!=='not_required')return fail('Waiting-list payment state requires reconciliation',409);
+     const accountRows=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
+     const accountRow=accountRows?.[0];
+     const account=accountRow?{provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'}:null;
+     if(!account||!providerConfigured('sumup',account))return fail('SumUp account unavailable; original waitlist retained',503);
+     const urls=resolveEventCheckoutUrls({callbackBase:Deno.env.get('RALLYHUB_EVENT_CALLBACK_BASE_URL'),publicBase:Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL'),slug:destination.event_slug});
+     if(destination.event_private_invitation_token&&!destination.event_public_visible){
+      const site=new URL(Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL')||'');
+      urls.redirectUrl=new URL('/private-event/'+encodeURIComponent(destinationId)+'/'+encodeURIComponent(destination.event_private_invitation_token),site).toString();
+     }
+     const amount=Number(destination.event_fee_amount||0);
+     if(!Number.isFinite(amount)||amount<=0)return fail('Waiting-list transfer requires a paid destination',409);
+     // Claim source once. No second admin can issue another checkout while this claim is held.
+     const claim=await base44.asServiceRole.entities.EventRegistration.updateMany({id:fresh.id,event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,registration_status:'waitlisted',payment_status:'not_required'},{$set:{payment_status:'transfer_processing'}});
+     if(claim?.updated!==1)return fail('Transfer already in progress; refresh',409);
+     let checkout:any=null;
+     try{
+      checkout=await createCheckout({provider:'sumup',account,amount,currency:destination.event_currency||'EUR',reference:`ev_${fresh.id}`.slice(0,64),description:destination.name,...urls});
+      const payment=await base44.asServiceRole.entities.PaymentRecord.create({tenant_id:t.tenant_id,club_id:t.host_club_id,person_id:fresh.person_id||'',purpose_type:'event',purpose_id:fresh.id,payment_type:'event_registration',amount,currency:destination.event_currency||'EUR',payment_method:'sumup',payment_status:'pending',provider:'sumup',provider_account_id:accountRow.id,provider_checkout_id:checkout.checkoutId,provider_checkout_url:checkout.checkoutUrl,provider_status:'PENDING',source_system:'rallyhub_event'});
+      const history=[...(Array.isArray(fresh.transfer_history)?fresh.transfer_history:[]),{from_event_id:id,to_event_id:destinationId,transferred_at:now,previous_status:'waitlisted',previous_waitlist_position:fresh.waitlist_position||null}];
+      const expires=new Date(Date.now()+86400000).toISOString();
+      const updated=await base44.asServiceRole.entities.EventRegistration.update(fresh.id,{event_id:destinationId,registration_status:'approved_payment_hold',payment_status:'pending',payment_record_id:payment.id,payment_checkout_id:checkout.checkoutId,payment_checkout_url:checkout.checkoutUrl,payment_hold_expires_at:expires,approved_at:now,transfer_history:history});
+      if(updated?.event_id!==destinationId||updated?.payment_record_id!==payment.id)throw Error('Transfer persistence requires reconciliation; do not issue another link');
+      return Response.json({success:true,transferred:true,registrationId:fresh.id,eventId:destinationId,eventName:destination.name,checkoutUrl:checkout.checkoutUrl,fee:amount});
+     }catch(e){
+      if(!checkout)await base44.asServiceRole.entities.EventRegistration.updateMany({id:fresh.id,event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,payment_status:'transfer_processing'},{$set:{payment_status:'not_required'}});
+      throw e;
+     }
+    }
     const history=[...(Array.isArray(fresh.transfer_history)?fresh.transfer_history:[]),{from_event_id:id,to_event_id:destinationId,transferred_at:now,previous_status:fresh.registration_status,previous_waitlist_position:fresh.waitlist_position||null}];
     const updated=await base44.asServiceRole.entities.EventRegistration.update(fresh.id,{event_id:destinationId,transfer_history:history,payment_hold_expires_at:new Date(Date.now()+86400000).toISOString()});
     if(updated?.event_id!==destinationId)throw Error('Transfer persistence not verified');
