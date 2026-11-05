@@ -49,7 +49,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_resend_payment_link','admin_reissue_payment_link','admin_alternative_dates','admin_comms_templates','admin_comms_save_draft','admin_comms_send'];
+  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_resend_payment_link','admin_get_payment_link','admin_reissue_payment_link','admin_alternative_dates','admin_comms_templates','admin_comms_save_draft','admin_comms_send'];
   const isAdminAction=adminActions.includes(action);
   const privateAccess=!!(t?.event_private_invitation_token&&clean(b.invitationToken,100)===t.event_private_invitation_token);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||(!t.event_public_visible&&!privateAccess))))return fail('Bookings are not open for this event',404);
@@ -141,7 +141,7 @@ Deno.serve(async(req)=>{
   }
   stage='roster_verification';
   const rows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
-  if(action==='admin_approve'||action==='admin_verify'||action==='admin_refund_payment'||action==='admin_resend_payment_link'||action==='admin_reissue_payment_link'){
+  if(action==='admin_approve'||action==='admin_verify'||action==='admin_refund_payment'||action==='admin_resend_payment_link'||action==='admin_get_payment_link'||action==='admin_reissue_payment_link'){
    const registration=rows.find((r:any)=>r.id===clean(b.registrationId,100));if(!registration)return fail('Registration not found',404);
    const accountRows=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
    const accountRow=accountRows?.[0];const account=accountRow?{provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'}:null;
@@ -199,10 +199,12 @@ Deno.serve(async(req)=>{
     await base44.asServiceRole.entities.EventRegistration.update(registration.id,{registration_status:'approved_payment_hold',payment_status:'pending',payment_record_id:payment.id,payment_hold_expires_at:expires,payment_checkout_id:checkout.checkoutId,payment_checkout_url:checkout.checkoutUrl});
     return Response.json({success:true,checkoutUrl:checkout.checkoutUrl,expiresAt:expires,status:'approved_payment_hold'});
    }
+   if(action==='admin_get_payment_link'){
+    if(registration.registration_status!=='approved_payment_hold'||registration.payment_status!=='pending'||!registration.payment_checkout_url)return fail('No outstanding stored payment link',409);
+    return Response.json({success:true,checkoutUrl:registration.payment_checkout_url});
+   }
    if(action==='admin_resend_payment_link'){
     if(registration.registration_status!=='approved_payment_hold'||registration.payment_status!=='pending')return fail('No outstanding approved payment request',409);
-    const expires=Date.parse(registration.payment_hold_expires_at||'');
-    if(!Number.isFinite(expires)||expires<=Date.now())return fail('Payment hold expired. Do not resend an expired checkout; reconcile before creating a new one.',409);
     if(!registration.payment_checkout_id||!registration.payment_checkout_url)return fail('No existing checkout to resend',409);
     const paymentRows=await base44.asServiceRole.entities.PaymentRecord.filter({id:registration.payment_record_id,tenant_id:t.tenant_id,club_id:t.host_club_id,purpose_type:'event',purpose_id:registration.id},'-created_date',2);
     if(paymentRows.length!==1||paymentRows[0].payment_status!=='pending'||paymentRows[0].provider_checkout_id!==registration.payment_checkout_id)return fail('Payment record needs reconciliation before resend',409);
