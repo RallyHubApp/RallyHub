@@ -12,9 +12,9 @@ export default function useEventActionCount(user){
   refetchInterval:60000,
   refetchOnWindowFocus:true,
   queryFn:async()=>{
-   const events=await base44.entities.Tournament.filter({tenant_id:tenantId,host_club_id:clubId,event_registration_mode:'rallyhub',event_booking_enabled:true,event_publish_status:'published'},'-start_date',100);
-   if(!Array.isArray(events)||events.length>=100)throw Error('Event action count incomplete');
    const today=new Date().toISOString().slice(0,10);
+   const events=await base44.entities.Tournament.filter({tenant_id:tenantId,host_club_id:clubId,event_registration_mode:'rallyhub',event_booking_enabled:true,event_publish_status:'published',start_date:{$gte:today}},'start_date',100);
+   if(!Array.isArray(events)||events.length>=100)throw Error('Event action count incomplete');
    const active=events.filter(e=>String(e.start_date||'')>=today);
    if(active.length>25)throw Error('Too many active events for a verified action count');
    const results=await Promise.all(active.map(async e=>{

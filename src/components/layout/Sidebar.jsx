@@ -226,7 +226,6 @@ export default function Sidebar({ isOpen, onToggle }) {
                     <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center">{memberMessageUnread > 99 ? '99+' : memberMessageUnread}</span>
                   )}
                   {item.eventActions && pendingEventActionCount > 0 && <span className="ml-auto rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground">{pendingEventActionCount}</span>}
-                  {item.eventActions && pendingEventActionCount > 0 && <span className="ml-auto rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground">{pendingEventActionCount}</span>}
                 {item.bookingApprovals && pendingBookingApprovalCount > 0 && (
                     <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center" aria-label={`${pendingBookingApprovalCount} session booking request${pendingBookingApprovalCount === 1 ? '' : 's'} awaiting approval`} title={`${pendingBookingApprovalCount} session booking request${pendingBookingApprovalCount === 1 ? '' : 's'} awaiting approval`}>{pendingBookingApprovalCount > 99 ? '99+' : pendingBookingApprovalCount}</span>
                   )}
