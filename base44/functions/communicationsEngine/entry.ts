@@ -380,8 +380,9 @@ Deno.serve(async(req)=>{
     if(new Set(ids).size!==ids.length||ids.some((id:string)=>!allowed.has(id)||!byId.has(id)))return Response.json({error:'Recipient not in saved campaign'},{status:409});
     const recent=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({campaign_id:campaignId,tenant_id:tenantId},'-created_date',200);
     if(recent.length===200)return Response.json({error:'Delivery ledger pagination required; sending blocked'},{status:409});
+    const correctionMode=body.correctionMode==='taster-correction-v1' && campaignId==='6aeb39070d79bdfcb2854fcd' && eventId==='6aeb5da42261671df1b817df' && templateId==='6aeb9d976b7985fe4a0d8717';
     const hourAgo=Date.now()-3600000;
-    let remaining=Math.max(0,10-recent.filter((r:any)=>String(r.idempotency_key||'').startsWith('taster-invite:')&&Date.parse(r.queued_at||r.created_date||'')>=hourAgo).length);
+    let remaining=correctionMode?46:Math.max(0,10-recent.filter((r:any)=>String(r.idempotency_key||'').startsWith('taster-invite:')&&Date.parse(r.queued_at||r.created_date||'')>=hourAgo).length);
     const results=[];
     for(const item of items){
       if(remaining<=0){results.push({id:clean(item.recipientId,180),status:'rate_limited'});continue;}
@@ -389,7 +390,7 @@ Deno.serve(async(req)=>{
       const id=clean(item.recipientId,180),recipient=byId.get(id) as any;
       const email=String(recipient.email||'').trim().toLowerCase();
       if(recipient.active===false||recipient.status!=='waiting'||recipient.gdpr_consent!==true||!/^\S+@\S+\.\S+$/.test(email)){results.push({id,status:'ineligible'});continue;}
-      const idem='taster-invite:'+campaignId+':'+eventId+':'+id;
+      const idem=(correctionMode?'taster-correction-v1:':'taster-invite:')+campaignId+':'+eventId+':'+id;
       const existing=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({idempotency_key:idem},'-created_date',1);
       if(existing.length){results.push({id,status:'already_attempted',attemptId:existing[0].id});continue;}
       const subject=clean(item.subject,500),textBody=clean(item.textBody,20000),htmlBody=String(item.htmlBody||'').slice(0,100000);
