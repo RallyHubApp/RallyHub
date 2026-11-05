@@ -1,6 +1,7 @@
 /** Tenant Events registration. Explicitly gated until full payment, notice and admin workflows pass UAT. */
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
 import {occupied,duplicate,consentEvidence,canConfirm} from './rules.js';
+import {admitAtomically} from './atomicAdmission.mjs';
 import {createCheckout,retrievePayment,refundPayment,providerConfigured} from './payments.ts';
 import {eventNoticeRecipients,eventNoticeBody,EVENT_NOTICE_TYPES} from './notificationPolicy.js';
 import {renderBasicBrandedEmail} from './communicationsBasicRenderer.ts';
@@ -254,25 +255,23 @@ Deno.serve(async(req)=>{
    if(!account||!providerConfigured('sumup',account))return fail('The club SumUp connection is unavailable. No place has been reserved.',503);
    try{resolveEventCheckoutUrls({callbackBase:Deno.env.get('RALLYHUB_EVENT_CALLBACK_BASE_URL'),publicBase:Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL'),slug:t.event_slug})}catch{return fail('SumUp callback configuration is unavailable. No place has been reserved.',503)}
   }
-  // The legacy count is a derived display cache, never an admission authority.
-  // A single event lease serialises capacity-sensitive admissions and paid confirmations.
-  const leaseUntil=new Date(Date.now()+120000).toISOString();
-  const lease=await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,$or:[{event_payment_confirmation_lease:null},{event_payment_confirmation_lease:{$lt:new Date().toISOString()}}]},{$set:{event_payment_confirmation_lease:leaseUntil}});
-  if(lease?.updated!==1)return fail('Event booking is being processed; please retry shortly',409);
-  let accepted=false;let saved:any=null;let persisted:any=null;let status='waitlisted';
-  try{
-   const latest=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
-   if(latest.some((r:any)=>r.operation_id===operationId))return Response.json({success:true,received:true,message:'Your application has already been received.'});
-   if(duplicate(latest,email))return fail('This email may already have an application. Please contact the organiser.',409);
-   accepted=occupied(latest)<capacity;
-  status=accepted?'pending_approval':'waitlisted';
-  if(!accepted&&!t.event_waitlist_enabled)return fail('Event is full',409);
+  // Registration admission and payment confirmation use the same atomic event lease.
   stage='record_create';
-  saved=await base44.asServiceRole.entities.EventRegistration.create({tenant_id:t.tenant_id,club_id:t.host_club_id,event_id:id,full_name:name,email,email_key:email,mobile,emergency_contact_name:emergencyName,emergency_contact_mobile:emergencyMobile,previous_experience:clean(b.previousExperience,250),previous_sports:Array.isArray(b.previousSports)?b.previousSports.filter((x:any)=>typeof x==='string').slice(0,12):[],health_declaration_applies:b.healthDeclarationApplies===true,medical_note:clean(b.medicalNote,1000),consent_evidence:evidence,photo_video_consent:!!b.consents?.photo_video,registration_status:status,payment_status:'not_required',operation_id:operationId,created_at:now});
-  if(!saved?.id)throw Error('Registration create returned no record ID');
-  persisted=await base44.asServiceRole.entities.EventRegistration.get(saved.id);
-  if(!persisted||persisted.operation_id!==operationId)throw Error('Registration persistence verification failed');
-  }finally{await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_payment_confirmation_lease:leaseUntil},{$set:{event_payment_confirmation_lease:null}});}
+  const admission=await admitAtomically({
+   tournaments:base44.asServiceRole.entities.Tournament,
+   registrations:base44.asServiceRole.entities.EventRegistration,
+   eventId:id,tenantId:t.tenant_id,capacity,email,operationId,
+   read:()=>readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id}),
+   create:async(accepted:boolean)=>{if(!accepted&&!t.event_waitlist_enabled)throw Error('Event is full');
+    return base44.asServiceRole.entities.EventRegistration.create({tenant_id:t.tenant_id,club_id:t.host_club_id,event_id:id,full_name:name,email,email_key:email,mobile,emergency_contact_name:emergencyName,emergency_contact_mobile:emergencyMobile,previous_experience:clean(b.previousExperience,250),previous_sports:Array.isArray(b.previousSports)?b.previousSports.filter((x:any)=>typeof x==='string').slice(0,12):[],health_declaration_applies:b.healthDeclarationApplies===true,medical_note:clean(b.medicalNote,1000),consent_evidence:evidence,photo_video_consent:!!b.consents?.photo_video,registration_status:accepted?'pending_approval':'waitlisted',payment_status:'not_required',operation_id:operationId,created_at:now});
+   }
+  });
+  if(admission.kind==='busy')return fail('Event booking is being processed; please retry shortly',409);
+  if(admission.kind==='existing')return Response.json({success:true,received:true,message:'Your application has already been received.'});
+  if(admission.kind==='duplicate')return fail('This email may already have an application. Please contact the organiser.',409);
+  const accepted=admission.accepted;
+  const saved=admission.saved;
+  const status=accepted?'pending_approval':'waitlisted';
   if(accepted&&t.event_booking_policy?.approval_required===false){
     stage='automatic_checkout';
     const amount=Number(t.event_fee_amount||0);
