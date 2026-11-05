@@ -259,22 +259,21 @@ Deno.serve(async(req)=>{
   const leaseUntil=new Date(Date.now()+120000).toISOString();
   const lease=await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,$or:[{event_payment_confirmation_lease:null},{event_payment_confirmation_lease:{$lt:new Date().toISOString()}}]},{$set:{event_payment_confirmation_lease:leaseUntil}});
   if(lease?.updated!==1)return fail('Event booking is being processed; please retry shortly',409);
-  let accepted=false;
+  let accepted=false;let saved:any=null;let persisted:any=null;
   try{
    const latest=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
    if(latest.some((r:any)=>r.operation_id===operationId))return Response.json({success:true,received:true,message:'Your application has already been received.'});
    if(duplicate(latest,email))return fail('This email may already have an application. Please contact the organiser.',409);
    accepted=occupied(latest)<capacity;
-  }finally{await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_payment_confirmation_lease:leaseUntil},{$set:{event_payment_confirmation_lease:null}});}
   const status=accepted?'pending_approval':'waitlisted';
   if(!accepted&&!t.event_waitlist_enabled)return fail('Event is full',409);
   stage='record_create';
-  try{
-   const saved=await base44.asServiceRole.entities.EventRegistration.create({tenant_id:t.tenant_id,club_id:t.host_club_id,event_id:id,full_name:name,email,email_key:email,mobile,emergency_contact_name:emergencyName,emergency_contact_mobile:emergencyMobile,previous_experience:clean(b.previousExperience,250),previous_sports:Array.isArray(b.previousSports)?b.previousSports.filter((x:any)=>typeof x==='string').slice(0,12):[],health_declaration_applies:b.healthDeclarationApplies===true,medical_note:clean(b.medicalNote,1000),consent_evidence:evidence,photo_video_consent:!!b.consents?.photo_video,registration_status:status,payment_status:'not_required',operation_id:operationId,created_at:now});
-   if(!saved?.id)throw Error('Registration create returned no record ID');
-   const persisted=await base44.asServiceRole.entities.EventRegistration.get(saved.id);
-   if(!persisted||persisted.operation_id!==operationId)throw Error('Registration persistence verification failed');
-   if(accepted&&t.event_booking_policy?.approval_required===false){
+  saved=await base44.asServiceRole.entities.EventRegistration.create({tenant_id:t.tenant_id,club_id:t.host_club_id,event_id:id,full_name:name,email,email_key:email,mobile,emergency_contact_name:emergencyName,emergency_contact_mobile:emergencyMobile,previous_experience:clean(b.previousExperience,250),previous_sports:Array.isArray(b.previousSports)?b.previousSports.filter((x:any)=>typeof x==='string').slice(0,12):[],health_declaration_applies:b.healthDeclarationApplies===true,medical_note:clean(b.medicalNote,1000),consent_evidence:evidence,photo_video_consent:!!b.consents?.photo_video,registration_status:status,payment_status:'not_required',operation_id:operationId,created_at:now});
+  if(!saved?.id)throw Error('Registration create returned no record ID');
+  persisted=await base44.asServiceRole.entities.EventRegistration.get(saved.id);
+  if(!persisted||persisted.operation_id!==operationId)throw Error('Registration persistence verification failed');
+  }finally{await base44.asServiceRole.entities.Tournament.updateMany({id,tenant_id:t.tenant_id,event_payment_confirmation_lease:leaseUntil},{$set:{event_payment_confirmation_lease:null}});}
+  if(accepted&&t.event_booking_policy?.approval_required===false){
     stage='automatic_checkout';
     const amount=Number(t.event_fee_amount||0);
     if(amount===0){await base44.asServiceRole.entities.EventRegistration.update(saved.id,{registration_status:'confirmed',payment_status:'not_required',confirmed_at:new Date().toISOString()});await deliverEventNotice(base44,t,saved,'booking_confirmed');return Response.json({success:true,received:true,status:'confirmed',message:'Your free booking is confirmed.'});}
@@ -294,11 +293,6 @@ Deno.serve(async(req)=>{
     await deliverEventNotice(base44,t,{...saved,payment_hold_expires_at:expires},'payment_required',`Payment link: ${checkout.checkoutUrl}`);
     return Response.json({success:true,received:true,status:'approved_payment_hold',checkoutUrl:checkout.checkoutUrl,operationId,expiresAt:expires,message:'Continue to secure SumUp payment. Your booking is confirmed only after payment verification.'});
    }
-  }catch(error){
-   if(stage==='automatic_checkout')throw error;
-
-   throw error;
-  }
   try{await deliverEventNotice(base44,t,{full_name:name,email},accepted?'application_received':'waitlist_joined');}catch(noticeError){console.error('Event application saved but notification delivery failed',noticeError);}
   return Response.json({success:true,received:true,status,message:accepted?'Application received. Await organiser approval.':'Event full. You have joined the waiting list.'});
  }catch(e){const message=String(e?.message||e||'Unknown error');console.error('event registration error',stage,message,e?.stack);if(message.startsWith('Event payment verification')||message.startsWith('Event payment pagination')||message.startsWith('Event payment record missing ID'))return fail('Event payment records could not be fully verified. No financial action was taken; please try again later.',503);if(message.startsWith('Event registration verification')||message.startsWith('Event registration pagination')||message.startsWith('Event registration missing ID'))return fail('Booking records could not be fully verified. No new booking has been accepted; please try again later or contact the organiser.',503);if(message.startsWith('Required consent missing:'))return fail('Please accept the required document: '+message.split(':')[1].trim().replaceAll('_',' '),400);return fail(['automatic_checkout','sumup_checkout_request','sumup_checkout_persistence'].includes(stage)?('Your booking was saved, but SumUp checkout failed at '+stage+'. '+(stage==='sumup_checkout_request'?message.slice(0,220):'Please contact the organiser to reconcile the payment attempt.')+' Do not submit again or pay twice.'):'Registration could not be saved. Your details remain in the form. Please contact the organiser.',503)}
