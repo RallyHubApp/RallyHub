@@ -38,6 +38,13 @@ export default function Sidebar({ isOpen, onToggle }) {
   const inDirectoryWorkspace = location.pathname === '/app/admin' && directoryWorkspaceTabs.has(currentAdminTab);
   const { data: memberMessageUnread = 0 } = useMemberMessageUnread();
   const {data:pendingEventActionCount=0}=useEventActionCount(user);
+  const {data:membershipAttentionCount=0,isError:membershipAttentionError}=useQuery({
+    queryKey:['membership-application-attention-count',user?.active_tenant_id,user?.active_club_id],
+    enabled:canManageMembership&&!!user?.active_tenant_id&&!!user?.active_club_id,
+    queryFn:async()=>{const res=await base44.functions.invoke('membershipApplication',{action:'admin_count'});if(res.data?.error||res.data?.success===false)throw Error(res.data?.error||'Membership count unavailable');return {approvalCount:Number(res.data?.approvalCount||0),paymentFollowUpCount:Number(res.data?.paymentFollowUpCount??res.data?.pendingCount??0)}},
+    select:data=>Number(data.approvalCount||0)+Number(data.paymentFollowUpCount||0),
+    retry:2,refetchInterval:30000,refetchOnWindowFocus:true
+  });
   const memberNavItems = [
     { path: '/app', label: 'Home', icon: Home },
     { path: '/app/play', label: 'Play', icon: CalendarDays },
@@ -55,7 +62,7 @@ export default function Sidebar({ isOpen, onToggle }) {
     { path: '/app/communications', label: 'Communications', icon: MessageCircle, section: 'SUPER ADMIN' },
     { path: '/directory', label: 'Public Directory', icon: MapPin, section: 'SUPER ADMIN' },
     { path: '/app/messages', label: 'Member Messages', icon: MessageCircle, messages: true, section: 'CLUB OPERATIONS' },
-    { path: '/app/membership', label: 'Membership', icon: ContactRound, section: 'CLUB OPERATIONS' },
+    { path: '/app/membership', label: 'Membership', icon: ContactRound, membershipActions: true, section: 'CLUB OPERATIONS' },
     { path: '/app/finance', label: 'Finance Summary', icon: WalletCards, section: 'CLUB OPERATIONS' },
     { path: '/app/waiting-list', label: 'Waiting List', icon: ClipboardList, section: 'CLUB OPERATIONS' },
     { path: '/app/players', label: 'Players', icon: Users, section: 'CLUB OPERATIONS' },
@@ -83,7 +90,7 @@ export default function Sidebar({ isOpen, onToggle }) {
     ...(canAccessAdmin ? [{ path: '/app/messages', label: 'Member Messages', icon: MessageCircle, messages: true }] : []),
     ...(canManageMembership ? [
       { path: '/app/club-command-centre', label: 'Club Command Centre', icon: ClipboardList },
-      { path: '/app/membership', label: 'Membership', icon: ContactRound },
+      { path: '/app/membership', label: 'Membership', icon: ContactRound, membershipActions: true },
       { path: '/app/finance', label: 'Finance Summary', icon: WalletCards },
       { path: '/app/waiting-list', label: 'Waiting List', icon: ClipboardList },
       { path: '/app/events', label: 'Events', icon: CalendarDays, eventActions: true },
@@ -225,7 +232,8 @@ export default function Sidebar({ isOpen, onToggle }) {
                   {item.messages && memberMessageUnread > 0 && (
                     <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center">{memberMessageUnread > 99 ? '99+' : memberMessageUnread}</span>
                   )}
-                  {item.eventActions && pendingEventActionCount > 0 && <span className="ml-auto rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground">{pendingEventActionCount}</span>}
+                  {item.membershipActions && (membershipAttentionCount > 0 || membershipAttentionError) && <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center" aria-label={membershipAttentionError?"Membership notification count unavailable":`${membershipAttentionCount} membership actions awaiting attention`}>{membershipAttentionError?"!":membershipAttentionCount>99?"99+":membershipAttentionCount}</span>}
+                {item.eventActions && pendingEventActionCount > 0 && <span className="ml-auto rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground">{pendingEventActionCount}</span>}
                 {item.bookingApprovals && pendingBookingApprovalCount > 0 && (
                     <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center" aria-label={`${pendingBookingApprovalCount} session booking request${pendingBookingApprovalCount === 1 ? '' : 's'} awaiting approval`} title={`${pendingBookingApprovalCount} session booking request${pendingBookingApprovalCount === 1 ? '' : 's'} awaiting approval`}>{pendingBookingApprovalCount > 99 ? '99+' : pendingBookingApprovalCount}</span>
                   )}
@@ -290,6 +298,7 @@ export default function Sidebar({ isOpen, onToggle }) {
               >
                 <item.icon className="w-4 h-4" />
                 {item.label}
+                {item.membershipActions && (membershipAttentionCount > 0 || membershipAttentionError) && <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center" aria-label={membershipAttentionError?"Membership notification count unavailable":`${membershipAttentionCount} membership actions awaiting attention`}>{membershipAttentionError?"!":membershipAttentionCount>99?"99+":membershipAttentionCount}</span>}
                 {item.eventActions && pendingEventActionCount > 0 && <span className="ml-auto rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground">{pendingEventActionCount}</span>}
                 {item.bookingApprovals && pendingBookingApprovalCount > 0 && (
                   <span
