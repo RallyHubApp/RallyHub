@@ -1042,6 +1042,18 @@ export default function MembershipConsole() {
     } finally { setApplicationBusyId(''); }
   };
 
+  const deleteDuplicateRequest = async request => {
+    if (!request?.id || !window.confirm(`Delete duplicate approval for ${request.fullName}? This is only allowed when a matching paid membership exists. The paid membership will be kept.`)) return;
+    setApplicationBusyId(`delete-${request.id}`);
+    try {
+      const response=await base44.functions.invoke('membershipApplication',{action:'admin_delete_duplicate_request',requestId:request.id});
+      if(response.data?.error)throw new Error(response.data.error);
+      toast.success('Duplicate approval deleted; paid membership retained');
+      await Promise.all([refetchApplications(),queryClient.invalidateQueries({queryKey:['membership-application-attention-count']})]);
+    }catch(error){toast.error(error?.response?.data?.error||error?.message||'Could not delete duplicate')}
+    finally{setApplicationBusyId('')}
+  };
+
   const rejectMembershipRequest = async request => {
     if (!request?.id) return;
     const reason = window.prompt(`Reason for declining ${request.fullName || 'this request'} (optional)`, '');
@@ -1266,7 +1278,7 @@ export default function MembershipConsole() {
                       </div>
                       <div className="flex flex-wrap gap-2 xl:justify-end">
                         <Button size="sm" onClick={() => approveMembershipRequest(request)} disabled={approvalBusy}><CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />Approve & create private link</Button>
-                        <Button size="sm" variant="outline" onClick={()=>openApplicantEditor(request)} disabled={approvalBusy}>Edit details</Button><Button size="sm" variant="outline" onClick={() => rejectMembershipRequest(request)} disabled={approvalBusy}><X className="w-3.5 h-3.5 mr-1.5" />Decline</Button>
+                        <Button size="sm" variant="outline" onClick={()=>openApplicantEditor(request)} disabled={approvalBusy}>Edit details</Button><Button size="sm" variant="destructive" onClick={() => deleteDuplicateRequest(request)} disabled={!!applicationBusyId}>Delete duplicate</Button><Button size="sm" variant="outline" onClick={() => rejectMembershipRequest(request)} disabled={approvalBusy}><X className="w-3.5 h-3.5 mr-1.5" />Decline</Button>
                       </div>
                     </div>
                   </div>;
@@ -1280,7 +1292,7 @@ export default function MembershipConsole() {
                   <p className="mt-1 text-xs text-muted-foreground">{request.email}{request.mobile?' · '+request.mobile:''}{request.primaryVenue?' · Joining: '+request.primaryVenue:''}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Approved {request.approvedAt?new Date(request.approvedAt).toLocaleString('en-IE'):'—'} · Membership application not completed; payment not recorded</p>
                   <div className="flex flex-wrap gap-2 mt-3">
-                    <Button size="sm" variant="outline" disabled={!!applicationBusyId} onClick={()=>openApplicantEditor(request)}>Edit details</Button><Button size="sm" variant="outline" disabled={!!applicationBusyId} onClick={()=>resendApprovedInvite(request)}>Resend private link</Button><Button size="sm" variant="outline" disabled={!!applicationBusyId} onClick={()=>prepareApprovedFollowUp(request)}>
+                    <Button size="sm" variant="outline" disabled={!!applicationBusyId} onClick={()=>openApplicantEditor(request)}>Edit details</Button><Button size="sm" variant="destructive" disabled={!!applicationBusyId} onClick={()=>deleteDuplicateRequest(request)}>Delete duplicate</Button><Button size="sm" variant="outline" disabled={!!applicationBusyId} onClick={()=>resendApprovedInvite(request)}>Resend private link</Button><Button size="sm" variant="outline" disabled={!!applicationBusyId} onClick={()=>prepareApprovedFollowUp(request)}>
                       <MessageCircle className="w-3.5 h-3.5 mr-1.5"/> {applicationBusyId==='followup-'+request.id?'Preparing…':'Create payment link / WhatsApp'}
                     </Button>
                   </div>

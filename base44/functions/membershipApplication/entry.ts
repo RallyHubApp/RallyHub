@@ -776,6 +776,19 @@ Deno.serve(async(req)=>{
           message:content.text,paymentUrl:prepared.paymentUrl,mobile:prepared.app.mobile||'',email:prepared.app.email||'',converted:true});
       }
 
+      if(action==='admin_delete_duplicate_request'){
+        if(user.role!=='admin')return Response.json({error:'Super Admin permission required.'},{status:403});
+        const requestId=clean(body.requestId,120);
+        const request=await first(base44,'ClubAccessRequest',{id:requestId,tenant_id:tenantId,club_id:clubId,request_type:'membership_application'});
+        if(!request)return Response.json({error:'Request not found.'},{status:404});
+        if(!['pending_approval','approved'].includes(request.status)||request.conversion_reference)return Response.json({error:'Only unconverted pending or approved requests can be deleted.'},{status:409});
+        const apps=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId,membership_season:config.season_label},'-created_date',500);
+        const matching=(apps||[]).find((a:any)=>a.payment_status==='paid'&&a.id!==request.conversion_reference&&((emailKey(a.email)&&emailKey(a.email)===emailKey(request.email))||samePhone(a.mobile,request.mobile)));
+        if(!matching)return Response.json({error:'No matching paid membership found. Decline this request instead.'},{status:409});
+        await base44.asServiceRole.entities.ClubAccessRequest.delete(request.id);
+        return Response.json({success:true,deletedRequestId:request.id,retainedPaidApplicationId:matching.id});
+      }
+
       if(action==='admin_reject_request'){
         const requestId=clean(body.requestId,120);
         const request=await first(base44,'ClubAccessRequest',{id:requestId,tenant_id:tenantId,club_id:clubId,request_type:'membership_application'});
