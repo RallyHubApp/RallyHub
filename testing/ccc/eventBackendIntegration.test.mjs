@@ -9,6 +9,9 @@ import {readPaymentRefundHistory,refundRemaining} from '../../base44/functions/e
 import {selectRefundableEventPayment,selectCheckoutPayment} from '../../base44/functions/eventRegistration/paymentSelection.mjs';
 import {readEventAdminPage} from '../../base44/functions/eventRegistration/adminPage.mjs';
 import {countActiveEventRegistrations} from '../../base44/functions/eventRegistration/availabilityCount.mjs';
+import {admitAtomically} from '../../base44/functions/eventRegistration/atomicAdmission.mjs';
+import {acquireEventApprovalLock} from '../../base44/functions/eventRegistration/approvalLock.mjs';
+import {resolveEventCheckoutUrls} from '../../base44/functions/eventRegistration/checkoutUrls.mjs';
 import {requireEventAdminGrant} from '../../base44/functions/eventRegistration/adminAccess.mjs';
 import {occupied,duplicate,consentEvidence,canConfirm} from '../../base44/functions/eventRegistration/rules.js';
 const source=readFileSync(new URL('../../base44/functions/eventRegistration/entry.ts',import.meta.url),'utf8').replace(/^import .*;\s*$/gm,'');
@@ -34,7 +37,7 @@ function harness({user={id:'admin',role:'admin',active_tenant_id:'t1',active_clu
  }]));
  const sdk={auth:{me:async()=>user},asServiceRole:{entities}};
  let handler;
- const context={Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,readBookingRegistrations,readAdminEventPayments,readPaymentRefundHistory,refundRemaining,selectRefundableEventPayment,selectCheckoutPayment,readEventAdminPage,countActiveEventRegistrations,requireEventAdminGrant,occupied,duplicate,consentEvidence,canConfirm,createCheckout:async()=>({checkoutId:'newCheckout',checkoutUrl:'https://example.invalid'}),retrievePayment:async()=>({normalizedStatus:'paid',transactionId:'tx1'}),refundPayment:async()=>{calls.refund++;if(refundResult instanceof Error)throw refundResult;return refundResult},providerConfigured:()=>true,deliverEventNotice:async()=>{calls.notice++},eventNoticeRecipients:()=>({}),eventNoticeBody:()=>'',EVENT_NOTICE_TYPES:[],renderBasicBrandedEmail:()=>'',Response,Date,console};
+ const context={Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,readBookingRegistrations,readAdminEventPayments,readPaymentRefundHistory,refundRemaining,selectRefundableEventPayment,selectCheckoutPayment,readEventAdminPage,countActiveEventRegistrations,admitAtomically,acquireEventApprovalLock,resolveEventCheckoutUrls,requireEventAdminGrant,occupied,duplicate,consentEvidence,canConfirm,createCheckout:async()=>({checkoutId:'newCheckout',checkoutUrl:'https://example.invalid'}),retrievePayment:async()=>({normalizedStatus:'paid',transactionId:'tx1'}),refundPayment:async()=>{calls.refund++;if(refundResult instanceof Error)throw refundResult;return refundResult},providerConfigured:()=>true,deliverEventNotice:async()=>{calls.notice++},eventNoticeRecipients:()=>({}),eventNoticeBody:()=>'',EVENT_NOTICE_TYPES:[],renderBasicBrandedEmail:()=>'',Response,Date,console};
  vm.runInNewContext(js,context);
  return {db,calls,call:async(action,fields={})=>{const response=await handler({method:'POST',json:async()=>({action,eventId:'event',...fields})});return {status:response.status,data:await response.json()}}};
 }
