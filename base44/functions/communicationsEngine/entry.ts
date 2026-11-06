@@ -1,3 +1,4 @@
+import {renderBasicBrandedEmail} from '../communicationsBasicRenderer.ts';
 import {normaliseRallyHubPlatformHtml} from '../../shared/rallyHubPlatformEmail.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { resolveEmailTransport, sendWithConfiguredEmailTransport } from './emailRouter.ts';
@@ -357,6 +358,43 @@ Deno.serve(async(req)=>{
   if(action==='transport_health'){
     const config=await resolveEmailTransport(base44,scope);
     return Response.json({success:true,provider:config.provider,status:config.status,senderName:config.sender_name,senderEmail:config.sender_email,replyTo:config.reply_to||config.sender_email});
+  }
+  if(action==='send_campaign_batch'){
+    if(ownerScope!=='tenant'||!clubId||purpose!=='waiting_list_opportunities_update'||body.confirmSend!==true)return Response.json({error:'Approved tenant campaign and explicit send confirmation required'},{status:403});
+    const campaignId=clean(body.campaignId,180),templateId=clean(body.templateId,180),ids=body.recipientIds;
+    if(!campaignId||!templateId||!Array.isArray(ids)||!ids.length||ids.length>5||new Set(ids).size!==ids.length)return Response.json({error:'Provide 1-5 unique campaign recipients'},{status:400});
+    const [campaigns,templates,brands,recipients,suppressions,preferences,recent]=await Promise.all([
+      base44.asServiceRole.entities.CommunicationCampaign.filter({id:campaignId,tenant_id:tenantId,club_id:clubId},'-created_date',1),
+      base44.asServiceRole.entities.CommunicationTemplate.filter({id:templateId,tenant_id:tenantId,status:'approved'},'-created_date',1),
+      base44.asServiceRole.entities.CommunicationBrandKit.filter({tenant_id:tenantId,status:'active'},'-updated_date',20),
+      base44.asServiceRole.entities.WaitingListEntry.filter({tenant_id:tenantId,club_id:clubId},'-created_date',500),
+      base44.asServiceRole.entities.CommunicationSuppression.filter({owner_scope:'tenant',tenant_id:tenantId,channel:'email',active:true},'-created_date',500),
+      base44.asServiceRole.entities.CommunicationPreference.filter({owner_scope:'tenant',tenant_id:tenantId,channel:'email'},'-updated_date',500),
+      base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({campaign_id:campaignId,tenant_id:tenantId},'-created_date',200)
+    ]);
+    if([recipients,suppressions,preferences].some(x=>x.length===500)||recent.length===200)return Response.json({error:'Incomplete roster, consent or delivery ledger; sending blocked'},{status:409});
+    const campaign=campaigns[0],template=templates[0];
+    if(!campaign||campaign.status!=='approved'||!template||template.purpose!==purpose||!template.html_template||!template.subject_template||!template.brand_kit_id)return Response.json({error:'Approved campaign and branded HTML template required'},{status:409});
+    const brand=brands.find((x:any)=>x.id===template.brand_kit_id);if(!brand)return Response.json({error:'Active campaign brand kit unavailable'},{status:409});
+    const allowed=new Set((campaign.audience_snapshot?.recipient_refs||[]).filter((r:any)=>r.source==='waiting_list').map((r:any)=>r.id));
+    const byId=new Map(recipients.map((r:any)=>[r.id,r]));
+    const results=[];const unsub='mailto:clarepb2025@gmail.com?subject='+encodeURIComponent('Unsubscribe from Clare Pickleball waiting-list updates');
+    const footer='<p style="font-size:12px;color:#64748b">To stop receiving waiting-list updates, <a href="'+unsub+'">unsubscribe here</a>.</p>';
+    for(const rawId of ids){const id=clean(rawId,180),r=byId.get(id) as any;
+      if(!allowed.has(id)||!r){results.push({id,status:'not_in_approved_audience'});continue}
+      const email=String(r.email||'').trim().toLowerCase();const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(email));const hash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+      const blocked=suppressions.some((x:any)=>x.person_id===id||x.endpoint_hash===hash)||preferences.some((x:any)=>x.person_id===id&&['opted_out','unsubscribed','denied','suppressed'].includes(String(x.status||'').toLowerCase()));
+      if(blocked||r.active===false||r.status!=='waiting'||r.gdpr_consent!==true||!/^\S+@\S+\.\S+$/.test(email)){results.push({id,status:'suppressed_or_ineligible'});continue}
+      const idem='campaign:'+campaignId+':'+id;const existing=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({idempotency_key:idem},'-created_date',1);
+      if(existing.length){results.push({id,status:'already_attempted'});continue}
+      const first=String(r.full_name||r.name||'Friend').trim().split(/\s+/)[0];const firstName=first.charAt(0).toLocaleUpperCase('en-IE')+first.slice(1);
+      const substitute=(v:string)=>String(v||'').replace(/{{\s*FIRST_NAME\s*}}/g,firstName).replace(/To stop receiving waiting-list updates, use the unsubscribe link in the branded email footer\./gi,'');
+      const subject=substitute(template.subject_template),textBody=substitute(template.plain_text_template||''),htmlBody=renderBasicBrandedEmail(substitute(template.html_template),brand,null,'Clare Pickleball','Waiting list update','Opportunities to play','',footer);
+      if(/{{[^}]+}}/.test(subject+textBody+htmlBody)){results.push({id,status:'unresolved_merge_field'});continue}
+      const attempt=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.create({campaign_id:campaignId,message_id:templateId,recipient_id:id,tenant_id:tenantId,channel:'email',provider:'pending',status:'sending',attempt_number:1,idempotency_key:idem,queued_at:new Date().toISOString(),metadata:{requested_by_user_id:user.id}});
+      try{const sent=await sendWithConfiguredEmailTransport(base44,scope,{to:email,subject,textBody,htmlBody,senderName:'Clare Pickleball'});await base44.asServiceRole.entities.CommunicationDeliveryAttempt.update(attempt.id,{provider:sent.provider,status:'sent',sent_at:new Date().toISOString()});results.push({id,status:'sent'});}catch(e:any){await base44.asServiceRole.entities.CommunicationDeliveryAttempt.update(attempt.id,{status:'sending',error_code:'unverified_provider_outcome',error_message:clean(e?.message,500)});results.push({id,status:'needs_reconciliation'});break}
+    }
+    return Response.json({success:true,results});
   }
   if(action==='send_taster_batch'){
     if(ownerScope!=='tenant'||purpose!=='event_invitation'||!clubId)return Response.json({error:'Tenant event invitation scope required'},{status:403});
