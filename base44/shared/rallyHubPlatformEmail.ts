@@ -118,7 +118,7 @@ export async function renderRallyHubSystemEmail(base44:any,options:{
   const allKeys=[...template.matchAll(/{{\s*([A-Z0-9_]+)\s*}}/g)].map(x=>x[1]);
   const required=options.requiredTokens||[];
   if(template && allKeys.every(k=>Object.hasOwn(substitutions,k))
-    && required.every(k=>template.includes('{{'+k+'}}'))){
+    && required.every((k:string)=>template.includes('{{'+k+'}}'))){
     body=template.replace(/{{\s*([A-Z0-9_]+)\s*}}/g,(_,key)=>String(substitutions[key]));
     const sb=String(record.subject_template||'');
     if([...sb.matchAll(/{{\s*([A-Z0-9_]+)\s*}}/g)].every(x=>Object.hasOwn(substitutions,x[1])))
@@ -158,7 +158,7 @@ export async function rallyHubEmailShellUsingTemplate(base44:any,purpose:string,
     const tokens=[...template.matchAll(/{{\s*([A-Za-z0-9_.]+)\s*}}/g)].map(x=>x[1]);
     const required=Array.isArray(options.requiredTemplateTokens)?options.requiredTemplateTokens:[];
     if(template && tokens.every(k=>Object.hasOwn(values,k))
-      && required.every(k=>template.includes('{{'+k+'}}'))){
+      && required.every((k:string)=>template.includes('{{'+k+'}}'))){
       const resolved=template.replace(/{{\s*([A-Za-z0-9_.]+)\s*}}/g,(_,key)=>String(values[key]));
       // The branded sender owns the signature; remove an old plain-text signoff.
       let body=resolved.replace(/\n*Yours in sport,[\s\S]*$/i,'').trim();
@@ -174,6 +174,6 @@ export async function rallyHubEmailShellUsingTemplate(base44:any,purpose:string,
     }
    }
   }
- }catch(e){console.warn('Platform email template preference lookup unavailable; using safe sender defaults',String(e?.message||e).slice(0,180))}
+ }catch(e){console.warn('Platform email template preference lookup unavailable; using safe sender defaults',String((e as Error)?.message||e).slice(0,180))}
  return rallyHubEmailShell({...options,content,utilityLinks});
 }
