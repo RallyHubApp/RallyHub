@@ -29,7 +29,7 @@ Deno.serve(async(req)=>{
  let stage='request';
  if(req.method!=='POST')return fail('POST required',405);
  try{
-  const b=await req.json();const action=clean(b.action||'get',30);const id=clean(b.eventId,80);
+  const b=await req.json();const action=clean(b.action||'get',30);const id=clean(b.eventId,80);if(action==='admin_list'||action==='admin_page')stage='admin_page';
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
