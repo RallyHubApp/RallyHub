@@ -51,6 +51,28 @@ Deno.serve(async req=>{try{
   if(updates.event_booking_enabled&&Number(updates.event_fee_amount)>0&&updates.event_booking_policy?.payment_provider!=='sumup')return Response.json({error:'Paid event requires SumUp'},{status:400});
   if(updates.event_fee_amount!=null&&(!Number.isFinite(updates.event_fee_amount)||updates.event_fee_amount<0))return Response.json({error:'Invalid numeric event fee'},{status:400});
 
+  // Mandatory server-side pre-publication gate, including Save As / cloned events.
+  // Drafts remain editable; no public booking or payment is enabled until this passes.
+  if(body.mode!=='draft'&&(updates.event_registration_mode??existing?.event_registration_mode)==='rallyhub'){
+    const event={...existing,...updates};
+    const date=clean(event.start_date,10),endDate=clean(event.end_date||date,10);
+    const validDate=(v:string)=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v+'T12:00:00Z'));
+    const clock=(v:any)=>/^([01]\d|2[0-3]):[0-5]\d$/.test(clean(v,5));
+    if(!validDate(date)||!validDate(endDate)||endDate<date)return Response.json({error:'Pre-publication check failed: review event start/end dates.'},{status:409});
+    if(!clock(event.event_start_time)||!clock(event.event_end_time)||event.event_end_time<=event.event_start_time)return Response.json({error:'Pre-publication check failed: enter valid start and finish times.'},{status:409});
+    if(!clean(event.location)||!(Number(event.event_capacity)>0))return Response.json({error:'Pre-publication check failed: venue and capacity are required.'},{status:409});
+    if(Number(event.event_fee_amount)>0&&event.event_booking_policy?.payment_provider!=='sumup')return Response.json({error:'Pre-publication check failed: paid booking must use SumUp.'},{status:409});
+    const isTaster=/\btaster\b/i.test(clean(event.name));
+    const purpose=isTaster?'event_booking_confirmed_taster_draft':'event_booking_confirmed';
+    const templates=await b.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:clean(event.tenant_id),purpose,status:'approved'},'-updated_date',20);
+    if(templates.length!==1)return Response.json({error:`Pre-publication check failed: exactly one approved ${isTaster?'taster':'event'} booking confirmation template is required for the payment webhook.`},{status:409});
+    const template=templates[0];
+    const required=['subject_template','plain_text_template','html_template'];
+    if(required.some(k=>!clean(template[k])))return Response.json({error:'Pre-publication check failed: confirmation template is incomplete.'},{status:409});
+    // Both eventRegistration and paymentGatewayWebhook must resolve this same purpose.
+    // This is a dry-run configuration check, not a real SumUp charge or sent email.
+  }
+
   const duplicate=await duplicateEvent(b,{...existing,...source},id);
   if(duplicate)return Response.json({
     error:'This event is already listed in RallyHub. Keep one canonical event and add the other organisation as a collaborator rather than creating a second event or poster.',
