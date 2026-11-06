@@ -15,6 +15,8 @@ export default function KotcEmailDeliveryActions({preview,emailTestSent,sharing,
   const recipientCount=Number(preview?.recipientCount||recipients.length||0);
   const sentCount=Number(delivery.sentCount||0);
   const failedCount=Number(delivery.failedCount||0);
+  const unsentCount=recipients.filter(r=>!r.hasSent).length;
+  const resendFailedCount=recipients.filter(r=>r.hasSent&&r.deliveryStatus==='failed').length;
   const attempted=recipients.some(r=>r.deliveryStatus&&r.deliveryStatus!=='not_sent');
   const allSent=delivery.allSent===true&&recipientCount>0;
   const bulkAt=delivery.bulkResendAvailableAt?Date.parse(delivery.bulkResendAvailableAt):0;
@@ -34,13 +36,14 @@ export default function KotcEmailDeliveryActions({preview,emailTestSent,sharing,
   return <div className="space-y-3">
     {sharing&&<div className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-sm font-semibold text-primary flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin"/>Sending email… confirmation will appear when the server finishes.</div>}
 
-    <div className={`rounded-xl border p-3 ${failedCount?'border-amber-400/30 bg-amber-500/10':'border-green-500/30 bg-green-500/10'}`}>
+    <div className={`rounded-xl border p-3 ${unsentCount?'border-amber-400/30 bg-amber-500/10':'border-green-500/30 bg-green-500/10'}`}>
       <div className="flex items-start gap-2">
-        <span className={`text-lg leading-none ${failedCount?'text-amber-600':'text-green-600'}`}>{failedCount?'⚠':'✓'}</span>
+        <span className={`text-lg leading-none ${unsentCount?'text-amber-600':'text-green-600'}`}>{unsentCount?'⚠':'✓'}</span>
         <div>
-          <p className={`text-sm font-bold ${failedCount?'text-amber-700':'text-green-700'}`}>{allSent?`Sent to ${sentCount} players`:`${sentCount} of ${recipientCount} players sent`}</p>
+          <p className={`text-sm font-bold ${unsentCount?'text-amber-700':'text-green-700'}`}>{allSent?`Sent to ${sentCount} players`:`${sentCount} of ${recipientCount} players sent`}</p>
           {delivery.lastSentAt&&<p className="text-[11px] text-muted-foreground mt-1">Last confirmed send: {formatEmailTimestamp(delivery.lastSentAt)}</p>}
-          {failedCount>0&&<p className="text-[11px] text-amber-700 mt-1">{failedCount} latest send attempt{failedCount===1?'':'s'} failed. Use the individual controls below to retry.</p>}
+          {unsentCount>0&&<p className="text-[11px] text-amber-700 mt-1">{unsentCount} player{unsentCount===1?' has':'s have'} no confirmed successful send. Retry only those recipients.</p>}
+          {resendFailedCount>0&&<p className="text-[11px] text-amber-700 mt-1">{resendFailedCount} resend attempt{resendFailedCount===1?'':'s'} failed after an earlier successful send. Those players have already been sent an email.</p>}
         </div>
       </div>
     </div>
@@ -69,7 +72,7 @@ export default function KotcEmailDeliveryActions({preview,emailTestSent,sharing,
         {recipients.map(r=><div key={r.playerId} className="flex items-center justify-between gap-3 px-3 py-2.5">
           <div className="min-w-0">
             <p className="text-sm font-medium truncate">{r.name}</p>
-            <p className={`text-[11px] ${r.deliveryStatus==='failed'?'text-destructive':r.hasSent?'text-green-600':'text-muted-foreground'}`}>{r.deliveryStatus==='failed'?'⚠ Latest attempt failed':r.hasSent?`✓ Sent${r.lastSentAt?` · ${formatEmailTimestamp(r.lastSentAt)}`:''}`:'Not sent yet'}</p>
+            <p className={`text-[11px] ${!r.hasSent&&r.deliveryStatus==='failed'?'text-destructive':r.hasSent?'text-green-600':'text-muted-foreground'}`}>{r.hasSent?`✓ Sent${r.lastSentAt?` · ${formatEmailTimestamp(r.lastSentAt)}`:''}${r.deliveryStatus==='failed'?' · Later resend failed':''}`:r.deliveryStatus==='failed'?'⚠ Send failed — not delivered':'Not sent yet'}</p>
           </div>
           <Button size="sm" variant="outline" onClick={()=>onResendPlayer(r.playerId)} disabled={sharing}>{r.hasSent?'Resend':'Send'}</Button>
         </div>)}
