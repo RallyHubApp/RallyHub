@@ -10,8 +10,13 @@ export async function deliverEventNotice(base44:any,event:any,registration:any,t
  if(!kit)throw Error('Active tenant email brand kit missing');
  const first=String(registration.full_name||'there').trim().split(' ')[0];
  const purpose=EVENT_TEMPLATE_PURPOSES[type];
- const templates=purpose?await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:event.tenant_id,purpose,status:'approved'},'-updated_date',20):[];
+ const isTasterConfirmation=type==='booking_confirmed'&&/\btaster\b/i.test(String(event.name||''));
+ const selectedPurpose=isTasterConfirmation?'event_booking_confirmed_taster_draft':purpose;
+ const selectedTemplates=selectedPurpose?await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:event.tenant_id,purpose:selectedPurpose,status:'approved'},'-updated_date',20):[];
+ if(type==='booking_confirmed'&&selectedTemplates.length!==1)throw Error('Exactly one approved event-specific confirmation template is required');
+ const templates=isTasterConfirmation?selectedTemplates.map((t:any)=>({...t,purpose})):selectedTemplates;
  const approved=resolveEventTemplate(templates,type,eventTemplateValues(event,registration,detail));
+ if(type==='booking_confirmed'&&!approved)throw Error('Approved event confirmation template required');
  const body=approved?.body||eventNoticeBody(type,first,event.name,detail);
  const paymentUrl=type==='payment_required'?String(eventTemplateValues(event,registration,detail).PAYMENT_LINK||''):'';
  const safePaymentUrl=/^https:\/\/[^\s"'<>]+$/.test(paymentUrl)?paymentUrl.replaceAll('&','&amp;').replaceAll('\"','&quot;'):'';
