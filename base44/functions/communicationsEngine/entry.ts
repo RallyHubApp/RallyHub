@@ -378,9 +378,10 @@ Deno.serve(async(req)=>{
     const brand=brands.find((x:any)=>x.id===template.brand_kit_id);if(!brand)return Response.json({error:'Active campaign brand kit unavailable'},{status:409});
     const allowed=new Set((campaign.audience_snapshot?.recipient_refs||[]).filter((r:any)=>r.source==='waiting_list').map((r:any)=>r.id));
     const byId=new Map(recipients.map((r:any)=>[r.id,r]));
+    const recentHour=recent.filter((x:any)=>String(x.idempotency_key||'').startsWith('campaign:')&&Date.parse(x.queued_at||x.created_date||'')>=Date.now()-3600000).length;let remaining=Math.max(0,10-recentHour);
     const results=[];const unsub='mailto:clarepb2025@gmail.com?subject='+encodeURIComponent('Unsubscribe from Clare Pickleball waiting-list updates');
     const footer='<p style="font-size:12px;color:#64748b">To stop receiving waiting-list updates, <a href="'+unsub+'">unsubscribe here</a>.</p>';
-    for(const rawId of ids){const id=clean(rawId,180),r=byId.get(id) as any;
+    for(const rawId of ids){const id=clean(rawId,180),r=byId.get(id) as any;if(remaining<=0){results.push({id,status:'rate_limited'});continue}
       if(!allowed.has(id)||!r){results.push({id,status:'not_in_approved_audience'});continue}
       const email=String(r.email||'').trim().toLowerCase();const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(email));const hash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
       const blocked=suppressions.some((x:any)=>x.person_id===id||x.endpoint_hash===hash)||preferences.some((x:any)=>x.person_id===id&&['opted_out','unsubscribed','denied','suppressed'].includes(String(x.status||'').toLowerCase()));
@@ -391,7 +392,7 @@ Deno.serve(async(req)=>{
       const substitute=(v:string)=>String(v||'').replace(/{{\s*FIRST_NAME\s*}}/g,firstName).replace(/To stop receiving waiting-list updates, use the unsubscribe link in the branded email footer\./gi,'');
       const subject=substitute(template.subject_template),textBody=substitute(template.plain_text_template||''),htmlBody=renderBasicBrandedEmail(substitute(template.html_template),brand,null,'Clare Pickleball','Waiting list update','Opportunities to play','',footer);
       if(/{{[^}]+}}/.test(subject+textBody+htmlBody)){results.push({id,status:'unresolved_merge_field'});continue}
-      const attempt=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.create({campaign_id:campaignId,message_id:templateId,recipient_id:id,tenant_id:tenantId,channel:'email',provider:'pending',status:'sending',attempt_number:1,idempotency_key:idem,queued_at:new Date().toISOString(),metadata:{requested_by_user_id:user.id}});
+      remaining--;const attempt=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.create({campaign_id:campaignId,message_id:templateId,recipient_id:id,tenant_id:tenantId,channel:'email',provider:'pending',status:'sending',attempt_number:1,idempotency_key:idem,queued_at:new Date().toISOString(),metadata:{requested_by_user_id:user.id}});
       try{const sent=await sendWithConfiguredEmailTransport(base44,scope,{to:email,subject,textBody,htmlBody,senderName:'Clare Pickleball'});await base44.asServiceRole.entities.CommunicationDeliveryAttempt.update(attempt.id,{provider:sent.provider,status:'sent',sent_at:new Date().toISOString()});results.push({id,status:'sent'});}catch(e:any){await base44.asServiceRole.entities.CommunicationDeliveryAttempt.update(attempt.id,{status:'sending',error_code:'unverified_provider_outcome',error_message:clean(e?.message,500)});results.push({id,status:'needs_reconciliation'});break}
     }
     return Response.json({success:true,results});
