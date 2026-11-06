@@ -248,7 +248,7 @@ export default function AdminPanel() {
       if (res.data?.error) throw new Error(res.data.error);
       return res.data?.rows || [];
     },
-    enabled: canAccessAdmin && activeAdminTab === 'linking' && !!user?.active_tenant_id && !!user?.active_club_id
+    enabled: canAccessAdmin && !directoryContext && !requestedDirectoryWorkspace && !!user?.active_tenant_id && !!user?.active_club_id
   });
 
   const { data: selectedMembershipRecord = null, isLoading: selectedMembershipLoading, error: selectedMembershipError } = useQuery({
@@ -1414,14 +1414,20 @@ Brian`;
   const normaliseIdentityName = value => String(value || '').toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9]+/g, ' ').trim();
   const membershipCandidateForUser = targetUser => {
     const targetEmail = String(targetUser?.email || '').trim().toLowerCase();
-    const eligible = clubPlayers.filter(p => p.person_id && (!p.user_id || p.user_id === targetUser.id));
-    const emailMatches = eligible.filter(p => targetEmail && String(p.email || p.linked_user_email || '').trim().toLowerCase() === targetEmail);
+    // ClubMembership/Person is the authoritative membership source. A paid
+    // member may not yet have a Player record, so never rely on Player alone.
+    const eligible = membershipRows.filter(m => m.person_id &&
+      ['paid','not_required'].includes(String(m.payment_status || '').toLowerCase()) &&
+      (!m.linked_user_id || m.linked_user_id === targetUser.id));
+    const emailMatches = eligible.filter(m => targetEmail && String(m.email || '').trim().toLowerCase() === targetEmail);
     if (emailMatches.length === 1) return emailMatches[0];
-    if (emailMatches.length > 1) return null; // ambiguous identity: do not guess
+    if (emailMatches.length > 1) return null; // Never guess between records.
+    // Only allow a unique exact-name fallback when the login email is not
+    // already associated with a different membership.
     const name = normaliseIdentityName(targetUser?.full_name || targetUser?.display_name || '');
     if (!name) return null;
-    const exactNameMatches = eligible.filter(p => normaliseIdentityName(p.full_name) === name);
-    return exactNameMatches.length === 1 ? exactNameMatches[0] : null;
+    const matches = eligible.filter(m => normaliseIdentityName(m.full_name) === name);
+    return matches.length === 1 ? matches[0] : null;
   };
 
   const filteredUsers = allUsers.filter(u => {
@@ -2735,7 +2741,7 @@ Brian`;
                           <p className="text-sm font-medium text-foreground truncate">{u.display_name || u.full_name || '(no name)'}</p>
                           {isDirectoryOnly && <Badge variant="outline" className="text-[9px] border-primary/30 text-primary shrink-0">Directory only</Badge>}
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{u.email}{candidate?.full_name && candidate.full_name !== u.full_name ? ` · Account name: ${u.full_name || 'not supplied'}` : ''}</p>
                         {isDirectoryOnly && <p className="text-[10px] text-muted-foreground mt-0.5">No RallyHub Club, tournament or tenant access</p>}
                       </div>
                     </div>
@@ -2943,7 +2949,7 @@ Brian`;
                               {(u.full_name || u.email || 'U')[0].toUpperCase()}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate">{u.full_name || '(no name)'}</p>
+                              <p className="text-sm font-medium text-foreground truncate">{candidate?.full_name || u.full_name || '(no name)'}</p>
                               <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                             </div>
                           </div>
