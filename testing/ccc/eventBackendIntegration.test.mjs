@@ -23,7 +23,7 @@ const initial={
  TenantUserAccess:[],ClubUserAccess:[],
  PaymentRefund:[],PaymentGatewayAccount:[{id:'gateway',tenant_id:'t1',club_id:'c1',provider:'sumup',status:'connected',is_default:true}],ClubLegalDocument:[],CommunicationBrandKit:[],Club:[]
 };
-const matches=(row,query)=>Object.entries(query||{}).every(([key,value])=>value&&typeof value==='object'&&'$in'in value?value.$in.includes(row[key]):value&&typeof value==='object'&&'$lt'in value?row[key]<value.$lt:value&&typeof value==='object'&&'$gt'in value?row[key]>value.$gt:value===null?row[key]==null:row[key]===value);
+const matches=(row,query)=>Object.entries(query||{}).every(([key,value])=>key==='$or'?value.some(q=>matches(row,q)):value&&typeof value==='object'&&'$in'in value?value.$in.includes(row[key]):value&&typeof value==='object'&&'$lt'in value?row[key]<value.$lt:value&&typeof value==='object'&&'$gt'in value?row[key]>value.$gt:value===null?row[key]==null:row[key]===value);
 function harness({user={id:'admin',role:'admin',active_tenant_id:'t1',active_club_id:'c1'},refundResult={refundId:'provider-refund',providerStatus:'REFUNDED'},lockAllowed=true,failPaymentUpdate=false}={}){
  const db=structuredClone(initial),calls={refund:0,notice:0,locks:0,reads:{}};
  if(user?.role==='admin')db.TenantUserAccess.push({id:'grant',tenant_id:'t1',user_id:user.id,role:'admin',status:'active'});
