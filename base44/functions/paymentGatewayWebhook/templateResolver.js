@@ -4,7 +4,11 @@ export function resolveEventTemplate(rows,type,values){
  if(!purpose)return null;
  const template=(rows||[]).find(t=>t.purpose===purpose&&t.status==='approved');
  if(!template)return null;
- const replace=s=>String(s||'').replace(/\{\{\s*([A-Z_]+)\s*\}\}/g,(_,key)=>String(values[key]??''));
+ const required=new Set(['FIRST_NAME','EVENT_NAME','EVENT_DATE','EVENT_VENUE','EVENT_START_TIME','EVENT_END_TIME','EVENT_FEE','BOOKING_REFERENCE','GOOGLE_MAPS_URL','VENUE_MAP_URL']);
+ const replace=s=>String(s||'').replace(/\{\{\s*([A-Z_]+)\s*\}\}/g,(_,key)=>{
+  if(values[key]===undefined||(required.has(key)&&!String(values[key]??'').trim()))throw Error('Event confirmation missing required merge field: '+key);
+  return String(values[key]??'');
+ });
  return {subject:replace(template.subject_template),body:replace(template.plain_text_template),html:replace(template.html_template)};
 }
 export function eventTemplateValues(event,registration,detail=''){
@@ -20,5 +24,5 @@ export function eventTemplateValues(event,registration,detail=''){
  const host=String(event.event_contact||'Event organiser');
  const phone=String(event.event_contact_phone||'').trim();
  const whatsapp=phone?`https://wa.me/${phone.replace(/\D/g,'').replace(/^0/,'353')}`:'';
- return {FIRST_NAME:String(registration.full_name||'there').trim().split(' ')[0],EVENT_NAME:event.name||'',EVENT_DATE:eventDate,EVENT_TIME:time,EVENT_VENUE:venue,EVENT_HOST:host,HOST_PHONE:phone,HOST_WHATSAPP:whatsapp,GOOGLE_MAPS_URL:mapUrl,PAYMENT_LINK:link,PAYMENT_DEADLINE:deadline};
+ return {EVENT_START_TIME:start,EVENT_END_TIME:end,EVENT_FEE:event.event_fee_amount==null?'':Number(event.event_fee_amount).toFixed(2),BOOKING_REFERENCE:registration.id||'',VENUE_MAP_URL:mapUrl,FIRST_NAME:String(registration.full_name||'').trim().split(' ')[0],EVENT_NAME:event.name||'',EVENT_DATE:eventDate,EVENT_TIME:time,EVENT_VENUE:venue,EVENT_HOST:host,HOST_PHONE:phone,HOST_WHATSAPP:whatsapp,GOOGLE_MAPS_URL:mapUrl,PAYMENT_LINK:link,PAYMENT_DEADLINE:deadline};
 }
