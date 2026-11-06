@@ -100,8 +100,9 @@ export async function sendWithConfiguredEmailTransport(
   base44: any,
   scope: EmailScope,
   message: { to: string; subject: string; textBody: string; htmlBody?: string | null },
+  resolvedConfig?: Awaited<ReturnType<typeof requireConfiguredEmailTransport>>,
 ) {
-  const config = await requireConfiguredEmailTransport(base44, scope);
+  const config = resolvedConfig || await requireConfiguredEmailTransport(base44, scope);
 
   if (config.provider === 'gmail_connector') {
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('gmail');
