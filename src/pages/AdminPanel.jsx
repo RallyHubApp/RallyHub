@@ -1395,10 +1395,11 @@ Brian`;
       const approvalRes = await base44.functions.invoke('adminUserTools', { action: 'set_approval', userId, status });
       if (approvalRes.data?.error) throw new Error(approvalRes.data.error);
       if (!approvalRes.data?.success) throw new Error('Approval was not confirmed. Please retry.');
-      await queryClient.invalidateQueries({ queryKey: ['all-users'] });
+      queryClient.setQueryData(['all-users'], previous => (previous || []).map(row => row.id === userId ? { ...row, approval_status: status, ...(status === 'approved' ? { account_scope: 'club' } : {}) } : row));
+      await queryClient.refetchQueries({ queryKey: ['all-users'], type: 'active' });
       const message = status === 'approved' ? 'RallyHub account approved.' : `Account ${status}.`;
       setApprovalFeedback({ userId, type: 'success', text: message });
-      toast.success(message);
+      toast.success(message, { duration: 6500 });
       if (status === 'approved' || status === 'rejected') {
         base44.functions.invoke('notifyAdminsOnSignup', { notifyUserApproval: true, userId, status }).catch(() => {});
       }
@@ -2918,6 +2919,7 @@ Brian`;
                 <strong className="text-foreground">RallyHub Club access only.</strong> This tab does not approve Directory users. A user can enter the RallyHub Club application only when they have a separate active ClubUserAccess grant. Directory owners/editors are handled only under Directory Claims and cannot access tournaments, players, matches, leaderboards or other Club tools.
               </p>
             </div>
+            {approvalFeedback && <p role="status" aria-live="polite" className={`rounded-lg border px-3 py-2 text-sm font-medium ${approvalFeedback.type === 'error' ? 'border-red-300 text-red-700' : approvalFeedback.type === 'success' ? 'border-green-300 text-green-700' : 'border-blue-300 text-blue-700'}`}>{approvalFeedback.text}</p>}
             {['pending', 'approved', 'rejected'].map(section => {
               const sectionUsers = platformApprovalUsers.filter(u => {
                 const s = u.approval_status || 'pending';
