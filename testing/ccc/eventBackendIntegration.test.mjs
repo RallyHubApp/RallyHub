@@ -17,7 +17,7 @@ import {occupied,duplicate,consentEvidence,canConfirm} from '../../base44/functi
 const source=readFileSync(new URL('../../base44/functions/eventRegistration/entry.ts',import.meta.url),'utf8').replace(/^import .*;\s*$/gm,'');
 const js=transformSync(source,{loader:'ts',format:'cjs'}).code;
 const initial={
- Tournament:[{id:'event',tenant_id:'t1',host_club_id:'c1',name:'Test event',event_capacity:2000,event_booking_enabled:true,event_registration_mode:'rallyhub',event_publish_status:'published',event_public_visible:true,event_fee_amount:10}],
+ Tournament:[{id:'event',tenant_id:'t1',host_club_id:'c1',name:'Test event',event_capacity:2000,event_booking_enabled:true,event_registration_mode:'rallyhub',event_publish_status:'published',event_public_visible:true,event_slug:'test-event',event_fee_amount:10}],
  EventRegistration:[{id:'r1',event_id:'event',tenant_id:'t1',club_id:'c1',full_name:'Player',email:'player@example.ie',registration_status:'confirmed',payment_status:'paid',payment_record_id:'p1',payment_checkout_id:'checkout1'}],
  PaymentRecord:[{id:'p1',tenant_id:'t1',club_id:'c1',purpose_type:'event',purpose_id:'r1',payment_status:'paid',amount:10,amount_refunded:0,provider:'sumup',provider_transaction_id:'tx1',provider_checkout_id:'checkout1'}],
  TenantUserAccess:[],ClubUserAccess:[],
@@ -37,7 +37,7 @@ function harness({user={id:'admin',role:'admin',active_tenant_id:'t1',active_clu
  }]));
  const sdk={auth:{me:async()=>user},asServiceRole:{entities}};
  let handler;
- const context={Deno:{serve:fn=>{handler=fn}},createClientFromRequest:()=>sdk,readBookingRegistrations,readAdminEventPayments,readPaymentRefundHistory,refundRemaining,selectRefundableEventPayment,selectCheckoutPayment,readEventAdminPage,countActiveEventRegistrations,admitAtomically,acquireEventApprovalLock,resolveEventCheckoutUrls,requireEventAdminGrant,occupied,duplicate,consentEvidence,canConfirm,createCheckout:async()=>({checkoutId:'newCheckout',checkoutUrl:'https://example.invalid'}),retrievePayment:async()=>({normalizedStatus:'paid',transactionId:'tx1'}),refundPayment:async()=>{calls.refund++;if(refundResult instanceof Error)throw refundResult;return refundResult},providerConfigured:()=>true,deliverEventNotice:async()=>{calls.notice++},eventNoticeRecipients:()=>({}),eventNoticeBody:()=>'',EVENT_NOTICE_TYPES:[],renderBasicBrandedEmail:()=>'',Response,Date,console};
+ const context={Deno:{serve:fn=>{handler=fn},env:{get:key=>key==='RALLYHUB_EVENT_CALLBACK_BASE_URL'?'https://backend.example.test/':key==='RALLYHUB_EVENT_PUBLIC_BASE_URL'?'https://rallyhub.example.test/':''}},createClientFromRequest:()=>sdk,readBookingRegistrations,readAdminEventPayments,readPaymentRefundHistory,refundRemaining,selectRefundableEventPayment,selectCheckoutPayment,readEventAdminPage,countActiveEventRegistrations,admitAtomically,acquireEventApprovalLock,resolveEventCheckoutUrls,requireEventAdminGrant,occupied,duplicate,consentEvidence,canConfirm,createCheckout:async()=>({checkoutId:'newCheckout',checkoutUrl:'https://example.invalid'}),retrievePayment:async()=>({normalizedStatus:'paid',transactionId:'tx1'}),refundPayment:async()=>{calls.refund++;if(refundResult instanceof Error)throw refundResult;return refundResult},providerConfigured:()=>true,deliverEventNotice:async()=>{calls.notice++},eventNoticeRecipients:()=>({}),eventNoticeBody:()=>'',EVENT_NOTICE_TYPES:[],renderBasicBrandedEmail:()=>'',Response,Date,console};
  vm.runInNewContext(js,context);
  return {db,calls,call:async(action,fields={})=>{const response=await handler({method:'POST',json:async()=>({action,eventId:'event',...fields})});return {status:response.status,data:await response.json()}}};
 }
@@ -84,6 +84,22 @@ test('booking accepts an application with verified small roster',async()=>{
  assert.equal(result.data.status,'pending_approval');
  assert.equal(h.db.EventRegistration.length,101);
  assert.equal(h.calls.notice,1);
+});
+test('automatic SumUp checkout uses the saved registration and persists a single checkout',async()=>{
+ const h=harness(),payload=setupApply(h,8);
+ h.db.Tournament[0].event_booking_policy={approval_required:false,payment_hold_minutes:15};
+ const result=await h.call('apply',payload);
+ assert.equal(result.status,200,JSON.stringify(result.data));
+ assert.equal(result.data.checkoutUrl,'https://example.invalid');
+ const reg=h.db.EventRegistration.find(r=>r.operation_id==='new-op');
+ assert.ok(reg?.id);
+ assert.equal(reg.registration_status,'approved_payment_hold');
+ assert.equal(reg.payment_status,'pending');
+ assert.equal(reg.payment_checkout_id,'newCheckout');
+ assert.equal(h.db.PaymentRecord.filter(p=>p.purpose_id===reg.id).length,1);
+ const again=await h.call('apply',payload);
+ assert.equal(again.status,200);
+ assert.equal(h.db.PaymentRecord.filter(p=>p.purpose_id===reg.id).length,1);
 });
 test('booking rejects duplicate email beyond the old 500-record boundary',async()=>{
  const h=harness(),payload=setupApply(h,700);
