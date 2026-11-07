@@ -17,11 +17,17 @@ export default function useEventActionCount(user){
    if(!Array.isArray(events)||events.length>=100)throw Error('Event action count incomplete');
    const active=events.filter(e=>String(e.start_date||'')>=today);
    if(active.length>25)throw Error('Too many active events for a verified action count');
-   const results=await Promise.all(active.map(async e=>{
-    const res=await base44.functions.invoke('eventRegistration',{action:'admin_list',eventId:e.id});
-    if(res.data?.success!==true||res.data?.summaryIsPartial)throw Error('Event action count unavailable');
-    return (res.data.registrations||[]).filter(r=>r.status==='pending_approval'||r.status==='waitlisted'||(r.status==='approved_payment_hold'&&r.paymentStatus==='pending'&&r.paymentHoldExpiresAt&&Date.parse(r.paymentHoldExpiresAt)<Date.now())).length;
-   }));
+   // Bound concurrent backend reads; an unbounded Promise.all across events can
+   // overwhelm the shared Base44 function/request budget on dashboard load.
+   const results=[];
+   for(let i=0;i<active.length;i+=2){
+    const batch=await Promise.all(active.slice(i,i+2).map(async e=>{
+     const res=await base44.functions.invoke('eventRegistration',{action:'admin_list',eventId:e.id});
+     if(res.data?.success!==true||res.data?.summaryIsPartial)throw Error('Event action count unavailable');
+     return (res.data.registrations||[]).filter(r=>r.status==='pending_approval'||r.status==='waitlisted'||(r.status==='approved_payment_hold'&&r.paymentStatus==='pending'&&r.paymentHoldExpiresAt&&Date.parse(r.paymentHoldExpiresAt)<Date.now())).length;
+    }));
+    results.push(...batch);
+   }
    return results.reduce((a,b)=>a+b,0);
   }
  });
