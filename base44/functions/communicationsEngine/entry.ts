@@ -1,3 +1,4 @@
+import {renderBasicBrandedEmail} from './clareBrandedRenderer.ts';
 import {normaliseRallyHubPlatformHtml} from '../../shared/rallyHubPlatformEmail.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { resolveEmailTransport, sendWithConfiguredEmailTransport } from './emailRouter.ts';
@@ -358,7 +359,6 @@ Deno.serve(async(req)=>{
     const config=await resolveEmailTransport(base44,scope);
     return Response.json({success:true,provider:config.provider,status:config.status,senderName:config.sender_name,senderEmail:config.sender_email,replyTo:config.reply_to||config.sender_email});
   }
-  const campaignEmailShell=(content:string,kit:any,footer:string)=>{const primary=String(kit?.colours?.primary||'#102a60');const secondary=String(kit?.colours?.secondary||'#FACC15');const logo=String(kit?.logos?.email||kit?.logos?.primary||'');const safeLogo=/^https:\/\//.test(logo)?'<img src="'+logo.replaceAll('"','&quot;')+'" alt="Clare Pickleball" style="max-width:180px;max-height:80px">':'<strong>Clare Pickleball</strong>';return '<!doctype html><html><body style="margin:0;background:#f4f6fa;font-family:Arial,sans-serif;color:#172033"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px"><table role="presentation" width="600" style="max-width:100%;background:white;border-radius:12px"><tr><td style="padding:22px;background:'+primary+';color:white;border-bottom:5px solid '+secondary+'">'+safeLogo+'</td></tr><tr><td style="padding:28px;line-height:1.6">'+content+'</td></tr><tr><td style="padding:18px 28px;border-top:1px solid #e2e8f0">'+footer+'</td></tr></table></td></tr></table></body></html>'};
   if(action==='send_campaign_batch'){
     if(ownerScope!=='tenant'||!clubId||purpose!=='waiting_list_opportunities_update'||body.confirmSend!==true)return Response.json({error:'Approved tenant campaign and explicit send confirmation required'},{status:403});
     const campaignId=clean(body.campaignId,180),templateId=clean(body.templateId,180),ids=body.recipientIds;
@@ -375,7 +375,7 @@ Deno.serve(async(req)=>{
     if([recipients,suppressions,preferences].some(x=>x.length===500)||recent.length===200)return Response.json({error:'Incomplete roster, consent or delivery ledger; sending blocked'},{status:409});
     const campaign=campaigns[0],template=templates[0];
     if(!campaign||campaign.status!=='approved'||!template||template.purpose!==purpose||!template.html_template||!template.subject_template||!template.brand_kit_id)return Response.json({error:'Approved campaign and branded HTML template required'},{status:409});
-    const brand=brands.find((x:any)=>x.id===template.brand_kit_id);if(!brand)return Response.json({error:'Active campaign brand kit unavailable'},{status:409});
+    const brand=brands.find((x:any)=>x.id===template.brand_kit_id);if(!brand?.logos?.primary||!brand?.contact?.name||!brand?.compliance_footer||!brand?.channel_overrides?.email?.utility_footer)return Response.json({error:'Complete active Clare Pickleball brand kit unavailable; sending blocked'},{status:409});
     const allowed=new Set((campaign.audience_snapshot?.recipient_refs||[]).filter((r:any)=>r.source==='waiting_list').map((r:any)=>r.id));
     const byId=new Map(recipients.map((r:any)=>[r.id,r]));
     const recentHour=recent.filter((x:any)=>String(x.idempotency_key||'').startsWith('campaign:')&&Date.parse(x.queued_at||x.created_date||'')>=Date.now()-3600000).length;let remaining=Math.max(0,10-recentHour);
@@ -390,7 +390,7 @@ Deno.serve(async(req)=>{
       if(existing.length){results.push({id,status:'already_attempted'});continue}
       const first=String(r.full_name||r.name||'Friend').trim().split(/\s+/)[0];const firstName=first.charAt(0).toLocaleUpperCase('en-IE')+first.slice(1);
       const substitute=(v:string)=>String(v||'').replace(/{{\s*FIRST_NAME\s*}}/g,firstName).replace(/To stop receiving waiting-list updates, use the unsubscribe link in the branded email footer\./gi,'');
-      const subject=substitute(template.subject_template),textBody=substitute(template.plain_text_template||''),htmlBody=campaignEmailShell(substitute(template.html_template),brand,footer);
+      const subject=substitute(template.subject_template),textBody=substitute(template.plain_text_template||''),htmlBody=renderBasicBrandedEmail(substitute(template.html_template),brand,null,'Clare Pickleball','Waiting list update','Opportunities to play','',footer);
       if(/{{[^}]+}}/.test(subject+textBody+htmlBody)){results.push({id,status:'unresolved_merge_field'});continue}
       remaining--;const attempt=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.create({campaign_id:campaignId,message_id:templateId,recipient_id:id,tenant_id:tenantId,channel:'email',provider:'pending',status:'sending',attempt_number:1,idempotency_key:idem,queued_at:new Date().toISOString(),metadata:{requested_by_user_id:user.id}});
       try{const sent=await sendWithConfiguredEmailTransport(base44,scope,{to:email,subject,textBody,htmlBody,senderName:'Clare Pickleball'});await base44.asServiceRole.entities.CommunicationDeliveryAttempt.update(attempt.id,{provider:sent.provider,status:'sent',sent_at:new Date().toISOString()});results.push({id,status:'sent'});}catch(e:any){await base44.asServiceRole.entities.CommunicationDeliveryAttempt.update(attempt.id,{status:'sending',error_code:'unverified_provider_outcome',error_message:clean(e?.message,500)});results.push({id,status:'needs_reconciliation'});break}
