@@ -9,7 +9,7 @@ export async function deliverEventNotice(base44:any,event:any,registration:any,t
  const kit=kits.find((k:any)=>!k.club_id||k.club_id===event.host_club_id);
  if(!kit)throw Error('Active tenant email brand kit missing');
  const first=String(registration.full_name||'there').trim().split(' ')[0];
- const purpose=EVENT_TEMPLATE_PURPOSES[type];
+ const purpose=EVENT_TEMPLATE_PURPOSES[type as keyof typeof EVENT_TEMPLATE_PURPOSES];
  const isTasterConfirmation=type==='booking_confirmed'&&/\btaster\b/i.test(String(event.name||''));
  const selectedPurpose=isTasterConfirmation?'event_booking_confirmed_taster_draft':purpose;
  const selectedTemplates=selectedPurpose?await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:event.tenant_id,purpose:selectedPurpose,status:'approved'},'-updated_date',20):[];
