@@ -22,7 +22,7 @@ export default function useEventActionCount(user){
    const results=[];
    for(let i=0;i<active.length;i+=2){
     const batch=await Promise.all(active.slice(i,i+2).map(async e=>{
-     const res=await base44.functions.invoke('eventRegistration',{action:'admin_list',eventId:e.id});
+     const res=await base44.functions.invoke('eventRegistration',{action:'admin_roster',eventId:e.id});
      if(res.data?.success!==true||res.data?.summaryIsPartial)throw Error('Event action count unavailable');
      return (res.data.registrations||[]).filter(r=>r.status==='pending_approval'||r.status==='waitlisted'||(r.status==='approved_payment_hold'&&r.paymentStatus==='pending'&&r.paymentHoldExpiresAt&&Date.parse(r.paymentHoldExpiresAt)<Date.now())).length;
     }));

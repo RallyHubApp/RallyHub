@@ -29,22 +29,22 @@ Deno.serve(async(req)=>{
  let stage='request';
  if(req.method!=='POST')return fail('POST required',405);
  try{
-  const b=await req.json();const action=clean(b.action||'get',30);const id=clean(b.eventId,80);if(action==='admin_list'||action==='admin_page')stage='admin_page';
+  const b=await req.json();const action=clean(b.action||'get',30);const id=clean(b.eventId,80);if(['admin_list','admin_page','admin_roster'].includes(action))stage='admin_page';
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_page','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_resend_payment_link','admin_get_payment_link','admin_reissue_payment_link','admin_alternative_dates','admin_transfer_date','admin_comms_templates','admin_comms_save_draft','admin_comms_send'];
+  const adminActions=['admin_list','admin_page','admin_roster','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_resend_payment_link','admin_get_payment_link','admin_reissue_payment_link','admin_alternative_dates','admin_transfer_date','admin_comms_templates','admin_comms_save_draft','admin_comms_send'];
   const isAdminAction=adminActions.includes(action);
   const privateAccess=!!(t?.event_private_invitation_token&&clean(b.invitationToken,100)===t.event_private_invitation_token);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||(!t.event_public_visible&&!privateAccess))))return fail('Bookings are not open for this event',404);
   let currentUser:any=null;
   if(isAdminAction){currentUser=await base44.auth.me().catch(()=>null);if(!currentUser||!t.tenant_id||!t.host_club_id||!await requireEventAdminGrant(base44,currentUser,t))return fail('Active tenant or club administrator grant required',403);}
   const capacity=Number(t.event_capacity||0);if(!Number.isSafeInteger(capacity)||capacity<1)return fail('Event capacity is not configured',503);
-  if(action==='admin_list'||action==='admin_page'){
+  if(action==='admin_list'||action==='admin_page'||action==='admin_roster'){
    const cursor=action==='admin_page'?clean(b.cursor,2048):'';
    if(action==='admin_page'&&!cursor)return fail('Continuation cursor required',400);
    stage='admin_page';
-   const page=await readEventAdminPage(base44.asServiceRole.entities.EventRegistration,base44.asServiceRole.entities.PaymentRecord,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id,cursor});
+   const page=await readEventAdminPage(base44.asServiceRole.entities.EventRegistration,base44.asServiceRole.entities.PaymentRecord,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id,cursor,includePayments:action!=='admin_roster'});
    return Response.json({success:true,event:{id:t.id,name:t.name,capacity},...page,summaryIsPartial:page.hasMore||!!cursor});
   }
   if(action==='check'){
