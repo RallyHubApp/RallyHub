@@ -111,7 +111,25 @@ Deno.serve(async(req)=>{
    if(!row)return fail('Registration not found',404);
    if(!['pending_approval','waitlisted','approved_payment_hold'].includes(row.registration_status))return fail('Only unconfirmed bookings can be withdrawn here',409);
    if(row.payment_status==='paid'||row.payment_status==='refunded'||row.payment_status==='refund_processing')return fail('Payment requires reconciliation before withdrawal',409);
-   if(row.payment_record_id||row.payment_checkout_id||row.payment_checkout_url)return fail('A checkout exists. Reconcile its provider status before withdrawal.',409);
+   if(row.payment_record_id||row.payment_checkout_id||row.payment_checkout_url){
+    if(!row.payment_record_id||!row.payment_checkout_id)return fail('Incomplete checkout records require manual reconciliation.',409);
+    const payments=await base44.asServiceRole.entities.PaymentRecord.filter({
+      id:row.payment_record_id,tenant_id:t.tenant_id,club_id:t.host_club_id,purpose_id:row.id,purpose_type:'event'
+    },'-created_date',2);
+    if(payments.length!==1||payments[0].provider_checkout_id!==row.payment_checkout_id||payments[0].payment_status!=='pending')
+      return fail('Payment record requires reconciliation before withdrawal.',409);
+    const accounts=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({
+      tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true
+    },'-updated_date',5);
+    const accountRow=accounts?.[0];
+    if(!accountRow)return fail('SumUp account unavailable; withdrawal blocked.',503);
+    const account={provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'};
+    const provider=await retrievePayment('sumup',row.payment_checkout_id,account);
+    if(provider.normalizedStatus!=='pending'&&provider.normalizedStatus!=='failed'&&provider.normalizedStatus!=='expired')
+      return fail('SumUp checkout is paid or uncertain. Reconcile before withdrawal.',409);
+    if(Array.isArray(provider.raw?.transactions)&&provider.raw.transactions.some((tx:any)=>String(tx.status||'').toUpperCase()==='SUCCESSFUL'))
+      return fail('SumUp reports a successful transaction. Withdrawal blocked.',409);
+   }
    const lock=await base44.asServiceRole.entities.EventRegistration.updateMany({
      id:row.id,event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,
      registration_status:row.registration_status,payment_status:row.payment_status
