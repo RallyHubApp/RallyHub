@@ -57,6 +57,7 @@
         "cash_confirmed",
         "waitlisted",
         "cancelled",
+        "withdrawn",
         "expired",
         "declined"
       ]

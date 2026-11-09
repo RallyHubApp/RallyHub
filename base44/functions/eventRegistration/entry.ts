@@ -33,7 +33,7 @@ Deno.serve(async(req)=>{
   if(!id)return fail('Event required');
   const base44=createClientFromRequest(req);
   const t=(await base44.asServiceRole.entities.Tournament.filter({id},'-created_date',1))?.[0];
-  const adminActions=['admin_list','admin_page','admin_roster','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_resend_payment_link','admin_get_payment_link','admin_reissue_payment_link','admin_alternative_dates','admin_transfer_date','admin_comms_templates','admin_comms_save_draft','admin_comms_send'];
+  const adminActions=['admin_list','admin_page','admin_roster','admin_approve','admin_verify','admin_refund_payment','admin_notice_preview','admin_resend_payment_link','admin_get_payment_link','admin_reissue_payment_link','admin_alternative_dates','admin_transfer_date','admin_withdraw','admin_comms_templates','admin_comms_save_draft','admin_comms_send'];
   const isAdminAction=adminActions.includes(action);
   const privateAccess=!!(t?.event_private_invitation_token&&clean(b.invitationToken,100)===t.event_private_invitation_token);
   if(!t||(!isAdminAction&&(!t.event_booking_enabled||t.event_registration_mode!=='rallyhub'||t.event_publish_status!=='published'||(!t.event_public_visible&&!privateAccess))))return fail('Bookings are not open for this event',404);
@@ -102,6 +102,22 @@ Deno.serve(async(req)=>{
     if(used<Number(candidate.event_capacity))alternatives.push({id:candidate.id,name:candidate.name,date:candidate.start_date,slug:candidate.event_slug,placesRemaining:Number(candidate.event_capacity)-used});
    }
    return Response.json({success:true,alternatives,readOnly:true});
+  }
+  if(action==='admin_withdraw'){
+   if(b.confirmWithdraw!==true)return fail('Confirm withdrawal first');
+   const registrationId=clean(b.registrationId,100);
+   const rows=await readBookingRegistrations(base44.asServiceRole.entities.EventRegistration,{eventId:id,tenantId:t.tenant_id,clubId:t.host_club_id});
+   const row=rows.find((r:any)=>r.id===registrationId);
+   if(!row)return fail('Registration not found',404);
+   if(!['pending_approval','waitlisted','approved_payment_hold'].includes(row.registration_status))return fail('Only unconfirmed bookings can be withdrawn here',409);
+   if(row.payment_status==='paid'||row.payment_status==='refunded'||row.payment_status==='refund_processing')return fail('Payment requires reconciliation before withdrawal',409);
+   if(row.payment_record_id||row.payment_checkout_id||row.payment_checkout_url)return fail('A checkout exists. Reconcile its provider status before withdrawal.',409);
+   const lock=await base44.asServiceRole.entities.EventRegistration.updateMany({
+     id:row.id,event_id:id,tenant_id:t.tenant_id,club_id:t.host_club_id,
+     registration_status:row.registration_status,payment_status:row.payment_status
+   },{$set:{registration_status:'withdrawn'}});
+   if(lock?.updated!==1)return fail('Booking changed. Refresh and retry.',409);
+   return Response.json({success:true,withdrawn:true});
   }
   if(action==='admin_transfer_date'){
    if(currentUser?.role!=='admin')return fail('Super administrator access required for booking transfers',403);
