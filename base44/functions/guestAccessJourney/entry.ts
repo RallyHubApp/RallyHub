@@ -196,11 +196,11 @@ async function sendPendingApprovalEmail(base44:any,club:any,row:any,selected:any
   const to=await approvalNotificationEmail(base44,club,String(row.preferred_session_key||selected?.id||''));
   if(!to)return {sent:false,reason:'No club booking notification email is configured.'};
   const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:club.tenant_id,clubId:club.id};
-  const manageUrl='https://rallyhub.ie/app/guest-bookings';
+  const manageUrl='******/app/guest-bookings';
   const subject=`Action required · ${club.name} guest session request · ${row.full_name}`;
   const sessionText=`${selected?.day||''} ${selected?.start||''}${selected?.end?`–${selected.end}`:''}`.trim();
   const textBody=`A new guest session request is waiting for approval in RallyHub.\n\nGuest: ${row.full_name}\nEmail: ${row.email}\nMobile: ${row.mobile}\nExperience: ${row.experience_level||''}\nSession: ${sessionText}\nVenue: ${selected?.venueName||row.preferred_venue_key||''}\n${row.home_club?`Home club: ${row.home_club}\n`:''}${row.dupr_id?`DUPR: ${row.dupr_id}\n`:''}${row.health_declaration_applies===true?'Health/medical details were supplied — review them securely inside RallyHub.\n':''}\nOpen Session Bookings to review and approve or decline:\n${manageUrl}\n\nRallyHub`;
-  // All club notifications use the approved tenant Basic email renderer.
+  // All club notifications use the approved tenant Basic ****** renderer.
   // Never embed a legacy RallyHub logo, signature or footer in a workflow email.
   const brandKit=await tenantEmailBrandKit(base44,club.tenant_id,club.id);
   if(!brandKit)throw new Error('Approved Clare Pickleball email brand kit is unavailable; notification not sent.');
@@ -434,7 +434,7 @@ Deno.serve(async(req)=>{
         const link=sessionLinkById.get(sessionKey);
         const booking=bookingBySessionAndEmail.get(sessionKey+':'+emailKey(r.email||''))||bookingBySessionAndMobile.get(sessionKey+':'+mobileKey(r.mobile||''));
         const invite=inviteByRequestId.get(String(r.id));
-        return {id:r.id,status:r.status,fullName:r.full_name,email:r.email,mobile:r.mobile,experienceLevel:r.experience_level,previousSports:r.previous_sports||[],sportingBackgroundNote:r.sporting_background_note||'',healthDeclarationApplies:r.health_declaration_applies===true,medicalNote:r.medical_note||'',duprId:r.dupr_id||'',homeClub:r.home_club||'',sessionId:r.preferred_session_key,venueName:link?.venue_name||s?.venueName||r.preferred_venue_key,memberPrimaryVenue:activeVenueByEmail.get(emailKey(r.email||''))||'',day:link?.weekday||s?.day||'',start:link?.start_time||s?.start||'',end:link?.end_time||s?.end||'',nextDate:s?nextDateForDay(s.day,s.start,s.end):'',submittedAt:r.submitted_at,approvedAt:r.approved_at||'',approvedSessionLinkId:r.approved_session_link_id||'',approvedSessionDate:link?.session_date||'',privateInviteUrl:invite&&link?`https://rallyhub.ie/book/${encodeURIComponent(link.token)}?invite=${encodeURIComponent(invite.token)}`:'',inviteExpiresAt:invite?.expires_at||'',bookingId:booking?.id||'',bookingStatus:booking?.booking_status||'',paymentStatus:booking?.payment_status||'',amount:booking?.amount??link?.fee_amount??null,paymentMethod:booking?.payment_method||link?.payment_method||'',sumupCheckoutUrl:booking?.sumup_checkout_url||''};
+        return {id:r.id,status:r.status,fullName:r.full_name,email:r.email,mobile:r.mobile,experienceLevel:r.experience_level,previousSports:r.previous_sports||[],sportingBackgroundNote:r.sporting_background_note||'',healthDeclarationApplies:r.health_declaration_applies===true,medicalNote:r.medical_note||'',duprId:r.dupr_id||'',homeClub:r.home_club||'',sessionId:r.preferred_session_key,venueName:link?.venue_name||s?.venueName||r.preferred_venue_key,memberPrimaryVenue:activeVenueByEmail.get(emailKey(r.email||''))||'',day:link?.weekday||s?.day||'',start:link?.start_time||s?.start||'',end:link?.end_time||s?.end||'',nextDate:s?nextDateForDay(s.day,s.start,s.end):'',submittedAt:r.submitted_at,approvedAt:r.approved_at||'',approvedSessionLinkId:r.approved_session_link_id||'',approvedSessionDate:link?.session_date||'',privateInviteUrl:invite&&link?`******/book/${encodeURIComponent(link.token)}?invite=${encodeURIComponent(invite.token)}`:'',inviteExpiresAt:invite?.expires_at||'',bookingId:booking?.id||'',bookingStatus:booking?.booking_status||'',paymentStatus:booking?.payment_status||'',amount:booking?.amount??link?.fee_amount??null,paymentMethod:booking?.payment_method||link?.payment_method||'',sumupCheckoutUrl:booking?.sumup_checkout_url||''};
       })});
     }
 
@@ -491,7 +491,7 @@ Deno.serve(async(req)=>{
       if(!invite){
         invite=await base44.asServiceRole.entities.AccessInviteToken.create({tenant_id:tenantId,club_id:clubId,purpose:'guest_booking',token:inviteToken(),status:'active',session_link_id:sessionLink.id,access_request_id:row.id,intended_email:row.email,intended_mobile:row.mobile||'',intended_name:row.full_name,expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),created_by_user_id:user.id,created_at:now.toISOString(),notes:`Replacement private invite for approved guest request ${row.id}`});
       }
-      const magicInviteUrl=`https://rallyhub.ie/book/${encodeURIComponent(sessionLink.token)}?invite=${encodeURIComponent(invite.token)}`;
+      const magicInviteUrl=`******/book/${encodeURIComponent(sessionLink.token)}?invite=${encodeURIComponent(invite.token)}`;
       let emailSent=false;
       if(sendEmail){
         const {session,venue}=await sessionFromDirectory(base44,club,row.preferred_session_key);
@@ -579,7 +579,7 @@ Deno.serve(async(req)=>{
       const now=new Date();
       const invite=await base44.asServiceRole.entities.AccessInviteToken.create({tenant_id:tenantId,club_id:clubId,purpose:'guest_booking',token:inviteToken(),status:'active',session_link_id:guestSession.id,access_request_id:row.id,intended_email:row.email,intended_mobile:row.mobile||'',intended_name:row.full_name,expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),created_by_user_id:user.id,created_at:now.toISOString(),notes:`Approved guest request ${row.id} · bound to email and mobile where available`});
       await base44.asServiceRole.entities.GuestBookingRequest.update(row.id,{status:'approved',approved_at:now.toISOString(),approved_session_link_id:guestSession.id,preferred_session_key:String(session.id),preferred_venue_key:String(venue.id),admin_notes:`Approved for ${date} · ${session.day} ${session.start} · ${venue.name}`});
-      const magicInviteUrl=`https://rallyhub.ie/book/${encodeURIComponent(guestSession.token)}?invite=${encodeURIComponent(invite.token)}`;
+      const magicInviteUrl=`******/book/${encodeURIComponent(guestSession.token)}?invite=${encodeURIComponent(invite.token)}`;
       let emailSent=false;
       try{await sendApprovedGuestInvite(base44,club,row,session,venue,date,magicInviteUrl);emailSent=true}catch(e){console.error('approved guest invitation email failed',e?.message||e)}
       return Response.json({success:true,magicInviteUrl,expiresAt:invite.expires_at,sessionDate:date,emailSent});
