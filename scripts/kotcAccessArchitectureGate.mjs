@@ -198,7 +198,7 @@ includes(publicResultsUi,"action:'email_players'",'player email must happen only
 includes(publicResultsUi,"!finished&&<section className=\"glass rounded-xl overflow-hidden\"",'public KOTC standings must remain available during live play');
 assert(!publicResultsUi.includes("finished?'Final Standings':'Live Standings'"),'completed public KOTC must not publish the full finishing order');
 includes(publicResultsUi,'Final podium and completed round results. Full individual rankings are not published here.','completed public KOTC must explain podium-only final presentation while retaining round results');
-includes(results,'standings:finished?[]:table','completed public-state response must not expose final individual standings');
+includes(publicBranch,'standings:[]','public-state response must not expose individual standings');
 includes(results,'standings:standings(matches||[],participants||[])','authenticated host management must retain full individual standings');
 includes(publicResultsUi,'kotc-host-final-standings','authenticated hosts must have full finished standings');
 includes(publicResultsUi,"!['live','scores','leaderboard'].includes(x)",'finished public links must not expose leaderboard tab');
