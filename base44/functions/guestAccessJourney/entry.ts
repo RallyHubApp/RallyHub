@@ -516,6 +516,18 @@ Deno.serve(async(req)=>{
       return Response.json({success:true,retracted:true,bookingCancelled:!!booking,invitesRevoked:(invites||[]).filter((i:any)=>i.status==='active').length});
     }
 
+    if(action==='admin_withdraw'){
+      const id=clean(body.requestId,100);
+      const row=(await base44.asServiceRole.entities.GuestBookingRequest.filter({id,tenant_id:tenantId,club_id:clubId},'-submitted_at',5))?.[0];
+      if(!row)return Response.json({error:'Guest request not found.'},{status:404});
+      if(row.status!=='pending_approval')return Response.json({error:'Only pending requests can be withdrawn.'},{status:409});
+      const reason=clean(body.reason||'Guest no longer wishes to attend.',500);
+      await base44.asServiceRole.entities.GuestBookingRequest.update(row.id,{
+        status:'withdrawn',admin_notes:`Withdrawn by club ${new Date().toISOString()} · ${reason}`
+      });
+      return Response.json({success:true,withdrawn:true});
+    }
+
     if(action==='admin_reject'){
       const id=clean(body.requestId,100);
       const row=(await base44.asServiceRole.entities.GuestBookingRequest.filter({id,tenant_id:tenantId,club_id:clubId},'-submitted_at',5))?.[0];
