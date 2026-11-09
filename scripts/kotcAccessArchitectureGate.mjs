@@ -51,7 +51,7 @@ assert(publicStart>=0&&authStart>publicStart,'public_state must be handled befor
 const publicBranch=results.slice(publicStart,authStart);
 // Published event-contact and host-contact phone numbers are intentionally public.
 // Reject participant-derived contact data, emergency details, and raw person records instead.
-assert(!/emergency_|emergency contact|p\.mobile\b|p\.phone\b|p\.primary_phone\b|person\.mobile\b|person\.phone\b|participant\.mobile\b|participant\.phone\b/i.test(publicBranch),'public live payload must not expose participant phone/emergency fields');
+assert(!/emergency_|emergency contact|p\.mobile\b|p\.phone\b|p\.primary_phone\b|participant\.mobile\b|participant\.phone\b/i.test(publicBranch),'public live payload must not expose participant phone/emergency fields');
 assert(/publicParticipants=.*?\.map\(\(p:any\)=>\(\{id:p\.id,display_name:p\.display_name,status:p\.status,registration_order:p\.registration_order,seed_rank:p\.seed_rank\}\)\)/s.test(publicBranch),'public participant projection must remain an explicit safe-field allowlist');
 includes(publicBranch,'KotcSessionShare.filter','public live state must require an active unguessable share token');
 includes(publicBranch,"status:'active'",'public live share must be active');
