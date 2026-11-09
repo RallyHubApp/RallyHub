@@ -120,7 +120,7 @@ includes(command,"p.participant_type!=='member'",'non-member participant types m
 includes(command,"x.participant_type==='member'",'historical aggregate records must also be member-only');
 
 // Historical corrections are controlled and do not mutate future draw history.
-includes(command,"commandType === 'correct_match' && user.role === 'admin'",'finalised score corrections must require Super Admin');
+includes(command,"(['correct_match','correct_match_players'].includes(commandType) && user.role === 'admin')",'finalised score and player corrections must require Super Admin');
 includes(command,"action:'kotc_score_corrected'",'score correction must be audit logged');
 
 // Base44 provider resilience: use small recovery markers and dedicated, rate-limit-aware live endpoints.
