@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
     }
     if (!allowed) return Response.json({ error:'KOTC session host permission required' }, { status:403 });
     if (accessRole === 'assistant_host' && !['autosave_score','complete_match','correct_match'].includes(commandType)) return Response.json({ error:'Assistant hosts can enter and correct scores only.' }, { status:403 });
-    if (session.status === 'finalised' && !(commandType === 'correct_match' && user.role === 'admin')) return Response.json({ error:'Finalised KOTC sessions are read-only except for audited Super Admin score corrections.' }, { status:409 });
+    if (session.status === 'finalised' && !(['correct_match','correct_match_players'].includes(commandType) && user.role === 'admin')) return Response.json({ error:'Finalised KOTC sessions are read-only except for audited Super Admin score corrections.' }, { status:409 });
 
     // Read-only, session-authorised late-arrival lookup. Never expose a global directory.
     if(commandType==='search_late_players'){
@@ -372,6 +372,37 @@ Deno.serve(async (req) => {
         catch(error){ console.warn('KOTC score corrected, aggregates need reconciliation',{matchId:match.id,error:String(error?.message||error)}); result.aggregateSyncWarning=true; }
       }
       await createSnapshot(base44, session, commandId, 'score_saved', user.id);
+    } else if (commandType === 'correct_match_players') {
+      // Historical identity correction only. Never run the rotation engine or change scores.
+      if(accessRole==='assistant_host')return Response.json({error:'Primary host or Super Admin permission required.'},{status:403});
+      if(!['completed','finalised'].includes(session.status))return Response.json({error:'Historical player correction is available after the session ends. Use the live round editor during play.'},{status:409});
+      const match=(await withRateLimitRetry('player correction match',()=>base44.asServiceRole.entities.KotcMatch.filter({id:body.matchId,session_id:session.id})))?.[0];
+      if(!match||match.status!=='completed')return Response.json({error:'Completed match not found.'},{status:404});
+      const revision=Number(match.revision||0);
+      if(Number(body.expectedMatchRevision)!==revision)return Response.json({conflict:true,error:'Match changed. Refresh before correcting players.',currentMatchRevision:revision},{status:409});
+      const reason=String(body.reason||'').trim();
+      if(reason.length<5)return Response.json({error:'A correction reason is required (at least five characters).'},{status:400});
+      const side=body.side;
+      if(!['A','B'].includes(side))return Response.json({error:'Select Team A or Team B.'},{status:400});
+      const oldId=String(body.outgoingParticipantId||''),newId=String(body.incomingParticipantId||'');
+      const team=side==='A'?[...(match.team_a_participant_ids||[])]:[...(match.team_b_participant_ids||[])];
+      const other=side==='A'?(match.team_b_participant_ids||[]):(match.team_a_participant_ids||[]);
+      if(team.length!==2||!team.includes(oldId)||!newId||oldId===newId||other.includes(newId)||team.includes(newId))return Response.json({error:'Invalid one-for-one player replacement.'},{status:400});
+      const roster=await withRateLimitRetry('player correction roster',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}));
+      const incoming=roster.find((p:any)=>String(p.id)===newId);
+      if(!incoming)return Response.json({error:'Incoming player must belong to this session.'},{status:400});
+      const sameRound=await withRateLimitRetry('player correction round',()=>base44.asServiceRole.entities.KotcMatch.filter({session_id:session.id,round_number:match.round_number}));
+      if(sameRound.some((m:any)=>m.id!==match.id&&[...(m.team_a_participant_ids||[]),...(m.team_b_participant_ids||[])].includes(newId)))return Response.json({error:'Incoming player is already assigned to another court in this round.'},{status:409});
+      const activeLock=match.scoring_lock_owner&&Date.parse(match.scoring_lock_expires_at||'')>Date.now();
+      if(activeLock)return Response.json({error:'Court is being edited by a scorer. Retry when the scoring lock expires.'},{status:423});
+      team[team.indexOf(oldId)]=newId;
+      const field=side==='A'?'team_a_participant_ids':'team_b_participant_ids';
+      const before={team_a_participant_ids:match.team_a_participant_ids,team_b_participant_ids:match.team_b_participant_ids,team_a_score:match.team_a_score,team_b_score:match.team_b_score,winner_side:match.winner_side,revision};
+      const updated=await base44.asServiceRole.entities.KotcMatch.update(match.id,{[field]:team,revision:revision+1,command_id:commandId,correction_count:Number(match.correction_count||0)+1,last_corrected_at:now,last_corrected_by_user_id:user.id,last_correction_reason:reason});
+      result={success:true,match:updated,aggregateSyncWarning:false};
+      try{await withRateLimitRetry('player correction audit',()=>base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_match_players_corrected',entity_type:'KotcMatch',entity_id:match.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify(before),after_state:JSON.stringify({...before,[field]:team,revision:revision+1}),reason}));}catch(error){console.warn('KOTC player correction audit deferred',String((error as any)?.message||error));result.auditSyncWarning=true;}
+      try{await refreshKotcAggregates(base44,session);}catch(error){console.warn('KOTC player correction aggregate reconciliation needed',String((error as any)?.message||error));result.aggregateSyncWarning=true;}
+      await createSnapshot(base44,session,commandId,'players_corrected',user.id);
     } else if (commandType === 'generate_next_round') {
       // The host normally presses Prepare immediately after the fourth score save.
       // Give Base44's burst window a moment to clear, then retry provider 429s internally.
