@@ -131,8 +131,8 @@ Deno.serve(async (req) => {
     let session = sessions?.[0];
     if (!session) return Response.json({ error:'KOTC session not found' }, { status:404 });
 
-    let allowed = user.role === 'admin';
-    let accessRole = user.role === 'admin' ? 'admin' : null;
+    let allowed = user.role === 'admin' || user.kotc_role === 'super_admin';
+    let accessRole = user.role === 'admin' ? 'admin' : user.kotc_role === 'super_admin' ? 'super_admin' : null;
     if (!allowed) {
       const grants = await base44.asServiceRole.entities.KotcSessionAccess.filter({ session_id:session.id, user_id:user.id, status:'active' });
       const valid = (grants || []).filter((a:any) => allowedAccess(a, session.tenant_id, session.id));
@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
     }
     if (!allowed) return Response.json({ error:'KOTC session host permission required' }, { status:403 });
     if (accessRole === 'assistant_host' && !['autosave_score','complete_match','correct_match'].includes(commandType)) return Response.json({ error:'Assistant hosts can enter and correct scores only.' }, { status:403 });
-    if (session.status === 'finalised' && !(['correct_match','correct_match_players'].includes(commandType) && user.role === 'admin')) return Response.json({ error:'Finalised KOTC sessions are read-only except for audited Super Admin score corrections.' }, { status:409 });
+    if (session.status === 'finalised' && !(['correct_match','correct_match_players'].includes(commandType) && (user.role === 'admin' || user.kotc_role === 'super_admin'))) return Response.json({ error:'Finalised KOTC sessions are read-only except for audited Super Admin score corrections.' }, { status:409 });
 
     // Read-only, session-authorised late-arrival lookup. Never expose a global directory.
     if(commandType==='search_late_players'){
