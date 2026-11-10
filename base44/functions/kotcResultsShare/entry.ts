@@ -99,7 +99,7 @@ Deno.serve(async req=>{try{
    const shareToken=String(body.token||'');if(!shareToken)return Response.json({error:'Token required',runtimeVersion:RUNTIME_VERSION},{status:400});
    const share=(await retry('management share read',()=>base44.asServiceRole.entities.KotcSessionShare.filter({token:shareToken,status:'active'})))?.[0];if(!share)return Response.json({error:'Results link is invalid or revoked.',runtimeVersion:RUNTIME_VERSION},{status:404});
    const session=(await retry('management session read',()=>base44.asServiceRole.entities.KotcSession.filter({id:share.session_id})))?.[0];if(!session)return Response.json({error:'Session not found.',runtimeVersion:RUNTIME_VERSION},{status:404});
-   let allowed=user.role==='admin';let role=user.role==='admin'?'admin':null;
+   let allowed=user.role==='admin'||user.kotc_role==='super_admin';let role=user.role==='admin'?'admin':user.kotc_role==='super_admin'?'super_admin':null;
    if(!allowed){const grants=await retry('management access read',()=>base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,user_id:user.id,status:'active'}));const valid=(grants||[]).filter((a:any)=>validAccess(a,session.tenant_id,session.id));allowed=valid.length>0;role=valid[0]?.role||null;}
    if(!allowed)return Response.json({error:'Host access required',runtimeVersion:RUNTIME_VERSION},{status:403});
    const participants=await retry('management participants',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}));
