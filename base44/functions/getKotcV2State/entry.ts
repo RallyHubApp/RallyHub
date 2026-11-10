@@ -11,8 +11,8 @@ Deno.serve(async(req)=>{try{
  const tournamentId=String(body.tournamentId||''); const sessionId=String(body.sessionId||''); const liveScoresOnly=body.liveScoresOnly===true; if(!tournamentId&&!sessionId)return Response.json({error:'tournamentId or sessionId required'},{status:400});
  let sessions:any[]=[]; if(sessionId)sessions=await retry('session read',()=>base44.asServiceRole.entities.KotcSession.filter({id:sessionId})); else sessions=await retry('tournament session read',()=>base44.asServiceRole.entities.KotcSession.filter({tournament_id:tournamentId}));
  const session=(sessions||[]).filter((s:any)=>s.status!=='cancelled').sort((a:any,b:any)=>Date.parse(b.created_date||0)-Date.parse(a.created_date||0))[0]||null;
- if(!session)return Response.json({session:null,participants:[],rounds:[],slots:[],matches:[],fixedPairs:[],currentUserId:user.id,currentAccessRole:user.role==='admin'?'admin':null,isAdmin:user.role==='admin',runtimeVersion:RUNTIME_VERSION});
- let allowed=user.role==='admin'; let currentAccessRole=user.role==='admin'?'admin':null;
+ if(!session)return Response.json({session:null,participants:[],rounds:[],slots:[],matches:[],fixedPairs:[],currentUserId:user.id,currentAccessRole:user.role==='admin'?'admin':user.kotc_role==='super_admin'?'super_admin':null,isAdmin:user.role==='admin'||user.kotc_role==='super_admin',runtimeVersion:RUNTIME_VERSION});
+ let allowed=user.role==='admin'||user.kotc_role==='super_admin'; let currentAccessRole=user.role==='admin'?'admin':user.kotc_role==='super_admin'?'super_admin':null;
  if(!allowed){const access=await retry('access read',()=>base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,user_id:user.id,status:'active'}));const valid=(access||[]).filter((a:any)=>validAccess(a,session.tenant_id,session.id));allowed=valid.length>0;currentAccessRole=valid[0]?.role||null;}
  if(!allowed)return Response.json({error:'KOTC session access required'},{status:403});
  if(liveScoresOnly){
@@ -31,5 +31,5 @@ Deno.serve(async(req)=>{try{
  const legacyScorerActive=(scorerTokens||[]).some((t:any)=>!t.expires_at||Date.parse(t.expires_at)>Date.now());const playerScoringActive=(playerShares||[]).some((s:any)=>String(s.scoring_access||'')==='verified_players');const scorerLinkActive=legacyScorerActive||playerScoringActive;
  const currentRound=(rounds||[]).filter((r:any)=>Number(r.round_number)===Number(session.current_round_number)&&!['superseded'].includes(r.status)).sort((a:any,b:any)=>Number(b.proposal_revision||0)-Number(a.proposal_revision||0))[0]||null;
  const slots=currentRound?await retry('current slots read',()=>base44.asServiceRole.entities.KotcRoundSlot.filter({session_id:session.id,round_id:currentRound.id},'ladder_court_rank',100)):[];
- return Response.json({session,participants,rounds,slots,matches,fixedPairs:fixedPairs||[],scorerLinkActive,contactDirectory:{},currentUserId:user.id,currentAccessRole,isAdmin:user.role==='admin',runtimeVersion:RUNTIME_VERSION});
+ return Response.json({session,participants,rounds,slots,matches,fixedPairs:fixedPairs||[],scorerLinkActive,contactDirectory:{},currentUserId:user.id,currentAccessRole,isAdmin:user.role==='admin'||user.kotc_role==='super_admin',runtimeVersion:RUNTIME_VERSION});
 }catch(error){return Response.json({error:error?.message||'Unexpected KOTC state error',runtimeVersion:RUNTIME_VERSION},{status:isRateLimit(error)?503:500});}});
