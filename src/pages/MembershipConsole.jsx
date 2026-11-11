@@ -779,7 +779,9 @@ export default function MembershipConsole() {
       const candidateName = candidate.full_name || '';
       let verifyDateOfBirth = '';
       let verifyMobile = '';
-      if (recordName && candidateName && recordName.trim().toLowerCase() !== candidateName.trim().toLowerCase()) {
+      // Login display names may be usernames (e.g. oliviachambers). Compare canonical name characters, not spaces/case.
+      const comparableName = value => String(value || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (recordName && candidateName && comparableName(recordName) !== comparableName(candidateName)) {
         const factor = window.prompt('The RallyHub account name is "' + candidateName + '" but the member record is "' + recordName + '". Enter the member\'s date of birth (YYYY-MM-DD) or mobile number to verify the link.');
         if (!factor) return;
         if (/^\d{4}-\d{2}-\d{2}$/.test(factor.trim())) verifyDateOfBirth = factor.trim();
