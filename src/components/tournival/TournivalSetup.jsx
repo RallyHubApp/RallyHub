@@ -32,6 +32,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
   const [saving, setSaving] = useState(false);
   const [entryFee, setEntryFee] = useState(String(tournament.event_fee_amount ?? 0));
   const [feeSaving, setFeeSaving] = useState(false);
+  const [feeSaveStatus, setFeeSaveStatus] = useState(null);
   const [playerStage,setPlayerStage]=useState(tournament.tournival_player_stage||'registration');
   const [playerVenue,setPlayerVenue]=useState(tournament.location||'');
   const [playerMapUrl,setPlayerMapUrl]=useState(tournament.event_map_url||'');
@@ -68,15 +69,18 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
       toast.error('Enter a valid EUR amount with up to two decimal places.');
       return;
     }
+    setFeeSaveStatus(null);
     setFeeSaving(true);
     try {
       const response = await base44.functions.invoke('legacyTournamentManager', {
         tournamentId: tournament.id, action: 'set_tournival_entry_fee', amount, currency: 'EUR'
       });
       if (!response?.data?.success) throw Error(response?.data?.error || 'Could not update tournament fee.');
+      setFeeSaveStatus({ok:true,message:`Event fee saved successfully — €${amount.toFixed(2)}`});
       toast.success('Tournival entry fee saved. New registrations will use this amount.');
       window.dispatchEvent(new CustomEvent('tournival-fee-updated', {detail:{tournamentId:tournament.id}}));
     } catch (error) {
+      setFeeSaveStatus({ok:false,message:error?.response?.data?.error || error.message || 'Could not save fee.'});
       toast.error(error?.response?.data?.error || error.message || 'Could not save fee.');
     } finally { setFeeSaving(false); }
   };
@@ -91,7 +95,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
   const currentSeedIds = fullOrderedPlayers.map(p => p.id);
   const seedLocked = locked;
 
-  const maxKnockoutPairs=Math.min(8,2**Math.floor(Math.log2(Math.max(1,Math.floor(numPlayers/2)))));
+  const maxKnockoutPairs=8; // Selection is a planning choice; validate actual roster before fixture generation.
   const selectedKnockoutPairs=Math.min(knockoutPairs,maxKnockoutPairs);
   const duration = estimateDuration({ numPlayers, numCourts, numRounds, matchFormat,
     knockoutPairs:selectedKnockoutPairs, matchMinutes: matchFormat.startsWith('timed_') ? undefined : matchMinutes, changeoverMinutes, venueMinutes });
@@ -100,6 +104,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
 
   const handleStart = async () => {
     if (!isValid) { toast.error('Add at least 4 players to start.'); return; }
+    if (numPlayers < selectedKnockoutPairs * 2) { toast.error(`At least ${selectedKnockoutPairs*2} players are required for the selected knockout stage.`); return; }
     if (!seedConfirmed) { toast.error('Confirm seed order before generating fixtures.'); return; }
     setSaving(true);
     await onStart({ numCourts: Number(numCourts), numRounds: Number(numRounds), matchFormat, duprEnabled, knockoutPairs:selectedKnockoutPairs, seedOrder: currentSeedIds, venueMinutes, matchMinutes: duration.matchMinutes, changeoverMinutes });
@@ -222,7 +227,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
           <div className="w-40">
             <Label className="text-xs text-muted-foreground" htmlFor="tournival-event-fee">Entry fee (€)</Label>
             <Input id="tournival-event-fee" type="number" min="0" max="10000" step="0.01"
-              value={entryFee} onChange={e=>setEntryFee(e.target.value)}
+              value={entryFee} onChange={e=>{setEntryFee(e.target.value);setFeeSaveStatus(null);}}
               disabled={!isAdmin || feeSaving || !!existingState?.rounds?.length} />
           </div>
           <Button type="button" variant="outline" onClick={saveEntryFee}
@@ -230,6 +235,7 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
             {feeSaving?'Saving…':'Save event fee'}
           </Button>
         </div>
+        {feeSaveStatus && <p role="status" className={`text-sm font-medium ${feeSaveStatus.ok?'text-green-600':'text-red-600'}`}>{feeSaveStatus.message}</p>}
         <p className="text-xs text-muted-foreground">Payment account is selected from this event's tenant and host club at checkout, not from a manually entered merchant ID.</p>
       </div>
 
@@ -259,11 +265,11 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label className="text-xs text-muted-foreground">Knockout pairs</Label>
+            <Label className="text-xs text-muted-foreground">Pairs qualifying for knockout stage</Label>
             <Select value={String(selectedKnockoutPairs)} onValueChange={v=>setKnockoutPairs(Number(v))}>
               <SelectTrigger className="mt-1 bg-secondary border-border"><SelectValue/></SelectTrigger>
-              <SelectContent>{[2,4,8].filter(n=>n<=maxKnockoutPairs).map(n=>
-                <SelectItem key={n} value={String(n)}>{n} pairs / {n*2} players</SelectItem>)}</SelectContent>
+              <SelectContent>{[2,4,8].map(n=>
+                <SelectItem key={n} value={String(n)}>{n===2?'2 pairs — Final only':n===4?'4 pairs — 2 semi-finals + final':'8 pairs — Quarter-finals, semi-finals + final'}</SelectItem>)}</SelectContent>
             </Select>
           </div>
         </div>
@@ -283,10 +289,11 @@ export default function TournivalSetup({ players, tournament, onStart, isAdmin, 
               className="mt-1 bg-secondary border-border" />
           </div>
           {!matchFormat.startsWith('timed_') && <div>
-            <Label className="text-xs text-muted-foreground">Average points match (minutes)</Label>
+            <Label className="text-xs text-muted-foreground">Estimated match duration (minutes)</Label>
             <Input type="number" min={1} max={90} value={matchMinutes}
               onChange={e => setMatchMinutes(Math.max(1, Math.min(90, Number(e.target.value))))}
               className="mt-1 bg-secondary border-border" />
+            <p className="text-xs text-muted-foreground mt-1">Planning estimate, not a match time limit.</p>
           </div>}
         </div>
         <div>
