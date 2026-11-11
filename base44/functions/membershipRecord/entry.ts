@@ -360,7 +360,7 @@ Deno.serve(async(req)=>{
       const accountEmail=lower(user.email), recordEmail=lower(person?.primary_email||player.email);
       if(!accountEmail||accountEmail!==recordEmail) return Response.json({error:'For security, members may only link a record with the same verified email address.'},{status:409});
       const accountName=nameKey(user.full_name||user.display_name||''), recordName=nameKey(person?.full_name||player.full_name||'');
-      const nameMismatch=!!(accountName&&recordName&&accountName!==recordName);
+      const nameMismatch=!!(accountName&&recordName&&accountName.replace(/\s+/g,'')!==recordName.replace(/\s+/g,''));
       const suppliedDob=clean(body.verifyDateOfBirth,20);
       const suppliedMobile=clean(body.verifyMobile,80).replace(/\s+/g,'');
       const recordMobile=clean(person?.mobile||player.phone,80).replace(/\s+/g,'');
@@ -678,7 +678,7 @@ Deno.serve(async(req)=>{
       const accountEmail=lower(target.email), recordEmail=lower(person.primary_email||player.email);
       const accountName=nameKey(target.full_name||target.display_name||''), recordName=nameKey(person.full_name||player.full_name||'');
       const emailMismatch=!!(accountEmail&&recordEmail&&accountEmail!==recordEmail);
-      const nameMismatch=!!(accountName&&recordName&&accountName!==recordName);
+      const nameMismatch=!!(accountName&&recordName&&accountName.replace(/\s+/g,'')!==recordName.replace(/\s+/g,''));
       const suppliedDob=clean(body.verifyDateOfBirth,20);
       const suppliedMobile=clean(body.verifyMobile,80).replace(/\D+/g,'');
       const recordMobile=clean(person.mobile||player.phone,80).replace(/\D+/g,'');
