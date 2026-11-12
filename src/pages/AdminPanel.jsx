@@ -2742,7 +2742,7 @@ Brian`;
                           <p className="text-sm font-medium text-foreground truncate">{u.display_name || u.full_name || '(no name)'}</p>
                           {isDirectoryOnly && <Badge variant="outline" className="text-[9px] border-primary/30 text-primary shrink-0">Directory only</Badge>}
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">{u.email}{candidate?.full_name && candidate.full_name !== u.full_name ? ` · Account name: ${u.full_name || 'not supplied'}` : ''}</p>
+                        <p className="text-xs text-muted-foreground truncate">{u.email}{u.display_name && u.full_name && u.display_name !== u.full_name ? ` · Account name: ${u.full_name}` : ''}</p>
                         {isDirectoryOnly && <p className="text-[10px] text-muted-foreground mt-0.5">No RallyHub Club, tournament or tenant access</p>}
                       </div>
                     </div>
