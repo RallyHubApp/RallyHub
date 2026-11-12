@@ -12,7 +12,7 @@ const actions=[['run','Run',Play],['players','Players',Users],['courts','Courts'
 
 export default function BrandedHostFrame({tenantId,title,subtitle,roundNote,hostName,activeTab,onTab,onSignOut,communicationsUrl,children,playerMode=false,playerTabs=[],clubName=''}){
   const clare=String(tenantId)===CLARE_TENANT||/^clare pickleball$/i.test(String(clubName).trim());
-  return <div className="min-h-screen flex flex-col bg-background text-foreground" data-testid="sporting-branded-host-frame">
+  return <div className="min-h-screen w-full max-w-6xl mx-auto flex flex-col bg-background text-foreground" data-testid="sporting-branded-host-frame">
     <header className="bg-card text-card-foreground" data-testid="sporting-host-brand-header">
       <div className="mx-auto max-w-6xl px-3 pt-3 sm:px-5 sm:pt-4 flex items-center gap-3">
         {clare&&<img src={CLARE_LOGO} alt="Clare Pickleball logo" className="h-14 w-14 sm:h-20 sm:w-20 shrink-0 object-contain"/>}
