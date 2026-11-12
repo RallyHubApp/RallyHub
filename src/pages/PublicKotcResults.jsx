@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { ArrowLeft,Bell,Crown,Mail,Menu,Minimize2,MonitorUp,Pencil,RefreshCw,Save,Share2,Trophy,WifiOff,X } from 'lucide-react';
+import { ArrowLeft,Bell,Crown,Mail,Menu,Minimize2,Pencil,RefreshCw,Save,Share2,Trophy,WifiOff,X } from 'lucide-react';
 import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
 import RallyHubPublicBrand from '@/components/branding/RallyHubPublicBrand';
 import KotcMyPlayerPanel from '@/components/kotc/KotcMyPlayerPanel';
@@ -132,7 +132,7 @@ export default function PublicKotcResults(){
     </div>;
   }
 
-  return <BrandedHostFrame playerMode tenantId={data.session?.tenant_id||data.club_brand?.tenant_id} title="King of the Court" subtitle={`${data.session.name} · ${finished?'Final results':`Round ${data.session.current_round_number||'-'}`}`} activeTab={activeTab} onTab={setActiveTab} playerTabs={visibleTabs.map(key=>({key,label:tabLabels[key]||key}))}><div className="space-y-4">
+  return <BrandedHostFrame playerMode tenantId={data.session?.tenant_id||data.club_brand?.tenant_id} clubName={data.club_brand?.name||data.club_brand?.club_name} title="King of the Court" subtitle={`${data.session.name} · ${finished?'Final results':`Round ${data.session.current_round_number||'-'}`}`} activeTab={activeTab} onTab={setActiveTab} playerTabs={visibleTabs.map(key=>({key,label:tabLabels[key]||key}))}><div className="space-y-4">
     {offline&&<div className="sticky top-2 z-30 rounded-lg bg-yellow-500 text-black p-3 text-center font-semibold"><WifiOff className="inline w-4 h-4 mr-2"/>Connection lost — showing last known state. RallyHub will resynchronise automatically.</div>}
     {requestedManage&&managementLoading&&<div className="glass rounded-xl p-3 text-sm text-muted-foreground">Checking host controls…</div>}
     {management?.canManage&&<section className="glass rounded-xl p-3 sm:p-4 space-y-3" data-testid="kotc-results-host-menu">

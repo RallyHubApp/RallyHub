@@ -10,8 +10,8 @@ const RALLYHUB_REVERSE_LOGO='https://base44.app/api/apps/6a01dc00702b7dd2a2978c2
 const playerIcons={live:Play,results:Trophy,my_access:UserRound,players:Users,rounds:Grid2X2,scores:ChartNoAxesColumn,event_info:Info,help:HelpCircle};
 const actions=[['run','Run',Play],['players','Players',Users],['courts','Courts',Grid2X2],['scores','Scores',ChartNoAxesColumn],['more','More',Menu],['guide','Guide',BookOpen]];
 
-export default function BrandedHostFrame({tenantId,title,subtitle,roundNote,hostName,activeTab,onTab,onSignOut,communicationsUrl,children,playerMode=false,playerTabs=[]}){
-  const clare=String(tenantId)===CLARE_TENANT;
+export default function BrandedHostFrame({tenantId,title,subtitle,roundNote,hostName,activeTab,onTab,onSignOut,communicationsUrl,children,playerMode=false,playerTabs=[],clubName=''}){
+  const clare=String(tenantId)===CLARE_TENANT||/^clare pickleball$/i.test(String(clubName).trim());
   return <div className="min-h-screen flex flex-col bg-background text-foreground" data-testid="sporting-branded-host-frame">
     <header className="bg-card text-card-foreground" data-testid="sporting-host-brand-header">
       <div className="mx-auto max-w-6xl px-3 pt-3 sm:px-5 sm:pt-4 flex items-center gap-3">
