@@ -1261,12 +1261,13 @@ export default function MembershipConsole() {
                 <div className="rounded-lg border bg-background/40 p-3"><p className="text-[10px] uppercase text-muted-foreground">Renewals</p><p className="mt-1 text-xl font-black">{applicationData.counts?.renewals || 0}</p></div>
               </div>
 
-              {editApplicant&&<div className="mb-5 rounded-xl border border-primary/40 p-4 space-y-3" role="region" aria-label="Edit membership applicant">
-                <h3 className="font-bold">Edit applicant — {editApplicant.fullName}</h3>
-                <p className="text-xs text-muted-foreground">Correct applicant details before membership completion. Changing contact details revokes the previous private invitation. Send a fresh link after saving.</p>
-                <div className="grid gap-3 sm:grid-cols-3">{[['fullName','Full name'],['email','Email address'],['mobile','Mobile number']].map(([key,title])=><label key={key} className="space-y-1"><span className="text-sm font-medium">{title}</span><Input type={key==='email'?'email':'text'} value={editApplicantForm[key]||''} onChange={e=>setEditApplicantForm(previous=>({...previous,[key]:e.target.value}))}/></label>)}</div>
-                <div className="flex gap-2"><Button disabled={!!applicationBusyId} onClick={saveApplicantEditor}>Save changes</Button><Button variant="outline" disabled={!!applicationBusyId} onClick={()=>setEditApplicant(null)}>Cancel</Button></div>
-              </div>}
+              <Dialog open={!!editApplicant} onOpenChange={open=>{if(!open&&!applicationBusyId)setEditApplicant(null)}}>
+                <DialogContent className="sm:max-w-lg">
+                  <DialogHeader><DialogTitle>Edit applicant — {editApplicant?.fullName||''}</DialogTitle><DialogDescription>Correct applicant details. Changing contact details revokes the previous invitation; send a fresh link after saving.</DialogDescription></DialogHeader>
+                  <div className="grid gap-3">{[['fullName','Full name'],['email','Email address'],['mobile','Mobile number']].map(([key,title])=><label key={key} className="space-y-1"><span className="text-sm font-medium">{title}</span><Input type={key==='email'?'email':'text'} value={editApplicantForm[key]||''} onChange={e=>setEditApplicantForm(previous=>({...previous,[key]:e.target.value}))}/></label>)}</div>
+                  <DialogFooter><Button variant="outline" disabled={!!applicationBusyId} onClick={()=>setEditApplicant(null)}>Cancel</Button><Button disabled={!!applicationBusyId} onClick={saveApplicantEditor}>Save changes</Button></DialogFooter>
+                </DialogContent>
+              </Dialog>
               {(applicationData.pendingApprovals || []).length > 0 ? <div className="mb-5 space-y-2">
                 <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-bold">Awaiting club approval</p><p className="text-xs text-muted-foreground">No payment has been taken. Approving creates a private link bound to that applicant’s email and mobile number where available.</p></div><Badge variant="outline">{applicationData.pendingApprovals.length}</Badge></div>
                 {(applicationData.pendingApprovals || []).map(request => {
