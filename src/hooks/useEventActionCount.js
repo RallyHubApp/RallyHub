@@ -2,15 +2,17 @@ import {useQuery} from '@tanstack/react-query';
 import {base44} from '@/api/base44Client';
 
 /** Read-only, tenant-scoped event attention from the existing authorised admin endpoint. */
-export default function useEventActionCount(user){
+export default function useEventActionCount(user,{enabled:enabledByPage=true}={}){
  const tenantId=user?.active_tenant_id,clubId=user?.active_club_id;
  const enabled=!!tenantId&&!!clubId&&(user?.role==='admin'||user?.active_club_role==='club_admin');
  return useQuery({
   queryKey:['ccc-event-action-count',tenantId,clubId],
-  enabled,
-  retry:1,
-  refetchInterval:60000,
-  refetchOnWindowFocus:true,
+  enabled:enabled&&enabledByPage,
+  retry:false,
+  staleTime:5*60_000,
+  gcTime:10*60_000,
+  refetchInterval:false,
+  refetchOnWindowFocus:false,
   queryFn:async()=>{
    const today=new Date().toISOString().slice(0,10);
    const events=await base44.entities.Tournament.filter({tenant_id:tenantId,host_club_id:clubId,event_registration_mode:'rallyhub',event_booking_enabled:true,event_publish_status:'published',start_date:{$gte:today}},'start_date',100);

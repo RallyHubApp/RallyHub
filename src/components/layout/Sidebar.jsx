@@ -37,13 +37,13 @@ export default function Sidebar({ isOpen, onToggle }) {
   const directoryWorkspaceTabs = new Set(['directory-command','directory-crm','directory','directory-contacts','directory-players','directory-analytics','directory-campaigns','directory-governance']);
   const inDirectoryWorkspace = location.pathname === '/app/admin' && directoryWorkspaceTabs.has(currentAdminTab);
   const { data: memberMessageUnread = 0 } = useMemberMessageUnread();
-  const {data:pendingEventActionCount=0}=useEventActionCount(user);
+  const {data:pendingEventActionCount=0}=useEventActionCount(user,{enabled:location.pathname === '/app/events'});
   const {data:membershipAttentionCount=0,isError:membershipAttentionError}=useQuery({
     queryKey:['membership-application-attention-count',user?.active_tenant_id,user?.active_club_id],
     enabled:canManageMembership&&!!user?.active_tenant_id&&!!user?.active_club_id,
     queryFn:async()=>{const res=await base44.functions.invoke('membershipApplication',{action:'admin_count'});if(res.data?.error||res.data?.success===false)throw Error(res.data?.error||'Membership count unavailable');return {approvalCount:Number(res.data?.approvalCount||0),paymentFollowUpCount:Number(res.data?.paymentFollowUpCount??res.data?.pendingCount??0)}},
     select:data=>Number(data.approvalCount||0)+Number(data.paymentFollowUpCount||0),
-    retry:2,refetchInterval:30000,refetchOnWindowFocus:true
+    retry:false,staleTime:5*60_000,refetchInterval:false,refetchOnWindowFocus:false
   });
   const memberNavItems = [
     { path: '/app', label: 'Home', icon: Home },
@@ -106,9 +106,8 @@ export default function Sidebar({ isOpen, onToggle }) {
       if (res.data?.error) throw new Error(res.data.error);
       return Number(res.data?.pendingCount || 0);
     },
-    enabled: canAccessAdmin,
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true
+    enabled: canAccessAdmin && !inDirectoryWorkspace,
+    staleTime:5*60_000,refetchInterval:false,refetchOnWindowFocus:false
   });
 
   const { data: pendingBookingApprovalCount = 0 } = useQuery({
@@ -118,9 +117,8 @@ export default function Sidebar({ isOpen, onToggle }) {
       if (res.data?.error) throw new Error(res.data.error);
       return Number(res.data?.pendingCount || 0);
     },
-    enabled: canAccessAdmin && !!user?.active_tenant_id && !!user?.active_club_id,
-    refetchInterval: 30_000,
-    refetchOnWindowFocus: true
+    enabled: canAccessAdmin && !inDirectoryWorkspace && !!user?.active_tenant_id && !!user?.active_club_id,
+    staleTime:5*60_000,refetchInterval:false,refetchOnWindowFocus:false
   });
 
   const { data: directoryEnquiryAlertCount = 0 } = useQuery({
@@ -130,10 +128,8 @@ export default function Sidebar({ isOpen, onToggle }) {
       if (res.data?.success !== true) throw new Error(res.data?.error || 'Directory inbox unavailable');
       return (res.data.enquiries || []).filter(row => row.followupStatus !== 'resolved').length;
     },
-    enabled: isSuperAdmin && inDirectoryWorkspace,
-    retry:false,
-    refetchInterval:60_000,
-    refetchOnWindowFocus:true,
+    enabled: isSuperAdmin && inDirectoryWorkspace && currentAdminTab === 'directory-crm',
+    retry:false,staleTime:5*60_000,refetchInterval:false,refetchOnWindowFocus:false,
   });
 
   const { data: pendingDirectoryAdminCount = 0 } = useQuery({
@@ -143,9 +139,8 @@ export default function Sidebar({ isOpen, onToggle }) {
       if (res.data?.error) throw new Error(res.data.error);
       return Number(res.data?.pendingCount || 0);
     },
-    enabled: canAccessAdmin && isSuperAdmin,
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true
+    enabled: canAccessAdmin && isSuperAdmin && inDirectoryWorkspace,
+    staleTime:5*60_000,refetchInterval:false,refetchOnWindowFocus:false
   });
 
   return (

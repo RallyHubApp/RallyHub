@@ -37,8 +37,8 @@ export default function Dashboard() {
       return res.data?.counts || {};
     },
     enabled: !!currentUser && !isMemberView,
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true
+    staleTime:5*60_000,
+    refetchInterval:false,refetchOnWindowFocus:false
   });
 
   const { data: players = [] } = useQuery({
@@ -85,8 +85,8 @@ export default function Dashboard() {
       return Number(res.data?.pendingCount || 0);
     },
     enabled: currentUser?.role === 'admin',
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true
+    staleTime:5*60_000,
+    refetchInterval:false,refetchOnWindowFocus:false
   });
 
   const { data: membershipAttention = { approvalCount: 0, paymentFollowUpCount: 0 }, isError: membershipAttentionError } = useQuery({
@@ -97,8 +97,8 @@ export default function Dashboard() {
       return { approvalCount: Number(res.data?.approvalCount || 0), paymentFollowUpCount: Number(res.data?.paymentFollowUpCount ?? res.data?.pendingCount ?? 0) };
     },
     enabled: !!currentUser && (currentUser?.role === 'admin' || currentUser?.active_club_role === 'club_admin'),
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true
+    staleTime:5*60_000,
+    refetchInterval:false,refetchOnWindowFocus:false
   });
 
   const pendingMembershipApplicationCount = membershipAttention.paymentFollowUpCount;
@@ -113,8 +113,8 @@ export default function Dashboard() {
       return Number(res.data?.pendingCount || 0);
     },
     enabled: currentUser?.role === 'admin',
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true
+    staleTime:5*60_000,
+    refetchInterval:false,refetchOnWindowFocus:false
   });
 
   const { data: pendingSessionBookingCount = 0 } = useQuery({
@@ -125,8 +125,8 @@ export default function Dashboard() {
       return Number(res.data?.pendingCount || 0);
     },
     enabled: !!currentUser && (currentUser?.role === 'admin' || currentUser?.active_club_role === 'club_admin'),
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true
+    staleTime:5*60_000,
+    refetchInterval:false,refetchOnWindowFocus:false
   });
 
   const { data: clubSessions = [], isLoading: sessionsLoading, isError: sessionsError } = useQuery({
