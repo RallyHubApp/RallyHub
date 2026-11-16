@@ -50,7 +50,8 @@
       "type": "string",
       "enum": [
         "timed",
-        "first_to"
+        "first_to",
+        "first_court_to_target"
       ],
       "default": "timed"
     },

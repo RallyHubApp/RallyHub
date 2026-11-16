@@ -423,6 +423,12 @@ Deno.serve(async (req) => {
       const matches = (await withRateLimitRetry('prepare current matches',()=>base44.asServiceRole.entities.KotcMatch.filter({ round_id:currentRound.id, session_id:session.id }))).sort((a:any,b:any)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank));
       const unresolved = matches.filter((m:any)=>!RESOLVED.has(m.status));
       if (unresolved.length) return Response.json({ error:`${unresolved.length} current-round match result(s) unresolved.` }, { status:409 });
+      if(session.scoring_mode==='first_court_to_target'){
+        let roundCall:any={};try{roundCall=JSON.parse(session.timer_state_json||'{}')}catch{}
+        if(roundCall.firstCourtCalledRoundId!==currentRound.id)return Response.json({error:'Call End Round before preparing the next round.'},{status:409});
+        const target=Number(session.score_target||11);
+        if(!matches.some((m:any)=>m.status==='completed'&&Math.max(Number(m.team_a_score||0),Number(m.team_b_score||0))===target))return Response.json({error:`At least one court must have reached ${target} before preparing the next round.`},{status:409});
+      }
       const playableMatches = matches.filter((m:any)=>m.status==='completed');
       if (!playableMatches.length) return Response.json({ error:'No completed sporting results are available to generate movement.' }, { status:409 });
       const participants = await withRateLimitRetry('prepare participants',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({ session_id:session.id }));
@@ -768,6 +774,15 @@ Deno.serve(async (req) => {
         result = { success:true, lease, session };
         await createSnapshot(base44, session, commandId, 'command', user.id);
       }
+    } else if (commandType === 'end_first_court_round') {
+      if(session.scoring_mode!=='first_court_to_target'||session.status!=='in_progress')return Response.json({error:'Only a live first-court-to-target round can be called.'},{status:409});
+      const round=(await withRateLimitRetry('call round lookup',()=>base44.asServiceRole.entities.KotcRound.filter({id:session.current_round_id,session_id:session.id})))?.[0];
+      if(round?.status!=='started')return Response.json({error:'The current round is not playing.'},{status:409});
+      let timer:any={};try{timer=JSON.parse(session.timer_state_json||'{}')}catch{}
+      if(timer.firstCourtCalledRoundId===round.id)return Response.json({success:true,alreadyCalled:true,session});
+      timer={...timer,firstCourtCalledRoundId:round.id,firstCourtCalledAt:nowIso(),running:false,deadlineAt:null};
+      session=await base44.asServiceRole.entities.KotcSession.update(session.id,{timer_state_json:JSON.stringify(timer),revision:currentSessionRevision+1,last_command_id:commandId});
+      result={success:true,session};
     } else if (commandType === 'update_timer_settings') {
       const playMinutes = Number(body.playMinutes);
       const changeoverMinutes = Number(body.changeoverMinutes);
