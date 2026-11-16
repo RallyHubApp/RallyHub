@@ -9,6 +9,15 @@ async function withRateLimitRetry<T>(label:string,fn:()=>Promise<T>,attempts=4){
 function validAccess(a:any,tenantId:string,sessionId:string){if(!a||a.status!=='active'||String(a.tenant_id)!==String(tenantId)||String(a.session_id)!==String(sessionId)||!['session_host','assistant_host'].includes(a.role))return false;const now=Date.now();if(a.starts_at&&Date.parse(a.starts_at)>now)return false;if(a.ends_at&&Date.parse(a.ends_at)<now)return false;return true;}
 function validateFinalScore(body:any,session:any){
   const a=int0(body.teamAScore),b=int0(body.teamBScore);if(a==null||b==null)return{error:'Scores must be non-negative whole numbers.'};if(a>99||b>99)return{error:'KOTC scores cannot exceed 99.'};
+  if (session.scoring_mode === 'first_court_to_target') {
+    const target=Number(session.score_target||11);
+    if (Math.max(a,b)>target) return {error:`No score may exceed ${target} in first-court-to-target mode.`};
+    if (a===b) {
+      if (!['A','B'].includes(body.servingSideAtHorn)) return {error:'Select the serving team to resolve this tied court.'};
+      return {a,b,winner:body.servingSideAtHorn,method:'timed_serving_tiebreak'};
+    }
+    return {a,b,winner:a>b?'A':'B',method:'normal'};
+  }
   if(session.scoring_mode==='timed'){
     if(a===b){if(!['A','B'].includes(body.servingSideAtHorn))return{error:'A tied timed match requires the serving side at the horn.'};return{a,b,winner:body.servingSideAtHorn==='B'?'B':'A',method:'timed_serving_tiebreak'};}
     return{a,b,winner:a>b?'A':'B',method:'normal'};
