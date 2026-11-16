@@ -96,6 +96,12 @@ export function validateKotcScore({ teamAScore, teamBScore, session, servingSide
 
   if (!final) return { valid: true, teamAScore: a, teamBScore: b, winnerSide: a === b ? null : a > b ? 'A' : 'B', resultMethod: null };
 
+  if (session?.scoring_mode === 'first_court_to_target') {
+    const target = Number(session?.score_target ?? 11);
+    if (Math.max(a,b)>target) return {valid:false,error:`No score may exceed ${target}.`};
+    if (a===b && !['A','B'].includes(servingSideAtHorn)) return {valid:false,error:'Select the serving team for a tied court.'};
+    return {valid:true,teamAScore:a,teamBScore:b,winnerSide:a===b?servingSideAtHorn:a>b?'A':'B',resultMethod:a===b?'timed_serving_tiebreak':'normal'};
+  }
   if (session?.scoring_mode === 'timed') {
     if (a === b) {
       if (!['A', 'B'].includes(servingSideAtHorn)) {
