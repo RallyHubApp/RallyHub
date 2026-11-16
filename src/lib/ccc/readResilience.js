@@ -3,7 +3,7 @@ export const READ_STALE_MS=45_000;
 export const READ_GC_MS=5*60_000;
 export function shouldRetryRead(failureCount,error){
  const status=Number(error?.response?.status||error?.status||0);
- if([400,401,403,404,409,422].includes(status))return false;
+ if([400,401,403,404,409,422,429,503].includes(status)||/rate limit|too many requests|retry after/i.test(String(error?.response?.data?.error||error?.message||'')))return false;
  return failureCount<2;
 }
 export function readRetryDelay(attemptIndex){return Math.min(1500,400*(attemptIndex+1));}

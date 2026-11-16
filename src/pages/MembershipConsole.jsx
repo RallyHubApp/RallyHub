@@ -199,8 +199,8 @@ export default function MembershipConsole() {
       if (response.data?.error) throw new Error(response.data.error);
       return response.data || {};
     },
-    enabled: canManage,
-    retry: false
+    enabled: canManage && membershipSourceOpen,
+    retry: false, staleTime: 5*60_000, refetchOnWindowFocus:false
   });
 
   const { data: broadcastData = { groups: [], broadcasts: [], audience: {} }, refetch: refetchBroadcasts } = useQuery({
@@ -210,8 +210,8 @@ export default function MembershipConsole() {
       if (response.data?.error) throw new Error(response.data.error);
       return response.data || { groups: [], broadcasts: [], audience: {} };
     },
-    enabled: canManage,
-    staleTime: 20_000,
+    enabled: canManage && broadcastOpen,
+    staleTime: 5*60_000,
     refetchOnWindowFocus: false,
     retry: false
   });
