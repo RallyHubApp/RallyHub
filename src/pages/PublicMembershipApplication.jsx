@@ -164,12 +164,14 @@ export default function PublicMembershipApplication() {
         }
         if (next) {
           setApplication(next);
-          setStep(next.paymentStatus === 'paid' || next.status === 'approved' ? 'complete' : 'payment');
+          const complete=next.paymentStatus === 'paid' || next.status === 'approved';
+          setStep(complete ? 'complete' : 'payment');
+          if(complete && timer){window.clearInterval(timer);timer=null;}
         }
       } catch {}
     };
     check();
-    timer = window.setInterval(check, 5000);
+    timer = window.setInterval(()=>{if(document.visibilityState==='visible')check();}, 12000);
     return () => { active = false; if (timer) window.clearInterval(timer); };
   }, [config, clubSlug, statusToken, searchParams, setSearchParams]);
 

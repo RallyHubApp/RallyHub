@@ -21,7 +21,7 @@ export default function MemberPortalDashboard() {
       return res.data?.play || null;
     },
     staleTime: 60_000,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 
   const { data: performance = null, isLoading: isLoadingPerformance } = useQuery({
@@ -32,7 +32,7 @@ export default function MemberPortalDashboard() {
       return res.data || null;
     },
     staleTime: 60_000,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 
   const { data: announcements = [] } = useQuery({
@@ -45,8 +45,8 @@ export default function MemberPortalDashboard() {
         return [];
       }
     },
-    staleTime: 30_000,
-    refetchInterval: 60_000,
+    staleTime: 5*60_000,
+    refetchInterval: false,
     refetchOnWindowFocus: false,
     retry: false,
   });

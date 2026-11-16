@@ -196,8 +196,8 @@ export default function MemberMessages({ previewSnapshot = null, onPreviewBack =
       return res.data;
     },
     enabled: !preview,
-    staleTime: 10_000,
-    refetchInterval: 20_000,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
     refetchOnWindowFocus: false,
   });
   const data = preview ? previewPayload(previewSnapshot) : bootstrap;
@@ -218,8 +218,8 @@ export default function MemberMessages({ previewSnapshot = null, onPreviewBack =
       return res.data?.thread || null;
     },
     enabled: !preview && !!selectedThreadId,
-    staleTime: 2_000,
-    refetchInterval: 12_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
     refetchOnWindowFocus: false,
   });
 

@@ -16,8 +16,8 @@ export default function useMemberMessageUnread() {
       }
     },
     enabled: !!user?.id && !!user?.active_tenant_id && !!user?.active_club_id,
-    staleTime: 15_000,
-    refetchInterval: 30_000,
+    staleTime: 2*60_000,
+    refetchInterval: false,
     refetchOnWindowFocus: false,
     retry: false,
   });
