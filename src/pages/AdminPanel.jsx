@@ -41,7 +41,7 @@ export default function AdminPanel() {
       return result.data?.authorised === true;
     },
     enabled: canAccessAdmin && !!user?.id,
-    staleTime: 0,
+    staleTime: 5 * 60_000, refetchOnWindowFocus:false,
     retry: false,
   });
   const canAccessDirectoryAdmin = canAccessAdmin && directoryCapability === true;
@@ -268,13 +268,15 @@ export default function AdminPanel() {
       if (res.data?.error) throw new Error(res.data.error);
       return res.data?.users || [];
     },
-    enabled: canAccessAdmin
+    enabled: canAccessAdmin && ['users','linking','preview','invitations'].includes(activeAdminTab),
+    staleTime: 5*60_000, refetchOnWindowFocus:false
   });
 
   const { data: allClubUserAccesses = [] } = useQuery({
     queryKey: ['all-club-user-accesses'],
     queryFn: () => base44.entities.ClubUserAccess.list('-approved_at', 500),
-    enabled: canAccessAdmin
+    enabled: canAccessAdmin && ['users','linking','preview','invitations'].includes(activeAdminTab),
+    staleTime: 5*60_000, refetchOnWindowFocus:false
   });
 
   const previewTargetUserId = previewUserId || user?.id || '';
@@ -359,7 +361,8 @@ export default function AdminPanel() {
   const { data: matches = [] } = useQuery({
     queryKey: ['matches'],
     queryFn: () => base44.entities.Match.list('-created_date', 200),
-    enabled: canAccessAdmin
+    enabled: canAccessAdmin && activeAdminTab==='matches',
+    staleTime: 5*60_000, refetchOnWindowFocus:false
   });
 
   const { data: directoryVerification = { claims: [], accesses: [], listingRequests: [], listingRecords: [], listingProfiles: [], invitations: [] }, isFetched: directoryVerificationFetched, isError: directoryVerificationError, error: directoryVerificationFailure, refetch: retryDirectoryVerification, isFetching: directoryVerificationFetching } = useQuery({
@@ -370,7 +373,7 @@ export default function AdminPanel() {
       return { claims: res.data?.claims || [], accesses: res.data?.accesses || [], listingRequests: res.data?.listingRequests || [], listingRecords: res.data?.listingRecords || [], listingProfiles: res.data?.listingProfiles || [], invitations: res.data?.invitations || [] }; 
     },
     enabled: canAccessDirectoryAdmin && ['directory-command','directory-crm','directory','directory-contacts','directory-analytics','directory-campaigns','directory-governance'].includes(activeAdminTab),
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
     retry: false,
     refetchOnMount: false,
     refetchOnWindowFocus: false
@@ -383,7 +386,8 @@ export default function AdminPanel() {
       if (res.data?.error) throw new Error(res.data.error);
       return res.data || { counts: {}, subscribers: [] };
     },
-    enabled: canAccessDirectoryAdmin && ['directory-command', 'directory-crm', 'directory-players'].includes(activeAdminTab)
+    enabled: canAccessDirectoryAdmin && activeAdminTab === 'directory-players',
+    staleTime: 5 * 60_000, refetchOnWindowFocus:false, retry:false
   });
 
   const { data: directoryInbox = { enquiries: [], contactActions: [] }, isLoading: directoryInboxLoading, isError: directoryInboxError, refetch: refreshDirectoryInbox } = useQuery({
@@ -393,9 +397,10 @@ export default function AdminPanel() {
       if (res.data?.error || res.data?.success !== true) throw new Error(res.data?.error || 'Unable to load Directory enquiries');
       return res.data;
     },
-    enabled: canAccessDirectoryAdmin && directoryContext,
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true,
+    enabled: canAccessDirectoryAdmin && ['directory-crm','directory-command'].includes(activeAdminTab),
+    staleTime: 5 * 60_000,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
     retry: false,
   });
 
@@ -406,7 +411,8 @@ export default function AdminPanel() {
       if (res.data?.error) throw new Error(res.data.error);
       return res.data?.rows || [];
     },
-    enabled: canAccessAdmin
+    enabled: canAccessAdmin && activeAdminTab==='feedback',
+    staleTime: 5*60_000, refetchOnWindowFocus:false
   });
 
   const updateFeedbackStatus = async (row, status) => {
