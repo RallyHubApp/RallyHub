@@ -25,7 +25,7 @@ export default function KotcSetupPanel({
   // required remainder from the current player order.
   const benchReady=true;
   const selectedRemaining=Math.max(0,requiredBench-benchIds.length);
-  const scoringSummary=scoringMode==='timed'?`${playMinutes} min timed rounds`:`First to ${scoreTarget}${winByTwo?' · win by 2':' · win by 1'}`;
+  const scoringSummary=scoringMode==='first_court_to_target'?'First court to 11 · all courts stop · serving wins ties':scoringMode==='timed'?`${playMinutes} min timed rounds`:`First to ${scoreTarget}${winByTwo?' · win by 2':' · win by 1'}`;
   return <div className="space-y-5" data-testid="kotc-setup">
     <header className="glass rounded-2xl p-5 sm:p-6 border border-primary/15">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
