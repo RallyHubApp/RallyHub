@@ -580,7 +580,7 @@ test('First court to 11: whistle, partial scores, serving tie, 18-player bench a
  const model=createModel();await installMockBackend(page,model);page.on('dialog',d=>d.accept());
  await page.goto('/e2e/kotcHarness.html');
  await expect(page.getByTestId('kotc-setup')).toBeVisible();
- await page.getByRole('button',{name:'Timed rounds'}).click();
+ await page.getByRole('combobox').first().click();
  await page.getByRole('option',{name:/First court to 11/}).click();
  await page.getByRole('button',{name:'Player 17',exact:true}).click();
  await page.getByRole('button',{name:'Player 18',exact:true}).click();
