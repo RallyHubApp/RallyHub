@@ -1,0 +1,1 @@
+{"version":9,"type":"context-options","origin":"library","browserName":"","playwrightVersion":"1.63.0","options":{},"platform":"linux","wallTime":1794930401103,"monotonicTime":17897.912,"sdkLanguage":"javascript","title":"kotc-host-desktop.spec.mjs:543 › Base44 resilience: next round committed but response fails is reconciled without duplicate generation"}
