@@ -508,7 +508,7 @@ test('18-player mobile host journey: setup → controls → rounds → podium', 
   await page.getByTestId('kotc-add-player-visible').click();
   await page.getByTestId('kotc-player-participant-03').click();
   await page.getByTestId('kotc-player-sit-out').click();
-  await expect(page.getByTestId('kotc-player-participant-03')).toContainText('voluntary rest', { timeout: 1500 });
+  await expect(page.getByTestId('kotc-player-participant-03')).toContainText('Bench · this round', { timeout: 1500 });
   expect(model.participants.find(p => p.id === 'participant-03')?.status).toBe('voluntary_rest');
 
   report.round2_score_save_ms = await scoreCurrentRound(page, 4, 10);
