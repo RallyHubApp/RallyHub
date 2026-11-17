@@ -4,12 +4,12 @@ const APP_ID = process.env.VITE_BASE44_APP_ID || '6a01dc00702b7dd2a2978c28';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 
-function createModel(){
+function createModel(scoringMode='timed'){
   const now=()=>Date.now();
   const matches=[1,2].map(c=>({id:`match-${c}`,court:c,status:'scheduled',revision:0,team_a:[`P${c}A1`,`P${c}A2`],team_b:[`P${c}B1`,`P${c}B2`],team_a_score:null,team_b_score:null,lockOwner:'',lockExpires:0,correctionOwner:'',correction_count:0,completedAt:0}));
   const calls=[];let transientSaveRateLimits=0,commitThenFail=0,finished=false;
   const correctionOpen=(m,clientId)=>m.status==='completed'&&m.correctionOwner===clientId&&m.completedAt>0&&now()-m.completedAt<=90000;
-  const state=(clientId)=>finished?{success:true,finished:true,results_path:'/kotc-live/e2e-final-results',session:{name:'E2E Player Scoring',status:'completed',current_round_number:1}}:({success:true,session:{name:'E2E Player Scoring',status:'in_progress',current_round_number:1,planned_rounds:1,scoring_mode:'timed'},round:{id:'round-1',round_number:1,status:'started'},bench:[],timer:{running:true,remainingSeconds:300,deadlineAt:new Date(Date.now()+300000).toISOString()},matches:matches.map(m=>({id:m.id,court:m.court,status:m.status,revision:m.revision,team_a:m.team_a,team_b:m.team_b,team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:m.lockOwner&&m.lockExpires>now()?(m.lockOwner===clientId?'mine':'other'):'free',lock_seconds:m.lockExpires>now()?Math.ceil((m.lockExpires-now())/1000):0,can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((m.completedAt+90000-now())/1000)):0}))});
+  const state=(clientId)=>finished?{success:true,finished:true,results_path:'/kotc-live/e2e-final-results',session:{name:'E2E Player Scoring',status:'completed',current_round_number:1}}:({success:true,session:{name:'E2E Player Scoring',status:'in_progress',current_round_number:1,planned_rounds:1,scoring_mode:scoringMode},round:{id:'round-1',round_number:1,status:'started'},bench:[],timer:{running:true,remainingSeconds:300,deadlineAt:new Date(Date.now()+300000).toISOString()},matches:matches.map(m=>({id:m.id,court:m.court,status:m.status,revision:m.revision,team_a:m.team_a,team_b:m.team_b,team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:m.lockOwner&&m.lockExpires>now()?(m.lockOwner===clientId?'mine':'other'):'free',lock_seconds:m.lockExpires>now()?Math.ceil((m.lockExpires-now())/1000):0,can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((m.completedAt+90000-now())/1000)):0}))});
   const handle=async(body)=>{
     calls.push({...body,at:Date.now()});
     const action=body.action||'state',clientId=body.clientId||'';
@@ -39,7 +39,7 @@ function createModel(){
       if(correcting&&m.status!=='completed')return {status:409,body:{error:'This score has not been saved yet.'}};
       if(correcting&&!correctionOpen(m,clientId))return {status:423,body:{error:'The 90-second scorer correction window has closed. Ask the host to correct this result.',read_only:true}};
       if(!correcting&&m.status==='completed')return {status:409,body:{error:'This result is already saved. Use Undo / Update on the scorer screen.'}};
-      m.team_a_score=Number(body.teamAScore);m.team_b_score=Number(body.teamBScore);m.winner_side=m.team_a_score>=m.team_b_score?'A':'B';m.status='completed';m.revision++;if(correcting)m.correction_count++;else m.completedAt=now();m.lockOwner='';m.lockExpires=0;m.correctionOwner=clientId;
+      m.team_a_score=Number(body.teamAScore);m.team_b_score=Number(body.teamBScore);m.winner_side=m.team_a_score===m.team_b_score?body.servingSideAtHorn:m.team_a_score>m.team_b_score?'A':'B';m.status='completed';m.revision++;if(correcting)m.correction_count++;else m.completedAt=now();m.lockOwner='';m.lockExpires=0;m.correctionOwner=clientId;
       if(commitThenFail>0){commitThenFail--;return {status:503,body:{error:'Response lost after committed sporting write'}};}
       return {status:200,body:{success:true,corrected:correcting,message:correcting?'Updated score saved':'Score saved',match:{...m,completed_at:new Date(m.completedAt).toISOString(),can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((m.completedAt+90000-now())/1000)):0,lock_status:'free'}}};
     }
@@ -167,4 +167,24 @@ test('scorer reconciles committed save when Base44 response is lost and ignores 
   expect(model.matches[0].revision).toBe(1);expect(model.matches[0].team_a_score).toBe(11);expect(model.matches[0].team_b_score).toBe(4);
   expect(model.calls.filter(c=>c.action==='save').length).toBe(1);
   await ctx.close();
+});
+
+test('First court to 11: two player scorer devices save partial result and serving-side tie',async({browser})=>{
+ const model=createModel('first_court_to_target');
+ const aCtx=await browser.newContext({viewport:{width:390,height:844}});
+ const bCtx=await browser.newContext({viewport:{width:390,height:844}});
+ await install(aCtx,model);await install(bCtx,model);
+ const [a,b]=await Promise.all([openScorer(aCtx),openScorer(bCtx)]);
+ const first=await fillCourt(a,1,8,6);
+ const second=await fillCourt(b,2,5,5);
+ await expect(second.getByText('Tie at the horn — who was serving?')).toBeVisible();
+ await second.getByRole('combobox').click();
+ await b.getByRole('option',{name:'Team B serving at horn'}).click();
+ await Promise.all([first.getByRole('button',{name:'Save Result'}).click(),second.getByRole('button',{name:'Save Result'}).click()]);
+ await expect(first).toContainText('Score saved: 8–6');
+ await expect(second).toContainText('Score saved: 5–5');
+ expect(model.matches[0].winner_side).toBe('A');
+ expect(model.matches[1].winner_side).toBe('B');
+ expect(model.calls.filter(c=>c.action==='save')).toHaveLength(2);
+ await Promise.all([aCtx.close(),bCtx.close()]);
 });
