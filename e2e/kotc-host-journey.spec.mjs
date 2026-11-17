@@ -639,6 +639,18 @@ test('Preset Finish: host saves two timed layouts, activates preset and preserve
  await page.getByTestId('kotc-preset-finish-editor').getByRole('button',{name:'Configure'}).click();
  await expect(page.getByLabel('Preset 1 minutes')).toHaveValue('15');
  await expect(page.getByLabel('Preset 2 minutes')).toHaveValue('15');
+ const presetOne=page.getByTestId('kotc-court-layout-preset-1');
+ const presetTwo=page.getByTestId('kotc-court-layout-preset-2');
+ await expect(presetOne.getByTestId('kotc-whole-court-1')).toBeVisible();
+ await expect(presetTwo.getByTestId('kotc-whole-court-4')).toBeVisible();
+ await expect(presetOne.getByText('Move court').first()).toBeVisible();
+ await expect(presetOne.getByRole('button',{name:'Lock pair'}).first()).toBeVisible();
+ await expect(presetOne.getByTestId('kotc-bench')).toContainText('Player 17');
+ await presetOne.getByRole('button',{name:'Lock pair'}).first().click();
+ await expect(presetOne.getByText('LOCKED PAIR').first()).toBeVisible();
+ await presetOne.getByTestId('kotc-bench').getByRole('button',{name:'Player 17'}).click();
+ await presetOne.getByTestId('kotc-whole-court-1').getByRole('button',{name:/Player 1$/}).click();
+ await expect(presetOne.getByTestId('kotc-whole-court-1')).toContainText('Player 17');
  await page.getByLabel('Preset 1 minutes').fill('10');
  await page.getByLabel('Preset 2 minutes').fill('12');
  await page.getByTestId('kotc-save-preset-finish').click();
