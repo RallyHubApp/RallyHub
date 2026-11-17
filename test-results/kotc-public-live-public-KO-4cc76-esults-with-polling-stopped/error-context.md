@@ -14,14 +14,14 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('Event Summary')
+Locator: getByText('Full individual rankings are not published here.')
 Expected: visible
 Timeout: 3000ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('Event Summary') with timeout 3000ms
-  - waiting for getByText('Event Summary')
+  - Expect "toBeVisible" getByText('Full individual rankings are not published here.') with timeout 3000ms
+  - waiting for getByText('Full individual rankings are not published here.')
 
 ```
 
@@ -142,77 +142,76 @@ Call log:
   54  |   await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   55  |   await expect(page.getByTestId('public-kotc-podium')).toBeVisible({timeout:1800});
   56  |   await page.getByRole('button',{name:'Results',exact:true}).click();
-> 57  |   await expect(page.getByText('Event Summary')).toBeVisible();
-      |                                                 ^ Error: expect(locator).toBeVisible() failed
-  58  |   await expect(page.getByTestId('public-kotc-podium').getByText('Final Podium',{exact:true})).toBeVisible();
-  59  |   await expect(page.getByText('Full individual rankings are not published here.')).toBeVisible();
-  60  |   await expect(page.getByText('Live Standings')).toHaveCount(0);
-  61  |   await expect(page.getByText('Final Standings',{exact:true})).toHaveCount(0);
-  62  |   await expect(page.getByRole('button',{name:'Leaderboard',exact:true})).toBeVisible();
-  63  |   await page.getByRole('button',{name:'Leaderboard',exact:true}).click();
-  64  |   await expect(page.getByText('Live Standings')).toBeVisible();
-  65  |   await page.getByRole('button',{name:'Results',exact:true}).click();
-  66  |   await expect(page.getByTestId('public-kotc-current-round')).toHaveCount(0);
-  67  |   await page.getByRole('button',{name:'Rounds',exact:true}).click();
-  68  |   await expect(page.getByTestId('public-kotc-round-history')).toBeVisible();
-  69  |   await page.getByRole('button',{name:'Results',exact:true}).click();
-  70  |   await expect(page.getByTestId('public-kotc-podium').getByText('Guest One')).toBeVisible();
-  71  |   const podiumItems=page.getByTestId('public-kotc-podium').locator('[role="listitem"]');
-  72  |   await expect(podiumItems).toHaveCount(3);
-  73  |   await expect(podiumItems.nth(0)).toHaveAttribute('aria-label',/1st place/);
-  74  |   await expect(podiumItems.nth(1)).toHaveAttribute('aria-label',/2nd place/);
-  75  |   await expect(podiumItems.nth(2)).toHaveAttribute('aria-label',/3rd place/);
-  76  |   const podiumBoxes=await Promise.all([0,1,2].map(i=>podiumItems.nth(i).boundingBox()));
-  77  |   expect(podiumBoxes[0]?.height||0,'winner podium must be tallest').toBeGreaterThan(podiumBoxes[1]?.height||0);
-  78  |   expect(podiumBoxes[1]?.height||0,'second-place podium must be taller than third').toBeGreaterThan(podiumBoxes[2]?.height||0);
-  79  |   const callsAtFinish=publicCalls;await new Promise(resolve=>setTimeout(resolve,500));expect(publicCalls,'completed public results must stop polling Base44').toBe(callsAtFinish);
-  80  | });
-  81  | 
-  82  | test('finished KOTC host management: secure menu, local share, explicit email and post-event correction',async({page})=>{
-  83  |   const finished=makeState('finished');
-  84  |   let correctionCalls=0,emailCalls=0,managementCalls=0,publicCalls=0;
-  85  |   const management={canManage:true,role:'admin',sessionId:'session-finished',tournamentId:'tournament-finished',sessionName:'E2E Live KOTC',standings:finished.standings,matches:[{id:'match-r1-c1',round_id:'round-1',round_number:1,court:1,team_a_participant_ids:['p1','p2'],team_b_participant_ids:['p3','p4'],team_a:['Player 01','Player 02'],team_b:['Player 03','Player 04'],team_a_score:11,team_b_score:9,winner_side:'A',result_method:'normal',revision:1}]};
-  86  |   await page.addInitScript(()=>{navigator.share=async payload=>{window.__kotcShared=payload;};});
-  87  |   await page.route('**/api/apps/**',async route=>{
-  88  |     const request=route.request();const path=new URL(request.url()).pathname;const marker=`/api/apps/${APP_ID}/functions/`;const idx=path.indexOf(marker);
-  89  |     if(idx<0)return json(route,[]);
-  90  |     const name=decodeURIComponent(path.slice(idx+marker.length).split('/')[0]);let body={};try{body=request.postDataJSON()||{};}catch{}
-  91  |     if(name==='kotcResultsShare'){
-  92  |       if(body.action==='management_state'){managementCalls++;return json(route,management);}
-  93  |       if(body.action==='email_players'){emailCalls++;return json(route,{success:true,sent:16,skipped:1,alreadySent:0,failed:0});}
-  94  |       publicCalls++;return json(route,{...finished,poll_after_ms:0});
-  95  |     }
-  96  |     if(name==='kotcCommand'){
-  97  |       correctionCalls++;management.matches[0]={...management.matches[0],team_a_score:Number(body.teamAScore),team_b_score:Number(body.teamBScore),revision:2};
-  98  |       finished.current_matches[0]={...finished.current_matches[0],team_a_score:Number(body.teamAScore),team_b_score:Number(body.teamBScore)};
-  99  |       return json(route,{success:true,match:management.matches[0]});
-  100 |     }
-  101 |     return json(route,{});
-  102 |   });
-  103 | 
-  104 |   await page.goto('/e2e/kotcLiveHarness.html?manage=1');
-  105 |   await expect(page.getByTestId('kotc-results-host-menu')).toBeVisible({timeout:1800});
-  106 |   await expect(page.getByTestId('kotc-host-final-standings')).toContainText('Full Final Standings · Host Only');
-  107 |   await expect(page.getByTestId('kotc-host-final-standings')).toContainText('Guest One');
-  108 |   await expect(page.getByText('Final Standings',{exact:true})).toHaveCount(0);
-  109 |   expect(managementCalls).toBeGreaterThan(0);
-  110 |   await page.getByRole('button',{name:'Host Menu'}).click();
-  111 |   const callsBeforeShare=publicCalls+managementCalls+correctionCalls+emailCalls;
-  112 |   await page.getByRole('button',{name:'Share Results'}).click();
-  113 |   expect(await page.evaluate(()=>window.__kotcShared?.url)).toContain('/kotc-live/e2e-live-token');
-  114 |   expect(publicCalls+managementCalls+correctionCalls+emailCalls,'Share Results must be local').toBe(callsBeforeShare);
-  115 | 
-  116 |   await page.getByRole('button',{name:'Send to Players'}).click();
-  117 |   expect(emailCalls).toBe(1);
-  118 | 
-  119 |   await page.getByRole('button',{name:'Correct Results'}).click();
-  120 |   await expect(page.getByTestId('kotc-results-correction-panel')).toBeVisible();
-  121 |   await page.getByRole('button',{name:'Edit Court Result'}).click();
-  122 |   const scoreInputs=page.getByTestId('kotc-results-correction-panel').locator('input[type="number"]');
-  123 |   await scoreInputs.nth(0).fill('10');await scoreInputs.nth(1).fill('9');
-  124 |   await page.getByRole('button',{name:'Save Correction'}).click();
-  125 |   await expect.poll(()=>correctionCalls).toBe(1);
-  126 |   await expect(page.getByTestId('kotc-results-correction-panel')).toContainText('10');
-  127 | });
-  128 | 
+  57  |   await expect(page.getByTestId('public-kotc-podium').getByText('Final Podium',{exact:true})).toBeVisible();
+> 58  |   await expect(page.getByText('Full individual rankings are not published here.')).toBeVisible();
+      |                                                                                    ^ Error: expect(locator).toBeVisible() failed
+  59  |   await expect(page.getByText('Live Standings')).toHaveCount(0);
+  60  |   await expect(page.getByText('Final Standings',{exact:true})).toHaveCount(0);
+  61  |   await expect(page.getByRole('button',{name:'Leaderboard',exact:true})).toBeVisible();
+  62  |   await page.getByRole('button',{name:'Leaderboard',exact:true}).click();
+  63  |   await expect(page.getByText('Live Standings')).toBeVisible();
+  64  |   await page.getByRole('button',{name:'Results',exact:true}).click();
+  65  |   await expect(page.getByTestId('public-kotc-current-round')).toHaveCount(0);
+  66  |   await page.getByRole('button',{name:'Rounds',exact:true}).click();
+  67  |   await expect(page.getByTestId('public-kotc-round-history')).toBeVisible();
+  68  |   await page.getByRole('button',{name:'Results',exact:true}).click();
+  69  |   await expect(page.getByTestId('public-kotc-podium').getByText('Guest One')).toBeVisible();
+  70  |   const podiumItems=page.getByTestId('public-kotc-podium').locator('[role="listitem"]');
+  71  |   await expect(podiumItems).toHaveCount(3);
+  72  |   await expect(podiumItems.nth(0)).toHaveAttribute('aria-label',/1st place/);
+  73  |   await expect(podiumItems.nth(1)).toHaveAttribute('aria-label',/2nd place/);
+  74  |   await expect(podiumItems.nth(2)).toHaveAttribute('aria-label',/3rd place/);
+  75  |   const podiumBoxes=await Promise.all([0,1,2].map(i=>podiumItems.nth(i).boundingBox()));
+  76  |   expect(podiumBoxes[0]?.height||0,'winner podium must be tallest').toBeGreaterThan(podiumBoxes[1]?.height||0);
+  77  |   expect(podiumBoxes[1]?.height||0,'second-place podium must be taller than third').toBeGreaterThan(podiumBoxes[2]?.height||0);
+  78  |   const callsAtFinish=publicCalls;await new Promise(resolve=>setTimeout(resolve,500));expect(publicCalls,'completed public results must stop polling Base44').toBe(callsAtFinish);
+  79  | });
+  80  | 
+  81  | test('finished KOTC host management: secure menu, local share, explicit email and post-event correction',async({page})=>{
+  82  |   const finished=makeState('finished');
+  83  |   let correctionCalls=0,emailCalls=0,managementCalls=0,publicCalls=0;
+  84  |   const management={canManage:true,role:'admin',sessionId:'session-finished',tournamentId:'tournament-finished',sessionName:'E2E Live KOTC',standings:finished.standings,matches:[{id:'match-r1-c1',round_id:'round-1',round_number:1,court:1,team_a_participant_ids:['p1','p2'],team_b_participant_ids:['p3','p4'],team_a:['Player 01','Player 02'],team_b:['Player 03','Player 04'],team_a_score:11,team_b_score:9,winner_side:'A',result_method:'normal',revision:1}]};
+  85  |   await page.addInitScript(()=>{navigator.share=async payload=>{window.__kotcShared=payload;};});
+  86  |   await page.route('**/api/apps/**',async route=>{
+  87  |     const request=route.request();const path=new URL(request.url()).pathname;const marker=`/api/apps/${APP_ID}/functions/`;const idx=path.indexOf(marker);
+  88  |     if(idx<0)return json(route,[]);
+  89  |     const name=decodeURIComponent(path.slice(idx+marker.length).split('/')[0]);let body={};try{body=request.postDataJSON()||{};}catch{}
+  90  |     if(name==='kotcResultsShare'){
+  91  |       if(body.action==='management_state'){managementCalls++;return json(route,management);}
+  92  |       if(body.action==='email_players'){emailCalls++;return json(route,{success:true,sent:16,skipped:1,alreadySent:0,failed:0});}
+  93  |       publicCalls++;return json(route,{...finished,poll_after_ms:0});
+  94  |     }
+  95  |     if(name==='kotcCommand'){
+  96  |       correctionCalls++;management.matches[0]={...management.matches[0],team_a_score:Number(body.teamAScore),team_b_score:Number(body.teamBScore),revision:2};
+  97  |       finished.current_matches[0]={...finished.current_matches[0],team_a_score:Number(body.teamAScore),team_b_score:Number(body.teamBScore)};
+  98  |       return json(route,{success:true,match:management.matches[0]});
+  99  |     }
+  100 |     return json(route,{});
+  101 |   });
+  102 | 
+  103 |   await page.goto('/e2e/kotcLiveHarness.html?manage=1');
+  104 |   await expect(page.getByTestId('kotc-results-host-menu')).toBeVisible({timeout:1800});
+  105 |   await expect(page.getByTestId('kotc-host-final-standings')).toContainText('Full Final Standings · Host Only');
+  106 |   await expect(page.getByTestId('kotc-host-final-standings')).toContainText('Guest One');
+  107 |   await expect(page.getByText('Final Standings',{exact:true})).toHaveCount(0);
+  108 |   expect(managementCalls).toBeGreaterThan(0);
+  109 |   await page.getByRole('button',{name:'Host Menu'}).click();
+  110 |   const callsBeforeShare=publicCalls+managementCalls+correctionCalls+emailCalls;
+  111 |   await page.getByRole('button',{name:'Share Results'}).click();
+  112 |   expect(await page.evaluate(()=>window.__kotcShared?.url)).toContain('/kotc-live/e2e-live-token');
+  113 |   expect(publicCalls+managementCalls+correctionCalls+emailCalls,'Share Results must be local').toBe(callsBeforeShare);
+  114 | 
+  115 |   await page.getByRole('button',{name:'Send to Players'}).click();
+  116 |   expect(emailCalls).toBe(1);
+  117 | 
+  118 |   await page.getByRole('button',{name:'Correct Results'}).click();
+  119 |   await expect(page.getByTestId('kotc-results-correction-panel')).toBeVisible();
+  120 |   await page.getByRole('button',{name:'Edit Court Result'}).click();
+  121 |   const scoreInputs=page.getByTestId('kotc-results-correction-panel').locator('input[type="number"]');
+  122 |   await scoreInputs.nth(0).fill('10');await scoreInputs.nth(1).fill('9');
+  123 |   await page.getByRole('button',{name:'Save Correction'}).click();
+  124 |   await expect.poll(()=>correctionCalls).toBe(1);
+  125 |   await expect(page.getByTestId('kotc-results-correction-panel')).toContainText('10');
+  126 | });
+  127 | 
 ```

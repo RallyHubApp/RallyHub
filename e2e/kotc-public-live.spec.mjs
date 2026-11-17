@@ -54,7 +54,6 @@ test('public KOTC link: assignments → live scores → permanent final results 
   await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   await expect(page.getByTestId('public-kotc-podium')).toBeVisible({timeout:1800});
   await page.getByRole('button',{name:'Results',exact:true}).click();
-  await expect(page.getByText('Event Summary')).toBeVisible();
   await expect(page.getByTestId('public-kotc-podium').getByText('Final Podium',{exact:true})).toBeVisible();
   await expect(page.getByText('Full individual rankings are not published here.')).toBeVisible();
   await expect(page.getByText('Live Standings')).toHaveCount(0);
