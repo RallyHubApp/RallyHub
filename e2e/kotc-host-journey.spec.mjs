@@ -649,7 +649,7 @@ test('Preset Finish: host saves two timed layouts, activates preset and preserve
  await presetOne.getByRole('button',{name:'Lock pair'}).first().click();
  await expect(presetOne.getByText('LOCKED PAIR').first()).toBeVisible();
  await presetOne.getByTestId('kotc-bench').getByRole('button',{name:'Player 17'}).click();
- await presetOne.getByTestId('kotc-whole-court-1').getByRole('button',{name:/Player 1$/}).click();
+ await presetOne.getByTestId('kotc-whole-court-1').getByRole('button',{name:'Player 09'}).click();
  await expect(presetOne.getByTestId('kotc-whole-court-1')).toContainText('Player 17');
  await page.getByLabel('Preset 1 minutes').fill('10');
  await page.getByLabel('Preset 2 minutes').fill('12');
