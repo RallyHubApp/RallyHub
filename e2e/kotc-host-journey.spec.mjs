@@ -189,6 +189,13 @@ function createModel() {
     }
 
     if (name === 'kotcCommand' || name === 'startKotcRound' || name === 'saveKotcScore' || name === 'prepareKotcNextRound') {
+      if (body.commandType === 'end_first_court_round') {
+        if(model.session.scoring_mode!=='first_court_to_target')return {success:false,error:'Wrong scoring mode'};
+        model.session.timer_state_json=JSON.stringify({firstCourtCalledRoundId:currentRound().id,firstCourtCalledAt:new Date().toISOString()});
+        model.session.revision += 1;
+        return {success:true,session:model.session};
+      }
+
       if (body.commandType === 'host_claim_score') {
         const match = model.matches.find(m => m.id === body.matchId);
         if (!match) return { success: false, error: 'Match not found' };
@@ -254,7 +261,7 @@ function createModel() {
         const correction = body.commandType === 'correct_match';
         match.team_a_score = Number(body.teamAScore);
         match.team_b_score = Number(body.teamBScore);
-        match.winner_side = match.team_a_score >= match.team_b_score ? 'A' : 'B';
+        match.winner_side = match.team_a_score === match.team_b_score ? body.servingSideAtHorn : match.team_a_score > match.team_b_score ? 'A' : 'B';
         match.status = 'completed';
         match.completed_at = match.completed_at || new Date().toISOString();
         match.scoring_lock_owner = null;
@@ -265,6 +272,13 @@ function createModel() {
       }
 
       if (name === 'prepareKotcNextRound' || body.commandType === 'generate_next_round') {
+        if(model.session.scoring_mode==='first_court_to_target'){
+          const call=JSON.parse(model.session.timer_state_json||'{}');
+          if(call.firstCourtCalledRoundId!==currentRound().id)return {success:false,error:'Call End Round first'};
+          if(!currentMatches().some(m=>Math.max(Number(m.team_a_score||0),Number(m.team_b_score||0))===11))return {success:false,error:'One court must reach 11'};
+          if(currentMatches().some(m=>m.status!=='completed'))return {success:false,error:'Unresolved court'};
+        }
+
         await sleep(500);
         const prior = currentRound();
         prior.status = 'completed';
@@ -559,4 +573,41 @@ test('18-player mobile host journey: setup → controls → rounds → podium', 
   report.function_calls = model.calls.length;
   console.log(`KOTC HOST JOURNEY REPORT\n${JSON.stringify(report, null, 2)}`);
   await testInfo.attach('kotc-host-journey-report.json', { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
+});
+
+
+test('First court to 11: whistle, partial scores, serving tie, 18-player bench and round transition',async({page})=>{
+ const model=createModel();await installMockBackend(page,model);page.on('dialog',d=>d.accept());
+ await page.goto('/e2e/kotcHarness.html');
+ await expect(page.getByTestId('kotc-setup')).toBeVisible();
+ await page.getByRole('button',{name:'Timed rounds'}).click();
+ await page.getByRole('option',{name:/First court to 11/}).click();
+ await page.getByRole('button',{name:'Player 17',exact:true}).click();
+ await page.getByRole('button',{name:'Player 18',exact:true}).click();
+ await page.getByTestId('kotc-create-session').click();
+ await expect(page.getByTestId('kotc-round-editor')).toBeVisible();
+ expect(model.session.scoring_mode).toBe('first_court_to_target');
+ expect(model.session.score_target).toBe(11);
+ await expect(page.getByTestId('kotc-bench')).toContainText('Player 17');
+ await expect(page.getByTestId('kotc-bench')).toContainText('Player 18');
+ await page.getByTestId('kotc-start-round').click();
+ await expect(page.getByText('Round 1 — LIVE')).toBeVisible();
+ const scores=[[11,7],[8,6],[5,5],[9,4]];
+ for(let c=1;c<=4;c++){
+  await page.getByTestId(`kotc-score-${c}-a`).fill(String(scores[c-1][0]));
+  await page.getByTestId(`kotc-score-${c}-b`).fill(String(scores[c-1][1]));
+  if(c===3){await page.getByTestId('kotc-serving-3-b').click();}
+  await page.getByTestId(`kotc-complete-${c}`).click();
+  await expect(page.getByTestId(`kotc-score-card-${c}`)).toContainText('Saved');
+ }
+ expect(model.matches.find(m=>m.ladder_court_rank===3).winner_side).toBe('B');
+ await expect(page.getByRole('button',{name:'End Round — First Court Reached 11'})).toBeVisible();
+ await page.getByRole('button',{name:'End Round — First Court Reached 11'}).click();
+ await expect(page.getByText(/Whistle called · Collect scores/)).toBeVisible();
+ expect(JSON.parse(model.session.timer_state_json).firstCourtCalledRoundId).toBe('round-1');
+ await page.getByTestId('kotc-prepare-next-round').click();
+ await expect(page.getByTestId('kotc-start-round')).toContainText('START ROUND 2');
+ expect(model.rounds.find(r=>r.round_number===1).status).toBe('completed');
+ expect(model.rounds.find(r=>r.round_number===2).bench_count).toBe(2);
+ expect(model.matches.filter(m=>m.round_number===1).map(m=>m.winner_side)).toEqual(['A','A','B','A']);
 });
