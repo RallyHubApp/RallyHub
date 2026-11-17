@@ -132,6 +132,10 @@
     "scorer_correction_owner_client_id": {
       "type": "string",
       "description": "Scorer device that last saved this court through the player scoring link; only this device may reopen the saved score until host action or round close"
+    },
+    "preset_finish_index": {
+      "type": "number",
+      "description": "1 or 2; exclude from normal KOTC ranking and aggregates"
     }
   },
   "required": [
