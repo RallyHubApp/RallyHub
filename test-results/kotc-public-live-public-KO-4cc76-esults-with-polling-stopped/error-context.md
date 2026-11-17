@@ -14,25 +14,25 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('Live Standings')
+Locator: getByText('Event Summary')
 Expected: visible
 Timeout: 3000ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('Live Standings') with timeout 3000ms
-  - waiting for getByText('Live Standings')
+  - Expect "toBeVisible" getByText('Event Summary') with timeout 3000ms
+  - waiting for getByText('Event Summary')
 
 ```
 
 ```yaml
 - banner:
   - heading "King of the Court" [level=1]
-  - paragraph: E2E Live KOTC · Round 1
+  - paragraph: E2E Live KOTC · Final results
 - navigation "Player session navigation":
+  - button "Results"
   - button "My KOTC"
   - button "Leaderboard"
-  - button "Live"
   - button "Players"
   - button "Rounds"
   - button "Event Info"
@@ -52,16 +52,30 @@ Call log:
   - img
   - text: Dark
 - main:
-  - text: Player view Round 1 STARTED 06:58
-  - paragraph: Live session · Follow your courts and scores
+  - text: Player view Round 3 COMPLETED
+  - paragraph: Session complete · Final results
+  - heading "Your Individual Results" [level=2]
+  - paragraph: Choose your name to see your played rounds without a verification code. These are the published court results.
+  - combobox "Choose your player name":
+    - option "Choose your name" [selected]
   - img
-  - paragraph: My KOTC · Verify your device
-  - paragraph: Choose your name. We'll email a one-time code to the address on your club membership. SMS is available as a backup when configured. Your device will be remembered for future sessions.
-  - combobox: Choose your name
-  - button "Send verification code by email" [disabled]
-  - button "Use my linked RallyHub account" [disabled]
-  - button "Ask host for in-person approval" [disabled]
-  - button "Need help verifying your device? Open the guide"
+  - paragraph: Final Podium
+  - list "Final podium":
+    - 'listitem "1st place: Player 01"':
+      - text: 🥇
+      - paragraph: 1st
+      - paragraph: Player 01
+      - paragraph: 3W · 0L · +14
+    - 'listitem "2nd place: Guest One"':
+      - text: 🥈
+      - paragraph: 2nd
+      - paragraph: Guest One
+      - paragraph: 3W · 0L · +10
+    - 'listitem "3rd place: Player 03"':
+      - text: 🥉
+      - paragraph: 3rd
+      - paragraph: Player 03
+      - paragraph: 2W · 1L · +6
 - contentinfo:
   - link "Powered by RallyHub":
     - /url: https://rallyhub.ie/
@@ -121,14 +135,14 @@ Call log:
   47  |   await expect(page.getByTestId('public-kotc-court-1')).toContainText('11');
   48  |   await expect(page.getByTestId('public-kotc-court-2')).toContainText('8');
   49  |   await page.getByRole('button',{name:'Leaderboard',exact:true}).click();
-> 50  |   await expect(page.getByText('Live Standings')).toBeVisible();
-      |                                                  ^ Error: expect(locator).toBeVisible() failed
+  50  |   await expect(page.getByText('Live Standings')).toBeVisible();
   51  | 
   52  |   await page.getByRole('button',{name:'Live',exact:true}).click();
   53  |   phase='finished';
   54  |   await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   55  |   await expect(page.getByTestId('public-kotc-podium')).toBeVisible({timeout:1800});
-  56  |   await expect(page.getByText('Event Summary')).toBeVisible();
+> 56  |   await expect(page.getByText('Event Summary')).toBeVisible();
+      |                                                 ^ Error: expect(locator).toBeVisible() failed
   57  |   await expect(page.getByTestId('public-kotc-podium').getByText('Final Podium',{exact:true})).toBeVisible();
   58  |   await expect(page.getByText('Full individual rankings are not published here.')).toBeVisible();
   59  |   await expect(page.getByText('Live Standings')).toHaveCount(0);
