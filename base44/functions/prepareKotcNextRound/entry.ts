@@ -27,7 +27,14 @@ Deno.serve(async req=>{try{
  const currentRound=(await retry('current round read',()=>base44.asServiceRole.entities.KotcRound.filter({id:fromRoundId,session_id:session.id})))?.[0];if(!currentRound||Number(currentRound.round_number)!==fromRoundNumber)return Response.json({error:'Current round not found'},{status:404});if(!['started','completed'].includes(currentRound.status))return Response.json({error:'Current round must be live before preparing the next round.'},{status:409});
  const matches=(await retry('current matches read',()=>base44.asServiceRole.entities.KotcMatch.filter({round_id:currentRound.id,session_id:session.id}))).sort((a:any,b:any)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank));const unresolved=matches.filter((m:any)=>!RESOLVED.has(m.status));if(unresolved.length)return Response.json({error:`${unresolved.length} current-round match result(s) unresolved.`},{status:409});if(session.scoring_mode==='first_court_to_target'){
   let call:any={};try{call=JSON.parse(session.timer_state_json||'{}')}catch{}
-  if(call.firstCourtCalledRoundId!==currentRound.id)return Response.json({error:'Call End Round — First Court Reached 11 before preparing the next round.'},{status:409});
+  // The host's Prepare Next Round action is confirmation once every score is saved.
+  // Validate the winning target first; do not require a second End Round click.
+  if(call.firstCourtCalledRoundId!==currentRound.id){
+    const target=Number(session.score_target||11);
+    if(!matches.some((m:any)=>m.status==='completed'&&Math.max(Number(m.team_a_score||0),Number(m.team_b_score||0))===target))return Response.json({error:`At least one court must have reached ${target}.`},{status:409});
+    const timer={...call,firstCourtCalledRoundId:currentRound.id,firstCourtCalledAt:nowIso(),running:false,deadlineAt:null};
+    session=await retry('confirm first court round',()=>base44.asServiceRole.entities.KotcSession.update(session.id,{timer_state_json:JSON.stringify(timer),revision:Number(session.revision||0)+1}));
+  }
   const target=Number(session.score_target||11);
   if(!matches.some((m:any)=>m.status==='completed'&&Math.max(Number(m.team_a_score||0),Number(m.team_b_score||0))===target))return Response.json({error:`At least one court must have reached ${target}.`},{status:409});
  }
