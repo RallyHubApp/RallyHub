@@ -33,7 +33,7 @@ Deno.serve(async req=>{try{
     const target=Number(session.score_target||11);
     if(!matches.some((m:any)=>m.status==='completed'&&Math.max(Number(m.team_a_score||0),Number(m.team_b_score||0))===target))return Response.json({error:`At least one court must have reached ${target}.`},{status:409});
     const timer={...call,firstCourtCalledRoundId:currentRound.id,firstCourtCalledAt:nowIso(),running:false,deadlineAt:null};
-    session=await retry('confirm first court round',()=>base44.asServiceRole.entities.KotcSession.update(session.id,{timer_state_json:JSON.stringify(timer),revision:Number(session.revision||0)+1}));
+    await retry('confirm first court round',()=>base44.asServiceRole.entities.KotcSession.update(session.id,{timer_state_json:JSON.stringify(timer),revision:Number(session.revision||0)+1}));
   }
   const target=Number(session.score_target||11);
   if(!matches.some((m:any)=>m.status==='completed'&&Math.max(Number(m.team_a_score||0),Number(m.team_b_score||0))===target))return Response.json({error:`At least one court must have reached ${target}.`},{status:409});
