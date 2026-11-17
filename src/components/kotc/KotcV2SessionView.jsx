@@ -216,6 +216,7 @@ function ProposedRoundEditor({round,slots,participants,names,fixedPairs,onStart=
   const togglePair=async(ids,isLocked)=>{const key=pairKey(ids);if(pairBusyKey)return;setPairBusyKey(key);try{await onPairLock(ids,isLocked,draft,round);}finally{setPairBusyKey('');}};
   return <div className="space-y-4" data-testid="kotc-round-editor">
     <KotcCourtLayoutEditor editorId={round.id} ordered={ordered} draft={draft} selected={selected} bench={bench} names={names} courts={courts} moveWholeCourt={moveWholeCourt} clickCourt={clickCourt} clickBench={clickBench} lockFor={lockFor} pairBusyKey={pairBusyKey} pairKey={pairKey} togglePair={togglePair} saving={saving} liveEditing={liveEditing}/>
+    <div className="space-y-3">
       <div className={`rounded-xl border p-3 flex flex-col sm:flex-row sm:items-center gap-3 ${dirty?'border-amber-400/30 bg-amber-500/10':'border-green-500/20 bg-green-500/5'}`}>
         <div className="flex-1"><p className="text-xs font-semibold">{dirty?'Unsaved round changes':'Round setup is saved'}</p><p className="text-[10px] text-muted-foreground mt-0.5">{dirty?'Save before leaving or refreshing. Starting the round will also save the final layout.':'You can leave this screen and return without losing the court layout.'}</p></div>
         <Button data-testid="kotc-save-round-setup" type="button" variant={dirty?'default':'outline'} onClick={saveDraft} disabled={saving||!dirty||issues.length>0} className="w-full sm:w-auto">{draftStatus?.state==='saving'?'Saving…':dirty?'Save Round Setup':'Saved ✓'}</Button>
