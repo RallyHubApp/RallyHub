@@ -655,4 +655,14 @@ test('Preset Finish: host saves two timed layouts, activates preset and preserve
  expect(model.session.play_minutes).toBe(10);
  expect(model.matches.filter(m=>m.round_number===1).map(m=>({id:m.id,a:m.team_a_score,b:m.team_b_score}))).toEqual(before);
  await expect(page.getByTestId('kotc-preset-finish-editor')).toBeVisible();
+ await page.getByTestId('kotc-start-round').click();
+ await expect(page.getByText('Round 2 — LIVE')).toBeVisible();
+ await scoreCurrentRound(page);
+ await expect(page.getByTestId('kotc-activate-preset-finish')).toContainText('Preset 2');
+ await page.getByTestId('kotc-activate-preset-finish').getByRole('button',{name:'Activate Preset 2'}).click();
+ await expect(page.getByTestId('kotc-start-round')).toContainText('START ROUND 3',{timeout:5000});
+ expect(model.rounds.find(r=>r.round_number===3).preset_finish_index).toBe(2);
+ expect(model.session.play_minutes).toBe(12);
+ expect(model.matches.filter(m=>m.round_number===1).map(m=>({id:m.id,a:m.team_a_score,b:m.team_b_score}))).toEqual(before);
+
 });
