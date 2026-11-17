@@ -13,6 +13,7 @@ Deno.serve(async req=>{try{
   if(!Number.isInteger(Number(preset.minutes))||Number(preset.minutes)<1||Number(preset.minutes)>60)return Response.json({error:`Preset ${index+1}: duration must be 1–60 minutes.`},{status:400});
   if(!Array.isArray(preset.courts)||preset.courts.length!==count)return Response.json({error:`Preset ${index+1}: expected ${count} courts.`},{status:400});
   const assigned=preset.courts.flatMap((c:any)=>[...(c.A||[]),...(c.B||[])]).map(String);
+  if(preset.locked_pairs!==undefined&&(!Array.isArray(preset.locked_pairs)||preset.locked_pairs.some((pair:any)=>!Array.isArray(pair)||pair.length!==2||String(pair[0])===String(pair[1])||!preset.courts.some((court:any)=>[court.A,court.B].some((team:any)=>pair.every((id:any)=>team.map(String).includes(String(id)))))))return Response.json({error:`Preset ${index+1}: a locked pair is split or invalid.`},{status:400});
   if(preset.courts.some((c:any)=>c.A?.length!==2||c.B?.length!==2)||assigned.length!==count*4||new Set(assigned).size!==assigned.length||assigned.some((id:string)=>!ids.has(id)))return Response.json({error:`Preset ${index+1}: duplicate, incomplete or unavailable player assignment.`},{status:400});
  }
  const updated=await base44.asServiceRole.entities.KotcSession.update(session.id,{preset_finish_json:JSON.stringify({presets}),revision:Number(session.revision||0)+1});

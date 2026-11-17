@@ -15,6 +15,9 @@ export function validatePresetFinish(presets, participantIds, courtCount = 4) {
     });
     if (new Set(ids.map(String)).size !== ids.length) errors.push(`${prefix}: duplicate player assignment.`);
     if (ids.some(id => !eligible.has(String(id)))) errors.push(`${prefix}: an unavailable player is assigned.`);
+    for (const pair of preset.locked_pairs || []) {
+      if (!Array.isArray(pair) || pair.length !== 2 || pair[0] === pair[1] || !preset.courts.some(court => [court.A, court.B].some(team => pair.every(id => team.map(String).includes(String(id)))))) errors.push(`${prefix}: locked pair must remain together on one team.`);
+    }
     const benched = participantIds.filter(id => !ids.map(String).includes(String(id)));
     if (benched.length > 0 && Number(preset.minutes) > 10) errors.push(`${prefix}: ${benched.length} players would sit out for ${preset.minutes} minutes (host warning).`);
   });
