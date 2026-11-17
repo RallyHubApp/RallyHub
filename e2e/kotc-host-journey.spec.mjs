@@ -291,6 +291,7 @@ function createModel() {
         const priorActive = new Set(currentSlots().map(slot => slot.participant_id));
         const priorBench = model.participants.filter(p => ['present', 'registered', 'confirmed', 'leaving_early'].includes(p.status) && !priorActive.has(p.id)).map(p => p.id);
 
+        const next = makeRound(Number(prior.round_number) + 1, priorBench.slice().reverse());
         if(body.presetIndex){
           const preset=JSON.parse(model.session.preset_finish_json).presets[body.presetIndex-1];
           next.preset_finish_index=body.presetIndex;
@@ -300,7 +301,7 @@ function createModel() {
           syncMatchesFromSlots(next.id);
           model.matches.filter(m=>m.round_id===next.id).forEach(m=>m.preset_finish_index=body.presetIndex);
         }
-        const next = makeRound(Number(prior.round_number) + 1, priorBench.slice().reverse());
+
         model.session.revision += 1;
         return { success: true, session: model.session, round: next, slots:model.slots.filter(s=>s.round_id===next.id), matches:model.matches.filter(m=>m.round_id===next.id), participants:model.participants, runtimeVersion:'kotc-2026-09-10-r6' };
       }
