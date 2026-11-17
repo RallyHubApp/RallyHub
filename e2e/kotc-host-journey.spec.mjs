@@ -137,6 +137,11 @@ function createModel() {
       };
     }
 
+    if (name === 'saveKotcPresetFinish') {
+      model.session.preset_finish_json=JSON.stringify({presets:body.presets});
+      model.session.revision+=1;
+      return {success:true,session:model.session};
+    }
     if (name === 'createKotcV2Session') {
       await sleep(450);
       model.participants = players.map(player => ({ ...participantByPlayer.get(player.id) }));
@@ -285,6 +290,16 @@ function createModel() {
         prior.completed_at = new Date().toISOString();
         const priorActive = new Set(currentSlots().map(slot => slot.participant_id));
         const priorBench = model.participants.filter(p => ['present', 'registered', 'confirmed', 'leaving_early'].includes(p.status) && !priorActive.has(p.id)).map(p => p.id);
+
+        if(body.presetIndex){
+          const preset=JSON.parse(model.session.preset_finish_json).presets[body.presetIndex-1];
+          next.preset_finish_index=body.presetIndex;
+          model.session.play_minutes=preset.minutes;
+          const ss=model.slots.filter(slot=>slot.round_id===next.id).sort((a,b)=>a.ladder_court_rank-b.ladder_court_rank||a.team_side.localeCompare(b.team_side)||a.slot_number-b.slot_number);
+          ss.forEach((slot,i)=>{const court=preset.courts[Math.floor(i/4)];slot.participant_id=(i%4<2?court.A:court.B)[i%2];});
+          syncMatchesFromSlots(next.id);
+          model.matches.filter(m=>m.round_id===next.id).forEach(m=>m.preset_finish_index=body.presetIndex);
+        }
         const next = makeRound(Number(prior.round_number) + 1, priorBench.slice().reverse());
         model.session.revision += 1;
         return { success: true, session: model.session, round: next, slots:model.slots.filter(s=>s.round_id===next.id), matches:model.matches.filter(m=>m.round_id===next.id), participants:model.participants, runtimeVersion:'kotc-2026-09-10-r6' };
@@ -610,4 +625,33 @@ test('First court to 11: whistle, partial scores, serving tie, 18-player bench a
  expect(model.rounds.find(r=>r.round_number===1).status).toBe('completed');
  expect(model.rounds.find(r=>r.round_number===2).bench_count).toBe(2);
  expect(model.matches.filter(m=>m.round_number===1).map(m=>m.winner_side)).toEqual(['A','A','B','A']);
+});
+
+
+test('Preset Finish: host saves two timed layouts, activates preset and preserves previous scores', async ({page})=>{
+ const model=createModel();await installMockBackend(page,model);page.on('dialog',d=>d.accept());
+ await page.goto('/e2e/kotcHarness.html');
+ await page.getByRole('button',{name:'Player 17',exact:true}).click();
+ await page.getByRole('button',{name:'Player 18',exact:true}).click();
+ await page.getByTestId('kotc-create-session').click();
+ await expect(page.getByTestId('kotc-preset-finish-editor')).toBeVisible();
+ await page.getByTestId('kotc-preset-finish-editor').getByRole('button',{name:'Configure'}).click();
+ await expect(page.getByLabel('Preset 1 minutes')).toHaveValue('15');
+ await expect(page.getByLabel('Preset 2 minutes')).toHaveValue('15');
+ await page.getByLabel('Preset 1 minutes').fill('10');
+ await page.getByLabel('Preset 2 minutes').fill('12');
+ await page.getByTestId('kotc-save-preset-finish').click();
+ await expect.poll(()=>model.calls.some(c=>c.name==='saveKotcPresetFinish')).toBe(true);
+ expect(JSON.parse(model.session.preset_finish_json).presets.map(p=>p.minutes)).toEqual([10,12]);
+ await page.getByTestId('kotc-start-round').click();
+ await expect(page.getByText('Round 1 — LIVE')).toBeVisible();
+ await scoreCurrentRound(page);
+ await expect(page.getByTestId('kotc-activate-preset-finish')).toBeVisible();
+ const before=model.matches.filter(m=>m.round_number===1).map(m=>({id:m.id,a:m.team_a_score,b:m.team_b_score}));
+ await page.getByTestId('kotc-activate-preset-finish').getByRole('button',{name:'Activate Preset 1'}).click();
+ await expect(page.getByTestId('kotc-start-round')).toContainText('START ROUND 2',{timeout:5000});
+ expect(model.rounds.find(r=>r.round_number===2).preset_finish_index).toBe(1);
+ expect(model.session.play_minutes).toBe(10);
+ expect(model.matches.filter(m=>m.round_number===1).map(m=>({id:m.id,a:m.team_a_score,b:m.team_b_score}))).toEqual(before);
+ await expect(page.getByTestId('kotc-preset-finish-editor')).toBeVisible();
 });
