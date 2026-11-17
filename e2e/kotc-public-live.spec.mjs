@@ -53,12 +53,16 @@ test('public KOTC link: assignments → live scores → permanent final results 
   phase='finished';
   await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   await expect(page.getByTestId('public-kotc-podium')).toBeVisible({timeout:1800});
+  await page.getByRole('button',{name:'Results',exact:true}).click();
   await expect(page.getByText('Event Summary')).toBeVisible();
   await expect(page.getByTestId('public-kotc-podium').getByText('Final Podium',{exact:true})).toBeVisible();
   await expect(page.getByText('Full individual rankings are not published here.')).toBeVisible();
   await expect(page.getByText('Live Standings')).toHaveCount(0);
   await expect(page.getByText('Final Standings',{exact:true})).toHaveCount(0);
-  await expect(page.getByRole('button',{name:'Leaderboard',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Leaderboard',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Leaderboard',exact:true}).click();
+  await expect(page.getByText('Live Standings')).toBeVisible();
+  await page.getByRole('button',{name:'Results',exact:true}).click();
   await expect(page.getByTestId('public-kotc-current-round')).toHaveCount(0);
   await page.getByRole('button',{name:'Rounds',exact:true}).click();
   await expect(page.getByTestId('public-kotc-round-history')).toBeVisible();
