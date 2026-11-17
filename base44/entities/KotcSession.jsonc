@@ -187,6 +187,10 @@
     },
     "timer_state_json": {
       "type": "string"
+    },
+    "preset_finish_json": {
+      "type": "string",
+      "description": "Optional two host-authored timed court layouts; saved before activation"
     }
   },
   "required": [

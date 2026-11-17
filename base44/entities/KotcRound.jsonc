@@ -65,6 +65,10 @@
     },
     "engine_output_hash": {
       "type": "string"
+    },
+    "preset_finish_index": {
+      "type": "number",
+      "description": "1 or 2 for host-selected preset rounds; omitted for sporting rounds"
     }
   },
   "required": [

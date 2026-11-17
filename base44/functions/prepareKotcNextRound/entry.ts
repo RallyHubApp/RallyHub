@@ -31,6 +31,35 @@ Deno.serve(async req=>{try{
   const target=Number(session.score_target||11);
   if(!matches.some((m:any)=>m.status==='completed'&&Math.max(Number(m.team_a_score||0),Number(m.team_b_score||0))===target))return Response.json({error:`At least one court must have reached ${target}.`},{status:409});
  }
+
+ // Preset Finish: optional, host-authored court assignments instead of sporting movement.
+ // No change to prior rounds; normal preparation remains the default without presetIndex.
+ if(body.presetIndex!==undefined){
+  if(session.scoring_mode!=='timed')return Response.json({error:'Preset Finish requires timed scoring.'},{status:409});
+  const index=Number(body.presetIndex);if(![1,2].includes(index))return Response.json({error:'Invalid preset number.'},{status:400});
+  let configuration:any;try{configuration=JSON.parse(session.preset_finish_json||'{}')}catch{return Response.json({error:'Preset configuration invalid.'},{status:409});}
+  const presets=configuration.presets||[],preset=presets[index-1];if(!preset)return Response.json({error:'Preset not saved.'},{status:409});
+  if(index===2){const prior=(await retry('prior preset round',()=>base44.asServiceRole.entities.KotcRound.filter({session_id:session.id,preset_finish_index:1}))).some((r:any)=>['started','completed'].includes(r.status));if(!prior)return Response.json({error:'Play Preset 1 before Preset 2.'},{status:409});}
+  const priorPresets=await retry('preset history',()=>base44.asServiceRole.entities.KotcRound.filter({session_id:session.id}));if(priorPresets.some((r:any)=>Number(r.preset_finish_index)===index&&!['abandoned','superseded'].includes(r.status)))return Response.json({error:`Preset ${index} has already been used.`},{status:409});
+  const people=await retry('preset participants',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}));
+  const eligible=people.filter((p:any)=>['registered','confirmed','present','leaving_early'].includes(p.status)&&!(p.scheduled_departure_at&&Date.parse(p.scheduled_departure_at)<=Date.now())&&!(p.availability_effective_from_round&&Number(p.availability_effective_from_round)<=fromRoundNumber+1&&p.status==='leaving_early'));
+  const allowedIds=new Set(eligible.map((p:any)=>String(p.id)));const courts=preset.courts||[];
+  const maxCourts=Math.min(Number(session.available_court_limit||session.venue_court_limit||4),Math.floor(eligible.length/4));
+  if(!Array.isArray(courts)||courts.length!==maxCourts)return Response.json({error:`Preset needs ${maxCourts} courts.`},{status:400});
+  const ids=courts.flatMap((c:any)=>[...(c.A||[]),...(c.B||[])]).map(String);
+  if(courts.some((c:any)=>c.A?.length!==2||c.B?.length!==2)||ids.length!==maxCourts*4||new Set(ids).size!==ids.length||ids.some((id:string)=>!allowedIds.has(id)))return Response.json({error:'Preset contains incomplete, duplicate or unavailable player assignments.'},{status:400});
+  const minutes=Number(preset.minutes);if(!Number.isInteger(minutes)||minutes<1||minutes>60)return Response.json({error:'Preset duration must be 1–60 minutes.'},{status:400});
+  const nextNumber=fromRoundNumber+1,commandId=String(body.commandId||`preset-${Date.now()}`),now=nowIso();
+  const existing=(await retry('existing preset round',()=>base44.asServiceRole.entities.KotcRound.filter({session_id:session.id,round_number:nextNumber}))).find((r:any)=>!['superseded','abandoned'].includes(r.status));
+  if(existing)return Response.json({error:'Next round is already prepared; preset activation is unavailable.'},{status:409});
+  const round=await retry('create preset round',()=>base44.asServiceRole.entities.KotcRound.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,round_number:nextNumber,status:'proposed',proposal_revision:1,active_court_count:maxCourts,bench_count:eligible.length-ids.length,preset_finish_index:index,generated_by_command_id:commandId}));
+  const slots=courts.flatMap((court:any,i:number)=>['A','B'].flatMap(side=>court[side].map((id:string,j:number)=>({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,round_id:round.id,round_number:nextNumber,ladder_court_rank:i+1,team_side:side,slot_number:j+1,participant_id:String(id),assignment_type:'manual_override',assignment_revision:1}))));
+  const matchRows=courts.map((court:any,i:number)=>({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,round_id:round.id,round_number:nextNumber,ladder_court_rank:i+1,team_a_participant_ids:court.A.map(String),team_b_participant_ids:court.B.map(String),status:'scheduled',revision:0,correction_count:0}));
+  const newSlots=await retry('preset slots',()=>base44.asServiceRole.entities.KotcRoundSlot.bulkCreate(slots));const newMatches=await retry('preset matches',()=>base44.asServiceRole.entities.KotcMatch.bulkCreate(matchRows));
+  if(currentRound.status!=='completed')await retry('complete previous round',()=>base44.asServiceRole.entities.KotcRound.update(currentRound.id,{status:'completed',completed_at:now}));
+  const updatedSession=await retry('activate preset',()=>base44.asServiceRole.entities.KotcSession.update(session.id,{revision:Number(session.revision||0)+1,last_command_id:commandId,current_round_number:nextNumber,current_round_id:round.id,play_minutes:minutes}));
+  return Response.json({success:true,session:updatedSession,round,slots:newSlots,matches:newMatches,participants:people,presetFinish:true,runtimeVersion:RUNTIME_VERSION});
+ }
  const playable=matches.filter((m:any)=>m.status==='completed');if(!playable.length)return Response.json({error:'No completed sporting results are available.'},{status:409});
  const participants=await retry('participants read',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}));const fixedPairs=await retry('fixed pairs read',()=>base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id,status:'active'}));const locks=(fixedPairs||[]).filter((p:any)=>p.pair_source==='host_selected'),nextNumber=fromRoundNumber+1;
  const eligible=participants.filter((p:any)=>{if(['injured','left','no_show','withdrawn','replaced','late_not_arrived'].includes(p.status))return false;if(p.scheduled_departure_at&&Date.parse(p.scheduled_departure_at)<=Date.now())return false;const effective=Number(p.availability_effective_from_round||0),again=Number(p.available_again_from_round||0);if(['temporarily_unavailable','voluntary_rest'].includes(p.status))return again>0&&nextNumber>=again;if(p.status==='leaving_early')return !(effective>0&&nextNumber>=effective);return ['registered','confirmed','present'].includes(p.status);});
