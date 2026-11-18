@@ -30,8 +30,7 @@ export default function KotcPlayerManagement({ tournament, players, allPlayers, 
   const close = () => { setMode(null); setSelectedIds([]); setReplaceFrom(''); setReplaceTo(''); setReplaceSearch(''); setNewName(''); };
   const updateTournament = async (patch) => {
     if (delegatedHost) {
-      if(patch.kotc_guest_roster!==undefined)throw Error('Guest changes are not yet supported in delegated setup; use registered players.');
-      const res=await base44.functions.invoke('manageKotcEventHost',{action:'roster',tournamentId:tournament.id,player_ids:patch.player_ids});
+      const res=await base44.functions.invoke('manageKotcEventHost',{action:'roster',tournamentId:tournament.id,player_ids:patch.player_ids??tournament.player_ids??[],kotc_guest_roster:patch.kotc_guest_roster});
       if(res.data?.error)throw Error(res.data.error);return res.data;
     }
     if (isTrialHost) {

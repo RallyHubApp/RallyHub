@@ -23,9 +23,11 @@ Deno.serve(async(req)=>{try{
  }
  if(action==='roster'){
   if(session)return Response.json({error:'Round 1 already created; use live roster controls'},{status:409});
-  const ids=body.player_ids;if(!Array.isArray(ids)||ids.length>200||ids.some((x:any)=>typeof x!=='string'))return Response.json({error:'Invalid roster'},{status:400});
+  const ids=body.player_ids;const guests=body.kotc_guest_roster===undefined?(t.kotc_guest_roster||[]):body.kotc_guest_roster;
+  if(!Array.isArray(guests)||guests.length>80||guests.some((g:any)=>!/^guest_[a-zA-Z0-9_-]{8,70}$/.test(String(g.guest_id||''))||typeof g.display_name!=='string'||!g.display_name.trim()||g.display_name.length>100))return Response.json({error:'Invalid guest roster'},{status:400});
+  if(!Array.isArray(ids)||ids.length>200||ids.some((x:any)=>typeof x!=='string'))return Response.json({error:'Invalid roster'},{status:400});
   const known=new Set((await b.asServiceRole.entities.Player.filter({tenant_id:t.tenant_id,club_id:t.host_club_id})).map((p:any)=>p.id));if(ids.some((x:string)=>!known.has(x)))return Response.json({error:'Player outside this club'},{status:403});
-  await b.asServiceRole.entities.Tournament.update(id,{player_ids:[...new Set(ids)],kotc_player_order:[]});return Response.json({success:true});
+  await b.asServiceRole.entities.Tournament.update(id,{player_ids:[...new Set(ids)],kotc_guest_roster:guests,kotc_player_order:[]});return Response.json({success:true});
  }
  return Response.json({error:'Unsupported action'},{status:400});
 }catch(e){return Response.json({error:e?.message||'Event host action failed'},{status:500});}});

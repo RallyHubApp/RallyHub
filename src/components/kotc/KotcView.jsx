@@ -50,7 +50,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient,
 
   const updateTournamentRoster = async (patch) => {
     if (delegatedHost) {
-      const res=await base44.functions.invoke('manageKotcEventHost',{action:'roster',tournamentId:tournament.id,player_ids:patch.player_ids});
+      const res=await base44.functions.invoke('manageKotcEventHost',{action:'roster',tournamentId:tournament.id,player_ids:patch.player_ids??tournament.player_ids??[],kotc_guest_roster:patch.kotc_guest_roster});
       if(res.data?.error)throw Error(res.data.error);return res.data;
     }
     if (isTrialHost) {
