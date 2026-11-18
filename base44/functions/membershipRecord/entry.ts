@@ -360,7 +360,10 @@ Deno.serve(async(req)=>{
       const accountEmail=lower(user.email), recordEmail=lower(person?.primary_email||player.email);
       if(!accountEmail||accountEmail!==recordEmail) return Response.json({error:'For security, members may only link a record with the same verified email address.'},{status:409});
       const accountName=nameKey(user.full_name||user.display_name||''), recordName=nameKey(person?.full_name||player.full_name||'');
-      const nameMismatch=!!(accountName&&recordName&&accountName.replace(/\s+/g,'')!==recordName.replace(/\s+/g,''));
+      // Registration usernames (often the email local-part) are not member names.
+      // The canonical display identity always comes from the paid membership Person.
+      const usernameLike=!!accountEmail&&accountName.replace(/\s+/g,'')===nameKey(accountEmail.split('@')[0]).replace(/\s+/g,'');
+      const nameMismatch=!!(accountName&&recordName&&!usernameLike&&accountName.replace(/\s+/g,'')!==recordName.replace(/\s+/g,''));
       const suppliedDob=clean(body.verifyDateOfBirth,20);
       const suppliedMobile=clean(body.verifyMobile,80).replace(/\s+/g,'');
       const recordMobile=clean(person?.mobile||player.phone,80).replace(/\s+/g,'');
@@ -673,12 +676,25 @@ Deno.serve(async(req)=>{
       if(!target) return Response.json({error:'User account not found'},{status:404});
       const person=await first(base44,'Person',{id:personId,tenant_id:tenantId});
       const membership=await first(base44,'ClubMembership',{tenant_id:tenantId,club_id:clubId,person_id:personId});
-      const player=await first(base44,'Player',{tenant_id:tenantId,club_id:clubId,person_id:personId});
-      if(!person||!membership||!player) return Response.json({error:'Complete member/person/player record not found in this club.'},{status:404});
+      let player=await first(base44,'Player',{tenant_id:tenantId,club_id:clubId,person_id:personId});
+      if(!person||!membership) return Response.json({error:'Active membership or person record not found in this club.'},{status:404});
+      // Legacy player rows can lack person_id. Resolve by a unique exact registered
+      // membership email only; never guess by username or create duplicate players.
+      if(!player){
+        const email=lower(person.primary_email);
+        if(email){
+          const matches=await base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId,email});
+          if(matches.length===1&&!matches[0].person_id)player=matches[0];
+        }
+      }
+      if(!player)return Response.json({error:'Player identity is missing or ambiguous. Review the member record before linking.'},{status:409});
       const accountEmail=lower(target.email), recordEmail=lower(person.primary_email||player.email);
       const accountName=nameKey(target.full_name||target.display_name||''), recordName=nameKey(person.full_name||player.full_name||'');
       const emailMismatch=!!(accountEmail&&recordEmail&&accountEmail!==recordEmail);
-      const nameMismatch=!!(accountName&&recordName&&accountName.replace(/\s+/g,'')!==recordName.replace(/\s+/g,''));
+      // Registration usernames (often the email local-part) are not member names.
+      // The canonical display identity always comes from the paid membership Person.
+      const usernameLike=!!accountEmail&&accountName.replace(/\s+/g,'')===nameKey(accountEmail.split('@')[0]).replace(/\s+/g,'');
+      const nameMismatch=!!(accountName&&recordName&&!usernameLike&&accountName.replace(/\s+/g,'')!==recordName.replace(/\s+/g,''));
       const suppliedDob=clean(body.verifyDateOfBirth,20);
       const suppliedMobile=clean(body.verifyMobile,80).replace(/\D+/g,'');
       const recordMobile=clean(person.mobile||player.phone,80).replace(/\D+/g,'');
@@ -698,8 +714,8 @@ Deno.serve(async(req)=>{
       if(otherPlayer&&String(otherPlayer.id)!==String(player.id)) return Response.json({error:'This user account is already linked to a different player record.'},{status:409});
       if(player.user_id&&String(player.user_id)!==String(userId)) return Response.json({error:'This player record is already linked to another user.'},{status:409});
       await base44.asServiceRole.entities.Person.update(person.id,{linked_user_id:userId});
-      await base44.asServiceRole.entities.Player.update(player.id,{user_id:userId,linked_user_email:accountEmail});
-      if(nameMismatch){
+      await base44.asServiceRole.entities.Player.update(player.id,{person_id:personId,user_id:userId,linked_user_email:accountEmail});
+      if(nameMismatch&&!usernameLike){
         const aliases=Array.from(new Set([...(membership.alternate_names||[]), clean(target.full_name||target.display_name,180)].filter(Boolean)));
         await base44.asServiceRole.entities.ClubMembership.update(membership.id,{alternate_names:aliases});
       }
@@ -709,7 +725,7 @@ Deno.serve(async(req)=>{
       const accessData={tenant_id:tenantId,club_id:clubId,user_id:userId,person_id:person.id,player_id:player.id,permission_bundle:'member',relationship_type:'member',status:'active',approved_by_user_id:user.id,approved_at:now};
       if(existingAccess) await base44.asServiceRole.entities.ClubUserAccess.update(existingAccess.id,accessData);
       else await base44.asServiceRole.entities.ClubUserAccess.create(accessData);
-      await base44.asServiceRole.entities.User.update(userId,{account_scope:'club',approval_status:'approved',active_tenant_id:tenantId,active_club_id:clubId,active_club_role:'member',security_context_updated_at:now});
+      await base44.asServiceRole.entities.User.update(userId,{full_name:person.full_name||player.full_name,account_scope:'club',approval_status:'approved',active_tenant_id:tenantId,active_club_id:clubId,active_club_role:'member',security_context_updated_at:now});
       try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:tenantId,club_id:clubId,user_id:user.id,action:'member_account_connected',entity_type:'Person',entity_id:person.id,scope_type:'Club',scope_id:clubId,after_state:JSON.stringify({target_user_id:userId,player_id:player.id,email_match:!emailMismatch,name_mismatch:nameMismatch,verification:adminAttested?'admin_identity_confirmation':dobMatch?'dob':mobileMatch?'mobile':'matching_account',login_email:accountEmail,membership_email:recordEmail,login_mobile:loginMobile||null,membership_mobile:recordMobile||null}),reason:adminAttested?'Administrator explicitly reviewed account versus membership details and confirmed recognised member identity':'Administrator connected matching member account'});}catch{}
       return Response.json({success:true,user_id:userId,person_id:person.id,player_id:player.id,name_mismatch:nameMismatch,email_mismatch:emailMismatch,verification:adminAttested?'admin_identity_confirmation':dobMatch?'dob':mobileMatch?'mobile':'matching_account'});
     }

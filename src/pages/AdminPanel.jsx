@@ -1356,7 +1356,7 @@ Brian`;
     const registeredEmail = String(targetUser.email || '').trim();
     const membershipEmail = String(player.email || '').trim();
     const emailDiffers = registeredEmail.toLowerCase() !== membershipEmail.toLowerCase();
-    const requiresConfirmation = confirmNameMismatch || emailDiffers;
+    const requiresConfirmation = emailDiffers || (confirmNameMismatch && !((targetUser.full_name || '').toLowerCase().replace(/[^a-z0-9]/g, '') === registeredEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')));
     if (requiresConfirmation && !window.confirm(`Verify existing member identity\n\nRallyHub account: ${targetUser.full_name || 'Not supplied'}\nMembership name: ${player.full_name}\n\nRallyHub login email: ${registeredEmail}\nMembership email: ${membershipEmail || 'Not recorded'}\n\nOnly approve if you personally know these records belong to the same person. This decision is logged. Contact details will NOT be overwritten automatically.\n\nApprove and connect?`)) return;
     setConnectingMemberAccount(targetUser.id);
     setApprovalFeedback({ userId: targetUser.id, type: 'progress', text: 'Verifying membership and connecting RallyHub account…' });
@@ -2944,7 +2944,8 @@ Brian`;
                     const candidate = membershipCandidateForUser(u);
                     const hasActiveClubAccess = allClubUserAccesses.some(access => access.user_id === u.id && access.status === 'active' && access.club_id === user?.active_club_id);
                     const fullyConnected = u.approval_status === 'approved' && hasActiveClubAccess && !!u.active_club_id;
-                    const nameMismatch = !!candidate &&
+                    const usernameFromEmail = normaliseIdentityName(u.full_name || u.display_name).replace(/\s/g, '') === normaliseIdentityName(String(u.email || '').split('@')[0]).replace(/\s/g, '');
+                    const nameMismatch = !!candidate && !usernameFromEmail &&
                       normaliseIdentityName(u.full_name || u.display_name) &&
                       normaliseIdentityName(candidate.full_name) &&
                       normaliseIdentityName(u.full_name || u.display_name) !== normaliseIdentityName(candidate.full_name);
