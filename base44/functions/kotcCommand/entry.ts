@@ -459,10 +459,25 @@ Deno.serve(async (req) => {
       const projected=eligible.map((p:any)=>{const onCourt=currentCourtIds.has(p.id),onCourt1=court1Ids.has(p.id),wonCourt1=onCourt1&&currentCourt1Winners.has(String(p.id));return{...p,rounds_played:Number(p.rounds_played||0)+(onCourt?1:0),fairness_benches:Number(p.fairness_benches||0)+(currentBenchIds.has(p.id)?1:0),consecutive_rounds_played:onCourt?Number(p.consecutive_rounds_played||0)+1:0,consecutive_court1_rounds:wonCourt1?Number(p.consecutive_court1_rounds||0)+1:0,court1_rounds:Number(p.court1_rounds||0)+(onCourt1?1:0),_previousBench:currentBenchIds.has(p.id)};});
       const benchPlaces=eligible.length-activeCourts*4;
       const lockedIds=new Set(activeLocks.flatMap((l:any)=>[String(l.participant1_id),String(l.participant2_id)]));
-      // LOCKED BENCH ORDER: fewest prior benches first; bottom of ladder first; Court 1 winners
-      // protected until 3 consecutive King Court wins; pair locks protected where alternatives exist.
-      const benchEligible=[...projected].filter((p:any)=>!(court1Ids.has(p.id)&&currentCourt1Winners.has(String(p.id))&&Number(p.consecutive_court1_rounds||0)<3));const benchPool=benchEligible.length>=benchPlaces?benchEligible:[...projected];
-      const selected=benchPlaces===0?[]:[...benchPool].sort((a:any,b:any)=>Number(lockedIds.has(String(a.id)))-Number(lockedIds.has(String(b.id)))||Number(a.fairness_benches)-Number(b.fairness_benches)||Number(a._previousBench)-Number(b._previousBench)||Number(destinationRank[b.id]||0)-Number(destinationRank[a.id]||0)||Number(currentCourtRank[b.id]||0)-Number(currentCourtRank[a.id]||0)||Number(b.consecutive_rounds_played)-Number(a.consecutive_rounds_played)||Number(b.rounds_played)-Number(a.rounds_played)||stableHash(`${session.random_seed}|r${nextNumber}|${a.id}`)-stableHash(`${session.random_seed}|r${nextNumber}|${b.id}`)).slice(0,benchPlaces).map((p:any)=>p.id);
+      // Fairness-first: bench history outranks sporting results. Locked pairs are
+      // inseparable groups; if their constraints prevent a fair allocation, fail
+      // safely rather than silently splitting a pair.
+      const groups:any[]=[];const grouped=new Set<string>();
+      for(const lock of activeLocks){const ids=[String(lock.participant1_id),String(lock.participant2_id)];if(ids.every(id=>projected.some((p:any)=>String(p.id)===id))){groups.push(projected.filter((p:any)=>ids.includes(String(p.id))));ids.forEach(id=>grouped.add(id));}}
+      for(const p of projected)if(!grouped.has(String(p.id)))groups.push([p]);
+      const ordered=groups.sort((a:any,b:any)=>Math.min(...a.map((p:any)=>Number(p.fairness_benches||0)))-Math.min(...b.map((p:any)=>Number(p.fairness_benches||0)))||Number(a.some((p:any)=>p._previousBench))-Number(b.some((p:any)=>p._previousBench))||stableHash(`${session.random_seed}|r${nextNumber}|${a[0].id}`)-stableHash(`${session.random_seed}|r${nextNumber}|${b[0].id}`));
+      // Exact subset selection for up to four bench places (and small rosters).
+      let best:any=null;
+      const choose=(at:number,ids:string[],penalty:number)=>{
+        if(ids.length===benchPlaces){if(!best||penalty<best.penalty)best={ids:[...ids],penalty};return;}
+        if(at>=ordered.length||ids.length>benchPlaces)return;
+        const g=ordered[at];const cost=g.reduce((sum:number,p:any)=>sum+Number(p.fairness_benches||0)*10000+Number(p._previousBench)*1000,0);
+        if(ids.length+g.length<=benchPlaces)choose(at+1,[...ids,...g.map((p:any)=>String(p.id))],penalty+cost);
+        choose(at+1,ids,penalty);
+      };
+      choose(0,[],0);
+      if(!best)return Response.json({error:'Locked pairs prevent a valid bench allocation; host must adjust pair locks or court count.'},{status:409});
+      const selected:string[]=best.ids;
       const selectedSet=new Set(selected); let finalSlots:any[]=[];
       if(activeCourts===currentActiveCourts){
         const destinations=sportingDestinations(courts,results); const sportingSlots:any[]=[];
