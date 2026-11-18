@@ -17,9 +17,9 @@ Deno.serve(async(req)=>{try{
   const email=String(body.email||'').trim().toLowerCase();const users=await b.asServiceRole.entities.User.list('-created_date',500);const target=(users||[]).find((u:any)=>String(u.email||'').toLowerCase()===email);
   if(!target)return Response.json({error:'Host must have an existing RallyHub account'},{status:404});
   const prior=grants.find((g:any)=>g.role==='event_host'&&String(g.user_id)===String(target.id));
-  if(action==='revoke'){if(prior)await b.asServiceRole.entities.TournamentUserAccess.update(prior.id,{status:'revoked'});return Response.json({success:true});}
+  if(action==='revoke'){if(prior)await b.asServiceRole.entities.TournamentUserAccess.update(prior.id,{status:'revoked'});if(session){const live=await b.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,user_id:target.id,status:'active'});for(const g of live||[])await b.asServiceRole.entities.KotcSessionAccess.update(g.id,{status:'revoked'});}return Response.json({success:true});}
   if(prior)return Response.json({success:true,alreadyGranted:true});
-  await b.asServiceRole.entities.TournamentUserAccess.create({tenant_id:t.tenant_id,tournament_id:id,user_id:target.id,role:'event_host',status:'active',granted_by_user_id:user.id,starts_at:new Date().toISOString()});return Response.json({success:true});
+  await b.asServiceRole.entities.TournamentUserAccess.create({tenant_id:t.tenant_id,tournament_id:id,user_id:target.id,role:'event_host',status:'active',granted_by_user_id:user.id,starts_at:new Date().toISOString()});if(session){const live=await b.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,user_id:target.id,status:'active'});if(!live?.length)await b.asServiceRole.entities.KotcSessionAccess.create({tenant_id:t.tenant_id,club_id:t.host_club_id,session_id:session.id,user_id:target.id,role:'session_host',status:'active',starts_at:new Date().toISOString(),granted_by_user_id:user.id});}return Response.json({success:true});
  }
  if(action==='roster'){
   if(session)return Response.json({error:'Round 1 already created; use live roster controls'},{status:409});
