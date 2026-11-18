@@ -1,3 +1,4 @@
+import { normaliseKotcName } from './kotcNameSearch';
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -17,7 +18,7 @@ export default function KotcPlayerManagement({ tournament, players, allPlayers, 
     .filter(p => !tournament.player_ids?.includes(p.id))
     .sort((a,b) => String(a.full_name || '').localeCompare(String(b.full_name || ''), 'en', { sensitivity:'base' }));
   const replacementMatches = replaceSearch.trim()
-    ? availablePlayers.filter(p => String(p.full_name || '').toLowerCase().includes(replaceSearch.trim().toLowerCase()))
+    ? availablePlayers.filter(p => normaliseKotcName(p.full_name).includes(normaliseKotcName(replaceSearch)))
     : availablePlayers;
   const guestRoster = tournament.kotc_guest_roster || [];
   const guestIds = new Set(guestRoster.map(g => g.guest_id));

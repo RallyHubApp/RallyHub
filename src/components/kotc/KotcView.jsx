@@ -1,3 +1,4 @@
+import { normaliseKotcName } from './kotcNameSearch';
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -47,7 +48,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient,
     .sort((a,b) => String(a.full_name || '').localeCompare(String(b.full_name || ''), 'en', { sensitivity:'base' })), [allPlayers]);
   const availablePlayers = operationalPlayers.filter(p => !tournament.player_ids?.includes(p.id));
   const searchedAvailablePlayers = playerSearch.trim()
-    ? availablePlayers.filter(p => String(p.full_name || '').toLowerCase().includes(playerSearch.trim().toLowerCase()))
+    ? availablePlayers.filter(p => normaliseKotcName(p.full_name).includes(normaliseKotcName(playerSearch)))
     : availablePlayers;
 
   const updateTournamentRoster = async (patch) => {
