@@ -15,7 +15,7 @@ import useKotcRole from '@/hooks/useKotcRole';
 import KotcPlayerManagement from './KotcPlayerManagement';
 import KotcEventHostAccess from './KotcEventHostAccess';
 
-export default function KotcView({ tournament, players, allPlayers, queryClient }) {
+export default function KotcView({ tournament, players, allPlayers, queryClient, delegatedHost=false }) {
   const isSandbox = String(tournament?.description || '').includes('RALLYHUB_KOTC_SANDBOX_V1');
   const [addPlayersOpen, setAddPlayersOpen] = useState(false);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
@@ -24,7 +24,8 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
   const [xlsxOpen, setXlsxOpen] = useState(false);
   const [selfRegisterOpen, setSelfRegisterOpen] = useState(false);
   const [rosterOpen, setRosterOpen] = useState(true);
-  const { canManagePlayers, isTrialHost } = useKotcRole();
+  const { canManagePlayers: roleCanManage, isTrialHost } = useKotcRole();
+  const canManagePlayers=delegatedHost||roleCanManage;
   const { data: kotcState } = useQuery({
     queryKey: ['kotc-shell-state', tournament.id],
     queryFn: async () => (await base44.functions.invoke('getKotcV2State', { tournamentId: tournament.id })).data,
@@ -47,6 +48,10 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
     : availablePlayers;
 
   const updateTournamentRoster = async (patch) => {
+    if (delegatedHost) {
+      const res=await base44.functions.invoke('manageKotcEventHost',{action:'roster',tournamentId:tournament.id,player_ids:patch.player_ids});
+      if(res.data?.error)throw Error(res.data.error);return res.data;
+    }
     if (isTrialHost) {
       const res = await base44.functions.invoke('trialJourney', {
         action: 'update_kotc_tournament',
@@ -74,7 +79,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
 
   return (
     <div id="kotc-start-section" className="space-y-4">
-      {!isSandbox && <KotcEventHostAccess tournamentId={tournament.id}/>}
+      {!isSandbox && !delegatedHost && <KotcEventHostAccess tournamentId={tournament.id}/>}
       {isSandbox && <div data-testid="kotc-sandbox-banner" className="rounded-xl border-2 border-amber-400/50 bg-amber-500/10 p-3 sm:p-4">
         <p className="text-xs font-bold uppercase tracking-[.18em] text-amber-600">TEST SANDBOX — isolated</p>
         <p className="text-sm font-semibold mt-1">18 dummy guests only · excluded from member stats, KOTC history and club leaderboards</p>
@@ -125,7 +130,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
             <div className="flex gap-2 flex-wrap">
               <Button variant="default" className="min-h-11" onClick={() => setAddPlayersOpen(true)} data-testid="kotc-add-player-visible"><UserPlus className="w-4 h-4 mr-1" />Add Player</Button>
               {!isTrialHost && <Button variant="outline" className="min-h-11" onClick={() => setXlsxOpen(true)}><FileSpreadsheet className="w-4 h-4 mr-1" />Import Spond XLSX</Button>}
-              <KotcPlayerManagement tournament={tournament} players={sessionPlayers} allPlayers={operationalPlayers} queryClient={queryClient} isTrialHost={isTrialHost} />
+              <KotcPlayerManagement tournament={tournament} players={sessionPlayers} allPlayers={operationalPlayers} queryClient={queryClient} isTrialHost={isTrialHost} delegatedHost={delegatedHost} />
             </div>
             {sessionPlayers.length === 0 ? <div className="text-center py-4"><Users className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2"/><p className="text-xs text-muted-foreground">No players on this session roster yet.</p></div> : <div className="grid sm:grid-cols-2 gap-1 max-h-64 overflow-auto">
               {sessionPlayers.map((p, i) => <div key={p.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 bg-secondary/30"><span className="text-[10px] font-bold text-muted-foreground w-5">{i + 1}</span><span className="text-xs font-medium flex-1 truncate">{p.full_name}</span>{p.is_guest && <span className="text-[9px] uppercase rounded border px-1.5 py-0.5 text-amber-500 border-amber-400/30">Guest</span>}{p.dupr_rating != null && <span className="text-[10px] font-mono text-primary">DUPR {Number(p.dupr_rating).toFixed(2)}</span>}</div>)}
