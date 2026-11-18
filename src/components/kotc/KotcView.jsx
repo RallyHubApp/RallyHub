@@ -13,6 +13,7 @@ import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 import PlayerRegisterModal from '@/components/registration/PlayerRegisterModal';
 import useKotcRole from '@/hooks/useKotcRole';
 import KotcPlayerManagement from './KotcPlayerManagement';
+import KotcEventHostAccess from './KotcEventHostAccess';
 
 export default function KotcView({ tournament, players, allPlayers, queryClient }) {
   const isSandbox = String(tournament?.description || '').includes('RALLYHUB_KOTC_SANDBOX_V1');
@@ -73,6 +74,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
 
   return (
     <div id="kotc-start-section" className="space-y-4">
+      {!isSandbox && <KotcEventHostAccess tournamentId={tournament.id}/>}
       {isSandbox && <div data-testid="kotc-sandbox-banner" className="rounded-xl border-2 border-amber-400/50 bg-amber-500/10 p-3 sm:p-4">
         <p className="text-xs font-bold uppercase tracking-[.18em] text-amber-600">TEST SANDBOX — isolated</p>
         <p className="text-sm font-semibold mt-1">18 dummy guests only · excluded from member stats, KOTC history and club leaderboards</p>

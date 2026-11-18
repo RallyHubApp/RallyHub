@@ -63,6 +63,7 @@ const PublicGuestSessionBooking = lazy(() => import('@/pages/PublicGuestSessionB
 const GuestBookingChange = lazy(() => import('@/pages/GuestBookingChange'));
 const PublicGuestRequest = lazy(() => import('@/pages/PublicGuestRequest'));
 const KotcHostSession = lazy(() => import('@/pages/KotcHostSession'));
+const KotcEventHost = lazy(() => import('@/pages/KotcEventHost'));
 const PublicKotcResults = lazy(() => import('@/pages/PublicKotcResults'));
 const PublicKotcScorer = lazy(() => import('@/pages/PublicKotcScorer'));
 const PublicKotcParticipantResult = lazy(() => import('@/pages/PublicKotcParticipantResult'));
@@ -343,6 +344,7 @@ function App() {
             <Route element={<ProtectedRoute fallback={<LoadingScreen />} />}>
               <Route path="/trial/activate" element={<TrialActivate />} />
               <Route path="/kotc-host/:sessionId" element={<KotcHostSession />} />
+              <Route path="/kotc-event-host/:tournamentId" element={<KotcEventHost />} />
               <Route path="/test-club-entry" element={<TestClubEntry />} />
               <Route path="/app/*" element={<AppAccessGate />} />
               <Route path="/players" element={<Navigate to="/app/players" replace />} />
