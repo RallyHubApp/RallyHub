@@ -466,16 +466,10 @@ Deno.serve(async (req) => {
       for(const lock of activeLocks){const ids=[String(lock.participant1_id),String(lock.participant2_id)];if(ids.every(id=>projected.some((p:any)=>String(p.id)===id))){groups.push(projected.filter((p:any)=>ids.includes(String(p.id))));ids.forEach(id=>grouped.add(id));}}
       for(const p of projected)if(!grouped.has(String(p.id)))groups.push([p]);
       const ordered=groups.sort((a:any,b:any)=>Math.min(...a.map((p:any)=>Number(p.fairness_benches||0)))-Math.min(...b.map((p:any)=>Number(p.fairness_benches||0)))||Number(a.some((p:any)=>p._previousBench))-Number(b.some((p:any)=>p._previousBench))||stableHash(`${session.random_seed}|r${nextNumber}|${a[0].id}`)-stableHash(`${session.random_seed}|r${nextNumber}|${b[0].id}`));
-      // Exact subset selection for up to four bench places (and small rosters).
-      let best:any=null;
-      const choose=(at:number,ids:string[],penalty:number)=>{
-        if(ids.length===benchPlaces){if(!best||penalty<best.penalty)best={ids:[...ids],penalty};return;}
-        if(at>=ordered.length||ids.length>benchPlaces)return;
-        const g=ordered[at];const cost=g.reduce((sum:number,p:any)=>sum+Number(p.fairness_benches||0)*10000+Number(p._previousBench)*1000,0);
-        if(ids.length+g.length<=benchPlaces)choose(at+1,[...ids,...g.map((p:any)=>String(p.id))],penalty+cost);
-        choose(at+1,ids,penalty);
-      };
-      choose(0,[],0);
+      // Bounded dynamic programming: at most benchPlaces + 1 states per group.
+      const states:any[]=Array(benchPlaces+1).fill(null);states[0]={ids:[],penalty:0};
+      for(const g of ordered){const cost=g.reduce((sum:number,p:any)=>sum+Number(p.fairness_benches||0)*10000+Number(p._previousBench)*1000,0);for(let n=benchPlaces;n>=g.length;n--){const prior=states[n-g.length];if(!prior)continue;const candidate={ids:[...prior.ids,...g.map((p:any)=>String(p.id))],penalty:prior.penalty+cost};if(!states[n]||candidate.penalty<states[n].penalty)states[n]=candidate;}}
+      const best=states[benchPlaces];
       if(!best)return Response.json({error:'Locked pairs prevent a valid bench allocation; host must adjust pair locks or court count.'},{status:409});
       const selected:string[]=best.ids;
       const selectedSet=new Set(selected); let finalSlots:any[]=[];
