@@ -85,6 +85,11 @@ Deno.serve(async(req)=>{try{
  // Trial hosts expire at the entitlement boundary. A live-event grace extension is
  // granted only by START ROUND after the first round genuinely starts before expiry.
  await retry('host access create',()=>base44.asServiceRole.entities.KotcSessionAccess.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,user_id:user.id,role:'session_host',status:'active',starts_at:now,ends_at:entitlementEnd,granted_by_user_id:user.id}));
+ // Preserve event-level host appointments when Round 1 is generated.
+ const assignedHosts=await retry('event host grants',()=>base44.asServiceRole.entities.TournamentUserAccess.filter({tournament_id:tournamentId,tenant_id:tournament.tenant_id,status:'active'}));
+ for(const grant of assignedHosts||[]){if(!['event_host','event_manager'].includes(grant.role)||String(grant.user_id)===String(user.id)||grant.starts_at&&Date.parse(grant.starts_at)>Date.now()||grant.ends_at&&Date.parse(grant.ends_at)<=Date.now())continue;
+  await retry('appointed host session access',()=>base44.asServiceRole.entities.KotcSessionAccess.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,user_id:grant.user_id,role:'session_host',status:'active',starts_at:now,ends_at:grant.ends_at||entitlementEnd,granted_by_user_id:user.id}));
+ }
  const lease=await retry('host lease create',()=>base44.asServiceRole.entities.KotcHostLease.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,holder_user_id:user.id,lease_revision:1,status:'active',acquired_at:now,last_heartbeat_at:now}));
  const updatedSession=await retry('session round pointer update',()=>base44.asServiceRole.entities.KotcSession.update(session.id,{current_round_id:round.id})); await retry('tournament session update',()=>base44.asServiceRole.entities.Tournament.update(tournament.id,{status:'In Progress',venue_id:venueId||tournament.venue_id,location:customLocation||tournament.location,name:sessionName,counts_toward_leaderboard:countsTowardLeaderboard}));
  return Response.json({success:true,session:updatedSession,round,participants,slots:createdSlots,matches:createdMatches,lease,partnershipPhases:phaseRecords,fixedPairs:fixedPairRecords});
