@@ -14,6 +14,7 @@ import PlayerRegisterModal from '@/components/registration/PlayerRegisterModal';
 import useKotcRole from '@/hooks/useKotcRole';
 import KotcPlayerManagement from './KotcPlayerManagement';
 import KotcEventHostAccess from './KotcEventHostAccess';
+import KotcDelegatedSpond from './KotcDelegatedSpond';
 
 export default function KotcView({ tournament, players, allPlayers, queryClient, delegatedHost=false }) {
   const isSandbox = String(tournament?.description || '').includes('RALLYHUB_KOTC_SANDBOX_V1');
@@ -74,6 +75,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient,
     setPlayerSearch('');
     setAddPlayersOpen(false);
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
+    if(delegatedHost)queryClient.invalidateQueries({queryKey:['kotc-event-host',tournament.id]});
     queryClient.invalidateQueries({ queryKey: ['players'] });
   };
 
@@ -104,6 +106,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient,
         </div>
       </GlassCard>
 
+      {delegatedHost && !isStarted && <KotcDelegatedSpond tournament={tournament} onImported={()=>{queryClient.invalidateQueries({queryKey:['kotc-event-host',tournament.id]});queryClient.invalidateQueries({queryKey:['tournament',tournament.id]});}}/>}
       {/* Pre-session roster: keep the normal path short. Spond refresh is the primary action;
           manual/XLSX tools and the player list are available only when explicitly opened. */}
       {!isStarted && (
@@ -114,7 +117,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient,
               <p className="text-xs text-muted-foreground mt-1">Check attendance and make your roster changes here before creating Round 1. Spond is an import, not a lock: remove no-shows, add or replace players, then review the draw.</p>
             </div>
             <div className="flex gap-2 flex-wrap">
-              {isSandbox ? <span className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-600">Dummy roster locked</span> : canManagePlayers ? <Button size="sm" onClick={() => setSpondOpen(true)}>
+              {isSandbox ? <span className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-600">Dummy roster locked</span> : canManagePlayers && !delegatedHost ? <Button size="sm" onClick={() => setSpondOpen(true)}>
                 <Download className="w-3 h-3 mr-1" /> Refresh from Spond
               </Button> : <Button size="sm" className="bg-primary text-primary-foreground gap-1" onClick={() => setSelfRegisterOpen(true)}>
                 <UserPlus className="w-3 h-3" /> Register to Play
@@ -129,7 +132,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient,
           {rosterOpen && canManagePlayers && !isSandbox && <div className="mt-4 pt-4 border-t border-border space-y-3" data-testid="kotc-visible-roster-tools">
             <div className="flex gap-2 flex-wrap">
               <Button variant="default" className="min-h-11" onClick={() => setAddPlayersOpen(true)} data-testid="kotc-add-player-visible"><UserPlus className="w-4 h-4 mr-1" />Add Player</Button>
-              {!isTrialHost && <Button variant="outline" className="min-h-11" onClick={() => setXlsxOpen(true)}><FileSpreadsheet className="w-4 h-4 mr-1" />Import Spond XLSX</Button>}
+              {!isTrialHost && !delegatedHost && <Button variant="outline" className="min-h-11" onClick={() => setXlsxOpen(true)}><FileSpreadsheet className="w-4 h-4 mr-1" />Import Spond XLSX</Button>}
               <KotcPlayerManagement tournament={tournament} players={sessionPlayers} allPlayers={operationalPlayers} queryClient={queryClient} isTrialHost={isTrialHost} delegatedHost={delegatedHost} />
             </div>
             {sessionPlayers.length === 0 ? <div className="text-center py-4"><Users className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2"/><p className="text-xs text-muted-foreground">No players on this session roster yet.</p></div> : <div className="grid sm:grid-cols-2 gap-1 max-h-64 overflow-auto">
@@ -149,6 +152,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient,
         tournament={tournament}
         onRegistered={() => {
           queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
+    if(delegatedHost)queryClient.invalidateQueries({queryKey:['kotc-event-host',tournament.id]});
           queryClient.invalidateQueries({ queryKey: ['players'] });
         }}
       />
@@ -161,6 +165,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient,
         onImported={() => {
           setXlsxOpen(false);
           queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
+    if(delegatedHost)queryClient.invalidateQueries({queryKey:['kotc-event-host',tournament.id]});
           queryClient.invalidateQueries({ queryKey: ['players'] });
         }}
       />
@@ -172,6 +177,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient,
         tournament={tournament}
         onImported={() => {
           queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
+    if(delegatedHost)queryClient.invalidateQueries({queryKey:['kotc-event-host',tournament.id]});
           queryClient.invalidateQueries({ queryKey: ['players'] });
         }}
       />
