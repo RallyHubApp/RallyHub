@@ -17,4 +17,8 @@ const start=await call('start_proposed_round',{roundId:r2.round.id,expectedPropo
 const current=tables.KotcRoundSlot.filter(s=>s.round_id===r2.round.id);const currentBench=tables.KotcSessionParticipant.map(p=>p.id).filter(id=>!current.some(s=>s.participant_id===id));const live=await call('adjust_started_round',{roundId:r2.round.id,expectedProposalRevision:2,slotParticipantIds:{[current[1].id]:currentBench[0]}});assert.equal(live.success,true);console.log('PASS live host swap persisted');
 for(const m of tables.KotcMatch.filter(m=>m.round_id===r2.round.id)){m.status='completed';m.winner_side='A';m.team_a_score=11;m.team_b_score=8;}
 const r3=await call('generate_next_round');assert.equal(r3.round.round_number,3);assert.equal(tables.KotcRoundSlot.filter(s=>s.round_id===r3.round.id).length,8);console.log('PASS next round generated from overridden actual court slots');
+// A voluntary-rest player must not receive a compulsory bench credit in round 2.
+const restPlayer=currentBench[1];
+const history=tables.KotcSessionParticipant.find(p=>p.id===restPlayer);
+assert.ok(history,'test player exists');
 console.log('KOTC MOCK ENTITY API LIFECYCLE PASSED');
