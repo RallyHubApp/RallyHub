@@ -419,7 +419,8 @@ Deno.serve(async (req) => {
   const hasTrialSpondManagerAccess = spondEntitlement.allowed && spondEntitlement.reason === 'active_entitlement';
   const hasInterclubManagerAccess = interclubEventId ? await interclubManagerAllowed(base44, user, interclubEventId) : false;
   const hasDirectoryEditorAccess = action === 'login' && listingSlug ? await directoryAccessAllowed(base44, user, clean(listingSlug, 180)) : false;
-  const isSpondManager = user.role === 'admin' || ['super_admin', 'admin', 'host'].includes(kotcRole) || hasTrialSpondManagerAccess || hasInterclubManagerAccess || hasDirectoryEditorAccess;
+  const eventHostSpond = String(action||'').startsWith('club_') && !!body.tournamentId && (await base44.asServiceRole.entities.TournamentUserAccess.filter({tournament_id:String(body.tournamentId),user_id:user.id,status:'active'})).some((g:any)=>['event_host','event_manager'].includes(g.role)&&(!g.starts_at||Date.parse(g.starts_at)<=Date.now())&&(!g.ends_at||Date.parse(g.ends_at)>Date.now()));
+  const isSpondManager = user.role === 'admin' || ['super_admin', 'admin', 'host'].includes(kotcRole) || hasTrialSpondManagerAccess || hasInterclubManagerAccess || hasDirectoryEditorAccess || eventHostSpond;
   if (!isSpondManager) {
     return Response.json({ error: 'Forbidden: Spond host/admin access or an active Spond trial entitlement is required' }, { status: 403 });
   }
