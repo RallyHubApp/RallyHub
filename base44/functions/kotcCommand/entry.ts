@@ -41,6 +41,10 @@ function enforcePersistentLocks(slots:any[],locks:any[],eligibleIds:Set<string>)
   }
   return out;
 }
+function pairWarnings(slots:any[],locks:any[]){
+  const teams=new Map<string,string[]>();for(const slot of slots){const key=`${slot.ladder_court_rank}-${slot.team_side}`;teams.set(key,[...(teams.get(key)||[]),String(slot.participant_id)]);}
+  return (locks||[]).filter((lock:any)=>{const a=String(lock.participant1_id),b=String(lock.participant2_id);return ![...teams.values()].some(ids=>ids.includes(a)&&ids.includes(b));}).filter((lock:any)=>slots.some((slot:any)=>String(slot.participant_id)===String(lock.participant1_id)||String(slot.participant_id)===String(lock.participant2_id))).map((lock:any)=>({pairId:lock.id,pairName:lock.pair_name||'',message:'Host override separates a locked partnership or benches one partner'}));
+}
 function sportingDestinations(courts:any[],results:any){const n=courts.length,w:any={},l:any={};for(const c of courts){const side=results[c.courtRank];w[c.courtRank]=side==='A'?[...c.teamA]:[...c.teamB];l[c.courtRank]=side==='A'?[...c.teamB]:[...c.teamA];}const d:any={};if(n===1){d[1]={pairOne:w[1],pairTwo:l[1]};return d;}for(let r=1;r<=n;r++){if(r===1)d[r]={pairOne:w[1],pairTwo:w[2]};else if(r===n)d[r]={pairOne:l[n-1],pairTwo:l[n]};else d[r]={pairOne:l[r-1],pairTwo:w[r+1]};}return d;}
 function allowedAccess(a:any, tenantId:string, sessionId:string) {
   if (!a || a.status !== 'active') return false;
@@ -451,12 +455,31 @@ Deno.serve(async (req) => {
       const results:any = Object.fromEntries(playableMatches.map((m:any)=>[Number(m.ladder_court_rank),m.winner_side]));
       const allCompleted = await withRateLimitRetry('prepare completed history',()=>base44.asServiceRole.entities.KotcMatch.filter({ session_id:session.id, status:'completed' }));
       const partnerCounts:any={}; for(const m of allCompleted){for(const pair of [m.team_a_participant_ids||[],m.team_b_participant_ids||[]])if(pair.length===2){const k=pairKey(pair[0],pair[1]);partnerCounts[k]=(partnerCounts[k]||0)+1;}}
+      // Derive fairness from actual round slots, not provisional bench proposals.
+      // This survives host overrides, abandoned proposals and changed court assignments.
+      const [historyRounds,historySlots,historyEvents]=await Promise.all([
+        base44.asServiceRole.entities.KotcRound.filter({session_id:session.id}),
+        base44.asServiceRole.entities.KotcRoundSlot.filter({session_id:session.id}),
+        base44.asServiceRole.entities.KotcParticipationEvent.filter({session_id:session.id})
+      ]);
+      const validHistory=(historyRounds||[]).filter((r:any)=>Number(r.round_number)<nextNumber&&['started','completed'].includes(r.status));
+      const historyByRound=new Map(validHistory.map((r:any)=>[String(r.id),r]));
+      const historyCourt=new Map<string,Set<string>>();
+      for(const slot of historySlots||[]){const key=String(slot.round_id);if(!historyByRound.has(key))continue;const ids=historyCourt.get(key)||new Set<string>();ids.add(String(slot.participant_id));historyCourt.set(key,ids);}
+      const voluntary=new Set((historyEvents||[]).filter((e:any)=>['voluntary_rest','voluntary_bench'].includes(e.event_type)).map((e:any)=>`${e.round_id}|${e.participant_id}`));
+      const lateArrivals=new Map<string,number>();for(const e of historyEvents||[])if(e.event_type==='late_arrival')lateArrivals.set(String(e.participant_id),Math.max(Number(e.effective_from_round||e.round_number||1),lateArrivals.get(String(e.participant_id))||0));
+      const actualBenchCounts=new Map<string,number>();const lastBenchIds=new Set<string>();
+      for(const r of validHistory){const onCourt=historyCourt.get(String(r.id))||new Set<string>();for(const p of participants){const id=String(p.id),joined=Math.max(Number(p.joined_at_round||1),lateArrivals.get(id)||0);if(Number(r.round_number)<joined||onCourt.has(id)||voluntary.has(`${r.id}|${id}`))continue;
+        // Players absent or withdrawn are not assumed to be compulsory benches.
+        if(['injured','left','no_show','withdrawn','replaced','late_not_arrived','temporarily_unavailable','voluntary_rest'].includes(p.status))continue;
+        actualBenchCounts.set(id,(actualBenchCounts.get(id)||0)+1);if(String(r.id)===String(currentRound.id))lastBenchIds.add(id);
+      }}
       const currentCourtIds=new Set(courts.flatMap((c:any)=>[...c.teamA,...c.teamB])); const currentBenchIds=new Set(eligible.map((p:any)=>p.id).filter((id:string)=>!currentCourtIds.has(id))); const court1Ids=new Set(courts.find((c:any)=>c.courtRank===1)?[...courts.find((c:any)=>c.courtRank===1).teamA,...courts.find((c:any)=>c.courtRank===1).teamB]:[]);
       const currentCourtRank:any={};for(const c of courts)for(const id of [...c.teamA,...c.teamB])currentCourtRank[id]=c.courtRank;
       const destinationRank:any={};for(const c of courts){const side=results[c.courtRank];const winners=side==='A'?c.teamA:c.teamB;const losers=side==='A'?c.teamB:c.teamA;for(const id of winners)destinationRank[id]=Math.max(1,c.courtRank-1);for(const id of losers)destinationRank[id]=Math.min(currentActiveCourts,c.courtRank+1);}for(const p of eligible)if(destinationRank[p.id]==null)destinationRank[p.id]=currentActiveCourts;
       // Court 1 is always King Court. This field now means consecutive COURT 1 WINS.
       const currentCourt1Match=playableMatches.find((m:any)=>Number(m.ladder_court_rank)===1);const currentCourt1Winners=new Set<string>();if(currentCourt1Match){const ids=currentCourt1Match.winner_side==='A'?(currentCourt1Match.team_a_participant_ids||[]):(currentCourt1Match.team_b_participant_ids||[]);for(const id of ids)currentCourt1Winners.add(String(id));}
-      const projected=eligible.map((p:any)=>{const onCourt=currentCourtIds.has(p.id),onCourt1=court1Ids.has(p.id),wonCourt1=onCourt1&&currentCourt1Winners.has(String(p.id));return{...p,rounds_played:Number(p.rounds_played||0)+(onCourt?1:0),fairness_benches:Number(p.fairness_benches||0)+(currentBenchIds.has(p.id)?1:0),consecutive_rounds_played:onCourt?Number(p.consecutive_rounds_played||0)+1:0,consecutive_court1_rounds:wonCourt1?Number(p.consecutive_court1_rounds||0)+1:0,court1_rounds:Number(p.court1_rounds||0)+(onCourt1?1:0),_previousBench:currentBenchIds.has(p.id)};});
+      const projected=eligible.map((p:any)=>{const onCourt=currentCourtIds.has(p.id),onCourt1=court1Ids.has(p.id),wonCourt1=onCourt1&&currentCourt1Winners.has(String(p.id));return{...p,rounds_played:Number(p.rounds_played||0)+(onCourt?1:0),fairness_benches:actualBenchCounts.get(String(p.id))||0,consecutive_rounds_played:onCourt?Number(p.consecutive_rounds_played||0)+1:0,consecutive_court1_rounds:wonCourt1?Number(p.consecutive_court1_rounds||0)+1:0,court1_rounds:Number(p.court1_rounds||0)+(onCourt1?1:0),_previousBench:lastBenchIds.has(String(p.id))};});
       const benchPlaces=eligible.length-activeCourts*4;
       const lockedIds=new Set(activeLocks.flatMap((l:any)=>[String(l.participant1_id),String(l.participant2_id)]));
       // Fairness-first: bench history outranks sporting results. Locked pairs are
@@ -470,23 +493,32 @@ Deno.serve(async (req) => {
       const states:any[]=Array(benchPlaces+1).fill(null);states[0]={ids:[],penalty:0};
       for(const g of ordered){const cost=g.reduce((sum:number,p:any)=>sum+Number(p.fairness_benches||0)*10000+Number(p._previousBench)*1000,0);for(let n=benchPlaces;n>=g.length;n--){const prior=states[n-g.length];if(!prior)continue;const candidate={ids:[...prior.ids,...g.map((p:any)=>String(p.id))],penalty:prior.penalty+cost};if(!states[n]||candidate.penalty<states[n].penalty)states[n]=candidate;}}
       const best=states[benchPlaces];
-      if(!best)return Response.json({error:'Locked pairs prevent a valid bench allocation; host must adjust pair locks or court count.'},{status:409});
-      const selected:string[]=best.ids;
+      // If locks make the automated allocation impossible, relax the locks as an advisory preference.
+      const selected:string[]=best?.ids||[...projected].sort((a:any,b:any)=>Number(a.fairness_benches)-Number(b.fairness_benches)||Number(a._previousBench)-Number(b._previousBench)||stableHash(`${session.random_seed}|fallback|${a.id}`)-stableHash(`${session.random_seed}|fallback|${b.id}`)).slice(0,benchPlaces).map((p:any)=>String(p.id));
       const selectedSet=new Set(selected); let finalSlots:any[]=[];
+      let drawLocks=best?activeLocks:[];
+      try {
       if(activeCourts===currentActiveCourts){
         const destinations=sportingDestinations(courts,results); const sportingSlots:any[]=[];
-        for(const [rankText,d] of Object.entries(destinations) as any){const rank=Number(rankText);const split=crossSplit(d.pairOne,d.pairTwo,partnerCounts,`${session.random_seed}|r${nextNumber}|c${rank}`,activeLocks);for(const [side,ids] of [['A',split.teamA],['B',split.teamB]] as any){for(let i=0;i<2;i++)sportingSlots.push({participant_id:ids[i],ladder_court_rank:rank,team_side:side,slot_number:i+1,destination_from_prior_round:rank});}}
+        for(const [rankText,d] of Object.entries(destinations) as any){const rank=Number(rankText);const split=crossSplit(d.pairOne,d.pairTwo,partnerCounts,`${session.random_seed}|r${nextNumber}|c${rank}`,drawLocks);for(const [side,ids] of [['A',split.teamA],['B',split.teamB]] as any){for(let i=0;i<2;i++)sportingSlots.push({participant_id:ids[i],ladder_court_rank:rank,team_side:side,slot_number:i+1,destination_from_prior_round:rank});}}
         const sportingSet=new Set(sportingSlots.map((s:any)=>s.participant_id)); const outgoing=sportingSlots.filter((s:any)=>selectedSet.has(s.participant_id)).sort((a:any,b:any)=>a.ladder_court_rank-b.ladder_court_rank||String(a.team_side).localeCompare(String(b.team_side))||a.slot_number-b.slot_number); const replacements=projected.filter((p:any)=>!sportingSet.has(p.id)&&!selectedSet.has(p.id)).map((p:any)=>p.id).sort((a:string,b:string)=>stableHash(`${session.random_seed}|r${nextNumber}|${a}`)-stableHash(`${session.random_seed}|r${nextNumber}|${b}`));
         if(outgoing.length!==replacements.length)return Response.json({ error:'Fairness substitution invariant failed while generating the next round.' }, { status:409 }); const replacementFor=new Map(outgoing.map((s:any,i:number)=>[s.participant_id,replacements[i]])); finalSlots=sportingSlots.map((s:any)=>replacementFor.has(s.participant_id)?{...s,replacement_for_participant_id:s.participant_id,participant_id:replacementFor.get(s.participant_id),assignment_type:'fairness_return'}:{...s,assignment_type:'sporting_movement'});
       }else{
         const activeIds=projected.filter((p:any)=>!selectedSet.has(p.id)).map((p:any)=>p.id).sort((a:string,b:string)=>Number(destinationRank[a]||99)-Number(destinationRank[b]||99)||Number(currentCourtRank[a]||99)-Number(currentCourtRank[b]||99)||stableHash(`${session.random_seed}|court-transition|r${nextNumber}|${a}`)-stableHash(`${session.random_seed}|court-transition|r${nextNumber}|${b}`));
         if(activeIds.length!==activeCourts*4)return Response.json({error:'Court transition did not produce exactly four players per active court.'},{status:409});
-        for(let rank=1;rank<=activeCourts;rank++){const four=activeIds.slice((rank-1)*4,rank*4);const split=splitFour(four,partnerCounts,`${session.random_seed}|court-transition|r${nextNumber}|c${rank}`,activeLocks);for(const [side,ids] of [['A',split.teamA],['B',split.teamB]] as any)for(let i=0;i<2;i++)finalSlots.push({participant_id:ids[i],ladder_court_rank:rank,team_side:side,slot_number:i+1,assignment_type:'sporting_movement',destination_from_prior_round:destinationRank[ids[i]]});}
+        for(let rank=1;rank<=activeCourts;rank++){const four=activeIds.slice((rank-1)*4,rank*4);const split=splitFour(four,partnerCounts,`${session.random_seed}|court-transition|r${nextNumber}|c${rank}`,drawLocks);for(const [side,ids] of [['A',split.teamA],['B',split.teamB]] as any)for(let i=0;i<2;i++)finalSlots.push({participant_id:ids[i],ladder_court_rank:rank,team_side:side,slot_number:i+1,assignment_type:'sporting_movement',destination_from_prior_round:destinationRank[ids[i]]});}
       }
       // Persistent host pair locks are a sporting invariant, not a warning preference.
       // Auto-repair the generated proposal before any RoundSlot/Match is persisted.
-      finalSlots=enforcePersistentLocks(finalSlots,activeLocks,new Set(eligible.map((p:any)=>String(p.id))));
-      for(const lock of activeLocks){const a=String(lock.participant1_id),b=String(lock.participant2_id);const sa=finalSlots.find((s:any)=>String(s.participant_id)===a),sb=finalSlots.find((s:any)=>String(s.participant_id)===b);if(sa&&sb&&(Number(sa.ladder_court_rank)!==Number(sb.ladder_court_rank)||String(sa.team_side)!==String(sb.team_side)))return Response.json({error:`Locked pair ${lock.pair_name||''} could not be kept together automatically.`},{status:409});}
+      finalSlots=enforcePersistentLocks(finalSlots,drawLocks,new Set(eligible.map((p:any)=>String(p.id))));
+      for(const lock of drawLocks){const a=String(lock.participant1_id),b=String(lock.participant2_id);const sa=finalSlots.find((s:any)=>String(s.participant_id)===a),sb=finalSlots.find((s:any)=>String(s.participant_id)===b);if(sa&&sb&&(Number(sa.ladder_court_rank)!==Number(sb.ladder_court_rank)||String(sa.team_side)!==String(sb.team_side)))return Response.json({error:`Locked pair ${lock.pair_name||''} could not be kept together automatically.`},{status:409});}
+      } catch(drawError){
+        // Retry without advisory partnership constraints; host can amend the proposal.
+        drawLocks=[];finalSlots=[];
+        const activeIds=projected.filter((p:any)=>!selectedSet.has(String(p.id))).map((p:any)=>String(p.id)).sort((a:string,b:string)=>Number(destinationRank[a]||99)-Number(destinationRank[b]||99)||stableHash(`${session.random_seed}|recovery|${a}`)-stableHash(`${session.random_seed}|recovery|${b}`));
+        for(let rank=1;rank<=activeCourts;rank++){const four=activeIds.slice((rank-1)*4,rank*4);const split=splitFour(four,partnerCounts,`${session.random_seed}|recovery|${rank}`,[]);for(const [side,ids] of [['A',split.teamA],['B',split.teamB]] as any)for(let i=0;i<2;i++)finalSlots.push({participant_id:ids[i],ladder_court_rank:rank,team_side:side,slot_number:i+1,assignment_type:'host_review_recovery'});}
+      }
+      const generationWarnings=pairWarnings(finalSlots,activeLocks);
       const existingNext=(rounds||[]).filter((r:any)=>Number(r.round_number)===nextNumber&&!['superseded','abandoned'].includes(r.status)).sort((a:any,b:any)=>Number(b.proposal_revision||0)-Number(a.proposal_revision||0))[0];
       if(existingNext){
         session=await withRateLimitRetry('prepare reconcile existing round',()=>base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId,current_round_number:nextNumber,current_round_id:existingNext.id}));
@@ -499,7 +531,7 @@ Deno.serve(async (req) => {
       const matchCreates=Array.from({length:activeCourts},(_,idx)=>{const rank=idx+1,ss=finalSlots.filter((s:any)=>s.ladder_court_rank===rank);return{tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,round_id:newRound.id,round_number:nextNumber,ladder_court_rank:rank,team_a_participant_ids:ss.filter((s:any)=>s.team_side==='A').sort((a:any,b:any)=>a.slot_number-b.slot_number).map((s:any)=>s.participant_id),team_b_participant_ids:ss.filter((s:any)=>s.team_side==='B').sort((a:any,b:any)=>a.slot_number-b.slot_number).map((s:any)=>s.participant_id),status:'scheduled',revision:0,correction_count:0};});
       const returningIds=new Set((participants||[]).filter((p:any)=>['temporarily_unavailable','voluntary_rest'].includes(p.status)&&Number(p.available_again_from_round||0)>0&&nextNumber>=Number(p.available_again_from_round)).map((p:any)=>String(p.id)));
       const participantUpdates=projected.map((p:any)=>({id:p.id,rounds_played:p.rounds_played,fairness_benches:p.fairness_benches,consecutive_rounds_played:p.consecutive_rounds_played,consecutive_court1_rounds:p.consecutive_court1_rounds,court1_rounds:p.court1_rounds,...(returningIds.has(String(p.id))?{status:'present',availability_effective_from_round:null,available_again_from_round:null}:{})}));
-      const participationEvents=[...selected.map((id:string)=>({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:id,round_id:newRound.id,round_number:nextNumber,event_type:'fairness_bench',effective_from_round:nextNumber,effective_to_round:nextNumber,fairness_credit:true,command_id:commandId,recorded_by_user_id:user.id,occurred_at:now})),...[...returningIds].map((id:string)=>({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:id,round_id:newRound.id,round_number:nextNumber,event_type:'returned_available',effective_from_round:nextNumber,fairness_credit:false,command_id:commandId,recorded_by_user_id:user.id,occurred_at:now}))];
+      const participationEvents=[...[...returningIds].map((id:string)=>({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:id,round_id:newRound.id,round_number:nextNumber,event_type:'returned_available',effective_from_round:nextNumber,fairness_credit:false,command_id:commandId,recorded_by_user_id:user.id,occurred_at:now}))];
       // Base44 live-session rule: keep child writes batched, but do NOT fire the batches
       // concurrently. Concurrent provider calls can trip Base44's burst limit even when
       // the total request count is modest. Each batch retries 429s with backoff.
@@ -509,7 +541,7 @@ Deno.serve(async (req) => {
       if(participationEvents.length)await withRateLimitRetry('prepare participation events',()=>base44.asServiceRole.entities.KotcParticipationEvent.bulkCreate(participationEvents));
       if(currentRound.status!=='completed')await withRateLimitRetry('prepare close current round',()=>base44.asServiceRole.entities.KotcRound.update(currentRound.id,{status:'completed',completed_at:now}));
       session=await withRateLimitRetry('prepare advance session',()=>base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId,current_round_number:nextNumber,current_round_id:newRound.id}));
-      result={success:true,session,round:newRound,benchParticipantIds:selected};
+      result={success:true,session,round:newRound,benchParticipantIds:selected,warnings:generationWarnings};
       if(activeCourts!==currentActiveCourts){try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_court_count_transition',entity_type:'KotcRound',entity_id:newRound.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({activeCourts:currentActiveCourts,eligiblePlayers:currentCourtIds.size}),after_state:JSON.stringify({activeCourts,eligiblePlayers:eligible.length,benchPlaces}),reason:'Availability change required safe court-count remap'});}catch(error){console.warn('KOTC court transition audit skipped',{sessionId:session.id,error:String((error as any)?.message||error)});}}
       await createSnapshot(base44,session,commandId,'round_completed',user.id);
     } else if (commandType === 'set_participant_status') {
@@ -660,6 +692,8 @@ Deno.serve(async (req) => {
       const eligible = new Set(eligibleList.map((p:any)=>String(p.id)));
       if (nextIds.some((id:string)=>!eligible.has(id))) return Response.json({ error:'Unavailable, injured, left or withdrawn players cannot be placed on court.' }, { status:400 });
       if(nextIds.length!==Number(round.active_court_count||0)*4)return Response.json({error:'Round must have exactly four players on every active court.'},{status:400});
+      const pairLocks=(await base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id,status:'active'})).filter((l:any)=>l.pair_source==='host_selected');
+      const warnings=pairWarnings(slots.map((slot:any,i:number)=>({...slot,participant_id:nextIds[i]})),pairLocks);
       const before = slots.map((s:any)=>({slotId:s.id,court:Number(s.ladder_court_rank),team:s.team_side,slot:Number(s.slot_number),participantId:String(s.participant_id)}));
       const changed:any[]=[];
       for (let i=0;i<slots.length;i++) {
@@ -682,7 +716,7 @@ Deno.serve(async (req) => {
       const updatedRound=await base44.asServiceRole.entities.KotcRound.update(round.id,{proposal_revision:currentProposalRevision+1,engine_output_hash:String(stableHash(JSON.stringify(slots.map((s:any)=>({court:s.ladder_court_rank,team:s.team_side,slot:s.slot_number,participant:s.participant_id})))))});
       session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId});
       await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_round_host_adjustment',entity_type:'KotcRound',entity_id:round.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify(before),after_state:JSON.stringify(changed),reason:String(body.reason||'Host adjusted proposed round').trim()});
-      result={success:true,session,round:updatedRound,changes:changed};
+      result={success:true,session,round:updatedRound,changes:changed,warnings};
       await createSnapshot(base44,session,commandId,'command',user.id);
     } else if (commandType === 'adjust_started_round') {
       // Emergency host override: the live timer and all untouched courts keep running.
@@ -728,11 +762,7 @@ Deno.serve(async (req) => {
           (teams[key]||(teams[key]=[])).push(nextIds[i]);
         }
         if(Object.values(teams).some((ids:any)=>ids.length!==2))return Response.json({error:'Every team must have exactly two players.'},{status:400});
-        for(const lock of (lockRows||[]).filter((x:any)=>x.pair_source==='host_selected')){
-          const first=String(lock.participant1_id),second=String(lock.participant2_id);
-          if(nextIds.includes(first)&&nextIds.includes(second)&&!Object.values(teams).some((ids:any)=>ids.includes(first)&&ids.includes(second)))
-            return Response.json({error:`Locked partnership ${lock.pair_name||''} cannot be separated.`},{status:409});
-        }
+        const warnings=pairWarnings(slots.map((slot:any,i:number)=>({...slot,participant_id:nextIds[i]})),(lockRows||[]).filter((x:any)=>x.pair_source==='host_selected'));
         for(let i=0;i<slots.length;i++)if(nextIds[i]!==currentIds[i])
           await withRateLimitRetry('live slot override',()=>base44.asServiceRole.entities.KotcRoundSlot.update(slots[i].id,{participant_id:nextIds[i],assignment_type:'manual_override',assignment_revision:Number(slots[i].assignment_revision||1)+1}));
         for(const match of matchRows||[]){
@@ -749,7 +779,7 @@ Deno.serve(async (req) => {
         // Bench fairness for future draws uses the actual revised slots; preserve
         // evidence of this late override independently of prior proposed bench events.
         try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_live_round_host_adjustment',entity_type:'KotcRound',entity_id:round.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({slotIds:currentIds}),after_state:JSON.stringify({slotIds:nextIds,newBench}),reason:String(body.reason||'Host changed players during live round').trim()});}catch(error){console.warn('KOTC live override audit deferred',String(error?.message||error));}
-        result={success:true,session,round:updatedRound,changes,affectedCourts:[...affected],bench:newBench};
+        result={success:true,session,round:updatedRound,changes,affectedCourts:[...affected],bench:newBench,warnings};
       }
     } else if (commandType === 'set_pair_lock') {
       const p1=String(body.participant1Id||''),p2=String(body.participant2Id||'');
@@ -847,8 +877,9 @@ Deno.serve(async (req) => {
         if(nextIds.length!==Number(round.active_court_count||0)*4||new Set(nextIds).size!==nextIds.length)return Response.json({error:'Round not ready: every active court needs four unique players.'},{status:409});
         if(nextIds.some((id:string)=>!eligible.has(id)))return Response.json({error:'Round not ready: an unavailable player is assigned to court.'},{status:409});
         const locks=(await base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id,status:'active'})).filter((p:any)=>p.pair_source==='host_selected');
-        const teams:any={};for(let i=0;i<slots.length;i++){const s=slots[i],id=nextIds[i];const key=`${s.ladder_court_rank}-${s.team_side}`;(teams[key]||(teams[key]=[])).push(id);if(id!==String(s.participant_id))await base44.asServiceRole.entities.KotcRoundSlot.update(s.id,{participant_id:id,assignment_type:'manual_override',assignment_revision:Number(s.assignment_revision||1)+1});}
-        for(const l of locks){const a=String(l.participant1_id),b=String(l.participant2_id);const both=nextIds.includes(a)&&nextIds.includes(b);if(both&&!Object.values(teams).some((t:any)=>t.includes(a)&&t.includes(b)))return Response.json({error:`Round not ready: locked pair ${l.pair_name||''} is split.`},{status:409});}
+        const teams:any={};for(let i=0;i<slots.length;i++){const s=slots[i],id=nextIds[i];const key=`${s.ladder_court_rank}-${s.team_side}`;(teams[key]||(teams[key]=[])).push(id);}
+        const startWarnings=pairWarnings(slots.map((slot:any,i:number)=>({...slot,participant_id:nextIds[i]})),locks);
+        for(let i=0;i<slots.length;i++)if(nextIds[i]!==String(slots[i].participant_id))await base44.asServiceRole.entities.KotcRoundSlot.update(slots[i].id,{participant_id:nextIds[i],assignment_type:'manual_override',assignment_revision:Number(slots[i].assignment_revision||1)+1});
         const matches=await base44.asServiceRole.entities.KotcMatch.filter({round_id:round.id,session_id:session.id});for(const m of matches.filter((m:any)=>!m.preset_finish_index)){const rank=Number(m.ladder_court_rank);const court=slots.map((s:any,i:number)=>({...s,participant_id:nextIds[i]})).filter((s:any)=>Number(s.ladder_court_rank)===rank);await base44.asServiceRole.entities.KotcMatch.update(m.id,{team_a_participant_ids:court.filter((s:any)=>s.team_side==='A').sort((a:any,b:any)=>a.slot_number-b.slot_number).map((s:any)=>s.participant_id),team_b_participant_ids:court.filter((s:any)=>s.team_side==='B').sort((a:any,b:any)=>a.slot_number-b.slot_number).map((s:any)=>s.participant_id),revision:Number(m.revision||0)+1,command_id:commandId});}
       }
       const target = commandType === 'confirm_round' ? 'confirmed' : 'started';
