@@ -7,59 +7,50 @@ const TENANT_HOST_INFOGRAPHICS = Object.freeze({
 });
 
 const chapters = [
-  { title: '1. Before players arrive', steps: [
-    'Open your personal host link and sign in with the authorised host account. This link controls only this KOTC session.',
-    'Check the player list and how many usable courts are available. Four players are required for each active doubles court.',
-    'Have a charged phone or tablet and a reliable connection. If using hall sound, pair the Bluetooth speaker with the host device, select it as the sound output, set the volume and test the audible signal before play.',
-    'The host may record all court scores directly. Player scoring links are optional; tonight can be run entirely with host-entered results.'
+  { title: '1. Open the pre-session Host Link', steps: [
+    'The organiser appoints you by searching for your club member record under Restricted Host Access, before Round 1 is created.',
+    'Open the Pre-session Host Link supplied by the organiser and sign in with your own authorised RallyHub account. Do not use the Player Link for hosting.',
+    'You can prepare the event without the organiser creating Round 1. If access is denied, ask the organiser to check your host appointment and account email.'
   ]},
-  { title: '2. Create the first-round draw', steps: [
-    'Under Session settings enter Venue courts and Hall / session duration.',
-    'Choose Timed rounds (set Round duration) or a points target. For Clare sessions, the usual target is 11.',
-    'Under Round 1 setup choose Starting order (Roster, Manual, Genuine DUPR or Previous KOTC), then Round 1 draw (Balanced Ranking, Pure Random or Strict Ranking).',
-    'Use Review player order if you need to adjust the starting order. Check the proposed bench when the roster exceeds the available court spaces.',
-    'Read the Ready check summary and press Create Round 1. Do not press repeatedly while a request is being processed.'
+  { title: '2. Refresh Spond and check attendance', steps: [
+    'In the pre-session host setup, refresh the Spond event list and select the correct club session by date and time.',
+    'Preview the respondents before importing. Check accepted players and resolve any missing or ambiguous player matches; do not assume every Spond response represents a player who will attend.',
+    'Import the accepted players only after reviewing the preview and confirming the roster replacement. This can replace manually entered names, so check the current roster first.',
+    'Review the resulting player list against actual arrivals. Add, remove or replace players as needed before generating the draw.'
   ]},
-  { title: '3. Check courts and start play', steps: [
-    'In the Host Round Editor, review every court and the Bench This Round list before starting.',
-    'Quick two-tap change: tap one court player, then the other court player to swap positions without redrawing. To bring someone off the bench, tap the outgoing court player first, then the incoming bench player.',
-    'Use Move court to drag an entire four-player court group to another court rank.',
-    'Each team has Lock pair and Locked / Unlock controls. Locking a pair keeps those two players partnered in future round proposals. Unlock before making a change that would split them. This does not lock the entire court.',
-    'After swapping players, making a bench substitution or moving a court, choose Save Round Setup and check the confirmation. For a completely new opening draw, use Return to Setup / Redo Round 1 Draw before play begins.',
-    'Call out courts, partners and opponents after the saved layout is confirmed.',
-    'For timed rounds, check the round minutes and test the Bluetooth speaker using Sound Check. Confirm the horn is audible across the hall; if not, use the on-screen timer and call time manually.',
-    'Press START ROUND only when everyone is on court. The round timer is associated with the round start.'
+  { title: '3. Configure courts, scoring and session length', steps: [
+    'Confirm the number of available courts and the number of players. Doubles requires four active players per court; additional players rotate through the bench.',
+    'Set the hall/session duration and choose your scoring format: Timed rounds with a round timer, or points-based play (for example first to 11, win by one if that is the agreed format).',
+    'For timed play, set the round duration (for example 10 minutes), check the sound output and test the audible signal. If the horn is inaudible, announce time manually.',
+    'Choose the starting order and opening draw settings. Review the proposed bench and player balance before proceeding.'
   ]},
-  { title: '4. Collect and verify scores', steps: [
-    'For host-led scoring, collect each court’s final score when the horn sounds. Enter Team A and Team B scores on the host court score card, confirm the result and save each court. No player scoring link is required.',
-    'If player scoring links are enabled for a future session, only one scorer should claim each court. The host can refresh player scores entered on another device.',
-    'Check that every court has a saved score before preparing the next round. Use the host correction control for a result that has already been submitted.',
-    'For a completed score that needs correction, choose Edit result, make the correction and save. Review the changed result before progressing.',
-    'For timed rounds ending in a tie, select Team A or Team B as serving at the horn; RallyHub uses that to determine the winner. No drawn match result.'
+  { title: '4. Create Round 1 and check the draw', steps: [
+    'Use the ready check and Generate / Create Round 1 only once. Wait for confirmation; do not tap repeatedly while the system is processing.',
+    'Review every court, partners, opponents and the bench. Swap players or substitute a bench player if necessary, then save the round setup.',
+    'Announce court allocations. Press START ROUND only when everyone is ready. The pre-session link hands over to the live Host Link after Round 1 is created.'
   ]},
-  { title: '5. Advance to the next round', steps: [
-    'Check that every court has a saved result. Resolve any missing or incorrect score before advancing.',
-    'Use the next-round preparation control when Round scores are complete. Wait for the confirmation; do not press again during a slow response.',
-    'Review the next proposed court positions and bench list. Winners move towards Court 1 and losers towards the highest-numbered court.',
-    'Make any permitted changes in the proposed round, call out the new courts and press START ROUND again.'
+  { title: '5. Run timed, first-to-11 and All-Change rounds', steps: [
+    'Timed: start the timer, play until the horn, collect each court score and save it. For a tie at the horn, identify the serving side as required by RallyHub.',
+    'First to 11: finish when a team reaches the configured target; if playing win by one, a one-point margin is enough. Record both team scores and save the result.',
+    'All-Change: when the round ends, complete and verify all court scores, then prepare the next round and follow the newly displayed court and bench assignments. Do not manually assume every player changes courts.',
+    'Check the new court layout and bench before starting the next round. Winners generally move towards Court 1; losers towards the higher-numbered courts.'
   ]},
-  { title: '6. Late arrival, injury or early departure', steps: [
-    'Open Session tools, then the Live Roster Controls / player controls.',
-    'Select the affected player and choose the relevant action: Late / Not Arrived, No-show, Injured, Leave After This Round, Sit Out 1 Round, Temporarily Unavailable or Arrived / Back Available.',
-    'When a round is live, many changes take effect from the next round so completed scores are preserved. Check the confirmation message.',
-    'To add someone after the draw, open Live Roster Controls and choose Add to Bench. Search for an existing club player or enter a one-off guest. The player appears on the bench without changing any court.',
-    'Before a round starts, tap the outgoing court player in Manage tonight’s players. Under Replace player · one step, choose the incoming bench player and press Confirm Replacement. They take exactly the same court position; partners, opponents and other courts remain unchanged.',
-    'Once the round has started, choose Change players / bench · Live round. Tap the outgoing court player, then the incoming bench player, and save the live layout. Courts already being scored or with saved scores are protected; do not try to rewrite a result.',
-    'A court/bench swap does not itself mark someone as withdrawn or injured. If the outgoing player has left, also set their roster status so they are excluded from later draws.',
-    'If a change was accidental, use the available roster Undo control promptly. Confirm the new court/bench layout before starting the next round.'
+  { title: '6. Scores, late arrivals and player changes', steps: [
+    'The host can enter all scores. If Player Link scoring is enabled, one player per court can submit the score; the host remains responsible for checking results.',
+    'To correct a saved result, use Edit result on the relevant court and save the correction before advancing.',
+    'For a late arrival, add the player to the bench. For a departure, injury or temporary absence, use Live Roster Controls and set the correct player status.',
+    'Before starting a round, select the outgoing player and replace them with an available bench player; save the layout. During live play, use Change players / bench · Live round, subject to score protection.',
+    'Do not recreate the entire session to fix one player change.'
   ]},
-  { title: '7. Finish and share results', steps: [
-    'After the final round, make sure all intended match results are saved and inspect the standings.',
-    'Open Session tools and select Finish session. Confirm only when play is genuinely finished; unplayed matches may be recorded as not played.',
-    'Use the Share results option to copy or share the session-specific results link. Communications tools may be available to authorised admins.'
+  { title: '7. Optional finish and final results', steps: [
+    'For timed sessions, Preset Finish is optional. If required, configure and save the finishing court layouts in advance; normal King of the Court continues until a preset is activated.',
+    'Activate an available saved preset only when the current round results are complete. Otherwise use Prepare Next Round to continue normal play.',
+    'At the end, check every intended result and the standings, then use Finish session. Share the final results link with players.'
   ]},
 ];
 const problems = [
+  ['Host Link says access denied', 'Ask the organiser to confirm your member record and RallyHub account were appointed for this event. The Player Link does not provide host permissions.'],
+  ['Spond attendance looks wrong', 'Refresh the Spond list, confirm the correct event/date, preview respondents and check ambiguous matches before confirming an import.'],
   ['A score is missing', 'Check the player scoring device, use Refresh Player Scores, then record the missing score on the host score card if necessary.'],
   ['A score is wrong', 'Open the saved court result, select Edit result, correct it and save before moving to the next round.'],
   ['A player leaves during play', 'Use Live Roster Controls and Leave After This Round or Injured, as appropriate. Check when the change takes effect.'],
@@ -79,7 +70,7 @@ export default function KotcHostGuide({compact=false,tenantId=''}) {
         <div><h2 className="text-base font-bold">Host quick-start infographic</h2><p className="text-xs text-blue-100">Visual overview — use the detailed instructions below for every step.</p></div>
         <a href={infographicUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold underline underline-offset-2 focus-visible:outline focus-visible:outline-2" download>Open full-size image</a>
       </div>
-      <a href={infographicUrl} target="_blank" rel="noopener noreferrer" aria-label="Open host guide infographic full size"><img src={infographicUrl} alt="Clare Pickleball King of the Court host quick-start guide: seven steps from opening the host link through setup, rounds, scoring, player management and results" className="block w-full h-auto max-h-[850px] object-contain bg-white" loading="lazy" /></a>
+      <a href={infographicUrl} target="_blank" rel="noopener noreferrer" aria-label="Open host guide infographic full size"><img src={infographicUrl} alt="Clare Pickleball King of the Court host quick-start guide: host setup, Spond attendance, round configuration and live session controls" className="block w-full h-auto max-h-[850px] object-contain bg-white" loading="lazy" /></a>
     </div>}
     <div className="rounded-2xl overflow-hidden border border-blue-900/20">
       <div className="bg-[#073a75] text-white px-5 py-5 border-b-4 border-[#ffcc16]">
