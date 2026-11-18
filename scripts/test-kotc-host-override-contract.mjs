@@ -6,8 +6,8 @@ const started=segment('adjust_started_round','set_pair_lock');
 const generated=segment('generate_next_round','replace_proposed_player');
 const tests=[
  ['proposed override validates host-selected locks',/KotcFixedPair|locked partnership|lockRows/.test(proposed)],
- ['proposed override persists actual slots for ledger',proposed.includes('pairWarnings(')&&proposed.includes('assignment_type:'manual_override'')],
- ['started override persists actual slots for ledger',started.includes('pairWarnings(')&&started.includes('assignment_type:'manual_override'')],
+ ['proposed override persists actual slots for ledger',proposed.includes('pairWarnings(')&&proposed.includes("assignment_type:'manual_override'")],
+ ['started override persists actual slots for ledger',started.includes('pairWarnings(')&&started.includes("assignment_type:'manual_override'")],
  ['generation avoids crediting proposed bench before play',!generated.includes('fairness_credit:true')],
  ['proposed override validates unique assignments',proposed.includes('new Set(nextIds).size')],
  ['started override protects scored courts',started.includes('being scored')],
