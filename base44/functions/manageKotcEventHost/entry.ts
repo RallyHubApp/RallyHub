@@ -38,7 +38,11 @@ Deno.serve(async(req)=>{try{
  }
  if(action==='state'){
   const players=await b.asServiceRole.entities.Player.filter({tenant_id:t.tenant_id,club_id:t.host_club_id});
-  return Response.json({tournament:t,players:(players||[]).filter((p:any)=>!['archived','inactive'].includes(String(p.relationship_status||'').toLowerCase())),sessionId:session?.id||null,canAppoint:user.role==='admin',hosts:grants.filter((g:any)=>g.role==='event_host'&&active(g)).map((g:any)=>({user_id:g.user_id,id:g.id}))});
+  const appointed=grants.filter((g:any)=>g.role==='event_host'&&active(g));
+  const users=appointed.length?await b.asServiceRole.entities.User.list('-created_date',500):[];
+  const byId=new Map((users||[]).map((u:any)=>[String(u.id),u]));
+  const hostList=appointed.map((g:any)=>{const u=byId.get(String(g.user_id)) as any;return {user_id:g.user_id,id:g.id,name:String(u?.full_name||u?.name||u?.email||'Host account'),email:String(u?.email||'')};});
+  return Response.json({tournament:t,players:(players||[]).filter((p:any)=>!['archived','inactive'].includes(String(p.relationship_status||'').toLowerCase())),sessionId:session?.id||null,canAppoint:user.role==='admin',hosts:hostList});
  }
  if(action==='grant'||action==='revoke'){
   if(user.role!=='admin')return Response.json({error:'Super Admin only'},{status:403});
