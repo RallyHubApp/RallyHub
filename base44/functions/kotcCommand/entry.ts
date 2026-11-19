@@ -474,6 +474,11 @@ Deno.serve(async (req) => {
         if(['injured','left','no_show','withdrawn','replaced','late_not_arrived','temporarily_unavailable','voluntary_rest'].includes(p.status))continue;
         actualBenchCounts.set(id,(actualBenchCounts.get(id)||0)+1);if(String(r.id)===String(currentRound.id))lastBenchIds.add(id);
       }}
+      // Last court actually played, not the bench round or a proposed draw.
+      const lastPlayedCourt=new Map<string,number>();
+      for(const r of [...validHistory].sort((a:any,b:any)=>Number(a.round_number)-Number(b.round_number))){
+        for(const slot of historySlots||[])if(String(slot.round_id)===String(r.id))lastPlayedCourt.set(String(slot.participant_id),Number(slot.ladder_court_rank));
+      }
       const currentCourtIds=new Set(courts.flatMap((c:any)=>[...c.teamA,...c.teamB])); const currentBenchIds=new Set(eligible.map((p:any)=>p.id).filter((id:string)=>!currentCourtIds.has(id))); const court1Ids=new Set(courts.find((c:any)=>c.courtRank===1)?[...courts.find((c:any)=>c.courtRank===1).teamA,...courts.find((c:any)=>c.courtRank===1).teamB]:[]);
       const currentCourtRank:any={};for(const c of courts)for(const id of [...c.teamA,...c.teamB])currentCourtRank[id]=c.courtRank;
       const destinationRank:any={};for(const c of courts){const side=results[c.courtRank];const winners=side==='A'?c.teamA:c.teamB;const losers=side==='A'?c.teamB:c.teamA;for(const id of winners)destinationRank[id]=Math.max(1,c.courtRank-1);for(const id of losers)destinationRank[id]=Math.min(currentActiveCourts,c.courtRank+1);}for(const p of eligible)if(destinationRank[p.id]==null)destinationRank[p.id]=currentActiveCourts;
@@ -502,7 +507,21 @@ Deno.serve(async (req) => {
         const destinations=sportingDestinations(courts,results); const sportingSlots:any[]=[];
         for(const [rankText,d] of Object.entries(destinations) as any){const rank=Number(rankText);const split=crossSplit(d.pairOne,d.pairTwo,partnerCounts,`${session.random_seed}|r${nextNumber}|c${rank}`,drawLocks);for(const [side,ids] of [['A',split.teamA],['B',split.teamB]] as any){for(let i=0;i<2;i++)sportingSlots.push({participant_id:ids[i],ladder_court_rank:rank,team_side:side,slot_number:i+1,destination_from_prior_round:rank});}}
         const sportingSet=new Set(sportingSlots.map((s:any)=>s.participant_id)); const outgoing=sportingSlots.filter((s:any)=>selectedSet.has(s.participant_id)).sort((a:any,b:any)=>a.ladder_court_rank-b.ladder_court_rank||String(a.team_side).localeCompare(String(b.team_side))||a.slot_number-b.slot_number); const replacements=projected.filter((p:any)=>!sportingSet.has(p.id)&&!selectedSet.has(p.id)).map((p:any)=>p.id).sort((a:string,b:string)=>stableHash(`${session.random_seed}|r${nextNumber}|${a}`)-stableHash(`${session.random_seed}|r${nextNumber}|${b}`));
-        if(outgoing.length!==replacements.length)return Response.json({ error:'Fairness substitution invariant failed while generating the next round.' }, { status:409 }); const replacementFor=new Map(outgoing.map((s:any,i:number)=>[s.participant_id,replacements[i]])); finalSlots=sportingSlots.map((s:any)=>replacementFor.has(s.participant_id)?{...s,replacement_for_participant_id:s.participant_id,participant_id:replacementFor.get(s.participant_id),assignment_type:'fairness_return'}:{...s,assignment_type:'sporting_movement'});
+        if(outgoing.length!==replacements.length)return Response.json({ error:'Fairness substitution invariant failed while generating the next round.' }, { status:409 }); // Minimum-cost assignment of returning bench players to the vacated sporting slots.
+        // Court-distance dominates ties; equal distance favours the lower-ranked court
+        // (no free promotion from a compulsory bench). Keep the bench selection intact.
+        const assignmentCost=(id:string,slot:any)=>{const previous=lastPlayedCourt.get(String(id));if(!previous)return 0;const court=Number(slot.ladder_court_rank);return Math.abs(court-previous)*100+(court<previous?10:0);};
+        const memo=new Map<string,{cost:number,ids:string[]}>();
+        const optimise=(index:number,mask:number):{cost:number,ids:string[]}=>{
+          if(index===outgoing.length)return {cost:0,ids:[]};
+          const key=`${index}|${mask}`;const cached=memo.get(key);if(cached)return cached;
+          let best:{cost:number,ids:string[]}|null=null;
+          for(let i=0;i<replacements.length;i++)if(!(mask&(1<<i))){const next=optimise(index+1,mask|(1<<i));const candidate={cost:assignmentCost(replacements[i],outgoing[index])+next.cost,ids:[replacements[i],...next.ids]};if(!best||candidate.cost<best.cost)best=candidate;}
+          memo.set(key,best!);return best!;
+        };
+        // Typical four-court sessions have at most three bench substitutions.
+        const assigned=outgoing.length<=12?optimise(0,0).ids:replacements;
+        const replacementFor=new Map(outgoing.map((s:any,i:number)=>[s.participant_id,assigned[i]])); finalSlots=sportingSlots.map((s:any)=>replacementFor.has(s.participant_id)?{...s,replacement_for_participant_id:s.participant_id,participant_id:replacementFor.get(s.participant_id),assignment_type:'fairness_return'}:{...s,assignment_type:'sporting_movement'});
       }else{
         const activeIds=projected.filter((p:any)=>!selectedSet.has(p.id)).map((p:any)=>p.id).sort((a:string,b:string)=>Number(destinationRank[a]||99)-Number(destinationRank[b]||99)||Number(currentCourtRank[a]||99)-Number(currentCourtRank[b]||99)||stableHash(`${session.random_seed}|court-transition|r${nextNumber}|${a}`)-stableHash(`${session.random_seed}|court-transition|r${nextNumber}|${b}`));
         if(activeIds.length!==activeCourts*4)return Response.json({error:'Court transition did not produce exactly four players per active court.'},{status:409});
