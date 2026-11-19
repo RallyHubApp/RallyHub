@@ -36,12 +36,12 @@ export default function PublicTournivalRegistration(){
   }catch(e){setError(e?.response?.data?.error||'Unable to register safely. Please contact organiser.');}
   finally{setSubmitting(false);}
  };
- return <main className="min-h-screen bg-background text-foreground p-4">
-  <div className="mx-auto max-w-lg space-y-4">
-   <RallyHubPublicBrand moduleName="Tournival" pageLabel="Tournament Registration" club={event?.organiser||null} clubFirst={true}/>
-   <section className="glass rounded-2xl p-6 space-y-4">
+ return <div className="min-h-screen flex flex-col bg-[#f4f7fb] text-[#081342]" data-testid="tournival-registration-branded-frame">
+  <div className="w-full max-w-3xl mx-auto flex-1 px-3 sm:px-5 py-4 space-y-4">
+   <header className="bg-white rounded-xl shadow-sm px-4 py-4"><RallyHubPublicBrand moduleName="Tournival" pageLabel="Tournament Registration" club={event?.organiser||null} clubFirst={true}/><div className="mt-3 bg-[#073b74] text-white rounded-t-lg p-3 text-center font-black">CHRISTMAS TOURNIVAL · REGISTRATION</div><div className="h-2 bg-[#f9cb17] rounded-b-lg"/></header>
+   <section className="bg-white border border-[#d6e0ec] rounded-xl shadow-sm p-4 sm:p-6 space-y-4">
     {loading?<p>Loading registration…</p>:!event?<p role="alert">{error||'Event not found'}</p>:<>
-     <header><h1 className="text-xl font-bold">{event.name}</h1>
+     <header className="space-y-3"><h1 className="text-xl sm:text-2xl font-black">{event.name}</h1>
       <p className="text-sm text-muted-foreground">{event.date} · {event.venue}</p>
       <p className="text-sm">Registration: {event.registered}/{event.capacity} places · Waiting list {event.waitlisted}</p>
       <p className="text-sm font-semibold">Fee: {Number(event.fee||0)===0?'Free':`€${Number(event.fee).toFixed(2)}`}</p>
@@ -57,7 +57,7 @@ export default function PublicTournivalRegistration(){
        {result.message&&<p className="text-sm">{result.message}</p>}
        {result.registration?.paymentStatus==='pending'&&<p className="text-xs text-muted-foreground">Payment is confirmed only when the provider verifies it. Closing this page does not complete a payment.</p>}
       </section>:
-      <form onSubmit={submit} className="space-y-3">
+      <form onSubmit={submit} className="space-y-3"><h2 className="font-black text-lg border-b pb-2">Register to play</h2>
        <label className="block text-sm">Full name <Input required autoComplete="name" minLength={2} maxLength={120} value={form.fullName} onChange={e=>setForm(f=>({...f,fullName:e.target.value}))}/></label>
        <label className="block text-sm">Email <Input required type="email" autoComplete="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/></label>
        <label className="block text-sm">Mobile <Input type="tel" autoComplete="tel" value={form.mobile} onChange={e=>setForm(f=>({...f,mobile:e.target.value}))}/></label>
@@ -66,10 +66,11 @@ export default function PublicTournivalRegistration(){
        <label className="flex gap-2 text-xs"><input type="checkbox" checked={form.duprConsent} onChange={e=>setForm(f=>({...f,duprConsent:e.target.checked}))}/>
         <span>Optional: I consent to eligible tournament results being prepared for DUPR reporting. A DUPR account is not required to participate, and reporting is subject to organiser and DUPR rules.</span></label>
        {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
-       <Button className="w-full" type="submit" disabled={submitting||!form.consent}>{submitting?'Registering…':'Register for Tournival'}</Button>
+       <Button className="w-full bg-[#073b74] hover:bg-[#052c56] text-white font-bold min-h-11" type="submit" disabled={submitting||!form.consent}>{submitting?'Registering…':'Register for Tournival'}</Button>
       </form>}
     </>}
    </section>
   </div>
- </main>;
+  <footer className="w-full max-w-3xl mx-auto bg-[#053c56] text-white text-center text-xs px-3 py-4 mt-5 rounded-t-xl">Clare Pickleball · Powered by RallyHub</footer>
+ </div>;
 }
