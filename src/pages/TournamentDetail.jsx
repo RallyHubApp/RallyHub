@@ -64,12 +64,24 @@ export default function TournamentDetail() {
     }).catch(() => prompt('Copy this link:', url));
   };
 
-  const handleRegLink = () => {
-    const url = `${window.location.origin}/register/${tournament?.id}`;
-    navigator.clipboard.writeText(url).then(() => {
+  const handleRegLink = async () => {
+    try {
+      let url = `${window.location.origin}/register/${tournament?.id}`;
+      if (String(tournament?.format || '').toLowerCase() === 'tournival') {
+        const response = await base44.functions.invoke('legacyTournamentManager', {
+          tournamentId: tournament.id, action: 'create_tournival_registration_link'
+        });
+        const data = response?.data || {};
+        if (!data.success || !data.path) throw new Error(data.error || 'Unable to create Tournival registration link');
+        url = `${window.location.origin}${data.path}`;
+      }
+      await navigator.clipboard.writeText(url);
       setRegLinkCopied(true);
+      toast.success('Registration link copied');
       setTimeout(() => setRegLinkCopied(false), 2000);
-    }).catch(() => prompt('Copy this link:', url));
+    } catch (error) {
+      toast.error(error?.message || 'Could not copy registration link');
+    }
   };
 
   useEffect(() => {
