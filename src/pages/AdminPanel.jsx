@@ -244,9 +244,9 @@ export default function AdminPanel() {
   });
 
   const { data: membershipRows = [], isLoading: membershipRowsLoading } = useQuery({
-    queryKey: ['admin-membership-records', user?.active_tenant_id, user?.active_club_id],
+    queryKey: ['admin-membership-records', activeAdminTab, user?.active_tenant_id, user?.active_club_id],
     queryFn: async () => {
-      const res = await base44.functions.invoke('membershipRecord', { action: 'admin_list' });
+      const res = await base44.functions.invoke('membershipRecord', { action: activeAdminTab === 'linking' ? 'admin_link_candidates' : 'admin_list' });
       if (res.data?.error) throw new Error(res.data.error);
       return res.data?.rows || [];
     },

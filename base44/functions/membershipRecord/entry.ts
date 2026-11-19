@@ -761,6 +761,19 @@ Deno.serve(async(req)=>{
       return Response.json({success:true,counts:{currentMembers,currentPaid:paid,complimentary,pending,unpaid:pending,linked,unlinked:Math.max(0,currentMembers-linked),source:'ClubMembership',season:currentSeason},currentSeason});
     }
 
+    if(action==='admin_link_candidates'){
+      // Approval screen only needs canonical paid membership identities.
+      // Avoid admin_list's eight unrelated full-entity scans.
+      const memberships=await base44.asServiceRole.entities.ClubMembership.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',500);
+      const eligible=(memberships||[]).filter((m:any)=>m.relationship_type==='member'&&m.membership_status==='paid_active'&&['paid','not_required'].includes(m.payment_status));
+      const people=await base44.asServiceRole.entities.Person.filter({tenant_id:tenantId},'full_name',500);
+      const byId=new Map((people||[]).map((p:any)=>[String(p.id),p]));
+      return Response.json({success:true,rows:eligible.map((m:any)=>{
+        const p:any=byId.get(String(m.person_id));
+        return {person_id:m.person_id,full_name:p?.full_name||'Member',email:p?.primary_email||'',linked_user_id:p?.linked_user_id||null,payment_status:m.payment_status,membership_status:m.membership_status,member_id:m.member_id};
+      }).filter((m:any)=>m.email)});
+    }
+
     if(action==='admin_list'){
       const [membersRaw,people,players,sportProfiles,clubSports,allSports,relationshipsRaw,membershipConfigs]=await Promise.all([
         base44.asServiceRole.entities.ClubMembership.filter({tenant_id:tenantId,club_id:clubId},'member_id',500),
