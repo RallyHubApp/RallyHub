@@ -105,6 +105,19 @@ export default function PublicRegister() {
     );
   }
 
+  if (String(tournament.format || '').toLowerCase() === 'tournival') {
+    return <div className="min-h-screen bg-[#f4f7fb] text-[#081342] flex flex-col" data-testid="tournival-legacy-link-notice">
+      <main className="w-full max-w-3xl mx-auto flex-1 px-3 sm:px-5 py-4 space-y-4">
+        <header className="bg-white rounded-xl shadow-sm p-4"><RallyHubPublicBrand moduleName="Tournival" pageLabel="Tournament Registration" club={clubBrand}/><div className="mt-3 bg-[#073b74] text-white font-black text-center p-3 rounded-t-lg">CHRISTMAS TOURNIVAL · REGISTRATION</div><div className="h-2 bg-[#f9cb17] rounded-b-lg"/></header>
+        <section className="bg-white rounded-xl border border-[#d6e0ec] shadow-sm p-5 space-y-3">
+          <h1 className="text-xl font-black">{tournament.name}</h1>
+          <p className="text-sm text-[#314563]">This is an older tournament link. Registration for Tournival uses a secure event-specific link to manage places, waiting lists and payment correctly.</p>
+          <p className="text-sm font-semibold">Please ask the organiser for the new Tournival registration link.</p>
+        </section>
+      </main><footer className="w-full max-w-3xl mx-auto bg-[#053c56] text-white text-center text-xs p-4 rounded-t-xl">Clare Pickleball · Powered by RallyHub</footer>
+    </div>;
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
       <div className="mb-8"><RallyHubPublicBrand moduleName={tournament.format || 'Tournament'} pageLabel="Registration" club={clubBrand}/></div>
