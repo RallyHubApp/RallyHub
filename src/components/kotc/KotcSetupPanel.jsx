@@ -12,7 +12,7 @@ const drawLabel={balanced:'Balanced Ranking',pure_random:'Pure Random',strict:'S
 
 export default function KotcSetupPanel({
   players,courts,requiredBench,
-  venueCourts,setVenueCourts,duration,setDuration,
+  venueCourts,setVenueCourts,courtStartNumber,setCourtStartNumber,duration,setDuration,
   scoringMode,setScoringMode,playMinutes,setPlayMinutes,scoreTarget,setScoreTarget,winByTwo,setWinByTwo,
   testMode,setTestMode,canUseTestMode=false,sandboxMode=false,
   countsTowardLeaderboard,setCountsTowardLeaderboard,
@@ -40,6 +40,7 @@ export default function KotcSetupPanel({
           <div className="flex items-start gap-3 mb-4"><div className="rounded-lg bg-secondary p-2"><Settings2 className="w-4 h-4"/></div><div><p className="font-semibold">1 · Session settings</p><p className="text-xs text-muted-foreground mt-0.5">The essentials for this hall and tonight’s scoring.</p></div></div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div><Label>Venue courts</Label><Input className="mt-1 min-h-11" type="number" min="1" max="20" value={venueCourts} onChange={e=>setVenueCourts(e.target.value)}/></div>
+            <div><Label>First physical court number</Label><Input data-testid="kotc-court-start" className="mt-1 min-h-11" type="number" min="1" max="20" value={courtStartNumber} onChange={e=>setCourtStartNumber(e.target.value)}/><p className="text-xs text-muted-foreground mt-1">For Courts 3 and 4, enter 3 and set venue courts to 2. The first assigned court remains King Court.</p></div>
             <div><Label>Hall / session duration</Label><div className="relative mt-1"><Input className="min-h-11 pr-14" type="number" min="15" value={duration} onChange={e=>setDuration(e.target.value)}/><span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">min</span></div></div>
             <div><Label>Scoring</Label><Select value={scoringMode} onValueChange={setScoringMode}><SelectTrigger className="mt-1 min-h-11"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="timed">Timed rounds</SelectItem><SelectItem value="first_court_to_target">First court to 11 · All courts stop</SelectItem></SelectContent></Select></div>
             {scoringMode==='first_court_to_target'?<div className="text-sm rounded-lg border p-3">First court to 11, win by 1. All courts stop at the whistle; tied courts use the serving team.</div>:scoringMode==='timed'?<div><Label>Round duration</Label><div className="relative mt-1"><Input className="min-h-11 pr-14" type="number" min="1" value={playMinutes} onChange={e=>setPlayMinutes(e.target.value)}/><span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">min</span></div></div>:<><div><Label>Score target</Label><Input className="mt-1 min-h-11" type="number" min="1" value={scoreTarget} onChange={e=>setScoreTarget(e.target.value)}/></div><div><Label>Winning margin</Label><Select value={winByTwo?'2':'1'} onValueChange={v=>setWinByTwo(v==='2')}><SelectTrigger className="mt-1 min-h-11"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="1">Win by 1</SelectItem><SelectItem value="2">Win by 2</SelectItem></SelectContent></Select></div></>}

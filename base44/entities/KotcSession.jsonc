@@ -55,6 +55,7 @@
     "venue_court_limit": {
       "type": "number"
     },
+    "court_start_number": {"type": "number", "default": 1},
     "available_court_limit": {
       "type": "number"
     },
