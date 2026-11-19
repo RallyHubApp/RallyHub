@@ -211,7 +211,7 @@ test('mobile timed tie: named-team serving buttons preview the correct winner',a
   await expect(page.getByTestId('kotc-complete-1')).toBeEnabled();
 });
 
-test('prestart scoring: timed to first to 11, then back to timed before Round 1',async({page})=>{
+test('prestart scoring: timed to first to 11 before Round 1',async({page})=>{
   const model=createModel({isAdmin:true});
   const original=model.handle;
   model.handle=async(name,body)=>{
