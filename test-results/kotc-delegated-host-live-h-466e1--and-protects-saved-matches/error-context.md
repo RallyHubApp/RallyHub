@@ -12,11 +12,11 @@
 # Error details
 
 ```
-Test timeout of 45000ms exceeded.
+Test timeout of 20000ms exceeded.
 ```
 
 ```
-Error: locator.click: Test timeout of 45000ms exceeded.
+Error: locator.click: Test timeout of 20000ms exceeded.
 Call log:
   - waiting for getByTestId('kotc-start-round')
 
@@ -126,7 +126,7 @@ Call log:
   173 |   await install(page,model);
   174 |   await page.goto('/e2e/kotcDelegatedHostHarness.html');
 > 175 |   await page.getByTestId('kotc-start-round').click();
-      |                                              ^ Error: locator.click: Test timeout of 45000ms exceeded.
+      |                                              ^ Error: locator.click: Test timeout of 20000ms exceeded.
   176 |   await expect(page.getByTestId('kotc-live-player-editor-toggle')).toBeVisible();
   177 |   await page.getByTestId('kotc-live-player-editor-toggle').click();
   178 |   await expect(page.getByTestId('kotc-round-editor')).toBeVisible();
