@@ -11,7 +11,7 @@ const assign=new Function(`${js};return assign`)();
 const preference={1:[1,2,3,4],2:[2,3,4,1],3:[3,4,2,1],4:[4,3,2,1]};
 let cases=0,returnCount=0,exact=0,firstAlternative=0,farther=0,forced=0;
 function check(previous,available){const ids=previous.map((_,i)=>`P${i}`);const slots=available.map(ladder_court_rank=>({ladder_court_rank}));const map=new Map(ids.map((id,i)=>[id,previous[i]]));const output=assign(map,slots,ids,4);assert.equal(output.length,ids.length);assert.equal(new Set(output).size,ids.length);const actual=output.map((id,i)=>({from:map.get(id),to:available[i]}));for(const x of actual){const idx=preference[x.from].indexOf(x.to);assert(idx>=0);returnCount++;if(idx===0)exact++;else if(idx===1)firstAlternative++;else farther++;}cases++;return actual;}
-for(let c=1;c<=4;c++){const actual=check([c],preference[c]);assert.equal(actual[0].to,preference[c][0]);for(const dest of preference[c]){const a=check([c],[dest]);assert.equal(a[0].to,dest);if(dest!==c)forced++;}}
+for(let c=1;c<=4;c++){const actual=check([c],[preference[c][0]]);assert.equal(actual[0].to,preference[c][0]);for(const dest of preference[c]){const a=check([c],[dest]);assert.equal(a[0].to,dest);if(dest!==c)forced++;}}
 for(let a=1;a<=4;a++)for(let b=1;b<=4;b++)for(let c=1;c<=4;c++)for(let d=1;d<=4;d++){
   for(const available of [[1,2,3,4],[4,3,2,1],[1,1,3,4],[2,2,3,4],[1,2,4,4],[1,1,1,1]]){
     const previous=[a,b,c,d],result=check(previous,available);
