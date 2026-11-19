@@ -508,9 +508,17 @@ Deno.serve(async (req) => {
         for(const [rankText,d] of Object.entries(destinations) as any){const rank=Number(rankText);const split=crossSplit(d.pairOne,d.pairTwo,partnerCounts,`${session.random_seed}|r${nextNumber}|c${rank}`,drawLocks);for(const [side,ids] of [['A',split.teamA],['B',split.teamB]] as any){for(let i=0;i<2;i++)sportingSlots.push({participant_id:ids[i],ladder_court_rank:rank,team_side:side,slot_number:i+1,destination_from_prior_round:rank});}}
         const sportingSet=new Set(sportingSlots.map((s:any)=>s.participant_id)); const outgoing=sportingSlots.filter((s:any)=>selectedSet.has(s.participant_id)).sort((a:any,b:any)=>a.ladder_court_rank-b.ladder_court_rank||String(a.team_side).localeCompare(String(b.team_side))||a.slot_number-b.slot_number); const replacements=projected.filter((p:any)=>!sportingSet.has(p.id)&&!selectedSet.has(p.id)).map((p:any)=>p.id).sort((a:string,b:string)=>stableHash(`${session.random_seed}|r${nextNumber}|${a}`)-stableHash(`${session.random_seed}|r${nextNumber}|${b}`));
         if(outgoing.length!==replacements.length)return Response.json({ error:'Fairness substitution invariant failed while generating the next round.' }, { status:409 }); // Minimum-cost assignment of returning bench players to the vacated sporting slots.
-        // Court-distance dominates ties; equal distance favours the lower-ranked court
-        // (no free promotion from a compulsory bench). Keep the bench selection intact.
-        const assignmentCost=(id:string,slot:any)=>{const previous=lastPlayedCourt.get(String(id));if(!previous)return 0;const court=Number(slot.ladder_court_rank);return Math.abs(court-previous)*100+(court<previous?10:0);};
+        // Preferences are soft, never eligibility restrictions. Bench fairness is
+        // already decided above. A bench return must not earn an easy promotion.
+        // Explicit agreed preference order (court 1 is King Court).
+        const returnPreference:any={1:[1,2,3,4],2:[2,3,4,1],3:[3,4,2,1],4:[4,3,2,1]};
+        const assignmentCost=(id:string,slot:any)=>{
+          const previous=lastPlayedCourt.get(String(id));if(!previous)return 0;
+          const court=Number(slot.ladder_court_rank);
+          const order=(returnPreference[previous]||Array.from({length:activeCourts},(_:any,i:number)=>i+1)).filter((rank:number)=>rank<=activeCourts);
+          const preferenceIndex=order.indexOf(court);
+          return preferenceIndex>=0?preferenceIndex:activeCourts;
+        };
         const memo=new Map<string,{cost:number,ids:string[]}>();
         const optimise=(index:number,mask:number):{cost:number,ids:string[]}=>{
           if(index===outgoing.length)return {cost:0,ids:[]};
