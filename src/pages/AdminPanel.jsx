@@ -272,7 +272,7 @@ export default function AdminPanel() {
       return res.data?.users || [];
     },
     enabled: canAccessAdmin && ['users','linking','preview','invitations'].includes(activeAdminTab),
-    staleTime: 5*60_000, refetchOnWindowFocus:false
+    staleTime: 5*60_000, refetchOnWindowFocus:false, retry:false
   });
 
   const { data: allClubUserAccesses = [] } = useQuery({
@@ -1371,13 +1371,13 @@ Brian`;
         identityConfirmedByAdmin: requiresConfirmation
       });
       if (res.data?.error) throw new Error(res.data.error);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['all-users'] }),
-        queryClient.invalidateQueries({ queryKey: ['all-club-user-accesses'] }),
-        queryClient.invalidateQueries({ queryKey: ['players'] }),
-        queryClient.invalidateQueries({ queryKey: ['admin-membership-records'] }),
-        queryClient.invalidateQueries({ queryKey: ['club-membership-relationships'] }),
-      ]);
+      // Update only the approved account in the local cache. Do not fan out
+      // five list reloads after a single member approval.
+      queryClient.setQueryData(['all-users'], previous => (previous || []).map(row =>
+        row.id === targetUser.id ? { ...row, approval_status: 'approved', active_club_id: user?.active_club_id || row.active_club_id, account_scope: 'club' } : row));
+      // Membership/access lists can be refreshed explicitly when opened later.
+      queryClient.setQueriesData({ queryKey: ['admin-membership-records'] }, previous =>
+        (previous || []).map(row => row.person_id === player.person_id ? { ...row, linked_user_id: targetUser.id } : row));
       const message = `${player.full_name} — RallyHub account approved and linked to existing membership. No payment required.`;
       setApprovalFeedback({ userId: targetUser.id, type: 'success', text: message });
       toast.success(message, { duration: 6500 });
@@ -1405,7 +1405,6 @@ Brian`;
       if (approvalRes.data?.error) throw new Error(approvalRes.data.error);
       if (!approvalRes.data?.success) throw new Error('Approval was not confirmed. Please retry.');
       queryClient.setQueryData(['all-users'], previous => (previous || []).map(row => row.id === userId ? { ...row, approval_status: status, ...(status === 'approved' ? { account_scope: 'club' } : {}) } : row));
-      await queryClient.refetchQueries({ queryKey: ['all-users'], type: 'active' });
       const message = status === 'approved' ? 'RallyHub account approved.' : `Account ${status}.`;
       setApprovalFeedback({ userId, type: 'success', text: message });
       toast.success(message, { duration: 6500 });
