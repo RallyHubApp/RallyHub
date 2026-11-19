@@ -46,7 +46,7 @@ export default function AdminPanel() {
   });
   const canAccessDirectoryAdmin = canAccessAdmin && directoryCapability === true;
 
-  const allowedAdminTabs = ['linking', 'preview', 'announcements', 'directory-command', 'directory-crm', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'directory-campaigns', 'directory-governance', 'feedback', 'control-library', 'dupr', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
+  const allowedAdminTabs = ['membership', 'linking', 'preview', 'announcements', 'directory-command', 'directory-crm', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'directory-campaigns', 'directory-governance', 'feedback', 'control-library', 'dupr', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
   const requestedDirectoryWorkspace = directoryTabNames.includes(requestedTab);
   const rawAdminTab = requestedTab === 'approvals' ? 'linking' : allowedAdminTabs.includes(requestedTab) ? requestedTab : 'linking';
@@ -216,7 +216,8 @@ export default function AdminPanel() {
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
     queryFn: () => base44.entities.Player.list('-created_date', 200),
-    enabled: canAccessAdmin && !directoryContext && !requestedDirectoryWorkspace
+    enabled: canAccessAdmin && ['players','matches'].includes(activeAdminTab),
+    staleTime: 5*60_000, refetchOnWindowFocus:false, retry:false
   });
 
   const { data: canonicalMembershipSummary = null, isLoading: canonicalMembershipLoading, isError: canonicalMembershipError } = useQuery({
@@ -227,8 +228,8 @@ export default function AdminPanel() {
       return res.data.counts;
     },
     enabled: canAccessAdmin && !directoryContext && !requestedDirectoryWorkspace && !!user?.active_tenant_id && !!user?.active_club_id,
-    refetchInterval: 60000,
-    refetchOnWindowFocus: true
+    staleTime: 5*60_000, refetchInterval:false,
+    refetchOnWindowFocus:false, retry:false
   });
 
   const { data: clubMembershipRelationships = [] } = useQuery({
@@ -238,7 +239,8 @@ export default function AdminPanel() {
       club_id: user?.active_club_id,
       relationship_type: 'member'
     }, '-updated_date', 500),
-    enabled: canAccessAdmin && !directoryContext && !requestedDirectoryWorkspace && !!user?.active_tenant_id && !!user?.active_club_id
+    enabled: canAccessAdmin && activeAdminTab === 'membership' && !!user?.active_tenant_id && !!user?.active_club_id,
+    staleTime:5*60_000, refetchOnWindowFocus:false, retry:false
   });
 
   const { data: membershipRows = [], isLoading: membershipRowsLoading } = useQuery({
@@ -248,7 +250,8 @@ export default function AdminPanel() {
       if (res.data?.error) throw new Error(res.data.error);
       return res.data?.rows || [];
     },
-    enabled: canAccessAdmin && !directoryContext && !requestedDirectoryWorkspace && !!user?.active_tenant_id && !!user?.active_club_id
+    enabled: canAccessAdmin && ['linking','membership'].includes(activeAdminTab) && !!user?.active_tenant_id && !!user?.active_club_id,
+    staleTime:5*60_000, refetchOnWindowFocus:false, retry:false
   });
 
   const { data: selectedMembershipRecord = null, isLoading: selectedMembershipLoading, error: selectedMembershipError } = useQuery({
@@ -276,7 +279,7 @@ export default function AdminPanel() {
     queryKey: ['all-club-user-accesses'],
     queryFn: () => base44.entities.ClubUserAccess.list('-approved_at', 500),
     enabled: canAccessAdmin && ['users','linking','preview','invitations'].includes(activeAdminTab),
-    staleTime: 5*60_000, refetchOnWindowFocus:false
+    staleTime: 5*60_000, refetchOnWindowFocus:false, retry:false
   });
 
   const previewTargetUserId = previewUserId || user?.id || '';
@@ -1810,6 +1813,7 @@ Brian`;
             <TabsTrigger value="directory-campaigns" className="text-xs gap-1.5"><Megaphone className="w-3.5 h-3.5" /> Campaigns & Consent</TabsTrigger>
             <TabsTrigger value="directory-governance" className="text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Governance & Export</TabsTrigger>
           </>) : (<>
+            <TabsTrigger value="membership" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Membership Control Centre</TabsTrigger>
             <TabsTrigger value="preview" className="text-xs gap-1.5"><Eye className="w-3.5 h-3.5" /> Member Preview</TabsTrigger>
             <TabsTrigger value="announcements" className="text-xs gap-1.5"><Megaphone className="w-3.5 h-3.5" /> Announcements</TabsTrigger>
             <TabsTrigger value="feedback" className="text-xs gap-1.5"><MessageCircle className="w-3.5 h-3.5" /> Feedback</TabsTrigger>
@@ -1824,6 +1828,7 @@ Brian`;
           </>)}
         </TabsList>
 
+        <TabsContent value="membership" className="mt-4"><div className="glass rounded-xl p-4 space-y-3"><h2 className="text-lg font-bold">Membership Control Centre</h2><p className="text-sm text-muted-foreground">Existing membership register, payments and account connections.</p><Button onClick={() => { window.location.href = "/app/membership"; }}>Open Membership Control Centre</Button></div></TabsContent>
         <TabsContent value="directory-campaigns" className="mt-4"><DirectoryGovernancePanel mode="campaigns" /></TabsContent>
         <TabsContent value="directory-governance" className="mt-4"><DirectoryGovernancePanel mode="governance" /></TabsContent>
         <TabsContent value="directory-command" className="mt-4">
