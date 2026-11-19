@@ -1813,7 +1813,7 @@ Brian`;
             <TabsTrigger value="directory-campaigns" className="text-xs gap-1.5"><Megaphone className="w-3.5 h-3.5" /> Campaigns & Consent</TabsTrigger>
             <TabsTrigger value="directory-governance" className="text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Governance & Export</TabsTrigger>
           </>) : (<>
-            <TabsTrigger value="membership" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Membership Control Centre</TabsTrigger>
+            <TabsTrigger value="membership" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Club Command Centre · Membership</TabsTrigger>
             <TabsTrigger value="preview" className="text-xs gap-1.5"><Eye className="w-3.5 h-3.5" /> Member Preview</TabsTrigger>
             <TabsTrigger value="announcements" className="text-xs gap-1.5"><Megaphone className="w-3.5 h-3.5" /> Announcements</TabsTrigger>
             <TabsTrigger value="feedback" className="text-xs gap-1.5"><MessageCircle className="w-3.5 h-3.5" /> Feedback</TabsTrigger>
@@ -1828,7 +1828,7 @@ Brian`;
           </>)}
         </TabsList>
 
-        <TabsContent value="membership" className="mt-4"><div className="glass rounded-xl p-4 space-y-3"><h2 className="text-lg font-bold">Membership Control Centre</h2><p className="text-sm text-muted-foreground">Existing membership register, payments and account connections.</p><Button onClick={() => { window.location.href = "/app/membership"; }}>Open Membership Control Centre</Button></div></TabsContent>
+        <TabsContent value="membership" className="mt-4"><div className="glass rounded-xl p-4 space-y-3"><h2 className="text-lg font-bold">Club Command Centre · People</h2><p className="text-sm text-muted-foreground">Central club workspace for membership, guests, players and account access. The existing membership register remains available there.</p><Button onClick={() => { window.location.href = "/app/club-command-centre?section=people"; }}>Open Club Command Centre · People</Button></div></TabsContent>
         <TabsContent value="directory-campaigns" className="mt-4"><DirectoryGovernancePanel mode="campaigns" /></TabsContent>
         <TabsContent value="directory-governance" className="mt-4"><DirectoryGovernancePanel mode="governance" /></TabsContent>
         <TabsContent value="directory-command" className="mt-4">
