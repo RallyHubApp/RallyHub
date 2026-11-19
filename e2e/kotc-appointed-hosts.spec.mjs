@@ -21,7 +21,7 @@ test('appointed hosts: names and emails persist on refresh; appointment updates 
  for(const h of initial){await expect(list.getByText(h.name,{exact:true})).toBeVisible();await expect(list.getByText(h.email,{exact:true})).toBeVisible();}
  await page.reload();await expect(list).toContainText('Appointed hosts (3)');
  for(const h of initial)await expect(list.getByText(h.name,{exact:true})).toBeVisible();
- await page.getByTestId('kotc-event-host-search').locator('input').fill('Host Four');
+ await page.getByTestId('kotc-event-host-search').fill('Host Four');
  await expect(page.getByRole('checkbox',{name:'Select Host Four as host'})).toBeVisible();
  await page.getByRole('checkbox',{name:'Select Host Four as host'}).check();
  await page.getByRole('button',{name:'Appoint 1 Host'}).click();

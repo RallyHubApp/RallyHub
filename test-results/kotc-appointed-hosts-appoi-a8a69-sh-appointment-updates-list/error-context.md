@@ -18,7 +18,7 @@ Test timeout of 45000ms exceeded.
 ```
 Error: locator.fill: Test timeout of 45000ms exceeded.
 Call log:
-  - waiting for getByTestId('kotc-event-host-search').locator('input')
+  - waiting for getByTestId('kotc-event-host-search')
 
 ```
 
@@ -82,8 +82,8 @@ Call log:
   21 |  for(const h of initial){await expect(list.getByText(h.name,{exact:true})).toBeVisible();await expect(list.getByText(h.email,{exact:true})).toBeVisible();}
   22 |  await page.reload();await expect(list).toContainText('Appointed hosts (3)');
   23 |  for(const h of initial)await expect(list.getByText(h.name,{exact:true})).toBeVisible();
-> 24 |  await page.getByTestId('kotc-event-host-search').locator('input').fill('Host Four');
-     |                                                                    ^ Error: locator.fill: Test timeout of 45000ms exceeded.
+> 24 |  await page.getByTestId('kotc-event-host-search').fill('Host Four');
+     |                                                   ^ Error: locator.fill: Test timeout of 45000ms exceeded.
   25 |  await expect(page.getByRole('checkbox',{name:'Select Host Four as host'})).toBeVisible();
   26 |  await page.getByRole('checkbox',{name:'Select Host Four as host'}).check();
   27 |  await page.getByRole('button',{name:'Appoint 1 Host'}).click();
