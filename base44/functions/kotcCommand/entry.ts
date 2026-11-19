@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
-const STRUCTURAL = new Set(['confirm_round','start_round','start_proposed_round','undo_start_round','generate_next_round','adjust_proposed_round','adjust_started_round','set_pair_lock','set_participant_status','bulk_roster_change','add_late_participant','replace_proposed_player','restore_participant_status','update_timer_settings','end_first_court_round','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
+const STRUCTURAL = new Set(['confirm_round','start_round','start_proposed_round','undo_start_round','generate_next_round','adjust_proposed_round','adjust_started_round','set_pair_lock','set_participant_status','bulk_roster_change','add_late_participant','replace_proposed_player','restore_participant_status','update_timer_settings','update_prestart_scoring_mode','end_first_court_round','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
 const RESOLVED = new Set(['completed','retired','abandoned','not_played']);
 
 function nowIso() { return new Date().toISOString(); }
@@ -849,6 +849,17 @@ Deno.serve(async (req) => {
       timer={...timer,firstCourtCalledRoundId:round.id,firstCourtCalledAt:nowIso(),running:false,deadlineAt:null};
       session=await base44.asServiceRole.entities.KotcSession.update(session.id,{timer_state_json:JSON.stringify(timer),revision:currentSessionRevision+1,last_command_id:commandId});
       result={success:true,session};
+    } else if (commandType === 'update_prestart_scoring_mode') {
+      const mode=String(body.scoringMode||'');
+      if(!['timed','first_court_to_target'].includes(mode))return Response.json({error:'Choose Timed or First to 11 (all courts stop).'},{status:400});
+      if(Number(session.current_round_number)!==1||!session.current_round_id)return Response.json({error:'Pre-start scoring change is only available before Round 1.'},{status:409});
+      const proposed=(await base44.asServiceRole.entities.KotcRound.filter({id:session.current_round_id,session_id:session.id}))?.[0];
+      if(proposed?.status!=='proposed')return Response.json({error:'Round 1 has already started.'},{status:409});
+      const recorded=await base44.asServiceRole.entities.KotcMatch.filter({session_id:session.id});
+      if((recorded||[]).some((m:any)=>m.status==='completed'||m.status==='started'))return Response.json({error:'Scoring mode cannot change after play has begun.'},{status:409});
+      session=await base44.asServiceRole.entities.KotcSession.update(session.id,{scoring_mode:mode,score_target:mode==='first_court_to_target'?11:null,win_by_two:false,score_cap:null,revision:currentSessionRevision+1,last_command_id:commandId});
+      result={success:true,session};
+      await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_prestart_scoring_mode_updated',entity_type:'KotcSession',entity_id:session.id,scope_type:'KotcSession',scope_id:session.id,after_state:JSON.stringify({scoringMode:mode})});
     } else if (commandType === 'update_timer_settings') {
       const playMinutes = Number(body.playMinutes);
       const changeoverMinutes = Number(body.changeoverMinutes);
