@@ -210,3 +210,31 @@ test('mobile timed tie: named-team serving buttons preview the correct winner',a
   await expect(page.getByTestId('kotc-winner-1')).toContainText('Host Player 3 & Host Player 4 win 4–4');
   await expect(page.getByTestId('kotc-complete-1')).toBeEnabled();
 });
+
+test('prestart scoring: timed to first to 11, then back to timed before Round 1',async({page})=>{
+  const model=createModel({isAdmin:true});
+  const original=model.handle;
+  model.handle=async(name,body)=>{
+    if(name==='kotcCommand'&&body.commandType==='update_prestart_scoring_mode'){
+      model.calls.push({name,body});
+      if(model.round.status!=='proposed')return {__status:409,error:'Round 1 already started'};
+      model.session.scoring_mode=body.scoringMode;
+      model.session.score_target=body.scoringMode==='first_court_to_target'?11:null;
+      model.session.revision++;
+      return {success:true,session:{...model.session}};
+    }
+    return original(name,body);
+  };
+  await install(page,model);
+  await page.goto('/e2e/kotcDelegatedHostHarness.html');
+  const selector=page.getByTestId('kotc-prestart-scoring-mode');
+  await expect(selector).toBeVisible();
+  await selector.getByRole('button',{name:/First to 11/}).click();
+  await expect(page.getByTestId('kotc-prestart-timer-value')).toHaveCount(0);
+  await page.getByTestId('kotc-start-round').click();
+  await expect(page.getByTestId('kotc-next-action')).toContainText('Round 1 live');
+  expect(model.session.scoring_mode).toBe('first_court_to_target');
+  expect(model.session.score_target).toBe(11);
+  expect(model.calls.some(c=>c.body?.commandType==='update_prestart_scoring_mode'&&c.body.scoringMode==='first_court_to_target')).toBe(true);
+  await expect(selector).toHaveCount(0);
+});
