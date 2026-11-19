@@ -29,3 +29,19 @@ test('appointed hosts: names and emails persist on refresh; appointment updates 
  await expect(list.getByText(fourth.name,{exact:true})).toBeVisible();
  await expect(list.getByText(fourth.email,{exact:true})).toBeVisible();
 });
+
+test('host appointment failure explains missing account persistently',async({page})=>{
+ await page.route(`**/api/apps/${appId}/functions/manageKotcEventHost`,async route=>{
+  const b=route.request().postDataJSON()||{};
+  const data=b.action==='state'?{hosts:[]}:b.action==='search_hosts'?{people:[{id:'p4',name:'Darragh Broderick',email:'darragh@example.test'}]}:{error:'Host must have an existing RallyHub account'};
+  await route.fulfill({status:b.action==='grant'?404:200,contentType:'application/json',body:JSON.stringify(data)});
+ });
+ await page.goto('/e2e/kotcHostAccessHarness.html');
+ await page.locator('#kotc-event-host-search').fill('Darragh');
+ await page.getByRole('checkbox',{name:'Select Darragh Broderick as host'}).check();
+ await page.getByRole('button',{name:'Appoint 1 Host'}).click();
+ const alert=page.getByTestId('kotc-host-appointment-errors');
+ await expect(alert).toContainText('Darragh Broderick');
+ await expect(alert).toContainText('existing RallyHub account');
+ await expect(alert).toContainText('sign in to RallyHub');
+});
