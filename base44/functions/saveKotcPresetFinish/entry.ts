@@ -20,6 +20,6 @@ Deno.serve(async req=>{try{
   if(invalidLocks)return Response.json({error:`Preset ${index+1}: a locked pair is split or invalid.`},{status:400});
   if(preset.courts.some((c:any)=>c.A?.length!==2||c.B?.length!==2)||assigned.length!==count*4||new Set(assigned).size!==assigned.length||assigned.some((id:string)=>!ids.has(id)))return Response.json({error:`Preset ${index+1}: duplicate, incomplete or unavailable player assignment.`},{status:400});
  }
- const updated=await base44.asServiceRole.entities.KotcSession.update(session.id,{preset_finish_json:JSON.stringify({presets}),revision:Number(session.revision||0)+1});
+ const updated=await base44.asServiceRole.entities.KotcSession.update(session.id,{preset_finish_json:JSON.stringify({presets,normal_play_minutes:Number(session.play_minutes||8)}),revision:Number(session.revision||0)+1});
  return Response.json({success:true,session:updated});
 }catch(error){return Response.json({error:(error as any)?.message||'Could not save presets'},{status:500});}});
