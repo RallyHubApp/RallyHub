@@ -1375,7 +1375,13 @@ Brian`;
       // five list reloads after a single member approval.
       queryClient.setQueryData(['all-users'], previous => (previous || []).map(row =>
         row.id === targetUser.id ? { ...row, approval_status: 'approved', active_club_id: user?.active_club_id || row.active_club_id, account_scope: 'club' } : row));
-      // Membership/access lists can be refreshed explicitly when opened later.
+      // The approval screen's completion badge reads this same cache. Patch the
+      // newly granted access locally so it never reports a successful link as incomplete.
+      queryClient.setQueryData(['all-club-user-accesses'], previous => {
+        const rows = previous || [];
+        const next = {user_id:targetUser.id,person_id:player.person_id,club_id:user?.active_club_id,status:'active',permission_bundle:'member'};
+        return [...rows.filter(row => !(row.user_id === targetUser.id && row.club_id === user?.active_club_id)),next];
+      });
       queryClient.setQueriesData({ queryKey: ['admin-membership-records'] }, previous =>
         (previous || []).map(row => row.person_id === player.person_id ? { ...row, linked_user_id: targetUser.id } : row));
       const message = `${player.full_name} — RallyHub account approved and linked to existing membership. No payment required.`;
