@@ -687,7 +687,14 @@ Deno.serve(async(req)=>{
           if(matches.length===1&&!matches[0].person_id)player=matches[0];
         }
       }
-      if(!player)return Response.json({error:'Player identity is missing or ambiguous. Review the member record before linking.'},{status:409});
+      if(!player){
+        // A paid membership may predate Player provisioning. Create the missing
+        // club Player only after confirming there is no conflicting email record.
+        const email=lower(person.primary_email);
+        const emailPlayers=email?await base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId,email},'-updated_date',20):[];
+        if(emailPlayers.length>0)return Response.json({error:'Player identity is ambiguous. Review existing player records before linking.'},{status:409});
+        player=await base44.asServiceRole.entities.Player.create({tenant_id:tenantId,club_id:clubId,person_id:personId,full_name:person.full_name,email:email||undefined,phone:person.mobile||undefined,status:'Active',relationship_type:'member',relationship_status:'active',wins:0,losses:0,matches_played:0,guest_visits_used:0});
+      }
       const accountEmail=lower(target.email), recordEmail=lower(person.primary_email||player.email);
       const accountName=nameKey(target.full_name||target.display_name||''), recordName=nameKey(person.full_name||player.full_name||'');
       const emailMismatch=!!(accountEmail&&recordEmail&&accountEmail!==recordEmail);

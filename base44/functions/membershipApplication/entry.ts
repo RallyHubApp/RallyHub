@@ -184,6 +184,23 @@ async function nextMemberId(base44:any,config:any){
   }
   return `${prefix}${String(max+1).padStart(digits,'0')}`;
 }
+async function ensureMemberPlayer(base44:any,tenantId:string,clubId:string,person:any){
+  // Person ID is authoritative; legacy email-only rows are adopted only if unique.
+  const scope={tenant_id:tenantId,club_id:clubId};
+  const linked=await base44.asServiceRole.entities.Player.filter({...scope,person_id:person.id},'-updated_date',10);
+  if(linked.length>1)throw new Error('Multiple player records linked to this member. Manual review required.');
+  if(linked.length===1)return linked[0];
+  const email=emailKey(person.primary_email);
+  if(email){
+    const legacy=await base44.asServiceRole.entities.Player.filter({...scope,email},'-updated_date',20);
+    if(legacy.length>1)throw new Error('Ambiguous player email. Manual review required.');
+    if(legacy.length===1){
+      if(legacy[0].person_id&&String(legacy[0].person_id)!==String(person.id))throw new Error('Player email belongs to another person. Manual review required.');
+      return await base44.asServiceRole.entities.Player.update(legacy[0].id,{person_id:person.id,relationship_type:'member',relationship_status:'active'});
+    }
+  }
+  return await base44.asServiceRole.entities.Player.create({...scope,person_id:person.id,full_name:person.full_name,email:email||undefined,phone:person.mobile||undefined,status:'Active',relationship_type:'member',relationship_status:'active',wins:0,losses:0,matches_played:0,guest_visits_used:0});
+}
 async function ensureRelationship(base44:any,config:any,person:any,membership:any){
   // Preserve the active guest relationship until payment is confirmed.
   // Membership and guest histories are separate club relationships of one Person.
@@ -462,6 +479,7 @@ async function syncPaid(base44:any,config:any,app:any,membership:any,payment:any
   const person=await first(base44,'Person',{id:membership.person_id,tenant_id:config.tenant_id});
   if(person){
     await ensureRelationship(base44,config,person,updatedMembership);
+    await ensureMemberPlayer(base44,config.tenant_id,config.club_id,person);
     await closeConvertedGuestRelationship(base44,config.tenant_id,config.club_id,person.id);
   }
   return await base44.asServiceRole.entities.MembershipApplication.update(app.id,{status:'approved',payment_status:'paid',paid_at:app.paid_at||now,approved_at:app.approved_at||now,follow_up_status:'complete'});
@@ -1156,6 +1174,7 @@ Deno.serve(async(req)=>{
         if(memberId)membership=await base44.asServiceRole.entities.ClubMembership.update(membership.id,{member_id:memberId});
       }
       await ensureRelationship(base44,config,person,membership);
+      await ensureMemberPlayer(base44,config.tenant_id,config.club_id,person);
     }
     app=await sendSubmittedEmails(base44,config,club,pay.app,pay.paymentUrl);
     if(app.payment_status==='not_required')app=await sendPaidConfirmation(base44,config,club,app);
