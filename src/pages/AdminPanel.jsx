@@ -2967,7 +2967,7 @@ Brian`;
                             </div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            {section !== 'approved' && (
+                            {section !== 'approved' && !candidate && (
                               <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90 gap-1"
                                 disabled={updatingApproval === u.id || connectingMemberAccount === u.id}
                                 onClick={() => setApprovalStatus(u.id, 'approved')}>
