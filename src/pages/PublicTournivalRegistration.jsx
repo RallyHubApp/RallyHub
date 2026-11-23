@@ -54,6 +54,12 @@ export default function PublicTournivalRegistration(){
    <section className="glass rounded-xl p-4 sm:p-5 space-y-4">
     {loading?<p>Loading registration…</p>:!event?<p role="alert">{error||'Event not found'}</p>:<>
      <div className="space-y-3">
+      <div className="space-y-2 border-b border-border pb-4" data-testid="tournival-invitation-copy">
+       <h2 className="text-lg sm:text-xl font-black">You're invited to Clare Pickleball's Christmas Tournival!</h2>
+       <p className="text-sm leading-relaxed">Join us for a festive evening of pickleball, friendly competition and plenty of Christmas spirit.</p>
+       <p className="text-sm leading-relaxed">Whether you're a social player, an improver or a more experienced competitor, everyone is welcome. Enjoy 3–4 rounds with different partners, followed by exciting knockout matches and medals for our winners.</p>
+       <p className="text-sm font-semibold">Wear your Christmas jumper or Santa hat and come ready for a great night!</p>
+      </div>
       <h2 className="text-lg sm:text-xl font-black">{event.name}</h2>
       <div className="grid gap-2 text-sm">
        <p className="flex items-center gap-2"><CalendarDays className="w-4 h-4 shrink-0"/>{event.date}</p>
@@ -62,7 +68,6 @@ export default function PublicTournivalRegistration(){
        <p className="flex items-center gap-2"><Users className="w-4 h-4 shrink-0"/>{event.registered} of {event.capacity} places reserved · {event.waitlisted} on waiting list</p>
       </div>
       <div className="rounded-xl border border-primary/25 bg-primary/5 p-3 flex items-center justify-between"><span className="font-semibold">Entry fee</span><span className="font-black text-xl">{Number(event.fee||0)===0?'Free':`€${Number(event.fee).toFixed(2)}`}</span></div>
-      <p className="text-sm text-muted-foreground">Enjoy 3–4 rounds with changing partners, followed by knockout games and gold, silver and bronze medals. Christmas jumpers and Santa hats encouraged!</p>
      </div>
      {result?<section className="space-y-3" aria-live="polite">
        <h2 className="font-semibold text-lg flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600"/>Registration received</h2>
