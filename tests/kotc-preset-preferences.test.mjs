@@ -4,3 +4,5 @@ test('no responses never blocks a four-court layout and leaves two benched',()=>
 test('mutual partner preference honoured without duplicate players',()=>{const c=suggestPresetCourts(people,[{participant_id:'1',partner_id:'8'},{participant_id:'8',partner_id:'1'}],4);assert.deepEqual(c[0].A,['1','8']);});
 test('one-sided preference accepted',()=>{const c=suggestPresetCourts(people,[{participant_id:'3',partner_id:'9'}],4);assert.deepEqual(c[0].A,['3','9']);});
 test('court count limited to available players',()=>{assert.equal(suggestPresetCourts(people.slice(0,6),[],4).length,1);});
+
+test('requested opponent influences opposing court',()=>{const c=suggestPresetCourts(people,[{participant_id:'1',opponent_id:'7'}],4);assert.ok(c[0].B.includes('7')||c[0].B.includes('8'));});
