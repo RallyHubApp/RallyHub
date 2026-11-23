@@ -225,8 +225,8 @@ export default function PublicGuestSessionBooking(){
           <div><h2 className="text-lg font-black">{data?.inviteApproved&&inviteToken?"Confirm your details":"Your details"}</h2><p className="mt-1 text-xs text-muted-foreground">{data?.inviteApproved&&inviteToken?"These details have been carried forward from your approved request.":"Used to administer this guest session and contact you if needed."}</p></div>
           <div><Label htmlFor="name">Full name</Label><Input id="name" value={form.fullName} onChange={e=>set('fullName',e.target.value)} autoComplete="name" required className="mt-1.5 bg-secondary"/></div>
           <div className="grid sm:grid-cols-2 gap-4">
-            <div><Label htmlFor="email">Email</Label><Input id="email" type="email" value={form.email} onChange={e=>set('email',e.target.value)} autoComplete="email" required className="mt-1.5 bg-secondary"/></div>
-            <div><Label htmlFor="mobile">Mobile</Label><Input id="mobile" type="tel" value={form.mobile} onChange={e=>set('mobile',e.target.value)} autoComplete="tel" required className="mt-1.5 bg-secondary"/></div>
+            <div><Label htmlFor="email">Email</Label><Input id="email" type="email" autoComplete="email" value={form.email} onChange={e=>set('email',e.target.value)} autoComplete="email" required className="mt-1.5 bg-secondary"/></div>
+            <div><Label htmlFor="mobile">Mobile</Label><Input id="mobile" type="tel" autoComplete="tel" value={form.mobile} onChange={e=>set('mobile',e.target.value)} autoComplete="tel" required className="mt-1.5 bg-secondary"/></div>
           </div>
         </section>
 
@@ -256,7 +256,7 @@ export default function PublicGuestSessionBooking(){
           <div><h2 className="text-lg font-black">Emergency contact</h2><p className="mt-1 text-xs text-muted-foreground">Only available to authorised club/session organisers.</p></div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div><Label htmlFor="emergencyName">Contact name</Label><Input id="emergencyName" value={form.emergencyContactName} onChange={e=>set('emergencyContactName',e.target.value)} required className="mt-1.5 bg-secondary"/></div>
-            <div><Label htmlFor="emergencyMobile">Contact mobile</Label><Input id="emergencyMobile" type="tel" value={form.emergencyContactMobile} onChange={e=>set('emergencyContactMobile',e.target.value)} required className="mt-1.5 bg-secondary"/></div>
+            <div><Label htmlFor="emergencyMobile">Contact mobile</Label><Input id="emergencyMobile" type="tel" autoComplete="tel" value={form.emergencyContactMobile} onChange={e=>set('emergencyContactMobile',e.target.value)} required className="mt-1.5 bg-secondary"/></div>
           </div>
         </section>
 

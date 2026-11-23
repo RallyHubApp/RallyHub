@@ -157,8 +157,8 @@ export default function PublicInterclubRegistration() {
               <Input id="fullName" value={form.fullName} onChange={e=>set('fullName',e.target.value)} autoComplete="name" required className="mt-1.5 bg-secondary"/>
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
-              <div><Label htmlFor="email">Email</Label><Input id="email" type="email" value={form.email} onChange={e=>set('email',e.target.value)} autoComplete="email" required className="mt-1.5 bg-secondary"/></div>
-              <div><Label htmlFor="mobile">Mobile</Label><Input id="mobile" type="tel" value={form.mobile} onChange={e=>set('mobile',e.target.value)} autoComplete="tel" required className="mt-1.5 bg-secondary"/></div>
+              <div><Label htmlFor="email">Email</Label><Input id="email" type="email" autoComplete="email" value={form.email} onChange={e=>set('email',e.target.value)} autoComplete="email" required className="mt-1.5 bg-secondary"/></div>
+              <div><Label htmlFor="mobile">Mobile</Label><Input id="mobile" type="tel" autoComplete="tel" value={form.mobile} onChange={e=>set('mobile',e.target.value)} autoComplete="tel" required className="mt-1.5 bg-secondary"/></div>
             </div>
             <div>
               <Label>Gender</Label>
@@ -192,7 +192,7 @@ export default function PublicInterclubRegistration() {
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div><Label htmlFor="emergencyName">Emergency contact name</Label><Input id="emergencyName" value={form.emergencyContactName} onChange={e=>set('emergencyContactName',e.target.value)} required className="mt-1.5 bg-secondary"/></div>
-              <div><Label htmlFor="emergencyMobile">Emergency contact mobile</Label><Input id="emergencyMobile" type="tel" value={form.emergencyContactMobile} onChange={e=>set('emergencyContactMobile',e.target.value)} required className="mt-1.5 bg-secondary"/></div>
+              <div><Label htmlFor="emergencyMobile">Emergency contact mobile</Label><Input id="emergencyMobile" type="tel" autoComplete="tel" value={form.emergencyContactMobile} onChange={e=>set('emergencyContactMobile',e.target.value)} required className="mt-1.5 bg-secondary"/></div>
             </div>
             <div>
               <Label htmlFor="medicalNote">Anything an organiser should know in an emergency? <span className="font-normal text-muted-foreground">(optional)</span></Label>
