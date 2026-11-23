@@ -254,8 +254,8 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
           <p className="text-sm font-semibold">{user?.role === 'admin' ? 'Use a Spond account for this connection' : 'Connect the club’s Spond account'}</p>
           <p className="text-xs text-muted-foreground">The password is used only to establish a temporary Spond session in this browser and is not saved by RallyHub.</p>
           <div className="grid sm:grid-cols-2 gap-3">
-            <div><Label className="text-xs">Spond email</Label><Input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-1" /></div>
-            <div><Label className="text-xs">Spond password</Label><PasswordInput value={password} onChange={e=>setPassword(e.target.value)} className="mt-1" autoComplete="current-password" placeholder="••••••••" onKeyDown={e=>e.key==='Enter'&&login()} /></div>
+            <div><Label htmlFor="directory-spond-email" className="text-xs">Spond email</Label><Input id="directory-spond-email" name="username" autoComplete="username" type="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-1" /></div>
+            <div><Label htmlFor="directory-spond-password" className="text-xs">Spond password</Label><PasswordInput id="directory-spond-password" name="password" value={password} onChange={e=>setPassword(e.target.value)} className="mt-1" autoComplete="current-password" placeholder="••••••••" onKeyDown={e=>e.key==='Enter'&&login()} /></div>
           </div>
           <Button type="button" onClick={login} disabled={loggingIn} className="gap-2">{loggingIn ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}{loggingIn ? 'Connecting…' : 'Connect Spond'}</Button>
         </div>

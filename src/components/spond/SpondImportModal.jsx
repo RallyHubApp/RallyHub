@@ -260,9 +260,9 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
             </p>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-muted-foreground block mb-1">Spond Email</label>
+                <label htmlFor="spond-import-email" className="text-xs text-muted-foreground block mb-1">Spond Email</label>
                 <Input
-                  type="email"
+                  id="spond-import-email" name="username" autoComplete="username" type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="you@example.com"
@@ -270,8 +270,9 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground block mb-1">Spond Password</label>
+                <label htmlFor="spond-import-password" className="text-xs text-muted-foreground block mb-1">Spond Password</label>
                 <PasswordInput
+                  id="spond-import-password" name="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
