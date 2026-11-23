@@ -48,18 +48,8 @@ export default function PublicTournivalRegistration(){
   playerTabs={[{key:'registration',label:'Registration'}]}
  >
   <div className="space-y-4" data-testid="tournival-registration-approved-frame">
-   <section className="relative isolate overflow-hidden rounded-xl border border-[#d8b95d]/50 bg-[#08254a] text-white shadow-md" aria-label="Christmas Tournival invitation banner">
-    <div className="pointer-events-none absolute inset-0" aria-hidden="true" style={{background:'radial-gradient(ellipse at 85% 12%, rgba(249,203,23,.18), transparent 47%), radial-gradient(ellipse at 8% 100%, rgba(8,142,72,.20), transparent 50%)'}}/>
-    <div className="pointer-events-none absolute -top-20 -right-16 h-48 w-48 rounded-full border border-[#f9cb17]/25 sm:h-64 sm:w-64" aria-hidden="true"/>
-    <div className="pointer-events-none absolute -top-12 -right-8 h-36 w-36 rounded-full border border-[#f9cb17]/20 sm:h-48 sm:w-48" aria-hidden="true"/>
-    <div className="relative px-5 py-7 text-center sm:px-10 sm:py-10">
-     <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[.25em] text-[#f9cb17]">Clare Pickleball presents</p>
-     <div className="mx-auto my-3 h-px w-20 bg-[#f9cb17]/75" aria-hidden="true"/>
-     <h1 className="text-[clamp(1.7rem,5.5vw,3rem)] font-black uppercase tracking-tight leading-[1.08]">Christmas <span className="block text-[#f9cb17]">Tournival</span></h1>
-     <p className="mt-3 text-sm sm:text-base font-semibold tracking-[.12em] uppercase text-white/95">Play. Compete. Celebrate.</p>
-     <p className="mx-auto mt-4 max-w-xl text-xs sm:text-sm leading-relaxed text-white/85">A festive pickleball celebration for all abilities. New partners, exciting knockouts and medals to be won.</p>
-     <div className="mx-auto mt-5 flex w-fit items-center gap-2 text-[#f9cb17]" aria-hidden="true"><span className="h-px w-12 bg-current/60"/><span className="h-1.5 w-1.5 rotate-45 bg-current"/><span className="h-px w-12 bg-current/60"/></div>
-    </div>
+   <section className="overflow-hidden rounded-xl border border-border shadow-sm" aria-label="Christmas Tournival promotional artwork">
+    <img src="https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/e6a64f1af63eed67c7c7a7ed3deff3dc_a_high_quality_festive_promotional_banner_graphic.png" alt="Clare Pickleball Christmas Tournival — Play. Compete. Celebrate. A festive pickleball night for all abilities, with changing partners, knockouts and medals." className="block w-full h-auto" loading="eager" decoding="async" />
    </section>
    <section className="glass rounded-xl p-4 sm:p-5 space-y-4">
     {loading?<p>Loading registration…</p>:!event?<p role="alert">{error||'Event not found'}</p>:<>
