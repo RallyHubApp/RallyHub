@@ -3,7 +3,7 @@ import {useParams} from 'react-router-dom';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {base44} from '@/api/base44Client';
-import RallyHubPublicBrand from '@/components/branding/RallyHubPublicBrand';
+import BrandedHostFrame from '@/components/sporting/BrandedHostFrame';
 import {CalendarDays,Clock3,MapPin,Users,Trophy,CheckCircle2} from 'lucide-react';
 
 const CONSENT='tournival-participation-v1';
@@ -37,14 +37,20 @@ export default function PublicTournivalRegistration(){
   }catch(e){setError(e?.response?.data?.error||'Unable to register safely. Please contact organiser.');}
   finally{setSubmitting(false);}
  };
- return <div className="min-h-screen bg-background text-foreground p-3 sm:p-5" data-testid="tournival-registration-kotc-style">
-  <main className="max-w-4xl mx-auto space-y-4">
-   <header className="glass rounded-xl p-4 text-center">
-    <RallyHubPublicBrand moduleName="Tournival" pageLabel="Christmas Festival Tournament" club={event?.organiser||null}/>
-    <h1 className="text-xl sm:text-2xl font-black mt-4">Christmas Tournival 🎄</h1>
-    <p className="text-sm text-muted-foreground mt-2">Great games, different partners, festive fun and medals to play for.</p>
-    <p className="text-xs text-muted-foreground mt-2">Everyone is welcome — from social players to experienced competitors.</p>
-   </header>
+ return <BrandedHostFrame
+  playerMode
+  tenantId="6a9b7790bc4a8d299938bda9"
+  clubName="Clare Pickleball"
+  title="Christmas Tournival 🎄"
+  subtitle={event?.name||'Clare Pickleball · Festival Tournament'}
+  activeTab="registration"
+  onTab={()=>{}}
+  playerTabs={[{key:'registration',label:'Registration'}]}
+ >
+  <div className="space-y-4" data-testid="tournival-registration-approved-frame">
+   <section className="glass rounded-xl p-4 sm:p-5 space-y-4">
+    <div className="text-center space-y-2"><div className="text-3xl" aria-hidden="true">🎄 🏓 🏅</div><h1 className="text-xl sm:text-2xl font-black">You're invited to our Christmas Tournival!</h1><p className="text-sm text-muted-foreground">A festive celebration of pickleball — fun games, new partners and medals to play for. All abilities welcome!</p></div>
+   </section>
    <section className="glass rounded-xl p-4 sm:p-5 space-y-4">
     {loading?<p>Loading registration…</p>:!event?<p role="alert">{error||'Event not found'}</p>:<>
      <div className="space-y-3">
@@ -82,7 +88,6 @@ export default function PublicTournivalRegistration(){
       </form>}
     </>}
    </section>
-   <footer className="glass rounded-xl p-3 text-center text-xs text-muted-foreground">Clare Pickleball · Powered by RallyHub</footer>
-  </main>
- </div>;
+  </div>
+ </BrandedHostFrame>;
 }
