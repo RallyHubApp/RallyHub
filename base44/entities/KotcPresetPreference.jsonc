@@ -1,0 +1,6 @@
+{
+ "name":"KotcPresetPreference","type":"object",
+ "properties":{"tenant_id":{"type":"string"},"club_id":{"type":"string"},"session_id":{"type":"string"},"participant_id":{"type":"string"},"partner_id":{"type":"string"},"opponent_id":{"type":"string"},"second_choice_id":{"type":"string"},"updated_by_host":{"type":"boolean"}},
+ "required":["session_id","participant_id"],
+ "rls":{"create":{"user_condition":{"role":"admin"}},"read":{"user_condition":{"role":"admin"}},"update":{"user_condition":{"role":"admin"}},"delete":{"user_condition":{"role":"admin"}}}
+}
