@@ -55,7 +55,7 @@ Deno.serve(async req=>{try{
   if(!Array.isArray(courts)||courts.length!==maxCourts)return Response.json({error:`Preset needs ${maxCourts} courts.`},{status:400});
   const ids=courts.flatMap((c:any)=>[...(c.A||[]),...(c.B||[])]).map(String);
   if(courts.some((c:any)=>c.A?.length!==2||c.B?.length!==2)||ids.length!==maxCourts*4||new Set(ids).size!==ids.length||ids.some((id:string)=>!allowedIds.has(id)))return Response.json({error:'Preset contains incomplete, duplicate or unavailable player assignments.'},{status:400});
-  const minutes=Number(preset.minutes);if(!Number.isInteger(minutes)||minutes<1||minutes>60)return Response.json({error:'Preset duration must be 1–60 minutes.'},{status:400});
+  const minutes=Number(body.presetMinutes??preset.minutes);if(!Number.isInteger(minutes)||minutes<1||minutes>60)return Response.json({error:'Preset duration must be 1–60 minutes.'},{status:400});
   const nextNumber=fromRoundNumber+1,commandId=String(body.commandId||`preset-${Date.now()}`),now=nowIso();
   const existing=(await retry('existing preset round',()=>base44.asServiceRole.entities.KotcRound.filter({session_id:session.id,round_number:nextNumber}))).find((r:any)=>!['superseded','abandoned'].includes(r.status));
   if(existing)return Response.json({error:'Next round is already prepared; preset activation is unavailable.'},{status:409});
