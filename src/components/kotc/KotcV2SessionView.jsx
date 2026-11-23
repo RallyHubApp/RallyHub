@@ -1,3 +1,4 @@
+import KotcPresetHostPreferences from './KotcPresetHostPreferences';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -271,9 +272,11 @@ function PresetFinishEditor({session,participants,rounds,onSaved,busy}){
   useEffect(()=>{setPresets(stored||makePresetFinish(eligible.map(p=>p.id),2,15,courtCount));},[session.id,session.preset_finish_json,eligible.map(p=>p.id).join('|'),courtCount]);
   const names=Object.fromEntries(eligible.map(p=>[String(p.id),p.display_name]));
   const errors=validatePresetFinish(presets,eligible.map(p=>p.id),courtCount);const warnings=errors.filter(e=>e.includes('host warning'));const blocking=errors.filter(e=>!e.includes('host warning'));
+  const applySuggestion=courts=>{if(used||!courts.length)return;setPresets(old=>old.map((p,i)=>({...p,courts:courts.map(c=>({A:[...c.A],B:[...c.B]})),locked_pairs:[]})));setOpen(true);};
   if(session.scoring_mode!=='timed')return null;
   return <div className="rounded-xl border border-primary/30 p-3 space-y-3" data-testid="kotc-preset-finish-editor">
     <div className="flex items-center justify-between gap-2"><div><p className="font-bold text-sm">Preset Finish · Optional</p><p className="text-xs text-muted-foreground">The same court editor as normal rounds. Save one or two timed layouts; normal King of the Court continues until activated.</p></div><Button size="sm" variant="outline" onClick={()=>setOpen(v=>!v)}>{open?'Close':'Configure'}</Button></div>
+    <KotcPresetHostPreferences session={session} participants={eligible} courtCount={courtCount} disabled={used||busy} onApply={applySuggestion}/>
     {used&&<p className="text-xs text-muted-foreground">A preset has been activated. Saved layouts are locked.</p>}
     {open&&<div className="space-y-4"><div className="flex gap-2"><Button size="sm" variant={presets.length===1?'default':'outline'} onClick={()=>setPresets(v=>v.slice(0,1))} disabled={used}>One preset</Button><Button size="sm" variant={presets.length===2?'default':'outline'} onClick={()=>setPresets(v=>v.length===2?v:[...v,makePresetFinish(eligible.map(p=>p.id),2,15,courtCount)[1]])} disabled={used}>Two presets</Button></div>
     {presets.map((preset,index)=><div key={index} className="rounded-lg border p-3 space-y-3"><div className="flex items-center gap-3"><strong className="text-sm">Preset {index+1}</strong><Label>Minutes</Label><Input aria-label={`Preset ${index+1} minutes`} type="number" min="1" max="60" className="w-20" value={preset.minutes} disabled={used} onChange={e=>setPresets(old=>old.map((p,i)=>i===index?{...p,minutes:Number(e.target.value)}:p))}/></div><PresetFinishCourt session={session} preset={preset} index={index} eligible={eligible} names={names} used={used} onChange={next=>setPresets(old=>old.map((p,i)=>i===index?next:p))}/></div>)}
