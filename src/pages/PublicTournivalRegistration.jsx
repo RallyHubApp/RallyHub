@@ -4,6 +4,7 @@ import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {base44} from '@/api/base44Client';
 import RallyHubPublicBrand from '@/components/branding/RallyHubPublicBrand';
+import {CalendarDays,Clock3,MapPin,Users,Trophy,CheckCircle2} from 'lucide-react';
 
 const CONSENT='tournival-participation-v1';
 async function request(payload){
@@ -36,18 +37,29 @@ export default function PublicTournivalRegistration(){
   }catch(e){setError(e?.response?.data?.error||'Unable to register safely. Please contact organiser.');}
   finally{setSubmitting(false);}
  };
- return <div className="min-h-screen flex flex-col bg-[#f4f7fb] text-[#081342]" data-testid="tournival-registration-branded-frame">
-  <div className="w-full max-w-3xl mx-auto flex-1 px-3 sm:px-5 py-4 space-y-4">
-   <header className="bg-white rounded-xl shadow-sm px-4 py-4"><RallyHubPublicBrand moduleName="Tournival" pageLabel="Tournament Registration" club={event?.organiser||null} clubFirst={true}/><div className="mt-3 bg-[#073b74] text-white rounded-t-lg p-3 text-center font-black">CHRISTMAS TOURNIVAL · REGISTRATION</div><div className="h-2 bg-[#f9cb17] rounded-b-lg"/></header>
-   <section className="bg-white border border-[#d6e0ec] rounded-xl shadow-sm p-4 sm:p-6 space-y-4">
+ return <div className="min-h-screen bg-background text-foreground p-3 sm:p-5" data-testid="tournival-registration-kotc-style">
+  <main className="max-w-4xl mx-auto space-y-4">
+   <header className="glass rounded-xl p-4 text-center">
+    <RallyHubPublicBrand moduleName="Tournival" pageLabel="Christmas Festival Tournament" club={event?.organiser||null}/>
+    <h1 className="text-xl sm:text-2xl font-black mt-4">Christmas Tournival 🎄</h1>
+    <p className="text-sm text-muted-foreground mt-2">Great games, different partners, festive fun and medals to play for.</p>
+    <p className="text-xs text-muted-foreground mt-2">Everyone is welcome — from social players to experienced competitors.</p>
+   </header>
+   <section className="glass rounded-xl p-4 sm:p-5 space-y-4">
     {loading?<p>Loading registration…</p>:!event?<p role="alert">{error||'Event not found'}</p>:<>
-     <header className="space-y-3"><h1 className="text-xl sm:text-2xl font-black">{event.name}</h1>
-      <p className="text-sm text-muted-foreground">{event.date} · {event.venue}</p>
-      <p className="text-sm">Registration: {event.registered}/{event.capacity} places · Waiting list {event.waitlisted}</p>
-      <p className="text-sm font-semibold">Fee: {Number(event.fee||0)===0?'Free':`€${Number(event.fee).toFixed(2)}`}</p>
-     </header>
+     <div className="space-y-3">
+      <h2 className="text-lg sm:text-xl font-black">{event.name}</h2>
+      <div className="grid gap-2 text-sm">
+       <p className="flex items-center gap-2"><CalendarDays className="w-4 h-4 shrink-0"/>{event.date}</p>
+       <p className="flex items-center gap-2"><Clock3 className="w-4 h-4 shrink-0"/>7:00 pm – 10:00 pm</p>
+       <p className="flex items-start gap-2"><MapPin className="w-4 h-4 shrink-0 mt-0.5"/>{event.venue}</p>
+       <p className="flex items-center gap-2"><Users className="w-4 h-4 shrink-0"/>{event.registered} of {event.capacity} places reserved · {event.waitlisted} on waiting list</p>
+      </div>
+      <div className="rounded-xl border border-primary/25 bg-primary/5 p-3 flex items-center justify-between"><span className="font-semibold">Entry fee</span><span className="font-black text-xl">{Number(event.fee||0)===0?'Free':`€${Number(event.fee).toFixed(2)}`}</span></div>
+      <p className="text-sm text-muted-foreground">Enjoy 3–4 rounds with changing partners, followed by knockout games and gold, silver and bronze medals. Christmas jumpers and Santa hats encouraged!</p>
+     </div>
      {result?<section className="space-y-3" aria-live="polite">
-       <h2 className="font-semibold text-lg">Registration received</h2>
+       <h2 className="font-semibold text-lg flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600"/>Registration received</h2>
        <p>Status: {result.registration?.status?.replaceAll('_',' ')}</p>
        <p>Payment: {result.registration?.paymentStatus?.replaceAll('_',' ')}</p>
        {result.registration?.checkoutUrl?
@@ -57,7 +69,7 @@ export default function PublicTournivalRegistration(){
        {result.message&&<p className="text-sm">{result.message}</p>}
        {result.registration?.paymentStatus==='pending'&&<p className="text-xs text-muted-foreground">Payment is confirmed only when the provider verifies it. Closing this page does not complete a payment.</p>}
       </section>:
-      <form onSubmit={submit} className="space-y-3"><h2 className="font-black text-lg border-b pb-2">Register to play</h2>
+      <form onSubmit={submit} className="space-y-3"><h2 className="font-black text-lg border-b pb-2">Join the Christmas Tournival</h2>
        <label className="block text-sm">Full name <Input required autoComplete="name" minLength={2} maxLength={120} value={form.fullName} onChange={e=>setForm(f=>({...f,fullName:e.target.value}))}/></label>
        <label className="block text-sm">Email <Input required type="email" autoComplete="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/></label>
        <label className="block text-sm">Mobile <Input type="tel" autoComplete="tel" value={form.mobile} onChange={e=>setForm(f=>({...f,mobile:e.target.value}))}/></label>
@@ -66,11 +78,11 @@ export default function PublicTournivalRegistration(){
        <label className="flex gap-2 text-xs"><input type="checkbox" checked={form.duprConsent} onChange={e=>setForm(f=>({...f,duprConsent:e.target.checked}))}/>
         <span>Optional: I consent to eligible tournament results being prepared for DUPR reporting. A DUPR account is not required to participate, and reporting is subject to organiser and DUPR rules.</span></label>
        {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
-       <Button className="w-full bg-[#073b74] hover:bg-[#052c56] text-white font-bold min-h-11" type="submit" disabled={submitting||!form.consent}>{submitting?'Registering…':'Register for Tournival'}</Button>
+       <Button className="w-full bg-[#073b74] hover:bg-[#052c56] text-white font-bold min-h-11" type="submit" disabled={submitting||!form.consent}>{submitting?'Registering…':'Register for the Christmas Tournival'}</Button>
       </form>}
     </>}
    </section>
-  </div>
-  <footer className="w-full max-w-3xl mx-auto bg-[#053c56] text-white text-center text-xs px-3 py-4 mt-5 rounded-t-xl">Clare Pickleball · Powered by RallyHub</footer>
+   <footer className="glass rounded-xl p-3 text-center text-xs text-muted-foreground">Clare Pickleball · Powered by RallyHub</footer>
+  </main>
  </div>;
 }
