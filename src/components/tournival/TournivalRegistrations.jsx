@@ -2,9 +2,11 @@ import React,{useCallback,useEffect,useState} from 'react';
 import {Button} from '@/components/ui/button';
 import {base44} from '@/api/base44Client';
 import {toast} from 'sonner';
+import PublicTournivalPlayer from '@/pages/PublicTournivalPlayer';
 
 export default function TournivalRegistrations({tournament,isAdmin}) {
  const [rows,setRows]=useState([]),[loading,setLoading]=useState(true),[working,setWorking]=useState(null),[error,setError]=useState('');
+ const [preview,setPreview]=useState(null);
  const invoke=useCallback(async payload=>{
   const res=await base44.functions.invoke('legacyTournamentManager',{
    tournamentId:tournament.id,...payload
@@ -35,6 +37,12 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
   if(reason?.trim().length>=3)act(row,'tournival_withdraw',{reason:reason.trim()});
  };
  return <section className="glass rounded-xl p-4 space-y-3">
+  {preview&&<div role="dialog" aria-modal="true" aria-label="Organiser player page preview" className="fixed inset-0 z-[100] overflow-y-auto bg-black/75 p-3 sm:p-8">
+   <div className="mx-auto max-w-3xl rounded-xl bg-background p-3">
+    <div className="mb-3 flex items-center justify-between gap-3"><div><strong>Organiser preview — {preview.player.name}</strong><p className="text-xs text-muted-foreground">Read-only preview. No payment required; no personal access link is issued.</p></div><Button onClick={()=>setPreview(null)}>Close preview</Button></div>
+    <PublicTournivalPlayer previewData={preview}/>
+   </div>
+  </div>}
   <div className="flex justify-between items-center">
    <div><h3 className="font-semibold">Tournival Registrations & Check-in</h3>
     <p className="text-xs text-muted-foreground">Only confirmed and paid/free registrations may check in.</p></div>
@@ -51,6 +59,7 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
       {r.waitlistPosition&&<p>Waitlist #{r.waitlistPosition}</p>}
       <p>{r.checkedIn?'Checked in':'Not checked in'}</p>
       {isAdmin&&<div className="flex gap-2">
+       <Button size="sm" variant="outline" onClick={()=>setPreview({stage:'registration',event:{id:tournament.id,name:tournament.name,date:tournament.start_date,venue:tournament.location,startTime:tournament.event_start_time||'19:00',endTime:tournament.event_end_time||'22:00',mapUrl:tournament.event_map_url||'',arrivalInfo:tournament.event_player_info||'',contactPhone:tournament.event_contact_phone_keep_private?'':tournament.event_contact_phone||'',organiser:{name:'Clare Pickleball'}},player:{id:r.playerId,name:r.name,registrationStatus:r.status,paymentStatus:r.paymentStatus,checkedIn:r.checkedIn},matches:[],knockout:[],displayNames:{},finalised:false})}>View Player Page</Button>
        {r.status==='confirmed'&&['paid','not_required','simulated'].includes(r.paymentStatus)&&
         <Button disabled={!!working} size="sm" onClick={()=>act(r,'tournival_check_in',{checkedIn:!r.checkedIn})}>
           {r.checkedIn?'Undo check-in':'Check in'}</Button>}

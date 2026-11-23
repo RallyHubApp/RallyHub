@@ -4,11 +4,12 @@ import {Button} from '@/components/ui/button';
 import {base44} from '@/api/base44Client';
 import BrandedPlayerFrame from '@/components/sporting/BrandedPlayerFrame';
 import {CalendarDays,Clock3,MapPin,Phone,Info,Trophy} from 'lucide-react';
-export default function PublicTournivalPlayer(){
- const {token}=useParams(),[data,setData]=useState(null),[error,setError]=useState(''),[loading,setLoading]=useState(true);
+export default function PublicTournivalPlayer({previewData=null}){
+ const {token}=useParams(),[data,setData]=useState(previewData),[error,setError]=useState(''),[loading,setLoading]=useState(!previewData);
  const [refreshCounter,setRefreshCounter]=useState(0);
  const [activeTab,setActiveTab]=useState('registration');
  useEffect(()=>{
+  if(previewData){setData(previewData);setLoading(false);return;}
   let mounted=true,timeout;
   async function load(){
     try{
@@ -26,7 +27,7 @@ export default function PublicTournivalPlayer(){
   }
   load();
   return ()=>{mounted=false;clearTimeout(timeout);};
- },[token,refreshCounter]);
+ },[token,refreshCounter,previewData]);
  const player=data?.player,upcoming=data?.matches?.find(m=>['waiting','playing','scheduled'].includes(m.status));
  const stageIndex=['registration','fixtures','live','knockout','results'].indexOf(data?.stage||'registration');
  const available=['registration','fixtures','live','knockout','results'];
@@ -108,7 +109,7 @@ export default function PublicTournivalPlayer(){
     {!data.matches?.some(m=>m.result)&&!data.knockout?.some(m=>m.result)&&<p className="text-sm text-muted-foreground">No final results published for your matches.</p>}
    </section>}
    <p className="text-xs text-[#314563]">Personal link — do not share. Updates are read-only and do not affect scores.</p>
-   <Button variant="outline" onClick={()=>setRefreshCounter(x=>x+1)}>Refresh my information</Button>
+   {!previewData&&<Button variant="outline" onClick={()=>setRefreshCounter(x=>x+1)}>Refresh my information</Button>}
   </>}
  </BrandedPlayerFrame>;
 }
