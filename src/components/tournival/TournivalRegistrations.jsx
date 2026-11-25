@@ -32,6 +32,14 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
    await refresh();
   }catch(e){setError(e.message||'Action failed');}finally{setWorking(null);}
  };
+ const [invite,setInvite]=useState('');
+ const prepareInvite=async()=>{
+  try{
+   const data=await invoke({action:'create_tournival_registration_link'});
+   if(!data.success||!data.path)throw Error('Registration link unavailable');
+   setInvite(tournament.name+' — '+(tournament.start_date||'')+' '+(tournament.event_start_time||'')+'–'+(tournament.event_end_time||'')+'\n'+(tournament.location||'')+'\nRegister: '+window.location.origin+data.path);
+  }catch(e){setError(e.message);}
+ };
  const withdraw=row=>{
   const reason=window.prompt('Reason for withdrawal (required):');
   if(reason?.trim().length>=3)act(row,'tournival_withdraw',{reason:reason.trim()});
@@ -48,6 +56,8 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
     <p className="text-xs text-muted-foreground">Only confirmed and paid/free registrations may check in.</p></div>
    <Button size="sm" variant="outline" onClick={refresh}>Refresh</Button>
   </div>
+  {isAdmin&&<div className="flex flex-wrap gap-2"><Button variant="outline" onClick={prepareInvite}>Prepare WhatsApp invitation</Button>{invite&&<><Button variant="outline" onClick={()=>window.open('https://wa.me/?text='+encodeURIComponent(invite),'_blank','noopener,noreferrer')}>Share via WhatsApp</Button><Button variant="outline" onClick={()=>navigator.clipboard.writeText(invite).then(()=>toast.success('Invitation copied')).catch(()=>toast.error('Copy failed'))}>Copy invitation</Button></>}</div>}
+  {!loading&&!error&&<p>{rows.filter(r=>['confirmed','pending_payment'].includes(r.status)).length}/{tournament.max_players||32} registered · {rows.filter(r=>r.status==='confirmed'&&['paid','not_required'].includes(r.paymentStatus)).length} paid/free</p>}
   {error&&<p role="alert" className="text-xs text-destructive">{error}</p>}
   {loading?<p className="text-xs">Loading registrations…</p>:
    <div className="space-y-2">

@@ -80,6 +80,23 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const tournamentId = clean(body.tournamentId, 100);
     const action = clean(body.action, 40);
+    if(action==='tournival_registration_summary'){
+      const tenant=user.active_tenant_id,club=user.active_club_id;
+      if(!tenant||!club)return Response.json({error:'Active club required'},{status:403});
+      if(user.role!=='admin'){
+        const grants=await base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:tenant,club_id:club,user_id:user.id,status:'active'});
+        if(!grants.some((g:any)=>activeNow(g)&&g.permission_bundle==='club_admin'))return Response.json({error:'Forbidden'},{status:403});
+      }
+      const events=await base44.asServiceRole.entities.Tournament.filter({tenant_id:tenant,host_club_id:club,format:'Tournival'},'-start_date',100);
+      const upcoming=events.filter((t:any)=>t.status==='Registration Open'||t.status==='In Progress');
+      const rows=upcoming.length?await base44.asServiceRole.entities.TournivalRegistration.filter({tenant_id:tenant,club_id:club},'-registered_at',500):[];
+      if(events.length===100||rows.length===500)return Response.json({error:'Summary requires pagination'},{status:409});
+      return Response.json({success:true,events:upcoming.map((t:any)=>{
+        const active=rows.filter((r:any)=>r.tournament_id===t.id&&['confirmed','pending_payment'].includes(r.registration_status));
+        const paid=active.filter((r:any)=>['paid','not_required'].includes(r.payment_status)).length;
+        return {id:t.id,name:t.name,capacity:Number(t.max_players||32),registered:active.length,paid,pending:active.length-paid};
+      })});
+    }
     if (!tournamentId || !action) {
       return Response.json({ error: 'tournamentId and action are required' }, { status: 400 });
     }

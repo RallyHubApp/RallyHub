@@ -1,3 +1,4 @@
+import TournivalRegistrationSummary from '@/components/tournival/TournivalRegistrationSummary';
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -138,6 +139,7 @@ export default function Tournaments() {
         </Button></div>
       </PageHeader>
 
+<TournivalRegistrationSummary user={currentUser}/>
       <div className="glass rounded-2xl p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
