@@ -1,7 +1,7 @@
 import { validateTournivalStateTransition } from './tournivalStateValidation.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 import { safelyQueueTournivalNotice } from './tournivalNoticeBridge.ts';
-import {refundPayment,retrievePayment} from './payments.ts';
+import {refundPayment,retrievePayment,createCheckout,providerConfigured} from './payments.ts';
 
 function activeNow(access:any) {
   if (!access || access.status !== 'active') return false;
@@ -273,10 +273,14 @@ Deno.serve(async (req) => {
         return Response.json({error:'Not a Tournival tournament'},{status:400});
       if (!['Draft','Registration Open'].includes(tournament.status))
         return Response.json({error:'Promotion requires registration to be open and the sporting draw not started'},{status:409});
-      // Paid promotions require a new authorised checkout journey; never imply
-      // payment or silently bypass the payment gateway.
-      if(Number(tournament.event_fee_amount||0)>0)
-        return Response.json({error:'Paid waitlist promotion requires a verified checkout flow; no free promotion permitted'},{status:409});
+      const fee=Number(tournament.event_fee_amount||0);
+      const paid=fee>0;
+      let account:any=null;
+      if(paid){
+        const row=(await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:tournament.tenant_id,club_id:tournament.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5))?.[0];
+        if(row)account={provider:'sumup',merchantAccountId:row.merchant_account_id||'',credentialSecretName:row.credential_reference||'SUMUP_API_KEY',connectionMode:row.connection_mode||'api_key'};
+        if(!providerConfigured('sumup',account))return Response.json({error:'SumUp checkout unavailable'},{status:409});
+      }
       const sessions=await base44.asServiceRole.entities.TournivalSession.filter({
         tournament_id:tournament.id,tenant_id:tournament.tenant_id
       },'-created_at',3);
@@ -289,6 +293,8 @@ Deno.serve(async (req) => {
         ||String(a.registered_at||'').localeCompare(String(b.registered_at||'')));
       const earliest=candidates[0];
       if(!earliest)return Response.json({success:true,nothingToPromote:true});
+      const person=paid?(await base44.asServiceRole.entities.Person.filter({tenant_id:tournament.tenant_id,primary_email:String(earliest.email||'').trim().toLowerCase()},'-updated_date',5))?.[0]:null;
+      if(paid&&!person)return Response.json({error:'Player payment identity requires reconciliation'},{status:409});
       const capacity=Number(tournament.max_players||32);
       const claim=await base44.asServiceRole.entities.Tournament.updateMany({
         id:tournament.id,tenant_id:tournament.tenant_id,tournival_reserved_count:{$lt:capacity}
@@ -298,14 +304,30 @@ Deno.serve(async (req) => {
       const promote=await base44.asServiceRole.entities.TournivalRegistration.updateMany({
         id:earliest.id,tenant_id:tournament.tenant_id,registration_status:'waitlisted'
       },{$set:{
-        registration_status:'confirmed',payment_status:'not_required',
-        confirmed_at:new Date().toISOString(),waitlist_position:earliest.waitlist_position
+        registration_status:paid?'pending_payment':'confirmed',payment_status:paid?'pending':'not_required',
+        amount_due:fee,currency:tournament.event_currency||'EUR',
+        ...(paid?{}:{confirmed_at:new Date().toISOString()}),waitlist_position:earliest.waitlist_position
       }});
       if(promote.updated!==1){
         await base44.asServiceRole.entities.Tournament.updateMany({
           id:tournament.id,tenant_id:tournament.tenant_id,tournival_reserved_count:{$gt:0}
         },{$inc:{tournival_reserved_count:-1}});
         return Response.json({error:'Waitlist changed during promotion; refresh'},{status:409});
+      }
+      if(paid){
+        try{
+          const reference=`RH-TRN-${earliest.id}`.slice(0,64);
+          const currency=tournament.event_currency||'EUR';
+          const payment=await base44.asServiceRole.entities.PaymentRecord.create({tenant_id:tournament.tenant_id,club_id:earliest.club_id,person_id:person.id,purpose_type:'event',purpose_id:earliest.id,payment_type:'tournival_registration',amount:fee,currency,provider:'sumup',payment_method:'online',payment_status:'pending',provider_payment_reference:reference});
+          await base44.asServiceRole.entities.TournivalRegistration.update(earliest.id,{payment_record_id:payment.id});
+          const checkout=await createCheckout({provider:'sumup',account,amount:fee,currency,reference,description:`Tournival: ${clean(tournament.name,75)}`,redirectUrl:'https://rallyhub.ie',returnUrl:'https://rallyhub.ie/api/apps/6a01dc00702b7dd2a2978c28/functions/paymentGatewayWebhook?provider=sumup'});
+          await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{provider_checkout_id:checkout.checkoutId,provider_checkout_url:checkout.checkoutUrl,provider_status:checkout.providerStatus,provider_account_id:checkout.merchantAccountId});
+          const notice=await safelyQueueTournivalNotice(base44,{tenantId:tournament.tenant_id,clubId:earliest.club_id,eventId:tournament.id,sourceRecordId:'payment-required:'+earliest.id,operationId:'promoted:'+earliest.id,purpose:'tournival_payment_required',recipient:{id:earliest.id,name:earliest.full_name,email:earliest.email,mobile:earliest.mobile},fields:{FIRST_NAME:String(earliest.full_name||'Player').split(' ')[0],FULL_NAME:String(earliest.full_name||''),EVENT_NAME:String(tournament.name||''),PAYMENT_LINK:checkout.checkoutUrl,PAYMENT_STATUS:'Pending'}});
+          return Response.json({success:true,registrationId:earliest.id,registrationStatus:'pending_payment',communicationQueued:notice.queued===true,needsCommunicationReview:(notice as any).needsCommunicationReview===true});
+        }catch(error){
+          console.warn('Promoted checkout requires reconciliation',earliest.id);
+          return Response.json({success:false,registrationId:earliest.id,registrationStatus:'pending_payment',error:'Place held; checkout requires reconciliation. Do not promote again.'},{status:202});
+        }
       }
       await base44.asServiceRole.entities.Tournament.updateMany({
         id:tournament.id,tenant_id:tournament.tenant_id
