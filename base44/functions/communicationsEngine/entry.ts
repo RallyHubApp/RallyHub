@@ -369,7 +369,7 @@ Deno.serve(async(req)=>{
     return Response.json({success:true,provider:config.provider,status:config.status,senderName:config.sender_name,senderEmail:config.sender_email,replyTo:config.reply_to||config.sender_email});
   }
 
-  if(['member_campaign_roster','member_campaign_preview','member_campaign_test','member_campaign_send'].includes(action)){
+  if(['member_campaign_roster','member_campaign_preview','member_campaign_test','member_campaign_send','member_campaign_progress'].includes(action)){
     if(ownerScope!=='tenant'||tenantId!==user.active_tenant_id||clubId!==user.active_club_id||!clubId||purpose!=='club_membership_campaign')
       return Response.json({error:'Active tenant and club membership scope required'},{status:403});
     const service=base44.asServiceRole.entities;
@@ -404,6 +404,21 @@ Deno.serve(async(req)=>{
     if(!brand?.logos?.primary||!brand?.compliance_footer)return Response.json({error:'Approved active club brand kit missing'},{status:409});
     const selected=new Set((campaign.audience_snapshot?.recipient_refs||[]).filter((r:any)=>r.source==='club_membership').map((r:any)=>r.id));
     const eligible=roster.filter((r:any)=>selected.has(r.id));
+    if(action==='member_campaign_progress'){
+      const ledger=new Map(attempts.filter((a:any)=>!a.metadata?.test&&String(a.idempotency_key||'').startsWith('member-campaign:'+campaignId+':')).map((a:any)=>[a.idempotency_key,a]));
+      const pendingIds=[],sentIds=[],uncertainIds=[],excludedIds=[];
+      for(const r of eligible){
+        if(!r)continue;
+        const a:any=ledger.get('member-campaign:'+campaignId+':'+r.email);
+        if(a?.status==='sent'){sentIds.push(r.id);continue}
+        if(a){uncertainIds.push(r.id);continue}
+        const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(r.email));
+        const hash=Array.from(new Uint8Array(digest),x=>x.toString(16).padStart(2,'0')).join('');
+        if(suppressions.some((x:any)=>x.person_id===r.id||x.endpoint_hash===hash)||preferences.some((x:any)=>x.person_id===r.id&&['withdrawn','denied','opted_out','unsubscribed','suppressed'].includes(String(x.status).toLowerCase()))){excludedIds.push(r.id);continue}
+        pendingIds.push(r.id);
+      }
+      return Response.json({success:true,pendingIds,sentIds,uncertainIds,excludedIds,audienceCount:selected.size});
+    }
     const unsub='mailto:clarepb2025@gmail.com?subject='+encodeURIComponent('Unsubscribe from Clare Pickleball communications');
     const footer='<p style="font-size:12px">To stop receiving club campaign emails, <a href="'+unsub+'">request to unsubscribe</a>.</p>';
     const html=renderBasicBrandedEmail(template.html_template,brand,null,'Clare Pickleball',template.channel_templates?.email?.heading||template.name,template.channel_templates?.email?.subheading||'','',footer);
