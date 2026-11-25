@@ -2,7 +2,7 @@ import {renderBasicBrandedEmail} from './clareBrandedRenderer.ts';
 import {normaliseRallyHubPlatformHtml} from '../../shared/rallyHubPlatformEmail.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { resolveEmailTransport, sendWithConfiguredEmailTransport } from './emailRouter.ts';
-import { resolveApprovedTournivalTemplate } from './tournivalTemplates.ts';
+import { resolveApprovedTournivalTemplate, renderApprovedTournivalTemplate } from './tournivalTemplates.ts';
 import {queueTournivalCommunication,listTournivalAudience,TOURNIVAL_EVENTS,makeTournivalDeliveryKey} from './tournivalDelivery.ts';
 import {validateTournivalDeliveryEligibility} from './tournivalEligibility.ts';
 import {inspectTournivalQueue} from './tournivalRecovery.ts';
@@ -27,9 +27,18 @@ Deno.serve(async(req)=>{
     },{status:400});
     const channel=body.channel==='whatsapp'?'whatsapp':'email';
     try{
-      const rendered=await resolveApprovedTournivalTemplate(base44,{
-        tenantId,clubId,purpose,channel,fields:body.fields||{}
-      });
+      let rendered;
+      if(body.previewDraft){
+        if(tenantId!==user.active_tenant_id||clubId!==user.active_club_id)throw Error('Select the active tenant and club');
+        const d=body.previewDraft;
+        const brand=(await base44.asServiceRole.entities.CommunicationBrandKit.filter({id:clean(d.brand_kit_id,120),tenant_id:tenantId,status:'active',owner_scope:'tenant'}))?.[0];
+        const club=(await base44.asServiceRole.entities.Club.filter({id:clubId,tenant_id:tenantId}))?.[0];
+        if(!brand||!club||(brand.club_id&&brand.club_id!==clubId))throw Error('Active club brand required');
+        const template={id:'preview-only',name:purpose,purpose,status:'approved',tenant_id:tenantId,brand_kit_id:brand.id,subject_template:clean(d.subject_template,500),html_template:clean(d.html_template,100000),plain_text_template:clean(d.plain_text_template,20000),channel_templates:{email:{header_title:clean(d.channel_templates?.email?.header_title,200),header_subtitle:clean(d.channel_templates?.email?.header_subtitle,200)}}};
+        const fields:Record<string,string>={FIRST_NAME:'Alex',FULL_NAME:'Alex Player',EVENT_NAME:'Christmas Tournival — Thursday 10 December',PAYMENT_STATUS:purpose==='tournival_payment_confirmed'?'Paid':'Pending',PAYMENT_REFERENCE:'SAMPLE-123',EVENT_DATE:'10 December 2026',EVENT_TIME:'7–10 pm',EVENT_VENUE:'St Joseph’s Doora-Barefield GAA Sports Hall'};
+        for(const m of JSON.stringify(template).matchAll(/{{\s*([A-Z][A-Z0-9_]*)\s*}}/g)){const key=m[1];if(!(key in fields))fields[key]=/(?:_LINK|_URL)$/.test(key)?'https://example.invalid/preview':key==='WAITLIST_POSITION'?'1':'Sample '+key.toLowerCase().replaceAll('_',' ');}
+        rendered=renderApprovedTournivalTemplate({template,brand,club,channel:'email',fields});
+      }else rendered=await resolveApprovedTournivalTemplate(base44,{tenantId,clubId,purpose,channel,fields:body.fields||{}});
       return Response.json({success:true,previewOnly:true,deliveryPerformed:false,
         ...rendered});
     }catch(error:any){

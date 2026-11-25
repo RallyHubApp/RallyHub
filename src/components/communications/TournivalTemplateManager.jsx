@@ -10,14 +10,17 @@ const purposes=[
  ['tournival_waitlist_promoted','Waitlist promotion'],
  ['tournival_host_invite','Host invitation'],
  ['tournival_results','Tournament results'],
- ['tournival_post_event_thanks','Thank you & what’s next']
+ ['tournival_post_event_thanks','Thank you & what’s next'],
+ ['tournival_refund_confirmed','Refund confirmation'],
+ ['tournival_player_link','Personal player link']
 ];
 const empty=(purpose)=>({purpose,subject_template:'',plain_text_template:'',html_template:'',
  channel_templates:{email:{header_title:''},whatsapp:{text_template:''}}});
-export default function TournivalTemplateManager(){
+export default function TournivalTemplateManager({requestedId,onOpened}){
  const {user}=useAuth(),tenantId=user?.active_tenant_id,clubId=user?.active_club_id;
  const [rows,setRows]=useState([]),[kits,setKits]=useState([]),[purpose,setPurpose]=useState(purposes[0][0]);
  const [selected,setSelected]=useState(null),[draft,setDraft]=useState(empty(purposes[0][0]));
+ const [preview,setPreview]=useState(null),[device,setDevice]=useState('desktop'),[previewBusy,setPreviewBusy]=useState(false);
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const load=async()=>{
   if(!tenantId||!clubId)return;
@@ -34,8 +37,13 @@ export default function TournivalTemplateManager(){
  const choose=(p,record)=>{
   setPurpose(p);setSelected(record||null);
   setDraft(record?{...record,channel_templates:record.channel_templates||{email:{},whatsapp:{}}}:empty(p));
-  setError('');setNotice('');
+  setError('');setNotice('');setPreview(null);
  };
+ useEffect(()=>{const record=rows.find(r=>r.id===requestedId);if(record){choose(record.purpose,record);onOpened?.();document.getElementById('tournival-template-editor')?.scrollIntoView({behavior:'smooth'});}},[requestedId,rows]);
+ const previewEmail=async()=>{setPreviewBusy(true);setError('');setPreview(null);try{
+  const result=await base44.functions.invoke('communicationsEngine',{action:'preview_tournival',ownerScope:'tenant',tenantId,clubId,purpose,channel:'email',templateId:selected?.id,previewDraft:{subject_template:draft.subject_template,html_template:draft.html_template,plain_text_template:draft.plain_text_template,channel_templates:draft.channel_templates,brand_kit_id:draft.brand_kit_id||kits[0]?.id}});
+  if(!result.data?.success)throw Error(result.data?.error||'Preview failed');setPreview(result.data);
+ }catch(e){setError(e.message||'Preview failed')}finally{setPreviewBusy(false)}};
  const edit=(field,value)=>setDraft(d=>({...d,[field]:value}));
  const updateChannel=(channel,field,value)=>setDraft(d=>({...d,channel_templates:{...d.channel_templates,
   [channel]:{...(d.channel_templates?.[channel]||{}),[field]:value}}}));
@@ -79,7 +87,7 @@ export default function TournivalTemplateManager(){
   finally{setBusy(false)}
  };
  const matching=rows.filter(r=>r.purpose===purpose);
- return <section className="rounded-xl border bg-white p-5 space-y-4">
+ return <section id="tournival-template-editor" className="rounded-xl border bg-white p-5 space-y-4">
   <div><h2 className="font-bold text-lg">Tournival — tenant-approved templates</h2>
   <p className="text-sm text-muted-foreground mt-1">Draft and approve the message body for each Tournival event. The shared Communications Centre renderer supplies the club logo, colours, signature and footer. No messages are sent by saving or approving a template.</p></div>
   {!clubId&&<p role="alert" className="text-sm text-amber-700">Choose an active tenant club first.</p>}
@@ -95,6 +103,8 @@ export default function TournivalTemplateManager(){
   <label className="block text-sm">Email header title<input className="block border rounded-lg p-2 w-full mt-1" value={draft.channel_templates?.email?.header_title||''} onChange={e=>updateChannel('email','header_title',e.target.value)}/></label>
   <label className="block text-sm">Approved WhatsApp body (optional until channel configured)<textarea className="block border rounded-lg p-2 w-full mt-1 h-24" value={draft.channel_templates?.whatsapp?.text_template||''} onChange={e=>updateChannel('whatsapp','text_template',e.target.value)}/></label>
   <p className="text-xs text-muted-foreground">Action merge fields include {'{{PAYMENT_LINK}}'}, {'{{PLAYER_LINK}}'}, {'{{HOST_LINK}}'}, {'{{RESULTS_LINK}}'} and {'{{EVENT_LINK}}'}. Links are resolved from the triggering event, not stored as permanent tenant text.</p>
+  <button type="button" className="rounded-lg bg-blue-700 text-white px-4 py-2 text-sm font-bold" disabled={previewBusy||!clubId} onClick={previewEmail}>{previewBusy?'Rendering…':'Preview Email'}</button>
+  {preview&&<div className="border rounded-xl p-3 space-y-3"><div className="flex flex-wrap gap-2 items-center"><strong>Branded email preview · sample data</strong>{['desktop','mobile'].map(d=><button key={d} type="button" className={'border rounded px-3 py-1 '+(device===d?'bg-slate-900 text-white':'')} onClick={()=>setDevice(d)}>{d==='desktop'?'Desktop':'Mobile'}</button>)}</div><p className="text-sm">Subject: {preview.subject}</p><div className="overflow-x-auto bg-slate-100 p-2"><iframe title="Branded Tournival email preview" sandbox="" srcDoc={preview.html} style={{width:device==='mobile'?'375px':'100%',maxWidth:'100%',height:760,border:0,display:'block',margin:'auto'}}/></div><p className="text-xs text-muted-foreground">Sample links are non-live. No email sent.</p></div>}
   {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
   {notice&&<p role="status" className="text-sm text-green-700">{notice}</p>}
   <div className="flex gap-2 flex-wrap">
