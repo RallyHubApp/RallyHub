@@ -174,6 +174,7 @@ export default function TournamentDetail() {
 
   // ── Add players ──
   const addPlayers = async () => {
+    if (isTournival) { toast.error("Use Tournival Registrations to add players"); return; }
     const newIds = [...(tournament.player_ids || []), ...selectedPlayerIds];
     await base44.entities.Tournament.update(tournament.id, { player_ids: newIds });
     toast.success(`${selectedPlayerIds.length} players added`);
@@ -346,7 +347,7 @@ export default function TournamentDetail() {
                 ))}
               </>
             )}
-            {!isClubChallenge && !isKotc && (isFixedPartners ? (
+            {!isClubChallenge && !isKotc && !isTournival && (isFixedPartners ? (
               <Button variant="outline" size="sm" onClick={() => setPairsUploadOpen(true)}>
                 <Upload className="w-3 h-3 mr-1" /> Upload Pairs
               </Button>
