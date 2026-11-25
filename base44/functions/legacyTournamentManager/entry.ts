@@ -380,7 +380,7 @@ Deno.serve(async (req) => {
         try{
           const reference=`RH-TRN-${earliest.id}`.slice(0,64);
           const currency=tournament.event_currency||'EUR';
-          const payment=await base44.asServiceRole.entities.PaymentRecord.create({tenant_id:tournament.tenant_id,club_id:earliest.club_id,person_id:person.id,purpose_type:'event',purpose_id:earliest.id,payment_type:'tournival_registration',amount:fee,currency,provider:'sumup',payment_method:'online',payment_status:'pending',provider_payment_reference:reference});
+          const payment=await base44.asServiceRole.entities.PaymentRecord.create({tenant_id:tournament.tenant_id,club_id:earliest.club_id,person_id:person!.id,purpose_type:'event',purpose_id:earliest.id,payment_type:'tournival_registration',amount:fee,currency,provider:'sumup',payment_method:'online',payment_status:'pending',provider_payment_reference:reference});
           await base44.asServiceRole.entities.TournivalRegistration.update(earliest.id,{payment_record_id:payment.id});
           const checkout=await createCheckout({provider:'sumup',account,amount:fee,currency,reference,description:`Tournival: ${clean(tournament.name,75)}`,redirectUrl:'https://rallyhub.ie',returnUrl:'https://rallyhub.ie/api/apps/6a01dc00702b7dd2a2978c28/functions/paymentGatewayWebhook?provider=sumup'});
           await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{provider_checkout_id:checkout.checkoutId,provider_checkout_url:checkout.checkoutUrl,provider_status:checkout.providerStatus,provider_account_id:checkout.merchantAccountId});
@@ -685,12 +685,12 @@ Deno.serve(async (req) => {
       });
       await audit(base44,user,tournament,'tournival_sumup_full_refund',{
         registrationId:reg.id,paymentId:payment.id,refundId:refund.id,
-        amount:Number(payment.amount),noticeSent:notice.automaticallySent===true
+        amount:Number(payment.amount),noticeSent:(notice as {automaticallySent?:boolean}).automaticallySent===true
       });
       return Response.json({success:true,refundId:refund.id,amount:Number(payment.amount),
         paymentStatus:'refunded',registrationStatus:'withdrawn',
-        emailSent:notice.automaticallySent===true,
-        emailNeedsReview:notice.automaticallySent!==true});
+        emailSent:(notice as {automaticallySent?:boolean}).automaticallySent===true,
+        emailNeedsReview:(notice as {automaticallySent?:boolean}).automaticallySent!==true});
     }
 
     // Issue an opaque, revocable registration link. Only the SHA-256 digest is stored.
