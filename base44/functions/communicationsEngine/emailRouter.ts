@@ -38,6 +38,14 @@ function gmailRawEmail({to,senderEmail,senderName,replyTo,subject,textBody,htmlB
  const mime=htmlBody?[...h,`Content-Type: multipart/alternative; boundary="${boundary}"`,'',`--${boundary}`,'Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: 8bit','',textBody,`--${boundary}`,'Content-Type: text/html; charset=UTF-8','Content-Transfer-Encoding: 8bit','',htmlBody,`--${boundary}--`,''].join('\r\n'):[...h,'Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: 8bit','',textBody].join('\r\n');
  return utf8Base64(mime).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/g,'');
 }
+// The Apps Script gateway has corrupted supplementary Unicode characters in
+// delivered messages. HTML numeric references preserve their visual appearance;
+// use readable ASCII fallbacks in headers/plain text until gateway MIME is fixed.
+export function gatewaySafeMessage(message:{subject:string;textBody:string;htmlBody?:string|null}){
+ const plain=(value:string)=>value.replace(/[\u{10000}-\u{10FFFF}]/gu,'').replace(/^[ \t]+/gm,'');
+ const html=String(message.htmlBody||'').replace(/[\u{10000}-\u{10FFFF}]/gu,c=>'&#'+c.codePointAt(0)+';');
+ return {subject:plain(message.subject),textBody:plain(message.textBody),htmlBody:html};
+}
 export async function sendWithConfiguredEmailTransport(base44:any,scope:EmailScope,message:{to:string;subject:string;textBody:string;htmlBody?:string|null;senderName?:string|null}){
  const c=await requireConfiguredEmailTransport(base44,scope); const senderName=String(message.senderName||c.sender_name||'RallyHub').trim();
  if(c.provider==='gmail_connector'){
@@ -48,7 +56,7 @@ export async function sendWithConfiguredEmailTransport(base44:any,scope:EmailSco
  if(c.provider==='google_apps_script'){
   const url=String(c.gateway_url||'').trim(), env=String(c.secret_env_var||'').trim(), secret=env?Deno.env.get(env):'';
   if(!url||!/^https:\/\//i.test(url))throw new Error('The tenant mail gateway URL is not configured.'); if(!secret)throw new Error('The tenant mail gateway secret is not configured.');
-  const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({secret,to:message.to,subject:message.subject,textBody:message.textBody,htmlBody:message.htmlBody||'',senderName,replyTo:c.reply_to||c.sender_email})});
+  const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({secret,to:message.to,...gatewaySafeMessage(message),senderName,replyTo:c.reply_to||c.sender_email})});
   const payload=await response.json().catch(()=>({})); if(!response.ok||payload?.ok===false)throw new Error(payload?.error||`Tenant mail gateway failed (${response.status})`); return {provider:c.provider,senderEmail:c.sender_email,payload};
  }
  if(c.provider==='base44_core'){await base44.asServiceRole.integrations.Core.SendEmail({to:message.to,from_name:senderName,subject:message.subject,body:message.textBody});return {provider:c.provider,senderEmail:c.sender_email};}
