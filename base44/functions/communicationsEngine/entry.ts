@@ -368,6 +368,80 @@ Deno.serve(async(req)=>{
     const config=await resolveEmailTransport(base44,scope);
     return Response.json({success:true,provider:config.provider,status:config.status,senderName:config.sender_name,senderEmail:config.sender_email,replyTo:config.reply_to||config.sender_email});
   }
+
+  if(['member_campaign_roster','member_campaign_preview','member_campaign_test','member_campaign_send'].includes(action)){
+    if(ownerScope!=='tenant'||tenantId!==user.active_tenant_id||clubId!==user.active_club_id||!clubId||purpose!=='club_membership_campaign')
+      return Response.json({error:'Active tenant and club membership scope required'},{status:403});
+    const service=base44.asServiceRole.entities;
+    const [members,persons]=await Promise.all([
+      service.ClubMembership.filter({tenant_id:tenantId,club_id:clubId},'-created_date',500),
+      service.Person.filter({tenant_id:tenantId},'-created_date',500)
+    ]);
+    if(members.length===500||persons.length===500)return Response.json({error:'Roster exceeds safe query limit; pagination required before campaign use'},{status:409});
+    const byPerson=new Map(persons.map((p:any)=>[p.id,p]));
+    const seen=new Set<string>();
+    const roster=members.filter((m:any)=>m.membership_status==='paid_active'&&m.relationship_type==='member'&&m.include_in_rallyhub!==false).map((m:any)=>{
+      const person:any=byPerson.get(m.person_id);const email=clean(person?.primary_email,240).toLowerCase();
+      if(!person||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||seen.has(email))return null;
+      seen.add(email);return {id:person.id,name:person.full_name||person.preferred_name||email,email};
+    }).filter(Boolean);
+    if(action==='member_campaign_roster')return Response.json({success:true,roster});
+    const campaignId=clean(body.campaignId,150),templateId=clean(body.templateId,150);
+    const [campaigns,templates,brands,suppressions,preferences,attempts]=await Promise.all([
+      service.CommunicationCampaign.filter({id:campaignId,tenant_id:tenantId,club_id:clubId},'-created_date',1),
+      service.CommunicationTemplate.filter({id:templateId,tenant_id:tenantId,club_id:clubId,status:'approved'},'-created_date',1),
+      service.CommunicationBrandKit.filter({tenant_id:tenantId,status:'active'},'-updated_date',20),
+      service.CommunicationSuppression.filter({owner_scope:'tenant',tenant_id:tenantId,channel:'email',active:true},'-created_date',500),
+      service.CommunicationPreference.filter({owner_scope:'tenant',tenant_id:tenantId,channel:'email'},'-updated_date',500),
+      service.CommunicationDeliveryAttempt.filter({campaign_id:campaignId,tenant_id:tenantId},'-created_date',200)
+    ]);
+    if(suppressions.length===500||preferences.length===500||attempts.length===200)return Response.json({error:'Incomplete suppression, preference or delivery history; operation blocked'},{status:409});
+    const campaign:any=campaigns[0],template:any=templates[0];
+    if(!campaign||campaign.purpose!=='club_membership_campaign'||!template||!template.html_template||!template.subject_template)
+      return Response.json({error:'Saved membership campaign and approved HTML template required'},{status:409});
+    if(campaign.metadata?.template_id!==template.id)return Response.json({error:'Campaign template mismatch'},{status:409});
+    const brand:any=brands.find((b:any)=>b.id===campaign.brand_kit_id);
+    if(!brand?.logos?.primary||!brand?.compliance_footer)return Response.json({error:'Approved active club brand kit missing'},{status:409});
+    const selected=new Set((campaign.audience_snapshot?.recipient_refs||[]).filter((r:any)=>r.source==='club_membership').map((r:any)=>r.id));
+    const eligible=roster.filter((r:any)=>selected.has(r.id));
+    const unsub='mailto:clarepb2025@gmail.com?subject='+encodeURIComponent('Unsubscribe from Clare Pickleball communications');
+    const footer='<p style="font-size:12px">To stop receiving club campaign emails, <a href="'+unsub+'">request to unsubscribe</a>.</p>';
+    const html=renderBasicBrandedEmail(template.html_template,brand,null,'Clare Pickleball',template.channel_templates?.email?.heading||template.name,template.channel_templates?.email?.subheading||'','',footer);
+    if(action==='member_campaign_preview')return Response.json({success:true,html,subject:template.subject_template,selectedCount:eligible.length});
+    if(body.confirmSend!==true&&action==='member_campaign_send')return Response.json({error:'Explicit send approval required'},{status:403});
+    if(action==='member_campaign_send'&&(!campaign.approved_at||campaign.approved_by_user_id!==user.id))
+      return Response.json({error:'Campaign must be approved by current administrator'},{status:409});
+    const ids=action==='member_campaign_test'?[clean(body.previewRecipientId,150)]:body.recipientIds;
+    if(!Array.isArray(ids)||ids.length<1||ids.length>5||new Set(ids).size!==ids.length)return Response.json({error:'Choose 1–5 unique recipient IDs'},{status:400});
+    const to=clean(body.to,240).toLowerCase();
+    if(action==='member_campaign_test'&&(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)||!clean(body.testNonce,100)))
+      return Response.json({error:'Test address and unique test nonce required'},{status:400});
+    const results=[];
+    const keys=new Set(attempts.map((a:any)=>a.idempotency_key));
+    for(const id of ids){
+      const r:any=eligible.find((x:any)=>x.id===id);
+      if(!r){results.push({id,status:'not_in_saved_audience'});continue}
+      const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(r.email));
+      const hash=Array.from(new Uint8Array(digest),x=>x.toString(16).padStart(2,'0')).join('');
+      if(suppressions.some((x:any)=>x.person_id===id||x.endpoint_hash===hash)||
+        preferences.some((x:any)=>x.person_id===id&&['withdrawn','denied','opted_out','unsubscribed','suppressed'].includes(String(x.status).toLowerCase()))){
+        results.push({id,status:'suppressed'});continue;
+      }
+      const key=action==='member_campaign_test'?'member-campaign-test:'+campaignId+':'+clean(body.testNonce,100):'member-campaign:'+campaignId+':'+r.email;
+      if(keys.has(key)){results.push({id,status:'already_attempted'});continue}
+      keys.add(key);
+      const attempt=await service.CommunicationDeliveryAttempt.create({tenant_id:tenantId,campaign_id:campaignId,message_id:templateId,recipient_id:action==='member_campaign_test'?to:id,channel:'email',provider:'pending',status:'sending',attempt_number:1,idempotency_key:key,queued_at:new Date().toISOString(),metadata:{test:action==='member_campaign_test',requested_by_user_id:user.id}});
+      try{
+        const sent=await sendWithConfiguredEmailTransport(base44,scope,{to:action==='member_campaign_test'?to:r.email,subject:template.subject_template,textBody:template.plain_text_template||'',htmlBody:html,senderName:'Clare Pickleball'});
+        await service.CommunicationDeliveryAttempt.update(attempt.id,{provider:sent.provider,status:'sent',sent_at:new Date().toISOString(),metadata:{test:action==='member_campaign_test',provider_accepted:true,requested_by_user_id:user.id}});
+        results.push({id,status:'sent'});
+      }catch(e:any){
+        await service.CommunicationDeliveryAttempt.update(attempt.id,{status:'sending',error_code:'unverified_provider_outcome',error_message:clean(e?.message,500)});
+        results.push({id,status:'needs_reconciliation'});break;
+      }
+    }
+    return Response.json({success:true,results});
+  }
   if(action==='send_campaign_batch'||action==='test_campaign_bulk_path'){
     const testMode=action==='test_campaign_bulk_path';
     if(ownerScope!=='tenant'||!clubId||purpose!=='waiting_list_opportunities_update'||(!testMode&&body.confirmSend!==true))return Response.json({error:'Approved tenant campaign and explicit send confirmation required'},{status:403});
