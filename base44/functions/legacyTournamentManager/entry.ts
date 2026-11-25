@@ -92,8 +92,6 @@ Deno.serve(async (req) => {
       const rows=upcoming.length?await base44.asServiceRole.entities.TournivalRegistration.filter({tenant_id:tenant,club_id:club},'-registered_at',500):[];
       if(events.length===100||rows.length===500)return Response.json({error:'Summary requires pagination'},{status:409});
       return Response.json({success:true,events:upcoming.map((t:any)=>{
-        const personId=player.person_id||(email?(await e.Person.filter({tenant_id:tournament.tenant_id,primary_email:email}))[0]?.id:null);
-      if(mode==='offline_paid'&&!personId)return Response.json({error:'Link player to a Person before recording offline payment'},{status:409});
       const active=rows.filter((r:any)=>r.tournament_id===t.id&&['confirmed','pending_payment'].includes(r.registration_status));
         const paid=active.filter((r:any)=>['paid','not_required'].includes(r.payment_status)).length;
         return {id:t.id,name:t.name,capacity:Number(t.max_players||32),registered:active.length,paid,pending:active.length-paid};
@@ -197,6 +195,8 @@ Deno.serve(async (req) => {
       const rows=await e.TournivalRegistration.filter({tournament_id:tournament.id,tenant_id:tournament.tenant_id},'-registered_at',500);
       const email=clean(player.email,180).toLowerCase();
       if(rows.some((r:any)=>r.registration_status!=='withdrawn'&&(r.player_id===playerId||(email&&clean(r.email,180).toLowerCase()===email))))return Response.json({error:'Player already registered'},{status:409});
+        const personId=player.person_id||(email?(await e.Person.filter({tenant_id:tournament.tenant_id,primary_email:email}))[0]?.id:null);
+      if(mode==='offline_paid'&&!personId)return Response.json({error:'Link player to a Person before recording offline payment'},{status:409});
       const active=rows.filter((r:any)=>['confirmed','pending_payment'].includes(r.registration_status)).length;
       const capacity=Number(tournament.max_players||32);
       if(rows.length>=500||active>=capacity||rows.some((r:any)=>r.registration_status==='waitlisted'))return Response.json({error:'No available place; review capacity or waitlist'},{status:409});
