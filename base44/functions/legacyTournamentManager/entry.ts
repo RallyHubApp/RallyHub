@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
         return Response.json({success:true,players:players.filter((p:any)=>p.status==='Active'&&[p.full_name,p.email].some(v=>String(v||'').toLowerCase().includes(q))).slice(0,30).map((p:any)=>({id:p.id,name:p.full_name,email:p.email}))});
       }
       const mode=clean(body.paymentMode,40),playerId=clean(body.playerId,120);
-      if(!['complimentary','offline_paid','awaiting_payment'].includes(mode))return Response.json({error:'Select payment option'},{status:400});
+      if(mode!=='complimentary')return Response.json({error:'Select payment option'},{status:400});
       const player=(await e.Player.filter({id:playerId,tenant_id:tournament.tenant_id}))[0];
       if(!player||player.status!=='Active')return Response.json({error:'Active player required'},{status:400});
       const lockId=crypto.randomUUID();
@@ -195,23 +195,17 @@ Deno.serve(async (req) => {
       const rows=await e.TournivalRegistration.filter({tournament_id:tournament.id,tenant_id:tournament.tenant_id},'-registered_at',500);
       const email=clean(player.email,180).toLowerCase();
       if(rows.some((r:any)=>r.registration_status!=='withdrawn'&&(r.player_id===playerId||(email&&clean(r.email,180).toLowerCase()===email))))return Response.json({error:'Player already registered'},{status:409});
-        const personId=player.person_id||(email?(await e.Person.filter({tenant_id:tournament.tenant_id,primary_email:email}))[0]?.id:null);
-      if(mode==='offline_paid'&&!personId)return Response.json({error:'Link player to a Person before recording offline payment'},{status:409});
       const active=rows.filter((r:any)=>['confirmed','pending_payment'].includes(r.registration_status)).length;
       const capacity=Number(tournament.max_players||32);
       if(rows.length>=500||active>=capacity||rows.some((r:any)=>r.registration_status==='waitlisted'))return Response.json({error:'No available place; review capacity or waitlist'},{status:409});
       await e.Tournament.updateMany({id:tournament.id,tenant_id:tournament.tenant_id,tournival_reserved_count:null},{$set:{tournival_reserved_count:active}});
       const claim=await e.Tournament.updateMany({id:tournament.id,tenant_id:tournament.tenant_id,tournival_reserved_count:{$lt:capacity}},{$inc:{tournival_reserved_count:1}});
       if(claim.updated!==1)return Response.json({error:'No available place'},{status:409});
-      const now=new Date().toISOString(),fee=mode==='complimentary'?0:Number(tournament.event_fee_amount||0),confirmed=mode!=='awaiting_payment'||fee===0;
+      const now=new Date().toISOString(),fee=0,confirmed=true;
       let row:any;
       try{
-        row=await e.TournivalRegistration.create({tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,tournament_id:tournament.id,player_id:playerId,full_name:player.full_name,email,mobile:player.phone||'',registration_operation_id:crypto.randomUUID(),registration_status:confirmed?'confirmed':'pending_payment',payment_status:mode==='offline_paid'?'paid':confirmed?'not_required':'pending',payment_reference:'manual:'+mode,amount_due:fee,currency:tournament.event_currency||'EUR',registered_at:now,...(confirmed?{confirmed_at:now}:{})});
+        row=await e.TournivalRegistration.create({tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,tournament_id:tournament.id,player_id:playerId,full_name:player.full_name,email,mobile:player.phone||'',registration_operation_id:crypto.randomUUID(),registration_status:confirmed?'confirmed':'pending_payment',payment_status:'not_required',payment_reference:'manual:'+mode,amount_due:fee,currency:tournament.event_currency||'EUR',registered_at:now,...(confirmed?{confirmed_at:now}:{})});
       }catch(error){await e.Tournament.updateMany({id:tournament.id,tenant_id:tournament.tenant_id,tournival_reserved_count:{$gt:0}},{$inc:{tournival_reserved_count:-1}});throw error;}
-      if(mode==='offline_paid'){
-        const payment=await e.PaymentRecord.create({tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,person_id:personId,purpose_type:'event',purpose_id:row.id,payment_type:'tournival_registration',amount:fee,currency:tournament.event_currency||'EUR',provider:'offline',payment_method:'offline',payment_status:'paid',payment_date:now.slice(0,10),source_system:'tournival_manual_registration',source_row:row.id});
-        await e.TournivalRegistration.update(row.id,{payment_record_id:payment.id,person_id:personId});
-      }
       if(confirmed)await e.Tournament.updateMany({id:tournament.id,tenant_id:tournament.tenant_id},{$addToSet:{player_ids:playerId}});
       const token='trp_'+Array.from(crypto.getRandomValues(new Uint8Array(24)),b=>b.toString(16).padStart(2,'0')).join('');
       const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))),b=>b.toString(16).padStart(2,'0')).join('');
