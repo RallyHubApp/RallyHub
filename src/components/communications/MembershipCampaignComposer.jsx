@@ -6,12 +6,12 @@ const unique=rows=>[...new Map(rows.map(r=>[String(r.email||'').toLowerCase(),r]
 export default function MembershipCampaignComposer({template,brandKit,user}){
  const tenantId=user?.active_tenant_id,clubId=user?.active_club_id;
  const [audienceDirty,setAudienceDirty]=useState(false);
- const [roster,setRoster]=useState([]),[audiences,setAudiences]=useState([]),[selected,setSelected]=useState([]),[query,setQuery]=useState(''),[sort,setSort]=useState('name'),[audienceName,setAudienceName]=useState('Christmas Tournival 2026'),[audienceId,setAudienceId]=useState(''),[campaign,setCampaign]=useState(null),[preview,setPreview]=useState(''),[testTo,setTestTo]=useState(user?.email||''),[busy,setBusy]=useState(''),[notice,setNotice]=useState(''),[error,setError]=useState(''),[tracking,setTracking]=useState([]);
+ const [roster,setRoster]=useState([]),[audiences,setAudiences]=useState([]),[savedCampaigns,setSavedCampaigns]=useState([]),[selected,setSelected]=useState([]),[query,setQuery]=useState(''),[sort,setSort]=useState('name'),[audienceName,setAudienceName]=useState('Christmas Tournival 2026'),[audienceId,setAudienceId]=useState(''),[campaign,setCampaign]=useState(null),[preview,setPreview]=useState(''),[testTo,setTestTo]=useState(user?.email||''),[busy,setBusy]=useState(''),[notice,setNotice]=useState(''),[error,setError]=useState(''),[tracking,setTracking]=useState([]);
  const payload=(action,extra={})=>({action,ownerScope:'tenant',tenantId,clubId,purpose:PURPOSE,...extra});
  const invoke=async(action,extra={})=>{const r=await base44.functions.invoke('communicationsEngine',payload(action,extra));if(r.data?.error)throw Error(r.data.error);return r.data};
  const refresh=async()=>{setBusy('load');setError('');try{
-   const [data,saved]=await Promise.all([invoke('member_campaign_roster'),base44.entities.ClubCampaignAudience.filter({tenant_id:tenantId,club_id:clubId,activity_id:'general_campaign'},'-updated_date',100)]);
-   setRoster(unique(data.roster||[]));setAudiences(saved||[]);
+   const [data,saved,campaigns]=await Promise.all([invoke('member_campaign_roster'),base44.entities.ClubCampaignAudience.filter({tenant_id:tenantId,club_id:clubId,activity_id:'general_campaign'},'-updated_date',100),base44.entities.CommunicationCampaign.filter({tenant_id:tenantId,club_id:clubId,purpose:PURPOSE},'-updated_date',100)]);
+   setRoster(unique(data.roster||[]));setAudiences(saved||[]);setSavedCampaigns(campaigns||[]);
  }catch(e){setError(e.message)}finally{setBusy('')}};
  useEffect(()=>{if(tenantId&&clubId)refresh()},[tenantId,clubId]);
  const visible=useMemo(()=>roster.filter(r=>(r.name+' '+r.email).toLowerCase().includes(query.toLowerCase())).sort((a,b)=>String(a[sort]||'').localeCompare(String(b[sort]||''),'en-IE')),[roster,query,sort]);
@@ -21,9 +21,9 @@ export default function MembershipCampaignComposer({template,brandKit,user}){
    let id=audienceId;
    if(id)await base44.entities.ClubCampaignAudience.update(id,data);
    else {const row=await base44.entities.ClubCampaignAudience.create(data);id=row.id}
-   setAudienceId(id);setAudienceDirty(false);await refresh();setNotice('Audience saved. No emails sent.');
+   setAudienceId(id);setAudienceDirty(false);setCampaign(null);setPreview('');await refresh();setNotice('Audience saved. No emails sent.');
  }catch(e){setError(e.message)}finally{setBusy('')}};
- const openAudience=id=>{const a=audiences.find(x=>x.id===id);if(!a)return;const ids=JSON.parse(a.recipient_ids_json||'[]');setSelected(ids.filter(x=>roster.some(r=>r.id===x)));setAudienceId(id);setAudienceName(a.name);setCampaign(null);setPreview('');setAudienceDirty(false);setNotice('Saved audience reopened. Save after making changes.')};
+ const openAudience=id=>{const a=audiences.find(x=>x.id===id);if(!a)return;const ids=JSON.parse(a.recipient_ids_json||'[]');setSelected(ids.filter(x=>roster.some(r=>r.id===x)));setAudienceId(id);setAudienceName(a.name);setCampaign(null);setPreview('');setAudienceDirty(false);const existing=savedCampaigns.find(c=>c.audience_definition?.audience_id===id&&c.metadata?.template_id===template.id);setCampaign(existing||null);setNotice('Saved audience reopened. Save after making changes.')};
  const saveCampaign=async()=>{if(!audienceId||!selected.length||audienceDirty)return setError('Save the current audience selection first');setBusy('campaign');setError('');try{
    const refs=roster.filter(r=>selected.includes(r.id)).map(r=>({source:'club_membership',id:r.id,email:r.email}));
    const data={tenant_id:tenantId,club_id:clubId,owner_scope:'tenant',source_module:'Membership',kind:'campaign',purpose:PURPOSE,name:audienceName,status:'draft',created_by_user_id:user.id,brand_kit_id:brandKit?.id,audience_definition:{source:'club_membership',audience_id:audienceId},audience_snapshot:{recipient_refs:refs},recipient_count:refs.length,metadata:{template_id:template.id}};
