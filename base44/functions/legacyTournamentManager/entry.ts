@@ -175,6 +175,74 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, tournament, players, club_brand:clubBrand });
     }
 
+    if (action === 'tournival_transfer_targets' || action === 'tournival_transfer') {
+      const e=base44.asServiceRole.entities;
+      const eligible=(t:any)=>String(t.format).toLowerCase()==='tournival'&&['Draft','Registration Open'].includes(t.status)&&(!t.tournival_player_stage||t.tournival_player_stage==='registration');
+      const fail=(error:string,status=409)=>Response.json({error},{status});
+      if(!eligible(tournament))return fail('Transfers are only available before fixtures or play');
+      const scope={tenant_id:tournament.tenant_id,host_club_id:tournament.host_club_id};
+      const candidates=await e.Tournament.filter({...scope,format:'Tournival'},'-start_date',100);
+      if(action==='tournival_transfer_targets'){
+        const targets=[];
+        for(const t of candidates)if(t.id!==tournament.id&&eligible(t)&&await canManageTournament(base44,user,t)){
+          const rows=await e.TournivalRegistration.filter({tournament_id:t.id,tenant_id:t.tenant_id},'-registered_at',500);
+          const available=Number(t.max_players||32)-rows.filter((r:any)=>['confirmed','pending_payment'].includes(r.registration_status)).length;
+          if(available>0&&rows.length<500&&!rows.some((r:any)=>r.registration_status==='waitlisted'))targets.push({id:t.id,name:t.name,date:t.start_date,time:t.event_start_time,available});
+        }
+        return Response.json({success:true,targets});
+      }
+      const target=candidates.find((t:any)=>t.id===clean(body.targetTournamentId,100)&&t.id!==tournament.id);
+      if(!target||!eligible(target)||!await canManageTournament(base44,user,target))return fail('Destination unavailable or not authorised',403);
+      const lockId=crypto.randomUUID(),locked:string[]=[];
+      const undo:Array<()=>Promise<any>>=[];
+      try{
+        for(const id of [tournament.id,target.id].sort()){
+          const result=await e.Tournament.updateMany({id,tenant_id:tournament.tenant_id,tournival_registration_lock:null},{$set:{tournival_registration_lock:lockId}});
+          if(result.updated!==1)return fail('Registration busy; retry shortly');
+          locked.push(id);
+        }
+        const fresh=await Promise.all([tournament.id,target.id].map(async id=>(await e.Tournament.filter({id,tenant_id:tournament.tenant_id}))[0]));
+        if(!fresh.every(eligible))return fail('Event no longer available for transfers');
+        for(const t of fresh)if((await e.TournivalSession.filter({tournament_id:t.id,tenant_id:t.tenant_id})).length)return fail('Fixtures or play already prepared');
+        const [from,to]=await Promise.all(fresh.map(t=>e.TournivalRegistration.filter({tournament_id:t.id,tenant_id:t.tenant_id},'-registered_at',500)));
+        if(from.length>=500||to.length>=500)return fail('Registration reconciliation required');
+        const reg=from.find((r:any)=>r.id===clean(body.registrationId,100));
+        if(!reg||reg.registration_status!=='confirmed'||!['paid','not_required','simulated'].includes(reg.payment_status)||reg.checked_in_at)return fail('Only confirmed, unchecked-in players may transfer');
+        if(to.some((r:any)=>r.registration_status!=='withdrawn'&&(r.player_id===reg.player_id||(reg.email&&clean(r.email,180).toLowerCase()===clean(reg.email,180).toLowerCase()))))return fail('Player already registered at destination');
+        if((fresh[1].player_ids||[]).includes(reg.player_id))return fail('Player already on destination roster');
+        const count=(rows:any[])=>rows.filter(r=>['confirmed','pending_payment'].includes(r.registration_status)).length;
+        const capacity=Number(fresh[1].max_players||32);
+        if(count(to)>=capacity||to.some((r:any)=>r.registration_status==='waitlisted'))return fail('Destination full or waitlist active');
+        for(let i=0;i<2;i++)await e.Tournament.updateMany({id:fresh[i].id,tenant_id:tournament.tenant_id,tournival_reserved_count:null},{$set:{tournival_reserved_count:count(i?to:from)}});
+        const q=(id:string)=>({id,tenant_id:tournament.tenant_id});
+        const change=async(id:string,filter:any,update:any,reverse:any)=>{
+          const result=await e.Tournament.updateMany({...q(id),...filter},update);
+          if(result.updated!==1)throw Error('Tournament changed during transfer');
+          undo.push(()=>e.Tournament.updateMany(q(id),reverse));
+        };
+        await change(target.id,{tournival_reserved_count:{$lt:capacity}},{$inc:{tournival_reserved_count:1},$addToSet:{player_ids:reg.player_id}},{$inc:{tournival_reserved_count:-1},$pull:{player_ids:reg.player_id}});
+        const links=await e.TournivalAccessToken.filter({registration_id:reg.id,tournament_id:tournament.id,tenant_id:tournament.tenant_id},'-created_at',500);
+        if(links.length>=500)throw Error('Too many access tokens');
+        const moved=await e.TournivalRegistration.updateMany({id:reg.id,tournament_id:tournament.id,registration_status:'confirmed'},{$set:{tournament_id:target.id}});
+        if(moved.updated!==1)throw Error('Registration changed during transfer');
+        undo.push(()=>e.TournivalRegistration.update(reg.id,{tournament_id:tournament.id}));
+        for(const link of links){
+          await e.TournivalAccessToken.update(link.id,{tournament_id:target.id});
+          undo.push(()=>e.TournivalAccessToken.update(link.id,{tournament_id:tournament.id}));
+        }
+        await change(tournament.id,{tournival_reserved_count:{$gt:0}},{$inc:{tournival_reserved_count:-1},$pull:{player_ids:reg.player_id}},{$inc:{tournival_reserved_count:1},$addToSet:{player_ids:reg.player_id}});
+        await audit(base44,user,tournament,'tournival_registration_transferred',{registrationId:reg.id,playerId:reg.player_id,from:tournament.id,to:target.id,paymentStatus:reg.payment_status});
+        await audit(base44,user,target,'tournival_registration_received',{registrationId:reg.id,from:tournament.id,to:target.id});
+        return Response.json({success:true,message:'Player transferred; original payment and personal link retained'});
+      }catch(error){
+        let rollbackFailed=false;
+        for(const reverse of undo.reverse())try{const result=await reverse();if(result?.updated===0)rollbackFailed=true;}catch{rollbackFailed=true;}
+        if(rollbackFailed){await audit(base44,user,tournament,'tournival_transfer_reconciliation_required',{target:target.id,registrationId:body.registrationId});return fail('Transfer requires administrator reconciliation',500);}
+        return fail('Transfer not completed; please refresh and retry');
+      }finally{
+        for(const id of locked)await e.Tournament.updateMany({id,tenant_id:tournament.tenant_id,tournival_registration_lock:lockId},{$set:{tournival_registration_lock:null}});
+      }
+    }
     if (action === 'tournival_manual_search' || action === 'tournival_manual_add') {
       if (String(tournament.format).toLowerCase() !== 'tournival' || !['Draft','Registration Open'].includes(tournament.status)) return Response.json({error:'Registration closed'},{status:409});
       const e=base44.asServiceRole.entities;
