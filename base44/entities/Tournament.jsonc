@@ -70,6 +70,7 @@
       "type": "number",
       "description": "Monotonic unique waitlist ticket allocator; never decrease or recycle tickets"
     },
+    "tournival_registration_lock": {"type":"string","description":"Shared registration write lock"},
     "tournival_reserved_count": {
       "type": "number",
       "description": "Atomic confirmed or pending-payment capacity reservations for Tournival only"

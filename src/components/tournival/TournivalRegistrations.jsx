@@ -1,11 +1,14 @@
 import React,{useCallback,useEffect,useState} from 'react';
 import {Button} from '@/components/ui/button';
 import {base44} from '@/api/base44Client';
+import {useQueryClient} from '@tanstack/react-query';
 import {toast} from 'sonner';
 import PublicTournivalPlayer from '@/pages/PublicTournivalPlayer';
 
 export default function TournivalRegistrations({tournament,isAdmin}) {
  const [rows,setRows]=useState([]),[loading,setLoading]=useState(true),[working,setWorking]=useState(null),[error,setError]=useState('');
+ const queryClient=useQueryClient();
+ const [adding,setAdding]=useState(false),[search,setSearch]=useState(''),[choices,setChoices]=useState([]),[selected,setSelected]=useState(''),[personalPath,setPersonalPath]=useState('');
  const [preview,setPreview]=useState(null);
  const invoke=useCallback(async payload=>{
   const res=await base44.functions.invoke('legacyTournamentManager',{
@@ -30,8 +33,11 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
    const data=await invoke({action,registrationId:row.id,...more});
    toast.success(data.message||'Registration updated');
    await refresh();
+   await queryClient.invalidateQueries();
   }catch(e){setError(e.message||'Action failed');}finally{setWorking(null);}
  };
+ const add=async()=>{if(working||!selected)return;try{setWorking('add');setError('');const result=await invoke({action:'tournival_manual_add',playerId:selected,paymentMode:'complimentary'});setPersonalPath(result.personalPath||'');setAdding(false);setSelected('');await refresh();await queryClient.invalidateQueries();toast.success('Player registered');}catch(e){setError(e.message);}finally{setWorking(null);}};
+ const find=async()=>{try{setSelected('');setChoices((await invoke({action:'tournival_manual_search',search})).players||[]);}catch(e){setError(e.message);}};
  const [invite,setInvite]=useState('');
  const prepareInvite=async()=>{
   try{
@@ -57,7 +63,10 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
    <Button size="sm" variant="outline" onClick={refresh}>Refresh</Button>
   </div>
   {isAdmin&&<div className="flex flex-wrap gap-2"><Button variant="outline" onClick={prepareInvite}>Prepare WhatsApp invitation</Button>{invite&&<><Button variant="outline" onClick={()=>window.open('https://wa.me/?text='+encodeURIComponent(invite),'_blank','noopener,noreferrer')}>Share via WhatsApp</Button><Button variant="outline" onClick={()=>navigator.clipboard.writeText(invite).then(()=>toast.success('Invitation copied')).catch(()=>toast.error('Copy failed'))}>Copy invitation</Button></>}</div>}
-  {!loading&&!error&&<p>{rows.filter(r=>['confirmed','pending_payment'].includes(r.status)).length}/{tournament.max_players||32} registered · {rows.filter(r=>r.status==='confirmed'&&['paid','not_required'].includes(r.paymentStatus)).length} paid/free</p>}
+  {isAdmin&&['Draft','Registration Open'].includes(tournament.status)&&<Button onClick={()=>setAdding(!adding)}>Add Player</Button>}
+  {adding&&<div className="border rounded-lg p-3 space-y-2"><label>Search existing player<input className="block border rounded p-2 w-full" value={search} onChange={e=>setSearch(e.target.value)}/></label><Button onClick={find} disabled={search.trim().length<2}>Search</Button><select className="block border rounded p-2 w-full" value={selected} onChange={e=>setSelected(e.target.value)}><option value="">Select player</option>{choices.map(p=><option key={p.id} value={p.id}>{p.name} — {p.email}</option>)}</select><p className="text-sm">Complimentary — no payment required</p><Button disabled={!selected||!!working} onClick={add}>Confirm registration</Button></div>}
+  {personalPath&&<p>Personal player link: <a className="underline" href={personalPath}>Open player page</a> <Button variant="outline" onClick={()=>navigator.clipboard.writeText(window.location.origin+personalPath)}>Copy link</Button></p>}
+  {!loading&&!error&&(()=>{const active=rows.filter(r=>['confirmed','pending_payment'].includes(r.status)),cap=tournament.max_players||32;return <div className="space-y-2"><strong>{active.length}/{cap} registered · {Math.max(0,cap-active.length)} places left</strong><progress className="w-full" value={active.length} max={cap}/><div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">{[['Paid',active.filter(r=>r.paymentStatus==='paid').length],['Complimentary',active.filter(r=>r.paymentReference==='manual:complimentary').length],['Awaiting payment',active.filter(r=>r.status==='pending_payment').length],['Checked in',active.filter(r=>r.checkedIn).length],['Waitlist',rows.filter(r=>r.status==='waitlisted').length]].map(([label,n])=><div className="border rounded p-2" key={label}>{label}: <strong>{n}</strong></div>)}</div></div>})()}
   {error&&<p role="alert" className="text-xs text-destructive">{error}</p>}
   {loading?<p className="text-xs">Loading registrations…</p>:
    <div className="space-y-2">
