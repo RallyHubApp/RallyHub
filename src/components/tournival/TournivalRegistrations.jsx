@@ -9,6 +9,7 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
  const [rows,setRows]=useState([]),[loading,setLoading]=useState(true),[working,setWorking]=useState(null),[error,setError]=useState('');
  const queryClient=useQueryClient();
  const [adding,setAdding]=useState(false),[search,setSearch]=useState(''),[choices,setChoices]=useState([]),[selected,setSelected]=useState(''),[personalPath,setPersonalPath]=useState('');
+ const [transfer,setTransfer]=useState(null),[targets,setTargets]=useState([]),[destination,setDestination]=useState('');
  const [preview,setPreview]=useState(null);
  const invoke=useCallback(async payload=>{
   const res=await base44.functions.invoke('legacyTournamentManager',{
@@ -46,6 +47,8 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
    setInvite(tournament.name+' — '+(tournament.start_date||'')+' '+(tournament.event_start_time||'')+'–'+(tournament.event_end_time||'')+'\n'+(tournament.location||'')+'\nRegister: '+window.location.origin+data.path);
   }catch(e){setError(e.message);}
  };
+ const prepareTransfer=async row=>{try{setError('');setDestination('');setTargets((await invoke({action:'tournival_transfer_targets'})).targets||[]);setTransfer(row);}catch(e){setError(e.message);}};
+ const confirmTransfer=async()=>{if(!transfer||!destination||working)return;try{setWorking(transfer.id);setError('');const data=await invoke({action:'tournival_transfer',registrationId:transfer.id,targetTournamentId:destination});setTransfer(null);await refresh();await queryClient.invalidateQueries();toast.success(data.message||'Player transferred');}catch(e){setError(e.message);}finally{setWorking(null);}};
  const withdraw=row=>{
   const reason=window.prompt('Reason for withdrawal (required):');
   if(reason?.trim().length>=3)act(row,'tournival_withdraw',{reason:reason.trim()});
@@ -65,6 +68,7 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
   {isAdmin&&<div className="flex flex-wrap gap-2"><Button variant="outline" onClick={prepareInvite}>Prepare WhatsApp invitation</Button>{invite&&<><Button variant="outline" onClick={()=>window.open('https://wa.me/?text='+encodeURIComponent(invite),'_blank','noopener,noreferrer')}>Share via WhatsApp</Button><Button variant="outline" onClick={()=>navigator.clipboard.writeText(invite).then(()=>toast.success('Invitation copied')).catch(()=>toast.error('Copy failed'))}>Copy invitation</Button></>}</div>}
   {isAdmin&&['Draft','Registration Open'].includes(tournament.status)&&<Button onClick={()=>setAdding(!adding)}>Add Player</Button>}
   {adding&&<div className="border rounded-lg p-3 space-y-2"><label>Search existing player<input className="block border rounded p-2 w-full" value={search} onChange={e=>setSearch(e.target.value)}/></label><Button onClick={find} disabled={search.trim().length<2}>Search</Button><select className="block border rounded p-2 w-full" value={selected} onChange={e=>setSelected(e.target.value)}><option value="">Select player</option>{choices.map(p=><option key={p.id} value={p.id}>{p.name} — {p.email}</option>)}</select><p className="text-sm">Complimentary — no payment required</p><Button disabled={!selected||!!working} onClick={add}>Confirm registration</Button></div>}
+  {transfer&&<div className="border rounded-lg p-3 space-y-2"><strong>Transfer {transfer.name}</strong><p className="text-sm">Original payment and personal link retained. No additional payment.</p><select className="block border rounded p-2 w-full" value={destination} onChange={e=>setDestination(e.target.value)}><option value="">Select destination</option>{targets.map(t=><option key={t.id} value={t.id}>{t.name} — {t.date} {t.time} ({t.available} places)</option>)}</select>{!targets.length&&<p>No eligible destination with available places.</p>}<Button disabled={!destination||!!working} onClick={confirmTransfer}>Confirm transfer</Button> <Button variant="outline" disabled={!!working} onClick={()=>setTransfer(null)}>Cancel</Button></div>}
   {personalPath&&<p>Personal player link: <a className="underline" href={personalPath}>Open player page</a> <Button variant="outline" onClick={()=>navigator.clipboard.writeText(window.location.origin+personalPath)}>Copy link</Button></p>}
   {!loading&&!error&&(()=>{const active=rows.filter(r=>['confirmed','pending_payment'].includes(r.status)),cap=tournament.max_players||32;return <div className="space-y-2"><strong>{active.length}/{cap} registered · {Math.max(0,cap-active.length)} places left</strong><progress className="w-full" value={active.length} max={cap}/><div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">{[['Paid',active.filter(r=>r.paymentStatus==='paid').length],['Complimentary',active.filter(r=>r.paymentReference==='manual:complimentary').length],['Awaiting payment',active.filter(r=>r.status==='pending_payment').length],['Checked in',active.filter(r=>r.checkedIn).length],['Waitlist',rows.filter(r=>r.status==='waitlisted').length]].map(([label,n])=><div className="border rounded p-2" key={label}>{label}: <strong>{n}</strong></div>)}</div></div>})()}
   {error&&<p role="alert" className="text-xs text-destructive">{error}</p>}
@@ -82,6 +86,7 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
        {r.status==='confirmed'&&['paid','not_required','simulated'].includes(r.paymentStatus)&&
         <Button disabled={!!working} size="sm" onClick={()=>act(r,'tournival_check_in',{checkedIn:!r.checkedIn})}>
           {r.checkedIn?'Undo check-in':'Check in'}</Button>}
+       {r.status==='confirmed'&&!r.checkedIn&&['paid','not_required','simulated'].includes(r.paymentStatus)&&['Draft','Registration Open'].includes(tournament.status)&&<Button disabled={!!working} variant="outline" size="sm" onClick={()=>prepareTransfer(r)}>Transfer Player</Button>}
        {r.status!=='withdrawn'&&<Button disabled={!!working} variant="outline" size="sm" onClick={()=>withdraw(r)}>Withdraw</Button>}
       </div>}
     </article>)}
