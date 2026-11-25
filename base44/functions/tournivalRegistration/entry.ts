@@ -65,9 +65,9 @@ Deno.serve(async(req)=>{
     const all=await base44.asServiceRole.entities.TournivalRegistration.filter({
       tournament_id:tournament.id,tenant_id:tournament.tenant_id
     },'-registered_at',500);
-    const rows=all||[];
-    const registered=rows.filter((r:any)=>['confirmed','pending_payment'].includes(r.registration_status)).length;
-    const waitlisted=rows.filter((r:any)=>r.registration_status==='waitlisted').length;
+    let rows=all||[];
+    let registered=rows.filter((r:any)=>['confirmed','pending_payment'].includes(r.registration_status)).length;
+    let waitlisted=rows.filter((r:any)=>r.registration_status==='waitlisted').length;
     // Public-facing event is presented by the tenant's organising club, not
     // by the RallyHub platform. Read only public club branding fields.
     const organiserRows=await base44.asServiceRole.entities.Club.filter({
@@ -90,6 +90,13 @@ Deno.serve(async(req)=>{
       return safeError('Valid name, email and registration operation required');
     if(body.consent!==true||body.consentVersion!=='tournival-participation-v1')
       return safeError('Participation and privacy consent required');
+    const lockId=crypto.randomUUID();
+    const lock=await base44.asServiceRole.entities.Tournament.updateMany({id:tournament.id,tenant_id:tournament.tenant_id,tournival_registration_lock:null},{$set:{tournival_registration_lock:lockId}});
+    if(lock.updated!==1)return Response.json({error:'Registration busy; retry shortly'},{status:409});
+    try {
+    rows=await base44.asServiceRole.entities.TournivalRegistration.filter({tournament_id:tournament.id,tenant_id:tournament.tenant_id},'-registered_at',500);
+    registered=rows.filter((r:any)=>['confirmed','pending_payment'].includes(r.registration_status)).length;
+    waitlisted=rows.filter((r:any)=>r.registration_status==='waitlisted').length;
     const duplicateOperation=rows.find((r:any)=>r.registration_operation_id===operationId);
     if(duplicateOperation){
       const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'event',purpose_id:duplicateOperation.id},'-created_date',5);
@@ -242,6 +249,7 @@ Deno.serve(async(req)=>{
       return Response.json({...publicReceipt(registration,updatedEvent),personalPath,paymentUnavailable:true,
         message:'Registration held. Payment checkout pending review; no payment confirmed.'},{status:202});
     }
+    } finally { await base44.asServiceRole.entities.Tournament.updateMany({id:tournament.id,tenant_id:tournament.tenant_id,tournival_registration_lock:lockId},{$set:{tournival_registration_lock:null}}); }
   }catch(error){
     console.error('Tournival public registration failed:',(error as any)?.message||error);
     if(/rate limit/i.test(String((error as any)?.message||error)))

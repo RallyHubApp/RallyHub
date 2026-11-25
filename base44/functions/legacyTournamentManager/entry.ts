@@ -92,7 +92,9 @@ Deno.serve(async (req) => {
       const rows=upcoming.length?await base44.asServiceRole.entities.TournivalRegistration.filter({tenant_id:tenant,club_id:club},'-registered_at',500):[];
       if(events.length===100||rows.length===500)return Response.json({error:'Summary requires pagination'},{status:409});
       return Response.json({success:true,events:upcoming.map((t:any)=>{
-        const active=rows.filter((r:any)=>r.tournament_id===t.id&&['confirmed','pending_payment'].includes(r.registration_status));
+        const personId=player.person_id||(email?(await e.Person.filter({tenant_id:tournament.tenant_id,primary_email:email}))[0]?.id:null);
+      if(mode==='offline_paid'&&!personId)return Response.json({error:'Link player to a Person before recording offline payment'},{status:409});
+      const active=rows.filter((r:any)=>r.tournament_id===t.id&&['confirmed','pending_payment'].includes(r.registration_status));
         const paid=active.filter((r:any)=>['paid','not_required'].includes(r.payment_status)).length;
         return {id:t.id,name:t.name,capacity:Number(t.max_players||32),registered:active.length,paid,pending:active.length-paid};
       })});
@@ -188,6 +190,10 @@ Deno.serve(async (req) => {
       if(!['complimentary','offline_paid','awaiting_payment'].includes(mode))return Response.json({error:'Select payment option'},{status:400});
       const player=(await e.Player.filter({id:playerId,tenant_id:tournament.tenant_id}))[0];
       if(!player||player.status!=='Active')return Response.json({error:'Active player required'},{status:400});
+      const lockId=crypto.randomUUID();
+      const lock=await e.Tournament.updateMany({id:tournament.id,tenant_id:tournament.tenant_id,tournival_registration_lock:null},{$set:{tournival_registration_lock:lockId}});
+      if(lock.updated!==1)return Response.json({error:'Registration busy; retry shortly'},{status:409});
+      try {
       const rows=await e.TournivalRegistration.filter({tournament_id:tournament.id,tenant_id:tournament.tenant_id},'-registered_at',500);
       const email=clean(player.email,180).toLowerCase();
       if(rows.some((r:any)=>r.registration_status!=='withdrawn'&&(r.player_id===playerId||(email&&clean(r.email,180).toLowerCase()===email))))return Response.json({error:'Player already registered'},{status:409});
@@ -202,12 +208,17 @@ Deno.serve(async (req) => {
       try{
         row=await e.TournivalRegistration.create({tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,tournament_id:tournament.id,player_id:playerId,full_name:player.full_name,email,mobile:player.phone||'',registration_operation_id:crypto.randomUUID(),registration_status:confirmed?'confirmed':'pending_payment',payment_status:mode==='offline_paid'?'paid':confirmed?'not_required':'pending',payment_reference:'manual:'+mode,amount_due:fee,currency:tournament.event_currency||'EUR',registered_at:now,...(confirmed?{confirmed_at:now}:{})});
       }catch(error){await e.Tournament.updateMany({id:tournament.id,tenant_id:tournament.tenant_id,tournival_reserved_count:{$gt:0}},{$inc:{tournival_reserved_count:-1}});throw error;}
+      if(mode==='offline_paid'){
+        const payment=await e.PaymentRecord.create({tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,person_id:personId,purpose_type:'event',purpose_id:row.id,payment_type:'tournival_registration',amount:fee,currency:tournament.event_currency||'EUR',provider:'offline',payment_method:'offline',payment_status:'paid',payment_date:now.slice(0,10),source_system:'tournival_manual_registration',source_row:row.id});
+        await e.TournivalRegistration.update(row.id,{payment_record_id:payment.id,person_id:personId});
+      }
       if(confirmed)await e.Tournament.updateMany({id:tournament.id,tenant_id:tournament.tenant_id},{$addToSet:{player_ids:playerId}});
       const token='trp_'+Array.from(crypto.getRandomValues(new Uint8Array(24)),b=>b.toString(16).padStart(2,'0')).join('');
       const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))),b=>b.toString(16).padStart(2,'0')).join('');
       await e.TournivalAccessToken.create({tenant_id:tournament.tenant_id,club_id:tournament.host_club_id||tournament.tenant_id,tournament_id:tournament.id,token_hash:hash,token_type:'player',player_id:playerId,registration_id:row.id,created_at:now,created_by_user_id:user.id});
       await audit(base44,user,tournament,'tournival_manual_registration',{registrationId:row.id,playerId,mode,fee});
       return Response.json({success:true,personalPath:'/tournival/player/'+token});
+      } finally { await e.Tournament.updateMany({id:tournament.id,tenant_id:tournament.tenant_id,tournival_registration_lock:lockId},{$set:{tournival_registration_lock:null}}); }
     }
     if (action === 'tournival_registrations') {
       if (String(tournament.format).toLowerCase() !== 'tournival')
