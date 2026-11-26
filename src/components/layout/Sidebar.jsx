@@ -36,11 +36,12 @@ export default function Sidebar({ isOpen, onToggle }) {
   const currentAdminTab = new URLSearchParams(location.search).get('tab');
   const directoryWorkspaceTabs = new Set(['directory-command','directory-crm','directory','directory-contacts','directory-players','directory-analytics','directory-campaigns','directory-governance']);
   const inDirectoryWorkspace = location.pathname === '/app/admin' && directoryWorkspaceTabs.has(currentAdminTab);
-  const { data: memberMessageUnread = 0 } = useMemberMessageUnread();
+  const inApprovalWorkspace = location.pathname === '/app/admin' && (!currentAdminTab || ['linking','approvals'].includes(currentAdminTab));
+  const { data: memberMessageUnread = 0 } = useMemberMessageUnread({enabled: !inApprovalWorkspace});
   const {data:pendingEventActionCount=0}=useEventActionCount(user,{enabled:location.pathname === '/app/events'});
   const {data:membershipAttentionCount=0,isError:membershipAttentionError}=useQuery({
     queryKey:['membership-application-attention-count',user?.active_tenant_id,user?.active_club_id],
-    enabled:canManageMembership&&!!user?.active_tenant_id&&!!user?.active_club_id,
+    enabled:!inApprovalWorkspace&&canManageMembership&&!!user?.active_tenant_id&&!!user?.active_club_id,
     queryFn:async()=>{const res=await base44.functions.invoke('membershipApplication',{action:'admin_count'});if(res.data?.error||res.data?.success===false)throw Error(res.data?.error||'Membership count unavailable');return {approvalCount:Number(res.data?.approvalCount||0),paymentFollowUpCount:Number(res.data?.paymentFollowUpCount??res.data?.pendingCount??0)}},
     select:data=>Number(data.approvalCount||0)+Number(data.paymentFollowUpCount||0),
     retry:false,staleTime:5*60_000,refetchInterval:false,refetchOnWindowFocus:false
@@ -106,7 +107,7 @@ export default function Sidebar({ isOpen, onToggle }) {
       if (res.data?.error) throw new Error(res.data.error);
       return Number(res.data?.pendingCount || 0);
     },
-    enabled: canAccessAdmin && !inDirectoryWorkspace,
+    enabled: !inApprovalWorkspace && canAccessAdmin && !inDirectoryWorkspace,
     staleTime:5*60_000,refetchInterval:false,refetchOnWindowFocus:false
   });
 
@@ -117,7 +118,7 @@ export default function Sidebar({ isOpen, onToggle }) {
       if (res.data?.error) throw new Error(res.data.error);
       return Number(res.data?.pendingCount || 0);
     },
-    enabled: canAccessAdmin && !inDirectoryWorkspace && !!user?.active_tenant_id && !!user?.active_club_id,
+    enabled: !inApprovalWorkspace && canAccessAdmin && !inDirectoryWorkspace && !!user?.active_tenant_id && !!user?.active_club_id,
     staleTime:5*60_000,refetchInterval:false,refetchOnWindowFocus:false
   });
 

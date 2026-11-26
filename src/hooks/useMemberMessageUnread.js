@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 
-export default function useMemberMessageUnread() {
+export default function useMemberMessageUnread({enabled = true} = {}) {
   const { user } = useAuth();
   return useQuery({
     queryKey: ['member-message-unread', user?.id, user?.active_tenant_id, user?.active_club_id],
@@ -15,7 +15,7 @@ export default function useMemberMessageUnread() {
         return 0;
       }
     },
-    enabled: !!user?.id && !!user?.active_tenant_id && !!user?.active_club_id,
+    enabled: enabled && !!user?.id && !!user?.active_tenant_id && !!user?.active_club_id,
     staleTime: 2*60_000,
     refetchInterval: false,
     refetchOnWindowFocus: false,
