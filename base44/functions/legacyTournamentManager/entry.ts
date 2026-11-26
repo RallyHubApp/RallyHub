@@ -282,6 +282,21 @@ Deno.serve(async (req) => {
       return Response.json({success:true,personalPath:'/tournival/player/'+token});
       } finally { await e.Tournament.updateMany({id:tournament.id,tenant_id:tournament.tenant_id,tournival_registration_lock:lockId},{$set:{tournival_registration_lock:null}}); }
     }
+    if (action === 'tournival_payment_reminder') {
+      if(String(tournament.format).toLowerCase()!=='tournival')return Response.json({error:'Not a Tournival'},{status:400});
+      const e=base44.asServiceRole.entities;
+      const row=(await e.TournivalRegistration.filter({id:clean(body.registrationId,120),tenant_id:tournament.tenant_id,tournament_id:tournament.id}))[0];
+      if(!row||row.registration_status!=='pending_payment'||row.payment_status!=='pending')return Response.json({error:'Registration is no longer awaiting payment; refresh'},{status:409});
+      const payments=await e.PaymentRecord.filter({tenant_id:tournament.tenant_id,club_id:row.club_id,purpose_id:row.id,payment_type:'tournival_registration'});
+      const payment=payments.find((p:any)=>p.id===row.payment_record_id);
+      if(!payment||payment.payment_status!=='pending'||payment.provider!=='sumup'||Number(payment.amount)!==Number(row.amount_due)||payment.currency!==row.currency||payments.some((p:any)=>p.payment_status==='paid'))return Response.json({error:'Payment record requires reconciliation; no reminder prepared'},{status:409});
+      let url:URL;
+      try{url=new URL(payment.provider_checkout_url);if(url.protocol!=='https:'||url.username||url.password||!(url.hostname==='sumup.com'||url.hostname.endsWith('.sumup.com')))throw Error('Invalid checkout');}catch{return Response.json({error:'Existing SumUp payment link unavailable; no new checkout created'},{status:409});}
+      let mobile=clean(row.mobile,40).replace(/[^0-9]/g,'');
+      if(mobile.startsWith('00'))mobile=mobile.slice(2);else if(mobile.startsWith('0'))mobile='353'+mobile.slice(1);
+      if(!/^[1-9][0-9]{7,14}$/.test(mobile))return Response.json({error:'No valid mobile number recorded'},{status:409});
+      return Response.json({success:true,mobile,checkoutUrl:url.href,amount:payment.amount,currency:payment.currency,name:row.full_name});
+    }
     if (action === 'tournival_registrations') {
       if (String(tournament.format).toLowerCase() !== 'tournival')
         return Response.json({error:'Not a Tournival tournament'},{status:400});
