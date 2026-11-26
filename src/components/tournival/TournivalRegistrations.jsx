@@ -59,10 +59,11 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
    const data=await invoke({action:'tournival_payment_reminder',registrationId:row.id});
    const amount=new Intl.NumberFormat('en-IE',{style:'currency',currency:data.currency}).format(data.amount);
    const message=`Hi ${String(data.name||'there').split(' ')[0]}, just a reminder that your payment of ${amount} for ${tournament.name} (${tournament.start_date||''}) is outstanding. Please complete your payment using your existing secure SumUp link: \n${data.checkoutUrl}\nThanks!`;
-   if(!/^[1-9][0-9]{7,14}$/.test(data.mobile))throw Error('Invalid WhatsApp number');
+
    setReminder({id:row.id,name:data.name,mobile:data.mobile,message});
   }catch(e){setError(e?.response?.data?.error||e.message||'Payment reminder unavailable');}finally{setWorking(null);}
  };
+ const whatsappNumber=value=>{let n=String(value||'').replace(/[^0-9]/g,'');if(n.startsWith('00'))n=n.slice(2);else if(n.startsWith('0'))n='353'+n.slice(1);return /^[1-9][0-9]{7,14}$/.test(n)?n:'';};
  const withdraw=row=>{
   const reason=window.prompt('Reason for withdrawal (required):');
   if(reason?.trim().length>=3)act(row,'tournival_withdraw',{reason:reason.trim()});
@@ -106,11 +107,15 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
       </div>}
       {isAdmin&&reminder?.id===r.id&&r.status==='pending_payment'&&r.paymentStatus==='pending'&&<div className="border rounded-lg p-3 space-y-2">
        <strong>Payment reminder for {reminder.name}</strong>
-       <p className="whitespace-pre-wrap break-all">{reminder.message}</p>
+       <label className="block">WhatsApp mobile number (editable for this reminder)<input type="tel" className="block border rounded p-2 w-full" value={reminder.mobile} onChange={e=>setReminder({...reminder,mobile:e.target.value})}/></label>
+       <p className="text-muted-foreground">Changing this number does not change the player's saved contact details.</p>
+       <textarea aria-label="Payment reminder message" className="block border rounded p-2 w-full min-h-28" readOnly value={reminder.message}/>
+       {!whatsappNumber(reminder.mobile)&&<p>Enter a valid number to open WhatsApp, or copy the message below.</p>}
        <div className="flex flex-wrap gap-2">
-        <a className="underline p-2" href={'whatsapp://send?phone='+reminder.mobile+'&text='+encodeURIComponent(reminder.message)}>Open WhatsApp app</a>
-        <a className="underline p-2" href={'https://web.whatsapp.com/send?phone='+reminder.mobile+'&text='+encodeURIComponent(reminder.message)} target="_blank" rel="noopener noreferrer">Open WhatsApp Web</a>
+        {whatsappNumber(reminder.mobile)&&<><a className="underline p-2" href={'whatsapp://send?phone='+whatsappNumber(reminder.mobile)+'&text='+encodeURIComponent(reminder.message)}>Open WhatsApp app</a>
+        <a className="underline p-2" href={'https://web.whatsapp.com/send?phone='+whatsappNumber(reminder.mobile)+'&text='+encodeURIComponent(reminder.message)} target="_blank" rel="noopener noreferrer">Open WhatsApp Web</a></>}
         <Button size="sm" variant="outline" onClick={()=>navigator.clipboard.writeText(reminder.message).then(()=>toast.success('Payment reminder copied')).catch(()=>toast.error('Copy failed'))}>Copy Payment Reminder</Button>
+        <Button size="sm" variant="outline" onClick={()=>navigator.clipboard.writeText(reminder.message.match(/https:\/\/[^\s]+/)?.[0]||'').then(()=>toast.success('Payment link copied')).catch(()=>toast.error('Copy failed'))}>Copy Payment Link</Button>
         <Button size="sm" variant="outline" onClick={()=>setReminder(null)}>Close</Button>
        </div>
        <p>No message is sent until you press Send in WhatsApp.</p>
