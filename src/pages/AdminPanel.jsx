@@ -577,7 +577,6 @@ export default function AdminPanel() {
 
   const setUserRole = async (userId, newRole) => {
     setUpdatingRole(userId);
-    if (approvalInFlight.current) return;
     const targetUser = allUsers.find(u => u.id === userId);
     if (!targetUser) { toast.error('User not found'); setUpdatingRole(null); return; }
     if (newRole === 'admin') {
@@ -1402,6 +1401,7 @@ Brian`;
   };
 
   const setApprovalStatus = async (userId, status) => {
+    if (approvalInFlight.current) return;
     const targetUser = allUsers.find(u => u.id === userId);
     const candidate = targetUser && membershipCandidateForUser(targetUser);
     if (status === 'approved' && candidate) {
