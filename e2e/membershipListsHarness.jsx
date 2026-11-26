@@ -1,0 +1,22 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
+import {AuthProvider,useAuth} from '@/lib/AuthContext';
+import MembershipConsole from '@/pages/MembershipConsole';
+import Composer from '@/components/communications/MembershipCampaignComposer';
+import {base44} from '@/api/base44Client';
+import '@/index.css';
+const user={id:'test-user',role:'admin',active_tenant_id:'test-tenant',active_club_id:'test-club',email:'test@example.invalid'};
+const rows=Array.from({length:102},(_,i)=>({person_id:'p'+i,full_name:i<98?'Original '+i:'Extra '+i,email:'p'+i+'@example.invalid',membership_status:'paid_active',payment_status:i===101?'pending':'paid',age:55,sport_profiles:[]}));
+const initial=[{id:'old',name:'Christmas Tournival 2026',recipient_count:98,recipient_ids_json:JSON.stringify(rows.slice(0,98).map(r=>r.person_id)),status:'saved'}];
+const read=()=>JSON.parse(sessionStorage.getItem('fixture-lists')||JSON.stringify(initial));
+const write=x=>sessionStorage.setItem('fixture-lists',JSON.stringify(x));
+base44.auth.me=async()=>user;
+base44.functions.invoke=async(name,args)=>({data:args.action==='admin_meta'?{club:{name:'Test club'},fieldCatalog:[{key:'full_name',label:'Name'},{key:'payment_status',label:'Payment'}],paymentStatuses:['paid','pending'],membershipStatuses:['paid_active']}:name==='membershipRecord'&&args.action==='admin_list'?{rows,counts:{}}:args.action==='member_campaign_roster'?{roster:rows.map(r=>({id:r.person_id,name:r.full_name,email:r.email}))}:{}});
+const audience=base44.entities.ClubCampaignAudience;
+audience.filter=async()=>read();
+audience.create=async d=>{const row={...d,id:'new-'+read().length};write([...read(),row]);return row};
+audience.update=async(id,d)=>{write(read().map(a=>a.id===id?{...a,...d}:a));};
+Object.defineProperty(base44,'entities',{value:{ClubCampaignAudience:audience,CommunicationCampaign:{filter:async()=>[]}}});
+function App(){const {user}=useAuth();return user?(location.hash==='#composer'?<Composer user={user} template={{id:'template',name:'Christmas template'}}/>:<MembershipConsole/>):null}
+createRoot(document.getElementById('root')).render(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><AuthProvider><App/></AuthProvider></QueryClientProvider>);

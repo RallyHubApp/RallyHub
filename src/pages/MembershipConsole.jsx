@@ -113,6 +113,20 @@ export default function MembershipConsole() {
   const [sortDirection, setSortDirection] = useState('asc');
   const [visibleFields, setVisibleFields] = useState([]);
   const [selected, setSelected] = useState(new Set());
+  const [savedListId,setSavedListId]=useState('');
+  const [excludeListId,setExcludeListId]=useState('');
+  const [savedListName,setSavedListName]=useState('');
+  const [listBusy,setListBusy]=useState(false);
+  const scope={tenant_id:user?.active_tenant_id,club_id:user?.active_club_id,activity_id:'general_campaign'};
+  const {data:savedLists=[],refetch:reloadSavedLists,isError:savedListsError,isSuccess:savedListsReady}=useQuery({
+    queryKey:['membership-saved-lists',scope.tenant_id,scope.club_id],
+    enabled:canManage&&!!scope.tenant_id&&!!scope.club_id,
+    queryFn:async()=>{const result=await base44.entities.ClubCampaignAudience.filter(scope,'-updated_date',500);if(result.length>=500)throw Error('Saved list limit reached');return result.filter(a=>a.status==='saved').map(a=>{const ids=JSON.parse(a.recipient_ids_json||'[]');if(!Array.isArray(ids)||ids.some(id=>typeof id!=='string'))throw Error('Invalid saved list');return a;});}
+  });
+  const listIds=a=>{const ids=JSON.parse(a?.recipient_ids_json||'[]');if(!Array.isArray(ids)||ids.some(id=>typeof id!=='string'))throw Error('Invalid saved list');return ids;};
+  const excluded=useMemo(()=>new Set(listIds(savedLists.find(a=>a.id===excludeListId))),[savedLists,excludeListId]);
+  useEffect(()=>{setSelected(new Set());setSavedListId('');setExcludeListId('');setSavedListName('');},[scope.tenant_id,scope.club_id]);
+
   const [personId, setPersonId] = useState('');
   const [detailOpen, setDetailOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -469,6 +483,7 @@ export default function MembershipConsole() {
   const rows = useMemo(() => {
     const needle = deferredSearch.trim().toLowerCase();
     const result = (listData.rows || []).filter(row => {
+      if (excluded.has(row.person_id)) return false;
       if (needle && ![
         row.full_name, row.email, row.mobile, row.member_id, row.external_rating_id, row.primary_sport,
         ...(row.alternate_names || [])
@@ -516,7 +531,7 @@ export default function MembershipConsole() {
       return sortDirection === 'desc' ? -comparison : comparison;
     });
     return result;
-  }, [listData.rows, deferredSearch, filters, sortField, sortDirection, meta.fieldCatalog]);
+  }, [listData.rows, deferredSearch, filters, sortField, sortDirection, meta.fieldCatalog, excluded]);
 
   const exportRows = useMemo(() => selected.size ? rows.filter(row => selected.has(row.person_id)) : rows, [rows, selected]);
 
@@ -557,9 +572,27 @@ export default function MembershipConsole() {
   };
 
   const toggleAll = () => {
-    setSelected(previous => previous.size === rows.length && rows.length
-      ? new Set()
-      : new Set(rows.map(row => row.person_id)));
+    setSelected(previous => {const next=new Set(previous);const all=rows.length&&rows.every(r=>next.has(r.person_id));for(const row of rows){if(all)next.delete(row.person_id);else next.add(row.person_id);}return next;});
+  };
+  const openSavedList=id=>{const list=savedLists.find(a=>a.id===id);if(!list)return;setSavedListId(id);setSavedListName(list.name);setSelected(new Set(listIds(list).filter(id=>!excluded.has(id))));};
+  const changeExclusion=id=>{const ids=new Set(listIds(savedLists.find(a=>a.id===id)));setExcludeListId(id);setSelected(old=>new Set([...old].filter(x=>!ids.has(x))));};
+  const persistList=async(mode)=>{
+    if(listBusy||!savedListsReady||savedListsError)return;
+    const name=savedListName.trim();const existing=savedLists.find(a=>a.id===savedListId);
+    if(!name)return toast.error('Enter a list name');
+    if(mode!=='new'&&!existing)return toast.error('Open a saved list first');
+    if(mode!=='new'&&excludeListId)return toast.error('Clear the exclusion before updating an existing list, or save as a new list');
+    if(savedLists.some(a=>a.name.trim().toLowerCase()===name.toLowerCase()&&(mode==='new'||a.id!==existing?.id)))return toast.error('A list with that name already exists');
+    const allowed=new Set((listData.rows||[]).map(r=>r.person_id));
+    const ids=[...new Set([...(mode==='add'?listIds(existing):[]),...selected])].filter(id=>allowed.has(id)&&!excluded.has(id));
+    if(!ids.length)return toast.error('Select members first');
+    if(mode!=='new'&&!window.confirm('Update '+existing.name+'? Existing campaign delivery records will not change.'))return;
+    setListBusy(true);
+    try{const data={...scope,name,recipient_ids_json:JSON.stringify(ids),recipient_count:ids.length,filters_json:JSON.stringify({source:'club_membership',exclude_list_id:excludeListId}),status:'saved'};
+      if(mode==='new'){const row=await base44.entities.ClubCampaignAudience.create({...data,created_by_user_id:user.id});setSavedListId(row.id);}
+      else await base44.entities.ClubCampaignAudience.update(existing.id,data);
+      await reloadSavedLists();toast.success('Saved '+ids.length+' members. No messages sent.');
+    }catch(e){toast.error(e.message||'Could not save list');}finally{setListBusy(false);}
   };
 
   const openBroadcast = () => {
@@ -1485,6 +1518,24 @@ export default function MembershipConsole() {
             </div>
           </div>
 
+          <section className="glass rounded-xl p-4 space-y-3">
+            <h2 className="font-semibold">Saved membership lists</h2>
+            <p className="text-xs text-muted-foreground">Use the existing filters and tick boxes. Lists are shared with Communications Centre; no messages are sent when saving.</p>
+            {savedListsError&&<p role="alert">Could not load saved lists. Saving is disabled.</p>}
+            <div className="flex flex-wrap gap-2">
+              <select aria-label="Open saved list" value={savedListId} onChange={e=>openSavedList(e.target.value)} className="border rounded p-2"><option value="">Open saved list</option>{savedLists.map(a=><option key={a.id} value={a.id}>{a.name} ({a.recipient_count})</option>)}</select>
+              <select aria-label="Exclude saved list" value={excludeListId} onChange={e=>changeExclusion(e.target.value)} className="border rounded p-2"><option value="">Exclude no list</option>{savedLists.map(a=><option key={a.id} value={a.id}>{a.name} ({a.recipient_count})</option>)}</select>
+              <Button variant="outline" onClick={()=>{setSavedListId('');setSavedListName('');setSelected(new Set());}}>New selection</Button>
+              <Button variant="outline" onClick={()=>setSelected(new Set())}>Clear selection</Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Input aria-label="Saved list name" placeholder="Name your list" value={savedListName} onChange={e=>setSavedListName(e.target.value)} className="max-w-sm"/>
+              <Button disabled={listBusy||!savedListsReady||!selected.size} onClick={()=>persistList('new')}>Save as new list</Button>
+              <Button variant="outline" disabled={listBusy||!savedListsReady||!savedListId} onClick={()=>persistList('replace')}>Update / rename list</Button>
+              <Button variant="outline" disabled={listBusy||!savedListsReady||!savedListId} onClick={()=>persistList('add')}>Add to opened list</Button>
+            </div>
+            <p className="text-sm">{rows.length} matching filters · {selected.size} selected · {excluded.size} excluded by list</p>
+          </section>
           <div className="glass rounded-xl overflow-hidden">
             <div className="px-4 py-3 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div><p className="font-semibold">Membership records</p><p className="text-xs text-muted-foreground">{rows.length} shown · {selected.size ? `${selected.size} selected` : 'exports use current filtered view'}</p></div>
@@ -1493,7 +1544,7 @@ export default function MembershipConsole() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead className="w-10"><Checkbox checked={rows.length > 0 && selected.size === rows.length} onCheckedChange={toggleAll} /></TableHead>
+                  <TableHead className="w-10"><Checkbox checked={rows.length > 0 && rows.every(row=>selected.has(row.person_id))} onCheckedChange={toggleAll} /></TableHead>
                   <TableHead className="sm:hidden">Member / status</TableHead>
                   {activeFields.map(field => <TableHead key={field.key} className="whitespace-nowrap">{field.label}</TableHead>)}
                   <TableHead className="text-right">Open</TableHead>
