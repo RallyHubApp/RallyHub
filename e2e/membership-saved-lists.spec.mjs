@@ -1,0 +1,24 @@
+import {test,expect} from '@playwright/test';
+test('membership list exclusion, persistence and communications reuse',async({page})=>{
+ await page.route('**/*',async route=>{const u=new URL(route.request().url());if(u.pathname.includes('public-settings'))return route.fulfill({json:{id:'test',public_settings:{}}});if(u.hostname==='127.0.0.1')return route.continue();return route.abort()});
+ await page.goto('/e2e/membershipListsHarness.html?app_id=test&access_token=fixture');
+ await expect(page.getByRole('heading',{name:'Saved membership lists'})).toBeVisible();
+ await page.getByLabel('Exclude saved list').selectOption('old');
+ await expect(page.getByText('4 matching filters · 0 selected · 98 excluded by list')).toBeVisible();
+ await page.getByLabel('Search membership records').fill('Extra 98');
+ await page.getByRole('table').last().getByRole('checkbox').first().click();
+ await page.getByLabel('Search membership records').fill('Extra 99');
+ await page.getByRole('table').last().getByRole('checkbox').first().click();
+ await expect(page.getByText('1 matching filters · 2 selected · 98 excluded by list')).toBeVisible();
+ await page.getByLabel('Saved list name').fill('Additional Recipients');
+ await page.getByRole('button',{name:'Save as new list'}).click();
+ await expect(page.getByLabel('Open saved list').locator('option',{hasText:'Additional Recipients (2)'})).toHaveCount(1);
+ await page.reload();
+ await page.getByLabel('Open saved list').selectOption('new-1');
+ await expect(page.getByLabel('Saved list name')).toHaveValue('Additional Recipients');
+ await page.goto('/e2e/membershipListsHarness.html#composer');await page.reload();
+ await page.getByLabel('Reopen saved audience').selectOption('new-1');
+ await expect(page.getByText('2 selected / 102 eligible members')).toBeVisible();
+ const lists=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('fixture-lists')));
+ expect(lists[0].recipient_count).toBe(98);expect(JSON.parse(lists[1].recipient_ids_json)).toEqual(['p98','p99']);
+});
