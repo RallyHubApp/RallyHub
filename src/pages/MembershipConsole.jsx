@@ -121,7 +121,7 @@ export default function MembershipConsole() {
   const {data:savedLists=[],refetch:reloadSavedLists,isError:savedListsError,isSuccess:savedListsReady}=useQuery({
     queryKey:['membership-saved-lists',scope.tenant_id,scope.club_id],
     enabled:canManage&&!!scope.tenant_id&&!!scope.club_id,
-    queryFn:async()=>{const result=await base44.entities.ClubCampaignAudience.filter(scope,'-updated_date',500);if(result.length>=500)throw Error('Saved list limit reached');return result.filter(a=>a.status==='saved');}
+    queryFn:async()=>{const result=await base44.entities.ClubCampaignAudience.filter(scope,'-updated_date',500);if(result.length>=500)throw Error('Saved list limit reached');return result.filter(a=>a.status==='saved').map(a=>{const ids=JSON.parse(a.recipient_ids_json||'[]');if(!Array.isArray(ids)||ids.some(id=>typeof id!=='string'))throw Error('Invalid saved list');return a;});}
   });
   const listIds=a=>{const ids=JSON.parse(a?.recipient_ids_json||'[]');if(!Array.isArray(ids)||ids.some(id=>typeof id!=='string'))throw Error('Invalid saved list');return ids;};
   const excluded=useMemo(()=>new Set(listIds(savedLists.find(a=>a.id===excludeListId))),[savedLists,excludeListId]);
@@ -581,13 +581,14 @@ export default function MembershipConsole() {
     const name=savedListName.trim();const existing=savedLists.find(a=>a.id===savedListId);
     if(!name)return toast.error('Enter a list name');
     if(mode!=='new'&&!existing)return toast.error('Open a saved list first');
+    if(mode!=='new'&&excludeListId)return toast.error('Clear the exclusion before updating an existing list, or save as a new list');
     if(savedLists.some(a=>a.name.trim().toLowerCase()===name.toLowerCase()&&(mode==='new'||a.id!==existing?.id)))return toast.error('A list with that name already exists');
     const allowed=new Set((listData.rows||[]).map(r=>r.person_id));
     const ids=[...new Set([...(mode==='add'?listIds(existing):[]),...selected])].filter(id=>allowed.has(id)&&!excluded.has(id));
     if(!ids.length)return toast.error('Select members first');
     if(mode!=='new'&&!window.confirm('Update '+existing.name+'? Existing campaign delivery records will not change.'))return;
     setListBusy(true);
-    try{const data={...scope,name,recipient_ids_json:JSON.stringify(ids),recipient_count:ids.length,filters_json:JSON.stringify({source:'club_membership',filters,search,exclude_list_id:excludeListId}),status:'saved'};
+    try{const data={...scope,name,recipient_ids_json:JSON.stringify(ids),recipient_count:ids.length,filters_json:JSON.stringify({source:'club_membership',exclude_list_id:excludeListId}),status:'saved'};
       if(mode==='new'){const row=await base44.entities.ClubCampaignAudience.create({...data,created_by_user_id:user.id});setSavedListId(row.id);}
       else await base44.entities.ClubCampaignAudience.update(existing.id,data);
       await reloadSavedLists();toast.success('Saved '+ids.length+' members. No messages sent.');
