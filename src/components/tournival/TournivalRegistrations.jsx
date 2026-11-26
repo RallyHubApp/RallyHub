@@ -11,6 +11,7 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
  const [adding,setAdding]=useState(false),[search,setSearch]=useState(''),[choices,setChoices]=useState([]),[selected,setSelected]=useState(''),[personalPath,setPersonalPath]=useState('');
  const [transfer,setTransfer]=useState(null),[targets,setTargets]=useState([]),[destination,setDestination]=useState('');
  const [preview,setPreview]=useState(null);
+ const [reminder,setReminder]=useState(null);
  const invoke=useCallback(async payload=>{
   const res=await base44.functions.invoke('legacyTournamentManager',{
    tournamentId:tournament.id,...payload
@@ -19,6 +20,7 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
   return res.data||{};
  },[tournament.id]);
  const refresh=useCallback(async()=>{
+  setReminder(null);
   try{
    setLoading(true);setError('');
    const data=await invoke({action:'tournival_registrations'});
@@ -52,16 +54,16 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
  const requestPayment=async row=>{
   if(working)return;
   setWorking(row.id);setError('');
-  const tab=window.open('about:blank','_blank');
-  if(tab)tab.opener=null;
+  setReminder(null);
   try{
    const data=await invoke({action:'tournival_payment_reminder',registrationId:row.id});
    const amount=new Intl.NumberFormat('en-IE',{style:'currency',currency:data.currency}).format(data.amount);
    const message=`Hi ${String(data.name||'there').split(' ')[0]}, just a reminder that your payment of ${amount} for ${tournament.name} (${tournament.start_date||''}) is outstanding. Please complete your payment using your existing secure SumUp link: \n${data.checkoutUrl}\nThanks!`;
-   const url='https://wa.me/'+data.mobile+'?text='+encodeURIComponent(message);
-   if(tab)tab.location.href=url;else window.location.href=url;
-  }catch(e){if(tab)tab.close();setError(e?.response?.data?.error||e.message||'Payment reminder unavailable');}finally{setWorking(null);}
+
+   setReminder({id:row.id,name:data.name,mobile:data.mobile,message});
+  }catch(e){setError(e?.response?.data?.error||e.message||'Payment reminder unavailable');}finally{setWorking(null);}
  };
+ const whatsappNumber=value=>{let n=String(value||'').replace(/[^0-9]/g,'');if(n.startsWith('00'))n=n.slice(2);else if(n.startsWith('0'))n='353'+n.slice(1);return /^[1-9][0-9]{7,14}$/.test(n)?n:'';};
  const withdraw=row=>{
   const reason=window.prompt('Reason for withdrawal (required):');
   if(reason?.trim().length>=3)act(row,'tournival_withdraw',{reason:reason.trim()});
@@ -102,6 +104,21 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
        {r.status==='confirmed'&&!r.checkedIn&&['paid','not_required','simulated'].includes(r.paymentStatus)&&['Draft','Registration Open'].includes(tournament.status)&&<Button disabled={!!working} variant="outline" size="sm" onClick={()=>prepareTransfer(r)}>Transfer Player</Button>}
        {r.status==='pending_payment'&&r.paymentStatus==='pending'&&<Button disabled={!!working} variant="outline" size="sm" onClick={()=>requestPayment(r)}>Request Payment via WhatsApp</Button>}
        {r.status!=='withdrawn'&&<Button disabled={!!working} variant="outline" size="sm" onClick={()=>withdraw(r)}>Withdraw</Button>}
+      </div>}
+      {isAdmin&&reminder?.id===r.id&&r.status==='pending_payment'&&r.paymentStatus==='pending'&&<div className="border rounded-lg p-3 space-y-2">
+       <strong>Payment reminder for {reminder.name}</strong>
+       <label className="block">WhatsApp mobile number (editable for this reminder)<input type="tel" className="block border rounded p-2 w-full" value={reminder.mobile} onChange={e=>setReminder({...reminder,mobile:e.target.value})}/></label>
+       <p className="text-muted-foreground">Changing this number does not change the player's saved contact details.</p>
+       <textarea aria-label="Payment reminder message" className="block border rounded p-2 w-full min-h-28" readOnly value={reminder.message}/>
+       {!whatsappNumber(reminder.mobile)&&<p>Enter a valid number to open WhatsApp, or copy the message below.</p>}
+       <div className="flex flex-wrap gap-2">
+        {whatsappNumber(reminder.mobile)&&<><a className="underline p-2" href={'whatsapp://send?phone='+whatsappNumber(reminder.mobile)+'&text='+encodeURIComponent(reminder.message)}>Open WhatsApp app</a>
+        <a className="underline p-2" href={'https://web.whatsapp.com/send?phone='+whatsappNumber(reminder.mobile)+'&text='+encodeURIComponent(reminder.message)} target="_blank" rel="noopener noreferrer">Open WhatsApp Web</a></>}
+        <Button size="sm" variant="outline" onClick={()=>navigator.clipboard.writeText(reminder.message).then(()=>toast.success('Payment reminder copied')).catch(()=>toast.error('Copy failed'))}>Copy Payment Reminder</Button>
+        <Button size="sm" variant="outline" onClick={()=>navigator.clipboard.writeText(reminder.message.match(/https:\/\/[^\s]+/)?.[0]||'').then(()=>toast.success('Payment link copied')).catch(()=>toast.error('Copy failed'))}>Copy Payment Link</Button>
+        <Button size="sm" variant="outline" onClick={()=>setReminder(null)}>Close</Button>
+       </div>
+       <p>No message is sent until you press Send in WhatsApp.</p>
       </div>}
     </article>)}
    </div>}

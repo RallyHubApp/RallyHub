@@ -294,7 +294,7 @@ Deno.serve(async (req) => {
       try{url=new URL(payment.provider_checkout_url);if(url.protocol!=='https:'||url.username||url.password||!(url.hostname==='sumup.com'||url.hostname.endsWith('.sumup.com')))throw Error('Invalid checkout');}catch{return Response.json({error:'Existing SumUp payment link unavailable; no new checkout created'},{status:409});}
       let mobile=clean(row.mobile,40).replace(/[^0-9]/g,'');
       if(mobile.startsWith('00'))mobile=mobile.slice(2);else if(mobile.startsWith('0'))mobile='353'+mobile.slice(1);
-      if(!/^[1-9][0-9]{7,14}$/.test(mobile))return Response.json({error:'No valid mobile number recorded'},{status:409});
+      if(!/^[1-9][0-9]{7,14}$/.test(mobile))mobile='';
       return Response.json({success:true,mobile,checkoutUrl:url.href,amount:payment.amount,currency:payment.currency,name:row.full_name});
     }
     if (action === 'tournival_registrations') {
