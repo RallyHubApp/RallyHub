@@ -49,6 +49,19 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
  };
  const prepareTransfer=async row=>{try{setError('');setDestination('');setTargets((await invoke({action:'tournival_transfer_targets'})).targets||[]);setTransfer(row);}catch(e){setError(e.message);}};
  const confirmTransfer=async()=>{if(!transfer||!destination||working)return;try{setWorking(transfer.id);setError('');const data=await invoke({action:'tournival_transfer',registrationId:transfer.id,targetTournamentId:destination});setTransfer(null);await refresh();await queryClient.invalidateQueries();toast.success(data.message||'Player transferred');}catch(e){setError(e.message);}finally{setWorking(null);}};
+ const requestPayment=async row=>{
+  if(working)return;
+  setWorking(row.id);setError('');
+  const tab=window.open('about:blank','_blank');
+  if(tab)tab.opener=null;
+  try{
+   const data=await invoke({action:'tournival_payment_reminder',registrationId:row.id});
+   const amount=new Intl.NumberFormat('en-IE',{style:'currency',currency:data.currency}).format(data.amount);
+   const message=`Hi ${String(data.name||'there').split(' ')[0]}, just a reminder that your payment of ${amount} for ${tournament.name} (${tournament.start_date||''}) is outstanding. Please complete your payment using your existing secure SumUp link: \n${data.checkoutUrl}\nThanks!`;
+   const url='https://wa.me/'+data.mobile+'?text='+encodeURIComponent(message);
+   if(tab)tab.location.href=url;else window.location.href=url;
+  }catch(e){if(tab)tab.close();setError(e?.response?.data?.error||e.message||'Payment reminder unavailable');}finally{setWorking(null);}
+ };
  const withdraw=row=>{
   const reason=window.prompt('Reason for withdrawal (required):');
   if(reason?.trim().length>=3)act(row,'tournival_withdraw',{reason:reason.trim()});
@@ -81,12 +94,13 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
       <p className="text-muted-foreground">{r.email} · Payment: {r.paymentStatus}</p>
       {r.waitlistPosition&&<p>Waitlist #{r.waitlistPosition}</p>}
       <p>{r.checkedIn?'Checked in':'Not checked in'}</p>
-      {isAdmin&&<div className="flex gap-2">
+      {isAdmin&&<div className="flex flex-wrap gap-2">
        <Button size="sm" variant="outline" onClick={()=>setPreview({stage:'registration',event:{id:tournament.id,name:tournament.name,date:tournament.start_date,venue:tournament.location,startTime:tournament.event_start_time||'19:00',endTime:tournament.event_end_time||'22:00',mapUrl:tournament.event_map_url||'',arrivalInfo:tournament.event_player_info||'',contactPhone:tournament.event_contact_phone_keep_private?'':tournament.event_contact_phone||'',organiser:{name:'Clare Pickleball'}},player:{id:r.playerId,name:r.name,registrationStatus:r.status,paymentStatus:r.paymentStatus,checkedIn:r.checkedIn},matches:[],knockout:[],displayNames:{},finalised:false})}>View Player Page</Button>
        {r.status==='confirmed'&&['paid','not_required','simulated'].includes(r.paymentStatus)&&
         <Button disabled={!!working} size="sm" onClick={()=>act(r,'tournival_check_in',{checkedIn:!r.checkedIn})}>
           {r.checkedIn?'Undo check-in':'Check in'}</Button>}
        {r.status==='confirmed'&&!r.checkedIn&&['paid','not_required','simulated'].includes(r.paymentStatus)&&['Draft','Registration Open'].includes(tournament.status)&&<Button disabled={!!working} variant="outline" size="sm" onClick={()=>prepareTransfer(r)}>Transfer Player</Button>}
+       {r.status==='pending_payment'&&r.paymentStatus==='pending'&&<Button disabled={!!working} variant="outline" size="sm" onClick={()=>requestPayment(r)}>Request Payment via WhatsApp</Button>}
        {r.status!=='withdrawn'&&<Button disabled={!!working} variant="outline" size="sm" onClick={()=>withdraw(r)}>Withdraw</Button>}
       </div>}
     </article>)}
