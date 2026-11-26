@@ -60,6 +60,7 @@ export default function AdminPanel() {
   }, [activeAdminTab,directoryFocus]);
 
   const queryClient = useQueryClient();
+  const approvalInFlight = useRef(false);
 
   useEffect(() => {
     if (activeAdminTab !== 'directory' || directoryFocus !== 'pending-actions') return;
@@ -227,7 +228,7 @@ export default function AdminPanel() {
       if (res.data?.error || !res.data?.success) throw new Error(res.data?.error || 'Could not verify membership totals');
       return res.data.counts;
     },
-    enabled: canAccessAdmin && !directoryContext && !requestedDirectoryWorkspace && !!user?.active_tenant_id && !!user?.active_club_id,
+    enabled: canAccessAdmin && activeAdminTab !== 'linking' && !directoryContext && !requestedDirectoryWorkspace && !!user?.active_tenant_id && !!user?.active_club_id,
     staleTime: 5*60_000, refetchInterval:false,
     refetchOnWindowFocus:false, retry:false
   });
@@ -576,6 +577,7 @@ export default function AdminPanel() {
 
   const setUserRole = async (userId, newRole) => {
     setUpdatingRole(userId);
+    if (approvalInFlight.current) return;
     const targetUser = allUsers.find(u => u.id === userId);
     if (!targetUser) { toast.error('User not found'); setUpdatingRole(null); return; }
     if (newRole === 'admin') {
@@ -1355,12 +1357,13 @@ Brian`;
   };
 
   const connectMemberAccount = async (targetUser, player, confirmNameMismatch = false) => {
-    if (!targetUser?.id || !player?.person_id) return;
+    if (approvalInFlight.current || !targetUser?.id || !player?.person_id) return;
     const registeredEmail = String(targetUser.email || '').trim();
     const membershipEmail = String(player.email || '').trim();
     const emailDiffers = registeredEmail.toLowerCase() !== membershipEmail.toLowerCase();
     const requiresConfirmation = emailDiffers || (confirmNameMismatch && !((targetUser.full_name || '').toLowerCase().replace(/[^a-z0-9]/g, '') === registeredEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')));
     if (requiresConfirmation && !window.confirm(`Verify existing member identity\n\nRallyHub account: ${targetUser.full_name || 'Not supplied'}\nMembership name: ${player.full_name}\n\nRallyHub login email: ${registeredEmail}\nMembership email: ${membershipEmail || 'Not recorded'}\n\nOnly approve if you personally know these records belong to the same person. This decision is logged. Contact details will NOT be overwritten automatically.\n\nApprove and connect?`)) return;
+    approvalInFlight.current = true;
     setConnectingMemberAccount(targetUser.id);
     setApprovalFeedback({ userId: targetUser.id, type: 'progress', text: 'Verifying membership and connecting RallyHub account…' });
     try {
@@ -1371,6 +1374,7 @@ Brian`;
         identityConfirmedByAdmin: requiresConfirmation
       });
       if (res.data?.error) throw new Error(res.data.error);
+      if (res.data?.success !== true) throw new Error('Connection was not confirmed. Please retry.');
       // Update only the approved account in the local cache. Do not fan out
       // five list reloads after a single member approval.
       queryClient.setQueryData(['all-users'], previous => (previous || []).map(row =>
@@ -1392,6 +1396,7 @@ Brian`;
       setApprovalFeedback({ userId: targetUser.id, type: 'error', text: message });
       toast.error(message, { duration: 9000 });
     } finally {
+      approvalInFlight.current = false;
       setConnectingMemberAccount(null);
     }
   };
@@ -1404,6 +1409,7 @@ Brian`;
       await connectMemberAccount(targetUser, candidate, !!(accountName && accountName !== normaliseIdentityName(candidate.full_name)));
       return;
     }
+    approvalInFlight.current = true;
     setUpdatingApproval(userId);
     setApprovalFeedback({ userId, type: 'progress', text: 'Checking account permissions…' });
     try {
@@ -1422,6 +1428,7 @@ Brian`;
       setApprovalFeedback({ userId, type: 'error', text: message });
       toast.error(message, { duration: 9000 });
     } finally {
+      approvalInFlight.current = false;
       setUpdatingApproval(null);
     }
   };
@@ -1783,7 +1790,7 @@ Brian`;
           <GlassCard className="min-h-[112px] p-3 sm:p-4"><p className="text-2xl sm:text-3xl font-black text-green-500">{directoryPlayerNetwork.counts?.whatsapp || 0}</p><p className="mt-1 text-xs sm:text-sm font-semibold">WhatsApp opt-ins</p><p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">Available for mobile updates</p></GlassCard>
           <GlassCard className="min-h-[112px] p-3 sm:p-4"><p className="text-2xl sm:text-3xl font-black text-amber-500">{directoryPlayerNetwork.counts?.counties || 0}</p><p className="mt-1 text-xs sm:text-sm font-semibold">Counties represented</p><p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">National reach</p></GlassCard>
         </div>
-      ) : directoryContext ? null : (
+      ) : directoryContext || activeAdminTab === 'linking' ? null : (
         <GlassCard role="button" tabIndex={0} onClick={() => { window.location.href='/app/membership'; }} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.location.href='/app/membership'; } }} className="cursor-pointer hover:border-primary/40 hover:bg-primary/5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -2975,7 +2982,7 @@ Brian`;
                           <div className="flex items-center gap-2 shrink-0">
                             {section !== 'approved' && !candidate && (
                               <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90 gap-1"
-                                disabled={updatingApproval === u.id || connectingMemberAccount === u.id}
+                                disabled={!!updatingApproval || !!connectingMemberAccount}
                                 onClick={() => setApprovalStatus(u.id, 'approved')}>
                                 <CheckCircle className="w-3 h-3" />
                                 {updatingApproval === u.id || connectingMemberAccount === u.id ? 'Approving…' : candidate ? 'Approve & link' : 'Approve'}
@@ -2983,7 +2990,7 @@ Brian`;
                             )}
                             {section !== 'rejected' && u.id !== user?.id && (
                               <Button size="sm" variant="outline" className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10 gap-1"
-                                disabled={updatingApproval === u.id || connectingMemberAccount === u.id}
+                                disabled={!!updatingApproval || !!connectingMemberAccount}
                                 onClick={() => setApprovalStatus(u.id, 'rejected')}>
                                 <XCircle className="w-3 h-3" />
                                 {updatingApproval === u.id ? '…' : 'Reject'}
@@ -2991,7 +2998,7 @@ Brian`;
                             )}
                             {section === 'approved' && u.id !== user?.id && (
                               <Button size="sm" variant="outline" className="h-7 text-xs text-muted-foreground gap-1"
-                                disabled={updatingApproval === u.id || connectingMemberAccount === u.id}
+                                disabled={!!updatingApproval || !!connectingMemberAccount}
                                 onClick={() => setApprovalStatus(u.id, 'pending')}>
                                 <Clock className="w-3 h-3" />
                                 {updatingApproval === u.id ? '…' : 'Revoke'}
@@ -3024,7 +3031,7 @@ Brian`;
                               <Button
                                 size="sm"
                                 className="min-h-9 shrink-0"
-                                disabled={connectingMemberAccount === u.id}
+                                disabled={!!updatingApproval || !!connectingMemberAccount}
                                 onClick={() => connectMemberAccount(u, candidate, nameMismatch)}
                               >
                                 <Link2 className="w-3.5 h-3.5 mr-1" />
