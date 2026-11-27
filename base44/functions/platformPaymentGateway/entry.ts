@@ -1,3 +1,4 @@
+import { diagnosticFetch } from './diagnostics.mjs';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
 const clean=(v:any,max=500)=>String(v??'').trim().slice(0,max);
@@ -49,9 +50,9 @@ function credentials(row:any,requireMerchantCode=true){
   return {apiKey,merchantCode,secretName};
 }
 
-async function verifySumUp(row:any){
+async function verifySumUp(base44:any,row:any){
   const {apiKey,merchantCode}=credentials(row,false);
-  const response=await fetch('https://api.sumup.com/v0.1/me',{headers:{Authorization:`Bearer ${apiKey}`}});
+  const response=await diagnosticFetch(fetch,(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),{scope:'platform',workflow:'platformPaymentGateway',operation:'verify'},'https://api.sumup.com/v0.1/me',{headers:{Authorization:`Bearer ${apiKey}`}});
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw Object.assign(new Error(data?.message||`SumUp verification failed (${response.status}).`),{status:502});
   const profileCode=clean(data?.merchant_profile?.merchant_code||data?.merchant_code,120);
@@ -63,14 +64,14 @@ async function verifySumUp(row:any){
   return {merchantCode:profileCode,merchantName};
 }
 
-async function createHostedCheckout(row:any,input:any){
+async function createHostedCheckout(base44:any,row:any,input:any){
   const {apiKey,merchantCode}=credentials(row);
   const amount=Math.round(Number(input.amount)*100)/100;
   if(!Number.isFinite(amount)||amount<=0||amount>10)throw Object.assign(new Error('Platform test checkout amount must be between €0.01 and €10.00.'),{status:400});
   const purpose=clean(input.purposeType,80)||'other';
   if(!ALLOWED_PURPOSES.has(purpose))throw Object.assign(new Error('Unsupported RallyHub platform payment purpose.'),{status:400});
   const reference=`RH-TEST-${Date.now()}-${crypto.randomUUID().slice(0,8)}`.slice(0,64);
-  const response=await fetch('https://api.sumup.com/v0.1/checkouts',{
+  const response=await diagnosticFetch(fetch,(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),{scope:'platform',workflow:'platformPaymentGateway',operation:'checkout_create'},'https://api.sumup.com/v0.1/checkouts',{
     method:'POST',
     headers:{Authorization:`Bearer ${apiKey}`,'Content-Type':'application/json'},
     body:JSON.stringify({
@@ -88,9 +89,9 @@ async function createHostedCheckout(row:any,input:any){
   return {amount,purpose,reference,data,merchantCode};
 }
 
-async function retrieveCheckout(row:any,checkoutId:string){
+async function retrieveCheckout(base44:any,row:any,checkoutId:string){
   const {apiKey,merchantCode}=credentials(row);
-  const response=await fetch(`https://api.sumup.com/v0.1/checkouts/${encodeURIComponent(checkoutId)}`,{headers:{Authorization:`Bearer ${apiKey}`}});
+  const response=await diagnosticFetch(fetch,(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),{scope:'platform',workflow:'platformPaymentGateway',operation:'checkout_retrieve'},`https://api.sumup.com/v0.1/checkouts/${encodeURIComponent(checkoutId)}`,{headers:{Authorization:`Bearer ${apiKey}`}});
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw Object.assign(new Error(data?.message||'Could not verify RallyHub SumUp checkout.'),{status:502});
   const tx=(Array.isArray(data?.transactions)?data.transactions:[]).find((t:any)=>String(t?.status||'').toUpperCase()==='SUCCESSFUL')||data?.transactions?.[0]||{};
@@ -111,14 +112,14 @@ Deno.serve(async(req)=>{
     if(action==='status')return Response.json({success:true,gateway:safeGateway(row)});
 
     if(action==='verify'){
-      const result=await verifySumUp(row);
+      const result=await verifySumUp(base44,row);
       row=await base44.asServiceRole.entities.PlatformPaymentGatewayAccount.update(row.id,{status:'connected',merchant_account_id:result.merchantCode,last_verified_at:nowIso(),connected_at:row.connected_at||nowIso(),notes:`RallyHub platform/commercial SumUp gateway. Verified merchant: ${result.merchantName||result.merchantCode}. Tenant/club payment gateways remain separate.`});
       return Response.json({success:true,gateway:safeGateway(row),merchantName:result.merchantName});
     }
 
     if(action==='create_test_checkout'){
-      await verifySumUp(row);
-      const created=await createHostedCheckout(row,body);
+      await verifySumUp(base44,row);
+      const created=await createHostedCheckout(base44,row,body);
       const payment=await base44.asServiceRole.entities.PlatformPaymentRecord.create({
         gateway_account_id:row.id,purpose_type:created.purpose,purpose_id:'platform_gateway_test',customer_name:'RallyHub gateway test',amount:created.amount,currency:'EUR',payment_status:'pending',provider:'sumup',provider_account_id:created.merchantCode,provider_checkout_id:String(created.data.id),provider_checkout_url:String(created.data.hosted_checkout_url),provider_payment_reference:created.reference,provider_status:String(created.data.status||'PENDING'),source_system:'platform_payment_gateway_test',notes:'Controlled RallyHub platform gateway test. This record must never be reconciled into a tenant ledger.'
       });
@@ -130,7 +131,7 @@ Deno.serve(async(req)=>{
       const rows=await base44.asServiceRole.entities.PlatformPaymentRecord.filter({id:paymentId});
       const payment=rows?.[0];
       if(!payment||payment.gateway_account_id!==row.id||payment.source_system!=='platform_payment_gateway_test')return Response.json({error:'RallyHub platform test payment not found.'},{status:404});
-      const result=await retrieveCheckout(row,clean(payment.provider_checkout_id,180));
+      const result=await retrieveCheckout(base44,row,clean(payment.provider_checkout_id,180));
       const saved=await base44.asServiceRole.entities.PlatformPaymentRecord.update(payment.id,{payment_status:result.normalized,provider_account_id:result.merchantCode,provider_transaction_id:result.transactionId,provider_payment_reference:result.transactionCode||payment.provider_payment_reference,provider_status:String(result.data?.status||''),payment_date:result.normalized==='paid'?new Date().toISOString().slice(0,10):payment.payment_date});
       return Response.json({success:true,payment:{id:saved.id,payment_status:saved.payment_status,provider_status:saved.provider_status,provider_transaction_id:saved.provider_transaction_id,provider_payment_reference:saved.provider_payment_reference,amount:saved.amount,currency:saved.currency}});
     }

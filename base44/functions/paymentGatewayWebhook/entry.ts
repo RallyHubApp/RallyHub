@@ -1,3 +1,4 @@
+import { diagnosticFetch } from './diagnostics.mjs';
 import {claimPaidEventConfirmation} from './confirmationLock.mjs';
 import {confirmWithinCapacity} from '../../shared/eventCapacityConfirmation.mjs';
 import {deliverEventNotice} from './eventDelivery.ts';
@@ -291,7 +292,7 @@ async function verifyCheckout(base44:any,payment:any,checkoutId:string){
      String(payment.provider_account_id)!==merchantCode)
     throw new Error('Tournival checkout merchant differs from the recorded club merchant; manual reconciliation required.');
 
-  const response=await fetch(`https://api.sumup.com/v0.1/checkouts/${encodeURIComponent(checkoutId)}`,{headers:{Authorization:`Bearer ${apiKey}`}});
+  const response=await diagnosticFetch(fetch,(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),{scope:'club',tenant_id:payment.tenant_id,club_id:payment.club_id,workflow:'paymentGatewayWebhook',operation:'webhook_verify',checkout_id:checkoutId},`https://api.sumup.com/v0.1/checkouts/${encodeURIComponent(checkoutId)}`,{headers:{Authorization:`Bearer ${apiKey}`}});
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data?.message||`SumUp checkout verification failed (${response.status}).`);
   const returnedMerchant=clean(data?.merchant_code,120);
