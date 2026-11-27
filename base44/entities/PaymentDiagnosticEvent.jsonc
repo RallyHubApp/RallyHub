@@ -1,0 +1,73 @@
+{
+  "name": "PaymentDiagnosticEvent",
+  "type": "object",
+  "properties": {
+    "scope": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "workflow": {
+      "type": "string"
+    },
+    "operation": {
+      "type": "string"
+    },
+    "checkout_id": {
+      "type": "string"
+    },
+    "transaction_id": {
+      "type": "string"
+    },
+    "reference": {
+      "type": "string"
+    },
+    "provider_status": {
+      "type": "string"
+    },
+    "fault_category": {
+      "type": "string"
+    },
+    "occurred_at": {
+      "type": "string"
+    },
+    "http_status": {
+      "type": "number"
+    },
+    "duration_ms": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "scope",
+    "workflow",
+    "operation",
+    "occurred_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "__service_only__"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "__service_only__"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "__service_only__"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "__service_only__"
+      }
+    }
+  }
+}
