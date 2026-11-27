@@ -127,7 +127,7 @@ async function gatewayAccount(base44:any,config:any){
     row=(rows||[]).find((x:any)=>x.status==='connected'&&x.is_default)||(rows||[]).find((x:any)=>x.status==='connected')||(rows||[]).find((x:any)=>x.is_default)||(rows||[])[0]||null;
   }
   if(!row)return null;
-  const account:ProviderAccount={provider:row.provider,merchantAccountId:row.merchant_account_id||undefined,credentialSecretName:row.credential_reference||undefined,connectionMode:row.connection_mode||undefined};
+  const account:ProviderAccount={provider:row.provider,merchantAccountId:row.merchant_account_id||undefined,diagnostic:{sink:(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),context:{scope:'club',tenant_id:row.tenant_id,club_id:row.club_id,workflow:'membershipApplication'}},credentialSecretName:row.credential_reference||undefined,connectionMode:row.connection_mode||undefined};
   return {row,account};
 }
 // Match a guest with no DOB only when both the verified contact identity and

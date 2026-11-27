@@ -157,7 +157,7 @@ async function resolvePaymentGateway(base44:any,tenantId:string,clubId:string,pr
   const eligible=(rows||[]).filter((row:any)=>row.supports_payments!==false && (!providerHint||String(row.provider)===String(providerHint)));
   const row=eligible.find((x:any)=>x.status==='connected'&&x.is_default)||eligible.find((x:any)=>x.status==='connected')||eligible.find((x:any)=>x.is_default)||eligible[0]||null;
   if(!row) return null;
-  const account:ProviderAccount={provider:row.provider,merchantAccountId:row.merchant_account_id||undefined,credentialSecretName:row.credential_reference||undefined,connectionMode:row.connection_mode||undefined};
+  const account:ProviderAccount={provider:row.provider,merchantAccountId:row.merchant_account_id||undefined,diagnostic:{sink:(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),context:{scope:'club',tenant_id:row.tenant_id,club_id:row.club_id,workflow:'membershipRecord'}},credentialSecretName:row.credential_reference||undefined,connectionMode:row.connection_mode||undefined};
   return {row,account};
 }
 

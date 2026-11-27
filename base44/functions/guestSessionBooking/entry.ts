@@ -980,7 +980,7 @@ async function gatewayAccount(base44:any,tenantId:string,clubId:string,provider:
     const account:ProviderAccount={
       provider,
       merchantAccountId:clean(row.merchant_account_id,120)||undefined,
-      credentialSecretName:clean(row.credential_reference,120)||undefined,
+      diagnostic:{sink:(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),context:{scope:'club',tenant_id:row.tenant_id,club_id:row.club_id,workflow:'guestSessionBooking'}},credentialSecretName:clean(row.credential_reference,120)||undefined,
       connectionMode:row.connection_mode||undefined,
     };
     return {row,account};

@@ -417,7 +417,7 @@ Deno.serve(async (req) => {
       let account:any=null;
       if(paid){
         const row=(await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:tournament.tenant_id,club_id:tournament.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5))?.[0];
-        if(row)account={provider:'sumup',merchantAccountId:row.merchant_account_id||'',credentialSecretName:row.credential_reference||'SUMUP_API_KEY',connectionMode:row.connection_mode||'api_key'};
+        if(row)account={provider:'sumup',merchantAccountId:row.merchant_account_id||'',diagnostic:{sink:(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),context:{scope:'club',tenant_id:row.tenant_id,club_id:row.club_id,workflow:'legacyTournamentManager'}},credentialSecretName:row.credential_reference||'SUMUP_API_KEY',connectionMode:row.connection_mode||'api_key'};
         if(!providerConfigured('sumup',account))return Response.json({error:'SumUp checkout unavailable'},{status:409});
       }
       const sessions=await base44.asServiceRole.entities.TournivalSession.filter({
@@ -673,7 +673,7 @@ Deno.serve(async (req) => {
       if(!gateway||String(gateway.merchant_account_id)!==String(payment.provider_account_id))
         return Response.json({error:'SumUp merchant account mismatch; refund blocked'},{status:409});
       const account={provider:'sumup',merchantAccountId:gateway.merchant_account_id,
-        credentialSecretName:gateway.credential_reference||'SUMUP_API_KEY',
+        diagnostic:{sink:(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),context:{scope:'club',tenant_id:gateway.tenant_id,club_id:gateway.club_id,workflow:'legacyTournamentManager'}},credentialSecretName:gateway.credential_reference||'SUMUP_API_KEY',
         connectionMode:gateway.connection_mode||'api_key'};
       // Confirm the provider still recognises the original transaction and merchant.
       const provider=await retrievePayment('sumup',payment.provider_checkout_id,account);

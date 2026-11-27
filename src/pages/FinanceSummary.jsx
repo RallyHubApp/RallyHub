@@ -1,3 +1,4 @@
+import PaymentDiagnosticHistory from '@/components/shared/PaymentDiagnosticHistory';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -333,6 +334,7 @@ export default function FinanceSummary() {
     <PageHeader title="Finance Summary" description="See whether each session, event, venue and month is making money or costing the club money.">
       <div className="flex flex-wrap gap-2"><Badge variant="outline" className="gap-1"><WalletCards className="h-3.5 w-3.5" />Finance Lite</Badge><a href="/app/communications?scope=tenant&source=finance&returnTo=%2Fapp%2Ffinance&label=Finance"><Button size="sm" variant="outline">Open in Communications</Button></a></div>
     </PageHeader>
+    <PaymentDiagnosticHistory tenantId={tenantId} clubId={clubId} />
 
     <GlassCard className="p-4 space-y-4 border-primary/20">
       <div><h2 className="font-bold">How to use this page</h2><p className="text-xs text-muted-foreground">Finance now uses the same proven Spond group-and-session scanner as the Directory. Link each repeating Spond session once, then use the date/month/venue filters for normal finance reporting.</p></div>

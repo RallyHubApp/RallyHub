@@ -39,7 +39,7 @@ async function accountFor(base44:any,tournament:any):Promise<ProviderAccount|nul
   const row=rows?.[0];
   if(!row)return null;
   return {provider:'sumup',merchantAccountId:row.merchant_account_id||'',
-    credentialSecretName:row.credential_reference||'SUMUP_API_KEY',
+    diagnostic:{sink:(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),context:{scope:'club',tenant_id:row.tenant_id,club_id:row.club_id,workflow:'tournivalRegistration'}},credentialSecretName:row.credential_reference||'SUMUP_API_KEY',
     connectionMode:row.connection_mode||'api_key'};
 }
 Deno.serve(async(req)=>{

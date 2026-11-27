@@ -125,7 +125,7 @@ Deno.serve(async(req)=>{
    if(photo&&source.consent_evidence?.photo_video?.version&&source.consent_evidence.photo_video.version!==photo.version)return fail('Photography consent was updated; request fresh consent first',409);
    if(!source.full_name||!source.mobile||!source.emergency_contact_name||!source.emergency_contact_mobile||!/^\S+@\S+\.\S+$/.test(source.email||''))return fail('Original attendee contact/emergency details are incomplete',409);
    const accounts=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
-   const accountRow=accounts?.[0];const account=accountRow?{provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'}:null;
+   const accountRow=accounts?.[0];const account=accountRow?{provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',diagnostic:{sink:(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),context:{scope:'club',tenant_id:accountRow.tenant_id,club_id:accountRow.club_id,workflow:'eventRegistration'}},credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'}:null;
    if(!account||!providerConfigured('sumup',account))return fail('SumUp connection unavailable. No repeat booking created.',503);
    let urls;try{urls=resolveEventCheckoutUrls({callbackBase:Deno.env.get('RALLYHUB_EVENT_CALLBACK_BASE_URL'),publicBase:Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL'),slug:destination.event_slug})}catch{return fail('SumUp redirect not configured. No repeat booking created.',503)}
    if(destination.event_private_invitation_token&&!destination.event_public_visible){const site=new URL(Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL')||'');urls.redirectUrl=new URL('/private-event/'+encodeURIComponent(destinationId)+'/'+encodeURIComponent(destination.event_private_invitation_token),site).toString()}
@@ -169,7 +169,7 @@ Deno.serve(async(req)=>{
     },'-updated_date',5);
     const accountRow=accounts?.[0];
     if(!accountRow)return fail('SumUp account unavailable; withdrawal blocked.',503);
-    const account={provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'};
+    const account={provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',diagnostic:{sink:(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),context:{scope:'club',tenant_id:accountRow.tenant_id,club_id:accountRow.club_id,workflow:'eventRegistration'}},credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'};
     const provider=await retrievePayment('sumup',row.payment_checkout_id,account);
     if(provider.normalizedStatus!=='pending'&&provider.normalizedStatus!=='failed'&&provider.normalizedStatus!=='expired')
       return fail('SumUp checkout is paid or uncertain. Reconcile before withdrawal.',409);
@@ -201,7 +201,7 @@ Deno.serve(async(req)=>{
     const accounts=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
     const accountRow=accounts?.[0];
     if(!accountRow)return fail('SumUp account unavailable',503);
-    const account={provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'};
+    const account={provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',diagnostic:{sink:(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),context:{scope:'club',tenant_id:accountRow.tenant_id,club_id:accountRow.club_id,workflow:'eventRegistration'}},credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'};
     const provider=await retrievePayment('sumup',source.payment_checkout_id,account);
     if(provider.normalizedStatus!=='pending')return fail('Checkout is no longer confirmed unpaid. Reconcile payment before transfer.',409);
    }
@@ -218,7 +218,7 @@ Deno.serve(async(req)=>{
      if(source.payment_checkout_id||source.payment_record_id||source.payment_status!=='not_required')return fail('Waiting-list payment state requires reconciliation',409);
      const accountRows=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
      const accountRow=accountRows?.[0];
-     const account=accountRow?{provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'}:null;
+     const account=accountRow?{provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',diagnostic:{sink:(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),context:{scope:'club',tenant_id:accountRow.tenant_id,club_id:accountRow.club_id,workflow:'eventRegistration'}},credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'}:null;
      if(!account||!providerConfigured('sumup',account))return fail('SumUp account unavailable; original waitlist retained',503);
      const urls=resolveEventCheckoutUrls({callbackBase:Deno.env.get('RALLYHUB_EVENT_CALLBACK_BASE_URL'),publicBase:Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL'),slug:destination.event_slug});
      if(destination.event_private_invitation_token&&!destination.event_public_visible){
@@ -276,7 +276,7 @@ Deno.serve(async(req)=>{
   if(action==='admin_approve'||action==='admin_verify'||action==='admin_refund_payment'||action==='admin_resend_payment_link'||action==='admin_get_payment_link'||action==='admin_reissue_payment_link'){
    const registration=rows.find((r:any)=>r.id===clean(b.registrationId,100));if(!registration)return fail('Registration not found',404);
    const accountRows=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
-   const accountRow=accountRows?.[0];const account=accountRow?{provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'}:null;
+   const accountRow=accountRows?.[0];const account=accountRow?{provider:'sumup',merchantAccountId:accountRow.merchant_account_id||'',diagnostic:{sink:(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),context:{scope:'club',tenant_id:accountRow.tenant_id,club_id:accountRow.club_id,workflow:'eventRegistration'}},credentialSecretName:accountRow.credential_reference||'SUMUP_API_KEY',connectionMode:accountRow.connection_mode||'api_key'}:null;
    if(action==='admin_refund_payment'){
     if(b.confirmRefund!==true)return fail('Explicit refund confirmation required');
     const reason=clean(b.reason,500);if(!reason)return fail('Refund reason required');
@@ -404,7 +404,7 @@ Deno.serve(async(req)=>{
   // Validate checkout configuration before reserving a paid place; do not strand a capacity hold for a missing gateway.
   if(t.event_booking_policy?.approval_required===false&&Number(t.event_fee_amount||0)>0){
    const accounts=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
-   const row=accounts?.[0];const account=row?{provider:'sumup',merchantAccountId:row.merchant_account_id||'',credentialSecretName:row.credential_reference||'SUMUP_API_KEY',connectionMode:row.connection_mode||'api_key'}:null;
+   const row=accounts?.[0];const account=row?{provider:'sumup',merchantAccountId:row.merchant_account_id||'',diagnostic:{sink:(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),context:{scope:'club',tenant_id:row.tenant_id,club_id:row.club_id,workflow:'eventRegistration'}},credentialSecretName:row.credential_reference||'SUMUP_API_KEY',connectionMode:row.connection_mode||'api_key'}:null;
    if(!account||!providerConfigured('sumup',account))return fail('The club SumUp connection is unavailable. No place has been reserved.',503);
    try{resolveEventCheckoutUrls({callbackBase:Deno.env.get('RALLYHUB_EVENT_CALLBACK_BASE_URL'),publicBase:Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL'),slug:t.event_slug})}catch{return fail('SumUp callback configuration is unavailable. No place has been reserved.',503)}
   }
@@ -430,7 +430,7 @@ Deno.serve(async(req)=>{
     const amount=Number(t.event_fee_amount||0);
     if(amount===0){await base44.asServiceRole.entities.EventRegistration.update(saved.id,{registration_status:'confirmed',payment_status:'not_required',confirmed_at:new Date().toISOString()});await deliverEventNotice(base44,t,saved,'booking_confirmed');return Response.json({success:true,received:true,status:'confirmed',message:'Your free booking is confirmed.'});}
     const accounts=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:t.tenant_id,club_id:t.host_club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5);
-    const row=accounts?.[0];const account=row?{provider:'sumup',merchantAccountId:row.merchant_account_id||'',credentialSecretName:row.credential_reference||'SUMUP_API_KEY',connectionMode:row.connection_mode||'api_key'}:null;
+    const row=accounts?.[0];const account=row?{provider:'sumup',merchantAccountId:row.merchant_account_id||'',diagnostic:{sink:(event:any)=>base44.asServiceRole.entities.PaymentDiagnosticEvent.create(event),context:{scope:'club',tenant_id:row.tenant_id,club_id:row.club_id,workflow:'eventRegistration'}},credentialSecretName:row.credential_reference||'SUMUP_API_KEY',connectionMode:row.connection_mode||'api_key'}:null;
     if(!account||!providerConfigured('sumup',account))return fail('SumUp unavailable. Your place is reserved; contact the organiser. Do not submit again.',503);
     const urls=resolveEventCheckoutUrls({callbackBase:Deno.env.get('RALLYHUB_EVENT_CALLBACK_BASE_URL'),publicBase:Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL'),slug:t.event_slug});
     if(privateAccess){const site=new URL(Deno.env.get('RALLYHUB_EVENT_PUBLIC_BASE_URL')||'');urls.redirectUrl=new URL('/private-event/'+encodeURIComponent(id)+'/'+encodeURIComponent(b.invitationToken),site).toString();}

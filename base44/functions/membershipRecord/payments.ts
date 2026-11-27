@@ -1,7 +1,9 @@
+import { diagnosticFetch } from './diagnostics.mjs';
 export type PaymentProvider='sumup'|'stripe'|'square'|'cash'|string;
 
 export type ProviderAccount={
   provider:PaymentProvider;
+  diagnostic?: {sink:(event:any)=>Promise<any>,context:any};
   merchantAccountId?:string;
   credentialSecretName?:string;
   connectionMode?:'api_key'|'oauth'|'manual'|string;
@@ -97,7 +99,7 @@ export async function createCheckout(input:CheckoutRequest):Promise<CheckoutResu
   const amount=requiredAmount(input.amount);
   if(input.provider!=='sumup') throw new Error(`Payment provider ${input.provider} is not implemented yet.`);
   const {apiKey,merchantAccountId}=sumUpCredentials(input.account);
-  const response=await fetch('https://api.sumup.com/v0.1/checkouts',{
+  const response=await (input.account?.diagnostic ? (url:string,options:any)=>diagnosticFetch(fetch,input.account.diagnostic!.sink,{...input.account.diagnostic!.context,operation:'checkout_create',reference:input.reference},url,options) : fetch)('https://api.sumup.com/v0.1/checkouts',{
     method:'POST',
     headers:{Authorization:`Bearer ${apiKey}`,'Content-Type':'application/json'},
     body:JSON.stringify({
@@ -134,7 +136,7 @@ function normalizeSumUpStatus(status:any):PaymentStatusResult['normalizedStatus'
 export async function retrievePayment(provider:PaymentProvider,checkoutId:string,account?:ProviderAccount|null):Promise<PaymentStatusResult>{
   if(provider!=='sumup') throw new Error(`Payment provider ${provider} is not implemented yet.`);
   const {apiKey,merchantAccountId}=sumUpCredentials(account);
-  const response=await fetch(`https://api.sumup.com/v0.1/checkouts/${encodeURIComponent(checkoutId)}`,{
+  const response=await (account?.diagnostic ? (url:string,options:any)=>diagnosticFetch(fetch,account.diagnostic!.sink,{...account.diagnostic!.context,operation:'checkout_retrieve',checkout_id:checkoutId},url,options) : fetch)(`https://api.sumup.com/v0.1/checkouts/${encodeURIComponent(checkoutId)}`,{
     headers:{Authorization:`Bearer ${apiKey}`},
   });
   const data=await response.json().catch(()=>({}));
@@ -155,7 +157,7 @@ export async function refundPayment(input:RefundRequest):Promise<RefundResult>{
   if(!input.transactionId) throw new Error('The gateway transaction ID is missing, so this payment cannot be refunded yet.');
   const partial=input.amount!==undefined&&input.amount!==null;
   const body=partial?JSON.stringify({amount:requiredAmount(input.amount)}):undefined;
-  const response=await fetch(`https://api.sumup.com/v0.1/me/refund/${encodeURIComponent(input.transactionId)}`,{
+  const response=await (input.account?.diagnostic ? (url:string,options:any)=>diagnosticFetch(fetch,input.account.diagnostic!.sink,{...input.account.diagnostic!.context,operation:'refund',transaction_id:input.transactionId},url,options) : fetch)(`https://api.sumup.com/v0.1/me/refund/${encodeURIComponent(input.transactionId)}`,{
     method:'POST',
     headers:partial?{Authorization:`Bearer ${apiKey}`,'Content-Type':'application/json'}:{Authorization:`Bearer ${apiKey}`},
     body,
