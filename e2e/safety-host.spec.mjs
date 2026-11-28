@@ -1,0 +1,22 @@
+import {test,expect} from '@playwright/test';
+test('emergency access independent of reporting and six-stage fictional report',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/e2e/safetyHarness.html');
+ await page.getByRole('button',{name:'First Aid',exact:true}).click();
+ await expect(page.getByRole('link',{name:'Call 112'})).toHaveAttribute('href','tel:112');
+ await expect(page.getByRole('link',{name:'Call 999'})).toHaveAttribute('href','tel:999');
+ await page.keyboard.press('Escape');
+ await page.getByRole('button',{name:'Report Incident'}).click();
+ await page.getByLabel('Factual description of incident').fill('Fictional slip');
+ await page.getByRole('button',{name:'Next'}).click();
+ await page.getByRole('button',{name:'Add person'}).click();
+ await page.getByLabel('Person 1',{exact:true}).fill('Fictional A');
+ await page.getByRole('button',{name:'Add person'}).click();
+ await page.getByLabel('Person 2',{exact:true}).fill('Fictional B');
+ for(let i=0;i<4;i++)await page.getByRole('button',{name:'Next'}).click();
+ await expect(page.getByText('Fictional slip',{exact:true})).toBeVisible();
+ await expect(page.getByText('Submission disabled until secure backend integration is tested.')).toBeVisible();
+ await page.getByRole('button',{name:'Discard draft'}).click();
+ await page.getByRole('button',{name:'Report Hazard'}).click();
+ await expect(page.getByText('Preview only — no hazard has been submitted.')).toBeVisible();
+});
