@@ -12,23 +12,61 @@
 # Error details
 
 ```
-Error: browserType.launch: Target page, context or browser has been closed
-Browser logs:
+Error: expect(locator).toBeVisible() failed
 
-<launching> /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-jKgamM --remote-debugging-pipe --no-startup-window
-<launched> pid=892
-[pid=892][err] /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell: error while loading shared libraries: libglib-2.0.so.0: cannot open shared object file: No such file or directory
+Locator: getByText('Test Player 1')
+Expected: visible
+Timeout: 3000ms
+Error: element(s) not found
+
 Call log:
-  - <launching> /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-jKgamM --remote-debugging-pipe --no-startup-window
-  - <launched> pid=892
-  - [pid=892][err] /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell: error while loading shared libraries: libglib-2.0.so.0: cannot open shared object file: No such file or directory
-  - [pid=892] <gracefully close start>
-  - [pid=892] <kill>
-  - [pid=892] <will force kill>
-  - [pid=892] exception while trying to kill process: Error: kill ESRCH
-  - [pid=892] <process did exit: exitCode=127, signal=null>
-  - [pid=892] starting temporary directories cleanup
-  - [pid=892] finished temporary directories cleanup
-  - [pid=892] <gracefully close end>
+  - Expect "toBeVisible" getByText('Test Player 1') with timeout 3000ms
+  - waiting for getByText('Test Player 1')
 
+```
+
+# Test source
+
+```ts
+  1  | import {test,expect} from '@playwright/test';
+  2  | for(const viewport of [{width:390,height:844},{width:1280,height:800}]) {
+  3  |  test(`Tournival public registration consent and checkout preview ${viewport.width}px`,async({page})=>{
+  4  |   await page.setViewportSize(viewport);
+  5  |   await page.goto('/e2e/tournivalPublicHarness.html?kind=register');
+  6  |   await expect(page.getByText('Tournival Sandbox Event')).toBeVisible();
+  7  |   await page.getByRole('textbox',{name:'Full name'}).fill('Sandbox Attendee');
+  8  |   await page.getByRole('textbox',{name:'Email'}).fill('sandbox@example.com');
+  9  |   await page.getByRole('button',{name:'Register for Tournival'}).click({force:true});
+  10 |   await expect(page.getByText('Registration received')).toHaveCount(0);
+  11 |   await page.getByRole('checkbox',{name:/I consent to my details/}).check();
+  12 |   await page.getByRole('button',{name:'Register for Tournival'}).click();
+  13 |   await expect(page.getByText('Registration received')).toBeVisible();
+  14 |   await expect(page.getByText('Proceed to secure payment')).toBeVisible();
+  15 |   await expect(page.getByText(/Payment is confirmed only when the provider verifies it/)).toBeVisible();
+  16 |  });
+  17 |  test(`Tournival personalised player link ${viewport.width}px`,async({page})=>{
+  18 |   await page.setViewportSize(viewport);
+  19 |   await page.goto('/e2e/tournivalPublicHarness.html?kind=player');
+> 20 |   await expect(page.getByText('Test Player 1')).toBeVisible();
+     |                                                 ^ Error: expect(locator).toBeVisible() failed
+  21 |   await expect(page.getByText('Payment: paid')).toBeVisible();
+  22 |   await expect(page.getByText('Check-in: Checked in')).toBeVisible();
+  23 |   await page.getByRole('button',{name:'Fixtures'}).click();
+  24 |   await expect(page.getByText('8–5')).toBeVisible();
+  25 |   await expect(page.getByText(/Partner: Test Player 2/).first()).toBeVisible();
+  26 |   await expect(page.getByText(/Opponents: Test Player 3 & Test Player 4/).first()).toBeVisible();
+  27 |  });
+  28 |  test(`Tournival spectator Live Hall redacted ${viewport.width}px`,async({page})=>{
+  29 |   await page.setViewportSize(viewport);
+  30 |   await page.goto('/e2e/tournivalPublicHarness.html?kind=hall');
+  31 |   await expect(page.getByText('Tournival Sandbox Event — Live Hall')).toBeVisible();
+  32 |   await expect(page.getByText('Court 1')).toBeVisible();
+  33 |   const contents=await page.locator('body').innerText();
+  34 |   expect(contents).not.toContain('sandbox@example.com');
+  35 |   expect(contents).not.toContain('checkoutUrl');
+  36 |   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+  37 |   expect(overflow).toBeLessThanOrEqual(1);
+  38 |  });
+  39 | }
+  40 | 
 ```
