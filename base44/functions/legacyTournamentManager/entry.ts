@@ -285,17 +285,42 @@ Deno.serve(async (req) => {
     if (action === 'tournival_payment_reminder') {
       if(String(tournament.format).toLowerCase()!=='tournival')return Response.json({error:'Not a Tournival'},{status:400});
       const e=base44.asServiceRole.entities;
+      const conflict=(error:string)=>Response.json({error},{status:409});
+      const lockId=crypto.randomUUID();
+      const lock=await e.Tournament.updateMany({id:tournament.id,tenant_id:tournament.tenant_id,tournival_registration_lock:null},{$set:{tournival_registration_lock:lockId}});
+      if(lock.updated!==1)return conflict('Registration is busy; retry shortly');
+      try {
       const row=(await e.TournivalRegistration.filter({id:clean(body.registrationId,120),tenant_id:tournament.tenant_id,tournament_id:tournament.id}))[0];
-      if(!row||row.registration_status!=='pending_payment'||row.payment_status!=='pending')return Response.json({error:'Registration is no longer awaiting payment; refresh'},{status:409});
+      if(!row||row.registration_status!=='pending_payment'||!['pending','failed','expired'].includes(row.payment_status))return conflict('Registration is no longer awaiting payment; refresh');
       const payments=await e.PaymentRecord.filter({tenant_id:tournament.tenant_id,club_id:row.club_id,purpose_id:row.id,payment_type:'tournival_registration'});
-      const payment=payments.find((p:any)=>p.id===row.payment_record_id);
-      if(!payment||payment.payment_status!=='pending'||payment.provider!=='sumup'||Number(payment.amount)!==Number(row.amount_due)||payment.currency!==row.currency||payments.some((p:any)=>p.payment_status==='paid'))return Response.json({error:'Payment record requires reconciliation; no reminder prepared'},{status:409});
+      let payment=payments.find((p:any)=>p.id===row.payment_record_id);
+      if(!payment||payments.some((p:any)=>p.payment_status==='paid'||!p.provider_checkout_id)||payments.some((p:any)=>p.id!==payment.id&&!['failed','expired'].includes(p.payment_status)))return conflict('Payment history requires reconciliation');
+      const gateway=(await e.PaymentGatewayAccount.filter({tenant_id:tournament.tenant_id,club_id:row.club_id,provider:'sumup',status:'connected',is_default:true},'-updated_date',5))[0];
+      const account=gateway?{provider:'sumup',merchantAccountId:gateway.merchant_account_id,credentialSecretName:gateway.credential_reference||'SUMUP_API_KEY',connectionMode:gateway.connection_mode||'api_key'}:null;
+      if(!account||payment.provider!=='sumup'||payment.provider_account_id!==account.merchantAccountId||Number(payment.amount)!==Number(row.amount_due)||payment.currency!==row.currency)return conflict('Payment account or amount requires reconciliation');
+      const verified=await retrievePayment('sumup',payment.provider_checkout_id,account);
+      if(verified.merchantAccountId!==account.merchantAccountId||Number(verified.raw?.amount)!==Number(row.amount_due)||verified.raw?.currency!==row.currency||!verified.raw?.status)return conflict('SumUp verification mismatch');
+      if(verified.normalizedStatus==='paid'){
+        await e.PaymentRecord.update(payment.id,{payment_status:'paid',provider_status:verified.providerStatus,provider_transaction_id:verified.transactionId,payment_date:new Date().toISOString().slice(0,10)});
+        await e.TournivalRegistration.update(row.id,{payment_status:'paid',registration_status:'confirmed',confirmed_at:new Date().toISOString(),payment_reference:verified.transactionId||payment.provider_checkout_id});
+        await e.Tournament.updateMany({id:tournament.id,tenant_id:tournament.tenant_id},{$addToSet:{player_ids:row.player_id}});
+        return Response.json({success:true,alreadyPaid:true});
+      }
+      if(['failed','expired'].includes(verified.normalizedStatus)){
+        await e.PaymentRecord.update(payment.id,{payment_status:'failed',provider_status:verified.providerStatus});
+        const reference='RH-TRN-R-'+crypto.randomUUID();
+        const replacement=await e.PaymentRecord.create({tenant_id:row.tenant_id,club_id:row.club_id,person_id:payment.person_id,purpose_type:'event',purpose_id:row.id,payment_type:'tournival_registration',amount:row.amount_due,currency:row.currency,provider:'sumup',payment_method:'online',payment_status:'pending',provider_payment_reference:reference,provider_account_id:account.merchantAccountId});
+        await e.TournivalRegistration.update(row.id,{payment_record_id:replacement.id,payment_status:'pending'});
+        const checkout=await createCheckout({provider:'sumup',account,amount:row.amount_due,currency:row.currency,reference,description:'Tournival: '+clean(tournament.name,75),redirectUrl:'https://rallyhub.ie',returnUrl:'https://rallyhub.ie/api/apps/6a01dc00702b7dd2a2978c28/functions/paymentGatewayWebhook?provider=sumup'});
+        payment=await e.PaymentRecord.update(replacement.id,{provider_checkout_id:checkout.checkoutId,provider_checkout_url:checkout.checkoutUrl,provider_status:checkout.providerStatus});
+      }else if(verified.normalizedStatus!=='pending')return conflict('SumUp status requires reconciliation');
       let url:URL;
-      try{url=new URL(payment.provider_checkout_url);if(url.protocol!=='https:'||url.username||url.password||!(url.hostname==='sumup.com'||url.hostname.endsWith('.sumup.com')))throw Error('Invalid checkout');}catch{return Response.json({error:'Existing SumUp payment link unavailable; no new checkout created'},{status:409});}
+      try{url=new URL(payment.provider_checkout_url);if(url.protocol!=='https:'||url.username||url.password||!(url.hostname==='sumup.com'||url.hostname.endsWith('.sumup.com')))throw Error('Invalid checkout');}catch{return conflict('SumUp payment link unavailable');}
       let mobile=clean(row.mobile,40).replace(/[^0-9]/g,'');
       if(mobile.startsWith('00'))mobile=mobile.slice(2);else if(mobile.startsWith('0'))mobile='353'+mobile.slice(1);
       if(!/^[1-9][0-9]{7,14}$/.test(mobile))mobile='';
       return Response.json({success:true,mobile,checkoutUrl:url.href,amount:payment.amount,currency:payment.currency,name:row.full_name});
+      } finally { await e.Tournament.updateMany({id:tournament.id,tenant_id:tournament.tenant_id,tournival_registration_lock:lockId},{$set:{tournival_registration_lock:null}}); }
     }
     if (action === 'tournival_registrations') {
       if (String(tournament.format).toLowerCase() !== 'tournival')
