@@ -347,9 +347,13 @@ Deno.serve(async (req) => {
         !['paid','not_required','simulated'].includes(row.payment_status))
         return Response.json({error:'Check-in requires a confirmed, payment-complete registration'},{status:409});
       const checkedIn=body.checkedIn!==false;
-      await base44.asServiceRole.entities.TournivalRegistration.update(row.id,{
-        checked_in_at:checkedIn?new Date().toISOString():''
-      });
+      if(!!row.checked_in_at===checkedIn)return Response.json({success:true,checkedIn});
+      const changed=await base44.asServiceRole.entities.TournivalRegistration.updateMany({id:row.id,tournament_id:tournament.id,tenant_id:tournament.tenant_id,registration_status:'confirmed',payment_status:row.payment_status,checked_in_at:row.checked_in_at??null},{$set:{checked_in_at:checkedIn?new Date().toISOString():''}});
+      if(changed.updated!==1){
+        const current=(await base44.asServiceRole.entities.TournivalRegistration.filter({id:row.id,tournament_id:tournament.id,tenant_id:tournament.tenant_id}))[0];
+        if(current?.registration_status==='confirmed'&&['paid','not_required','simulated'].includes(current.payment_status)&&!!current.checked_in_at===checkedIn)return Response.json({success:true,checkedIn});
+        return Response.json({error:'Registration changed; refresh and retry'},{status:409});
+      }
       await audit(base44,user,tournament,'tournival_check_in',{registrationId,checkedIn});
       return Response.json({success:true,checkedIn});
     }
