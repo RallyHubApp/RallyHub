@@ -1,0 +1,54 @@
+{
+  "name": "SafetyKitItem",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "kit_id": {
+      "type": "string"
+    },
+    "item_name": {
+      "type": "string"
+    },
+    "quantity": {
+      "type": "number"
+    },
+    "minimum_quantity": {
+      "type": "number"
+    },
+    "expiry": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "kit_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

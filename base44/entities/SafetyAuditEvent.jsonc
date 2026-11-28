@@ -1,0 +1,54 @@
+{
+  "name": "SafetyAuditEvent",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "incident_id": {
+      "type": "string"
+    },
+    "actor_id": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string"
+    },
+    "operation_id": {
+      "type": "string"
+    },
+    "recorded_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "incident_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

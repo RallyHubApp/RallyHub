@@ -1,0 +1,60 @@
+{
+  "name": "SafetyVenueProfile",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "venue_id": {
+      "type": "string"
+    },
+    "eircode": {
+      "type": "string"
+    },
+    "aed_location": {
+      "type": "string"
+    },
+    "ambulance_access": {
+      "type": "string"
+    },
+    "kit_location": {
+      "type": "string"
+    },
+    "verified_at": {
+      "type": "string"
+    },
+    "verified_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "venue_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

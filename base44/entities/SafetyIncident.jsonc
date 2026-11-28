@@ -1,0 +1,84 @@
+{
+  "name": "SafetyIncident",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "venue_id": {
+      "type": "string"
+    },
+    "reporter_id": {
+      "type": "string"
+    },
+    "operation_id": {
+      "type": "string"
+    },
+    "incident_at": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "people": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "actions": {
+      "type": "string"
+    },
+    "outcome": {
+      "type": "string"
+    },
+    "witnesses": {
+      "type": "string"
+    },
+    "supplies": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "session_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

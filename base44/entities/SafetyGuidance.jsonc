@@ -1,0 +1,60 @@
+{
+  "name": "SafetyGuidance",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "reviewed_by": {
+      "type": "string"
+    },
+    "reviewed_at": {
+      "type": "string"
+    },
+    "version": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "topic"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
