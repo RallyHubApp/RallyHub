@@ -1,3 +1,4 @@
+import SafetyAdminBoard from '@/components/safety/SafetyAdminBoard';
 import TournivalRegistrationSummary from '@/components/tournival/TournivalRegistrationSummary';
 import React,{useState} from 'react';
 import TenantEvents from './TenantEvents';
@@ -14,6 +15,7 @@ const sections=[
  {id:'people',name:'People',description:'Membership, guests, players and club access',links:[['Membership applications','/app/membership'],['Guest booking approvals','/app/guest-bookings'],['Players','/app/players'],['Waiting list','/app/waiting-list']]},
  {id:'activities',name:'Activities',description:'Plan and manage club sessions, clinics and events',links:[['Existing events','/app/events'],['Tournaments','/app/tournaments'],['Session bookings','/app/guest-bookings']]},
  {id:'operations',name:'Operations',description:'Host check-in, activity health and finance review',links:[['Guest attendance','/app/guest-bookings'],['Finance summary','/app/finance'],['Club analytics','/app/analytics']]},
+ {id:'safety',name:'Health & Safety',description:'Incidents, first aid and venue readiness',links:[]},
  {id:'management',name:'Management',description:'Approved communications, administration and controls',links:[['Communications Centre','/app/communications'],['Tournival communications','/app/communications?source=tournival&tab=Audiences'],['Event communications','/app/communications?source=events&tab=Compose'],['Membership communications','/app/communications?source=membership&tab=Compose'],['Session communications','/app/communications?source=sessions&tab=Compose'],['Guest communications','/app/communications?source=guests&tab=Compose'],['KOTC communications','/app/communications?source=kotc&tab=Compose'],['Administration','/app/admin'],['Learning resources','/app/learn/manage']]}
 ];
 /** Native CCC workspace. Links preserve the existing authoritative workflows. */
@@ -38,6 +40,7 @@ export default function ClubCommandCentre(){
     {active==='activities'&&permitted&&<><div className="rounded-xl border bg-card p-4"><h3 className="font-semibold">One club event setup</h3><p className="mt-1 text-sm text-muted-foreground">Plan the activity, then continue directly into registration, fees, refunds, artwork and publication. Both stages stay in the Club Command Centre.</p><div className="mt-3 flex gap-2"><button type="button" className="rounded-lg border px-3 py-2" onClick={()=>setEventSetup(null)}>1 · Plan activity</button><button type="button" className="rounded-lg border px-3 py-2" onClick={()=>setEventSetup({id:'manual'})}>2 · Event setup and booking</button></div></div>{eventSetup?<TenantEvents embedded activityPrefill={eventSetup.id==='manual'?null:eventSetup}/>:<ClubActivityPlanner tenantId={tenantId} clubId={clubId} onContinueEvent={setEventSetup}/>}</>}
     {active==='activities'&&!permitted&&<p className="text-sm text-muted-foreground">Activity planning requires an authorised administrator. Existing event and booking tools remain available above.</p>}
     {active==='operations'&&<><ClubHostWorkspace tenantId={tenantId} clubId={clubId}/>{permitted&&<ClubOperationsBoard tenantId={tenantId} clubId={clubId}/>}</>}
+    {active==='safety'&&permitted&&<SafetyAdminBoard tenantId={tenantId} clubId={clubId}/>}
     {active==='management'&&permitted&&<ClubManagementBoard tenantId={tenantId} clubId={clubId}/>}
     {active==='management'&&!permitted&&<p className="rounded-lg border p-3 text-sm text-muted-foreground">Management configuration inventory requires administrator access. Existing authorised tools remain available above.</p>}
     {active==='people'&&permitted&&<><ClubGuestBookingCRM tenantId={tenantId} clubId={clubId}/><ClubPeopleBoard tenantId={tenantId} clubId={clubId}/></>}

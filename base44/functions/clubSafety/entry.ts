@@ -1,5 +1,7 @@
 import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
 import {activeHost,validateReport} from './policy.mjs';
+import {readCccAccess} from './accessGate.mjs';
+import {isConfiguredHost} from './hostPolicy.mjs';
 const fail=(error:string,status=400)=>Response.json({error},{status});
 Deno.serve(async req=>{
  if(req.method!=='POST')return fail('POST required',405);
@@ -7,13 +9,28 @@ Deno.serve(async req=>{
  const sdk=createClientFromRequest(req),user=await sdk.auth.me().catch(()=>null);
  if(!user)return fail('Authentication required',401);
  const body=await req.json(),e=sdk.asServiceRole.entities;
- // Initial adapter: KOTC only. Other sources fail closed pending their own access integration.
- if(body.source!=='kotc'||typeof body.sessionId!=='string')return fail('Unsupported session source',400);
- const session=(await e.KotcSession.filter({id:body.sessionId}))?.[0];
+ if(body.action==='admin_summary'){
+ const scope={tenant_id:user.active_tenant_id,club_id:user.active_club_id};
+ if(!scope.tenant_id||!scope.club_id||!(await readCccAccess(sdk,user,scope.tenant_id,scope.club_id)).admin)return fail('Club administrator required',403);
+ const names=['SafetyIncident','SafetyVenueProfile','SafetyFirstAider','SafetyKitItem','SafetyFollowUp','SafetyGuidance'];
+ const rows=await Promise.all(names.map(name=>e[name].filter(scope,'-created_date',100)));
+ return Response.json({success:true,counts:Object.fromEntries(names.map((name,i)=>[name,rows[i].length])),possiblyTruncated:rows.some(r=>r.length===100)});
+ }
+ if(typeof body.sessionId!=='string')return fail('Session required');
+ let session:any,allowed=false;
+ if(body.source==='kotc'){
+ session=(await e.KotcSession.filter({id:body.sessionId}))?.[0];
+ if(session){const grants=await e.KotcSessionAccess.filter({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,user_id:user.id,status:'active'});allowed=grants.some(g=>activeHost(g));}
+ }else if(body.source==='activity'){
+ session=(await e.ClubActivity.filter({id:body.sessionId,tenant_id:user.active_tenant_id,club_id:user.active_club_id}))?.[0];
+ if(session){const access=await readCccAccess(sdk,user,session.tenant_id,session.club_id);
+ const venue=(await e.Venue.filter({id:session.venue_id,tenant_id:session.tenant_id,club_id:session.club_id,status:'active'}))?.[0];
+ const configs=await e.MembershipVenueHostConfig.filter({tenant_id:session.tenant_id,club_id:session.club_id,active:true},'-updated_date',100);
+ allowed=access.admin||(access.member&&user.approval_status==='approved'&&configs.length<100&&isConfiguredHost(configs,venue,user.email));}
+ }else return fail('Unsupported session source');
  if(!session||!session.tenant_id||!session.club_id)return fail('Session unavailable',404);
  const scope={tenant_id:session.tenant_id,club_id:session.club_id};
- const grants=await e.KotcSessionAccess.filter({...scope,session_id:session.id,user_id:user.id,status:'active'});
- if(user.role!=='admin'&&!grants.some(g=>activeHost(g)))return fail('Host access required',403);
+ if(!allowed&&!(await readCccAccess(sdk,user,scope.tenant_id,scope.club_id)).admin)return fail('Host access required',403);
  if(body.action==='context'){
  const venue=session.venue_id?(await e.Venue.filter({...scope,id:session.venue_id}))?.[0]:null;
  const profile=venue?(await e.SafetyVenueProfile.filter({...scope,venue_id:venue.id}))?.[0]:null;
