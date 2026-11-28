@@ -7,8 +7,23 @@ Deno.serve(async req=>{
  if(req.method!=='POST')return fail('POST required',405);
  try{
  const sdk=createClientFromRequest(req),user=await sdk.auth.me().catch(()=>null);
- if(!user)return fail('Authentication required',401);
  const body=await req.json(),e=sdk.asServiceRole.entities;
+ if(!user&&body.source!=='tournival')return fail('Authentication required',401);
+ if(body.source==='tournival'){
+ const token=typeof body.token==='string'?body.token:'';
+ if(!/^th_[0-9a-f]{48}$/.test(token))return fail('Invalid host link',403);
+ const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token));
+ const hash=Array.from(new Uint8Array(digest),v=>v.toString(16).padStart(2,'0')).join('');
+ const links=await e.TournivalAccessToken.filter({token_hash:hash,token_type:'host'},'-created_at',5);
+ const link=links?.find(l=>!l.revoked_at&&(!l.expires_at||Date.parse(l.expires_at)>Date.now()));
+ if(!link)return fail('Host link expired or revoked',403);
+ const event=(await e.Tournament.filter({id:link.tournament_id,tenant_id:link.tenant_id}))?.[0];
+ if(!event||String(event.format).toLowerCase()!=='tournival'||!event.host_club_id)return fail('Tournival unavailable',404);
+ const sessions=await e.TournivalSession.filter({tournament_id:event.id,tenant_id:event.tenant_id},'-created_at',5);
+ if(sessions?.length!==1||sessions[0].rehearsal)return fail('Live session unavailable',409);
+ if(body.action==='validate'){const errors=validateReport(body);if(!event.venue_id)errors.push('Verified venue reference required');return Response.json({success:!errors.length,errors,submissionEnabled:false});}
+ return fail('Action unavailable pending security acceptance',409);
+ }
  if(body.action==='admin_summary'){
  const scope={tenant_id:user.active_tenant_id,club_id:user.active_club_id};
  if(!scope.tenant_id||!scope.club_id||!(await readCccAccess(sdk,user,scope.tenant_id,scope.club_id)).admin)return fail('Club administrator required',403);
