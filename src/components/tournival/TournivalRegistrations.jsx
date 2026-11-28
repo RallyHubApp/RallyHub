@@ -1,13 +1,15 @@
-import React,{useCallback,useEffect,useState} from 'react';
+import React,{useCallback,useEffect,useState,useRef} from 'react';
 import {Button} from '@/components/ui/button';
 import {base44} from '@/api/base44Client';
 import {useQueryClient} from '@tanstack/react-query';
 import {toast} from 'sonner';
+import {checkInRequest} from './checkInRequest.mjs';
 import PublicTournivalPlayer from '@/pages/PublicTournivalPlayer';
 
 export default function TournivalRegistrations({tournament,isAdmin}) {
  const [rows,setRows]=useState([]),[loading,setLoading]=useState(true),[working,setWorking]=useState(null),[error,setError]=useState('');
  const queryClient=useQueryClient();
+ const checkInBusy=useRef(false);
  const [adding,setAdding]=useState(false),[search,setSearch]=useState(''),[choices,setChoices]=useState([]),[selected,setSelected]=useState(''),[personalPath,setPersonalPath]=useState('');
  const [transfer,setTransfer]=useState(null),[targets,setTargets]=useState([]),[destination,setDestination]=useState('');
  const [preview,setPreview]=useState(null);
@@ -16,7 +18,7 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
   const res=await base44.functions.invoke('legacyTournamentManager',{
    tournamentId:tournament.id,...payload
   });
-  if(res?.data?.error)throw Error(res.data.error);
+  if(res?.data?.error)throw Object.assign(Error(res.data.error),{status:res.status||res.data.status});
   return res.data||{};
  },[tournament.id]);
  const refresh=useCallback(async()=>{
@@ -30,14 +32,21 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
  },[invoke]);
  useEffect(()=>{refresh();},[refresh]);
  const act=async(row,action,more={})=>{
-  if(working)return;
+  if(working||checkInBusy.current)return;
+  checkInBusy.current=true;
   try{
    setWorking(row.id);setError('');
+   if(action==='tournival_check_in'){
+    const data=await checkInRequest(invoke,row.id,more.checkedIn);
+    setRows(previous=>previous.map(r=>r.id===row.id?{...r,checkedIn:data.checkedIn}:r));
+    toast.success(data.checkedIn?'Player checked in':'Check-in undone');
+    return;
+   }
    const data=await invoke({action,registrationId:row.id,...more});
    toast.success(data.message||'Registration updated');
    await refresh();
    await queryClient.invalidateQueries();
-  }catch(e){setError(e.message||'Action failed');}finally{setWorking(null);}
+  }catch(e){setError(Number(e?.response?.status??e?.status)===429?'Check-in temporarily rate limited. Refresh or retry shortly.':e.message||'Action failed');}finally{checkInBusy.current=false;setWorking(null);}
  };
  const add=async()=>{if(working||!selected)return;try{setWorking('add');setError('');const result=await invoke({action:'tournival_manual_add',playerId:selected,paymentMode:'complimentary'});setPersonalPath(result.personalPath||'');setAdding(false);setSelected('');await refresh();await queryClient.invalidateQueries();toast.success('Player registered');}catch(e){setError(e.message);}finally{setWorking(null);}};
  const find=async()=>{try{setSelected('');setChoices((await invoke({action:'tournival_manual_search',search})).players||[]);}catch(e){setError(e.message);}};
@@ -79,7 +88,7 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
   <div className="flex justify-between items-center">
    <div><h3 className="font-semibold">Tournival Registrations & Check-in</h3>
     <p className="text-xs text-muted-foreground">Only confirmed and paid/free registrations may check in.</p></div>
-   <Button size="sm" variant="outline" onClick={refresh}>Refresh</Button>
+   <Button size="sm" variant="outline" disabled={!!working||loading} onClick={refresh}>Refresh</Button>
   </div>
   {isAdmin&&<div className="flex flex-wrap gap-2"><Button variant="outline" onClick={prepareInvite}>Prepare WhatsApp invitation</Button>{invite&&<><Button variant="outline" onClick={()=>window.open('https://wa.me/?text='+encodeURIComponent(invite),'_blank','noopener,noreferrer')}>Share via WhatsApp</Button><Button variant="outline" onClick={()=>navigator.clipboard.writeText(invite).then(()=>toast.success('Invitation copied')).catch(()=>toast.error('Copy failed'))}>Copy invitation</Button></>}</div>}
   {isAdmin&&['Draft','Registration Open'].includes(tournament.status)&&<Button onClick={()=>setAdding(!adding)}>Add Player</Button>}
