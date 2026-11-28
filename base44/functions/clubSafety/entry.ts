@@ -2,6 +2,7 @@ import {createClientFromRequest} from 'npm:@base44/sdk@0.8.48';
 import {activeHost,validateReport} from './policy.mjs';
 import {readCccAccess} from './accessGate.mjs';
 import {isConfiguredHost} from './hostPolicy.mjs';
+import {qualificationState,kitState,approvedGuidance} from './readiness.mjs';
 const fail=(error:string,status=400)=>Response.json({error},{status});
 Deno.serve(async req=>{
  if(req.method!=='POST')return fail('POST required',405);
@@ -29,7 +30,7 @@ Deno.serve(async req=>{
  if(!scope.tenant_id||!scope.club_id||!(await readCccAccess(sdk,user,scope.tenant_id,scope.club_id)).admin)return fail('Club administrator required',403);
  const names=['SafetyIncident','SafetyVenueProfile','SafetyFirstAider','SafetyKitItem','SafetyFollowUp','SafetyGuidance'];
  const rows=await Promise.all(names.map(name=>e[name].filter(scope,'-created_date',100)));
- return Response.json({success:true,counts:Object.fromEntries(names.map((name,i)=>[name,rows[i].length])),possiblyTruncated:rows.some(r=>r.length===100)});
+ return Response.json({success:true,counts:Object.fromEntries(names.map((name,i)=>[name,rows[i].length])),readiness:{qualificationReview:rows[2].filter(r=>qualificationState(r)!=='current').length,stockReview:rows[3].filter(r=>kitState(r)!=='ready').length,guidancePending:rows[5].filter(r=>!approvedGuidance(r)).length},possiblyTruncated:rows.some(r=>r.length===100)});
  }
  if(typeof body.sessionId!=='string')return fail('Session required');
  let session:any,allowed=false;
