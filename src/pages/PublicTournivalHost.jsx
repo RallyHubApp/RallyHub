@@ -1,4 +1,5 @@
 import React,{useCallback,useEffect,useRef,useState} from 'react';
+import SafetyHostPanel from '@/components/safety/SafetyHostPanel';
 import {useParams} from 'react-router-dom';
 import {base44} from '@/api/base44Client';
 import {Button} from '@/components/ui/button';
@@ -64,6 +65,7 @@ export default function PublicTournivalHost(){
    </div>
    {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
    {!state?<p>Loading secure host control…</p>:<>
+    <SafetyHostPanel sessionLabel={event.name||'Tournival'}/>
     <nav className="flex overflow-x-auto gap-2" aria-label="Host sections">{views.map(([key,label])=>
       <Button key={key} variant={tab===key?'default':'outline'} size="sm" onClick={()=>setTab(key)}>{label}</Button>)}</nav>
     {tab==='scores'&&<TournivalLiveScoring state={state} playerMap={playerMap} onSaveState={saveState} isAdmin={!busy}/>}
