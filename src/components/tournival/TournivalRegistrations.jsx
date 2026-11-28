@@ -57,8 +57,9 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
   setReminder(null);
   try{
    const data=await invoke({action:'tournival_payment_reminder',registrationId:row.id});
+   if(data.alreadyPaid){await refresh();toast.success('Payment already received and reconciled');return;}
    const amount=new Intl.NumberFormat('en-IE',{style:'currency',currency:data.currency}).format(data.amount);
-   const message=`Hi ${String(data.name||'there').split(' ')[0]}, just a reminder that your payment of ${amount} for ${tournament.name} (${tournament.start_date||''}) is outstanding. Please complete your payment using your existing secure SumUp link: \n${data.checkoutUrl}\nThanks!`;
+   const message=`Hi ${String(data.name||'there').split(' ')[0]}, just a reminder that your payment of ${amount} for ${tournament.name} (${tournament.start_date||''}) is outstanding. Please complete your payment using your secure SumUp link: \n${data.checkoutUrl}\nThanks!`;
 
    setReminder({id:row.id,name:data.name,mobile:data.mobile,message});
   }catch(e){setError(e?.response?.data?.error||e.message||'Payment reminder unavailable');}finally{setWorking(null);}
@@ -102,10 +103,10 @@ export default function TournivalRegistrations({tournament,isAdmin}) {
         <Button disabled={!!working} size="sm" onClick={()=>act(r,'tournival_check_in',{checkedIn:!r.checkedIn})}>
           {r.checkedIn?'Undo check-in':'Check in'}</Button>}
        {r.status==='confirmed'&&!r.checkedIn&&['paid','not_required','simulated'].includes(r.paymentStatus)&&['Draft','Registration Open'].includes(tournament.status)&&<Button disabled={!!working} variant="outline" size="sm" onClick={()=>prepareTransfer(r)}>Transfer Player</Button>}
-       {r.status==='pending_payment'&&r.paymentStatus==='pending'&&<Button disabled={!!working} variant="outline" size="sm" onClick={()=>requestPayment(r)}>Request Payment via WhatsApp</Button>}
+       {r.status==='pending_payment'&&['pending','failed','expired'].includes(r.paymentStatus)&&<Button disabled={!!working} variant="outline" size="sm" onClick={()=>requestPayment(r)}>Request Payment via WhatsApp</Button>}
        {r.status!=='withdrawn'&&<Button disabled={!!working} variant="outline" size="sm" onClick={()=>withdraw(r)}>Withdraw</Button>}
       </div>}
-      {isAdmin&&reminder?.id===r.id&&r.status==='pending_payment'&&r.paymentStatus==='pending'&&<div className="border rounded-lg p-3 space-y-2">
+      {isAdmin&&reminder?.id===r.id&&r.status==='pending_payment'&&['pending','failed','expired'].includes(r.paymentStatus)&&<div className="border rounded-lg p-3 space-y-2">
        <strong>Payment reminder for {reminder.name}</strong>
        <label className="block">WhatsApp mobile number (editable for this reminder)<input type="tel" className="block border rounded p-2 w-full" value={reminder.mobile} onChange={e=>setReminder({...reminder,mobile:e.target.value})}/></label>
        <p className="text-muted-foreground">Changing this number does not change the player's saved contact details.</p>

@@ -489,8 +489,8 @@ Deno.serve(async(req)=>{
           id:payment.purpose_id,tenant_id:payment.tenant_id,club_id:payment.club_id
         },'-created_date',5);
         const reg=registrations?.[0];
-        if(reg&&reg.payment_status!=='paid')
-          await base44.asServiceRole.entities.TournivalRegistration.update(reg.id,{payment_status:local});
+        if(reg&&reg.payment_status!=='paid'&&reg.payment_record_id===payment.id)
+          await base44.asServiceRole.entities.TournivalRegistration.updateMany({id:reg.id,tenant_id:reg.tenant_id,payment_record_id:payment.id,payment_status:{$ne:'paid'}},{$set:{payment_status:local}});
       }
       if(payment.purpose_type==='booking'&&payment.purpose_id){
         const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({id:payment.purpose_id},'-created_date',5);
